@@ -20,11 +20,13 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
+import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FailureState
@@ -59,6 +61,9 @@ internal class RedisFailureState(
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
             if (operations.markFeedbackForFactory(campaign.tenant, campaignKey, feedback.nodeId)) {
+                if (feedback.status == FeedbackStatus.FAILED) {
+                    log.error { "Stopping the factory ${feedback.nodeId} properly failed, please proceed manually." }
+                }
                 context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.FAILED, error)
                 RedisDisabledState(campaign, false, operations)
             } else {
@@ -67,5 +72,9 @@ internal class RedisFailureState(
         } else {
             this
         }
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

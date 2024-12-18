@@ -20,3 +20,14 @@ micronaut:
       type: SCHEDULED
       core-pool-size: 2
       number-of-threads: 4
+
+hazelcast:
+  scheduled-executor-service:
+    statistics-enabled: true
+    pool-size: 16
+    durability: 2
+    capacity: 100
+    capacity-policy: PER_NODE
+    merge-policy:
+      batch-size: 100
+      class-name: PutIfAbsentMergePolicy

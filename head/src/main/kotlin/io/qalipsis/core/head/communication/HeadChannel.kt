@@ -21,6 +21,7 @@ package io.qalipsis.core.head.communication
 
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DispatcherChannel
+import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.lifetime.HeadStartupComponent
 
@@ -55,6 +56,11 @@ interface HeadChannel : HeadStartupComponent {
      * Sends a [Directive] to the channel specified in [directive].
      */
     suspend fun publishDirective(directive: Directive)
+
+    /**
+     * Sends a serialized [Feedback] back to the heads.
+     */
+    suspend fun publishFeedback(channelName: DispatcherChannel, campaignKey: String, serializedFeedback: Any)
 
     /**
      * Sends a [HandshakeResponse] to a factory via the channel [channelName].

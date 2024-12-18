@@ -59,6 +59,13 @@ internal interface HeadConfiguration {
     val heartbeatDelay: Duration
 
     /**
+     * Duration to wait for feedbacks before forcing the complete end of a campaign.
+     */
+    @get:PositiveDuration
+    @get:Bindable(defaultValue = "PT8S")
+    val campaignCancellationStateGracePeriod: Duration
+
+    /**
      * Contains configuration properties (zones and factories) for clusters.
      */
     val cluster: ClusterConfiguration

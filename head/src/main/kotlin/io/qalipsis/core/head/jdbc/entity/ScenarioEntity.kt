@@ -58,7 +58,7 @@ internal data class ScenarioEntity(
     val defaultMinionsCount: Int,
     @field:Relation(value = Relation.Kind.ONE_TO_MANY, mappedBy = "scenarioId")
     val dags: List<DirectedAcyclicGraphEntity>,
-    val enabled: Boolean
+    var enabled: Boolean
 ) : VersionedEntity {
 
     constructor(

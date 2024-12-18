@@ -101,6 +101,11 @@ internal class RedisHeadChannel(
         ).toFuture().asSuspended().get()
     }
 
+    override suspend fun publishFeedback(channelName: DispatcherChannel, campaignKey: String, serializedFeedback: Any) {
+        log.debug { "Sending a feedback to the channel $channelName" }
+        publisherCommands.publish(channelName, serializedFeedback as ByteArray).toFuture().asSuspended().get()
+    }
+
     @LogInput(Level.DEBUG)
     override suspend fun publishHandshakeResponse(
         channelName: DispatcherChannel,

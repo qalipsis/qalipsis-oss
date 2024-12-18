@@ -44,5 +44,6 @@ internal class CampaignExecutionContext(
     val assignmentResolver: FactoryWorkflowAssignmentResolver,
     val reportPublishers: Collection<CampaignReportPublisher>,
     @Nullable val campaignAutoStarter: CampaignAutoStarter?,
-    val campaignHooks: Collection<CampaignHook>
-    )
+    val campaignHooks: Collection<CampaignHook>,
+    val delayedFeedbackManager: DelayedFeedbackManager,
+)

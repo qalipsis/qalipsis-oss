@@ -100,6 +100,7 @@ dependencies {
     implementation("org.thymeleaf.extras:thymeleaf-extras-java8time")
     implementation("org.jfree:jfreechart:1.0.19")
     implementation("org.jfree:org.jfree.svg:5.0.5")
+    implementation("com.hazelcast:hazelcast-all:4.2.8")
 
     runtimeOnly("io.r2dbc:r2dbc-pool")
     runtimeOnly("org.postgresql:r2dbc-postgresql")

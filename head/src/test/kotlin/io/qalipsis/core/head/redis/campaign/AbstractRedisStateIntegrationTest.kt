@@ -32,6 +32,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignAutoStarter
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
+import io.qalipsis.core.head.campaign.states.DelayedFeedbackManager
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
@@ -99,6 +100,9 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
     @RelaxedMockK
     protected lateinit var campaignHook2: CampaignHook
 
+    @RelaxedMockK
+    protected lateinit var delayedFeedbackManager: DelayedFeedbackManager
+
     protected val campaignHooks: Collection<CampaignHook> by lazy {
         listOf(campaignHook1, campaignHook2)
     }
@@ -117,6 +121,9 @@ internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegra
 
     @MockBean(FactoryWorkflowAssignmentResolver::class)
     fun assignmentResolver(): FactoryWorkflowAssignmentResolver = assignmentResolver
+
+    @MockBean(DelayedFeedbackManager::class)
+    fun delayedFeedbackManager(): DelayedFeedbackManager = delayedFeedbackManager
 
     @BeforeEach
     internal fun setUp() {
