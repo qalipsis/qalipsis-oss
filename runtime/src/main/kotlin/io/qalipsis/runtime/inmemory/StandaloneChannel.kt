@@ -111,6 +111,14 @@ internal class StandaloneChannel(
         }
     }
 
+    override suspend fun publishFeedback(
+        channelName: DispatcherChannel,
+        campaignKey: String,
+        serializedFeedback: Any
+    ) {
+        publishFeedback(serializedFeedback as Feedback)
+    }
+
     @LogInput(level = Level.DEBUG)
     override suspend fun publishHandshakeRequest(handshakeRequest: HandshakeRequest) {
         listeners.get().handshakeRequestListeners.stream().forEach { listener ->

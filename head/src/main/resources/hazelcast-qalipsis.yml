@@ -1,0 +1,8 @@
+hazelcast:
+  import:
+    - hazelcast-default.yaml
+
+  serialization:
+    data-serializable-factories:
+      - factory-id: 1
+        class-name: io.qalipsis.core.head.campaign.states.DistributedDelayedFeedbackManager$DelayedFeedbackTaskFactory

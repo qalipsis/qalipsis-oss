@@ -25,6 +25,7 @@ import io.micronaut.core.util.StringUtils
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.CampaignReportPublisher
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.annotations.LogInput
@@ -84,10 +85,11 @@ internal class DatabaseCampaignReportPublisher(
     private suspend fun saveCampaignReport(campaignReport: CampaignReport): CampaignReportEntity {
         val campaignEntity = campaignRepository.findByKey(campaignReport.campaignKey)
         // Synchronize the campaign details with the ones from the report.
-        campaignRepository.update(
+        val updatedCampaignEntity = campaignRepository.update(
             campaignEntity.copy(
-                result = campaignReport.status,
-                end = campaignReport.end
+                result = campaignEntity.result?.takeIf { it in setOf(ExecutionStatus.ABORTED, ExecutionStatus.FAILED) }
+                    ?: campaignReport.status,
+                end = campaignEntity.end ?: campaignReport.end
             )
         )
         return campaignReportRepository.save(
@@ -97,7 +99,7 @@ internal class DatabaseCampaignReportPublisher(
                 completedMinions = campaignReport.completedMinions!!,
                 successfulExecutions = campaignReport.successfulExecutions!!,
                 failedExecutions = campaignReport.failedExecutions!!,
-                status = campaignReport.status
+                status = updatedCampaignEntity.result!!
             )
         )
     }
@@ -127,7 +129,7 @@ internal class DatabaseCampaignReportPublisher(
             ScenarioReportMessageEntity(
                 scenarioReportEntityId,
                 it.stepName,
-                it.messageId.toString(),
+                it.messageId,
                 it.severity,
                 it.message
             )

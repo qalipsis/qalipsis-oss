@@ -65,7 +65,10 @@ import java.time.Duration
     Property(name = "head.handshake-request-channel", value = RedisSubscriberIntegrationTest.HANDSHAKE_REQUEST_CHANNEL),
     Property(name = "head.heartbeat-channel", value = RedisSubscriberIntegrationTest.HEARTBEAT_CHANNEL)
 )
-@MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.HEAD], startApplication = false)
+@MicronautTest(
+    environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD],
+    startApplication = false
+)
 internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() {
 
     @JvmField

@@ -71,6 +71,9 @@ internal abstract class AbstractStateTest {
     @RelaxedMockK
     protected lateinit var assignmentResolver: FactoryWorkflowAssignmentResolver
 
+    @RelaxedMockK
+    protected lateinit var delayedFeedbackManager: DelayedFeedbackManager
+
     protected val reportPublishers: Collection<CampaignReportPublisher> by lazy {
         listOf(reportPublisher1, reportPublisher2)
     }

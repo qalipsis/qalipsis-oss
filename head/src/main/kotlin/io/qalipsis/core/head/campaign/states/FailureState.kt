@@ -20,12 +20,14 @@
 package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.lang.concurrentSet
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
+import io.qalipsis.core.feedbacks.FeedbackStatus
 
 internal open class FailureState(
     protected val campaign: RunningCampaign,
@@ -41,6 +43,20 @@ internal open class FailureState(
     }
 
     override suspend fun doInit(): List<Directive> {
+        // In case the factories do not answer fast enough or not at all,
+        // schedule a failure on each node to go on with the next state.
+        campaign.factories.keys.forEach { nodeId ->
+            context.delayedFeedbackManager.scheduleCancellation(
+                campaign.feedbackChannel, CampaignShutdownFeedback(
+                    campaign.key,
+                    status = FeedbackStatus.FAILED,
+                    errorMessage = "The factory could not be properly stopped"
+                ).also {
+                    it.nodeId = nodeId
+                    it.tenant = campaign.tenant
+                })
+        }
+
         return listOf(
             CampaignShutdownDirective(
                 campaignKey = campaignKey,
@@ -51,7 +67,9 @@ internal open class FailureState(
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
-            expectedFeedbacks -= feedback.nodeId
+            if (expectedFeedbacks.remove(feedback.nodeId) && feedback.status == FeedbackStatus.FAILED) {
+                log.error { "Properly shutting down the factory ${feedback.nodeId} failed, please proceed manually." }
+            }
             if (expectedFeedbacks.isEmpty()) {
                 context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.FAILED, error)
                 DisabledState(campaign, false)
@@ -65,6 +83,10 @@ internal open class FailureState(
 
     override fun toString(): String {
         return "FailureState(campaign=$campaign, error='$error', expectedFeedbacks=$expectedFeedbacks)"
+    }
+
+    private companion object {
+        val log = logger()
     }
 
 }
