@@ -269,8 +269,12 @@ internal class ConsoleCampaignProgressionReporter(
             } else if (severity == ReportMessageSeverity.WARN) {
                 scenario.reportableWarnings.incrementAndGet()
             }
-            scenario.steps.computeIfAbsent(stepName) { StepState(stepName) }.let { step ->
-                step.messages[messageId] = ExecutionMessage(messageId, severity, message)
+            if (stepName.isBlank()) {
+                scenario.messages += ExecutionMessage(messageId, severity, message)
+            } else {
+                scenario.steps.computeIfAbsent(stepName) { StepState(stepName) }.let { step ->
+                    step.messages[messageId] = ExecutionMessage(messageId, severity, message)
+                }
             }
         }
     }

@@ -36,9 +36,10 @@ import io.mockk.coJustRun
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.impl.annotations.SpyK
 import io.mockk.mockk
-import io.mockk.spyk
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.head.campaign.scheduler.CampaignScheduler
@@ -52,15 +53,15 @@ import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
+import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import java.time.Instant
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
 
 @WithMockk
 internal class PersistentCampaignServiceTest {
@@ -93,23 +94,12 @@ internal class PersistentCampaignServiceTest {
     @RelaxedMockK
     private lateinit var scheduledCampaignsRegistry: ScheduledCampaignsRegistry
 
-    private lateinit var persistentCampaignService: PersistentCampaignService
+    @RelaxedMockK
+    private lateinit var campaignReportStateKeeper: CampaignReportStateKeeper
 
-    @BeforeAll
-    internal fun setUp() {
-        persistentCampaignService = spyk(
-            PersistentCampaignService(
-                campaignRepository = campaignRepository,
-                userRepository = userRepository,
-                campaignScenarioRepository = campaignScenarioRepository,
-                campaignConverter = campaignConverter,
-                factoryRepository = factoryRepository,
-                campaignPreparator = campaignPreparator,
-                scheduledCampaignsRegistry = scheduledCampaignsRegistry
-            ),
-            recordPrivateCalls = true
-        )
-    }
+    @InjectMockKs
+    @SpyK
+    private lateinit var persistentCampaignService: PersistentCampaignService
 
     @Test
     internal fun `should create the new campaign`() = testDispatcherProvider.run {
@@ -226,6 +216,7 @@ internal class PersistentCampaignServiceTest {
         assertThat(result).isSameAs(convertedCampaign)
         coVerifyOnce {
             campaignRepository.complete("my-tenant", "my-campaign", ExecutionStatus.FAILED, "This is the failure")
+            campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "This is the failure")
             campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
             campaignConverter.convertToModel(refEq(campaignEntity))
         }
@@ -234,6 +225,7 @@ internal class PersistentCampaignServiceTest {
             userRepository,
             campaignRepository,
             campaignScenarioRepository,
+            campaignReportStateKeeper,
             campaignConverter,
             factoryRepository,
             campaignPreparator

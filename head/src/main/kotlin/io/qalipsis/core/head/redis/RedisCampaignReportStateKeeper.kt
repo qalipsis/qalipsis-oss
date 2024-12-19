@@ -208,7 +208,6 @@ internal class RedisCampaignReportStateKeeper(
                     message = it
                 )
             }) + initializationMessages + executionFailuresDetails + messages
-
             val status = when {
                 campaignKnownStatus == ExecutionStatus.ABORTED -> ExecutionStatus.ABORTED
                 campaignKnownStatus == ExecutionStatus.FAILED -> ExecutionStatus.FAILED

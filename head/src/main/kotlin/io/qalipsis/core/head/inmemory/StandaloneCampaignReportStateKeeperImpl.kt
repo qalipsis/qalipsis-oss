@@ -107,7 +107,8 @@ internal class StandaloneCampaignReportStateKeeperImpl(
                 // Adds the failure message on all the non-ended scenarios.
                 if (state.status == null) {
                     consoleCampaignProgressionReporter?.attachMessage(
-                        scenarioName, "", ReportMessageSeverity.ERROR, idGenerator.short(), failureReason
+                        scenarioName, "", ReportMessageSeverity.ERROR, idGenerator.short(),
+                        failureReason
                     )
                 }
             }

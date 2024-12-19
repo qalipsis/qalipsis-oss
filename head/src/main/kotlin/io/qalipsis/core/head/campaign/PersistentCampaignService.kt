@@ -39,6 +39,7 @@ import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.converter.CampaignConverter
+import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.utils.SortingUtil
 import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import jakarta.inject.Singleton
@@ -59,6 +60,7 @@ internal class PersistentCampaignService(
     private val factoryRepository: FactoryRepository,
     private val campaignPreparator: CampaignPreparator,
     private val scheduledCampaignsRegistry: ScheduledCampaignsRegistry,
+    private val campaignReportStateKeeper: CampaignReportStateKeeper
 ) : CampaignService {
 
     @LogInputAndOutput
@@ -128,6 +130,7 @@ internal class PersistentCampaignService(
         failureReason: String?,
     ): Campaign {
         campaignRepository.complete(tenant, campaignKey, result, failureReason)
+        campaignReportStateKeeper.complete(campaignKey, result, failureReason)
         return retrieve(tenant, campaignKey)
     }
 

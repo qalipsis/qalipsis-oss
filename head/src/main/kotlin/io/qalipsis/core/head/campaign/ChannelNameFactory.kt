@@ -19,17 +19,16 @@
 
 package io.qalipsis.core.head.campaign
 
-import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.handshake.HandshakeRequest
 
 interface ChannelNameFactory {
 
-    @LogInput
+    @LogInputAndOutput
     suspend fun getBroadcastChannelName(campaign: RunningCampaign): String
 
-    @LogInput
+    @LogInputAndOutput
     suspend fun getFeedbackChannelName(campaign: RunningCampaign): String
 
     suspend fun getUnicastChannelName(handshakeRequest: HandshakeRequest): String {
