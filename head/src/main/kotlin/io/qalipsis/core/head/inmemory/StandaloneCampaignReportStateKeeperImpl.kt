@@ -66,6 +66,9 @@ internal class StandaloneCampaignReportStateKeeperImpl(
     private val campaignStates =
         ConcurrentHashMap<CampaignKey, MutableMap<ScenarioName, InMemoryScenarioReportingExecutionState>>()
 
+    @KTestable
+    private val forcedStatus = ConcurrentHashMap<CampaignKey, ForcedStatus>()
+
     /**
      * Counter for the running scenarios to block the process until the campaign is completed.
      */
@@ -97,7 +100,19 @@ internal class StandaloneCampaignReportStateKeeperImpl(
     }
 
     @LogInput(Level.DEBUG)
-    override suspend fun complete(campaignKey: CampaignKey) {
+    override suspend fun complete(campaignKey: CampaignKey, result: ExecutionStatus, failureReason: String?) {
+        forcedStatus[campaignKey] = ForcedStatus(ExecutionStatus.ABORTED, failureReason)
+        failureReason?.let {
+            campaignStates[campaignKey]?.forEach { (scenarioName, state) ->
+                // Adds the failure message on all the non-ended scenarios.
+                if (state.status == null) {
+                    consoleCampaignProgressionReporter?.attachMessage(
+                        scenarioName, "", ReportMessageSeverity.ERROR, idGenerator.short(),
+                        failureReason
+                    )
+                }
+            }
+        }
         consoleCampaignProgressionReporter?.stop()
         runningCampaignLatch.cancel()
         // Deletes the campaign key after the retention delay.
@@ -106,6 +121,7 @@ internal class StandaloneCampaignReportStateKeeperImpl(
 
     @LogInput(Level.DEBUG)
     override suspend fun abort(campaignKey: CampaignKey) {
+        forcedStatus[campaignKey] = ForcedStatus(ExecutionStatus.ABORTED)
         val abortTimestamp = Instant.now()
         campaignStates[campaignKey]
             ?.filterValues { state -> state.end == null && state.abort == null }
@@ -214,7 +230,7 @@ internal class StandaloneCampaignReportStateKeeperImpl(
         val campaignState = campaignStates[campaignKey] ?: throw NoSuchElementException()
         val scenariosReports =
             campaignState.map { (_, runningScenarioCampaign) -> runningScenarioCampaign.toReport(campaignKey) }
-        return scenariosReports.toCampaignReport()
+        return scenariosReports.toCampaignReport(knownResult = forcedStatus[campaignKey]?.executionStatus)
     }
 
     @LogInputAndOutput
@@ -226,10 +242,15 @@ internal class StandaloneCampaignReportStateKeeperImpl(
             val scenariosReports = campaignStates[campaignKey]
                 ?.mapNotNull { (_, runningScenarioCampaign) -> runningScenarioCampaign.toReport(campaignKey) }
             if (scenariosReports?.isNotEmpty() == true) {
-                scenariosReports.toCampaignExecutionDetails()
+                scenariosReports.toCampaignExecutionDetails(
+                    knownResult = forcedStatus[campaignKey]?.executionStatus,
+                    failureReason = forcedStatus[campaignKey]?.failureReason
+                )
             } else {
                 null
             }
         }
     }
+
+    data class ForcedStatus(val executionStatus: ExecutionStatus, val failureReason: String? = null)
 }
