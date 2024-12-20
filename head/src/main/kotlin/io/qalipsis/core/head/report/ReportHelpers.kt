@@ -32,7 +32,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-internal fun Collection<ScenarioReport>.toCampaignReport(): CampaignReport {
+internal fun Collection<ScenarioReport>.toCampaignReport(knownResult: ExecutionStatus?): CampaignReport {
 
     return CampaignReport(
         campaignKey = first().campaignKey,
@@ -44,6 +44,8 @@ internal fun Collection<ScenarioReport>.toCampaignReport(): CampaignReport {
         successfulExecutions = this.asSequence().mapNotNull { it.successfulExecutions }.sum(),
         failedExecutions = this.asSequence().mapNotNull { it.failedExecutions }.sum(),
         status = when {
+            knownResult == ExecutionStatus.FAILED -> ExecutionStatus.FAILED
+            knownResult == ExecutionStatus.ABORTED -> ExecutionStatus.ABORTED
             any { it.status == ExecutionStatus.ABORTED } -> ExecutionStatus.ABORTED
             any { it.status == ExecutionStatus.FAILED } -> ExecutionStatus.FAILED
             any { it.status == ExecutionStatus.WARNING } -> ExecutionStatus.WARNING
@@ -60,7 +62,10 @@ internal fun Collection<ScenarioReport>.toCampaignReport(): CampaignReport {
  *
  * @author Eric Jessé
  */
-internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(): CampaignExecutionDetails {
+internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(
+    knownResult: ExecutionStatus?,
+    failureReason: String?
+): CampaignExecutionDetails {
 
     return CampaignExecutionDetails(
         creation = Instant.now(),
@@ -76,6 +81,8 @@ internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(): CampaignEx
         successfulExecutions = this.asSequence().mapNotNull { it.successfulExecutions }.sum(),
         failedExecutions = this.asSequence().mapNotNull { it.failedExecutions }.sum(),
         status = when {
+            knownResult == ExecutionStatus.FAILED -> ExecutionStatus.FAILED
+            knownResult == ExecutionStatus.ABORTED -> ExecutionStatus.ABORTED
             any { it.status == ExecutionStatus.ABORTED } -> ExecutionStatus.ABORTED
             any { it.status == ExecutionStatus.FAILED } -> ExecutionStatus.FAILED
             any { it.status == ExecutionStatus.WARNING } -> ExecutionStatus.WARNING
@@ -84,6 +91,7 @@ internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(): CampaignEx
             else -> ExecutionStatus.SUCCESSFUL
         },
         failureReason = when {
+            failureReason != null -> failureReason
             any { it.status == ExecutionStatus.ABORTED } -> "The campaign was aborted"
             any { it.status == ExecutionStatus.FAILED } -> "At least one scenario failed"
             else -> ""

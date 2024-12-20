@@ -64,6 +64,7 @@ internal class RedisFailureState(
                 if (feedback.status == FeedbackStatus.FAILED) {
                     log.error { "Stopping the factory ${feedback.nodeId} properly failed, please proceed manually." }
                 }
+                context.campaignReportStateKeeper.complete(campaignKey, ExecutionStatus.FAILED, error)
                 context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.FAILED, error)
                 RedisDisabledState(campaign, false, operations)
             } else {

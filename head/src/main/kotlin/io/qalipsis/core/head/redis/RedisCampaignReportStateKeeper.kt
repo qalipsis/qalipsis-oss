@@ -38,12 +38,13 @@ import io.qalipsis.core.head.report.DefaultScenarioReportingExecutionState
 import io.qalipsis.core.head.report.toCampaignReport
 import io.qalipsis.core.math.percentOf
 import jakarta.inject.Singleton
-import java.time.Instant
 import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.toSet
 import org.slf4j.event.Level.DEBUG
+import java.time.Instant
 
 /**
  * Implementation of [CampaignReportStateKeeper] based upon data storage in Redis.
@@ -90,7 +91,17 @@ internal class RedisCampaignReportStateKeeper(
         )
     }
 
-    override suspend fun complete(campaignKey: CampaignKey) = Unit
+    override suspend fun complete(campaignKey: CampaignKey, result: ExecutionStatus, failureReason: String?) {
+        // Saved the provided status and the potential error message.
+        val key = "$campaignKey-report:$CAMPAIGN_FORCED_STATUS"
+        val status = mutableMapOf(
+            CAMPAIGN_FORCED_STATUS_RESULT to "$result"
+        )
+        if (failureReason != null) {
+            status[CAMPAIGN_FORCED_STATUS_FAILURE] = failureReason
+        }
+        redisHashCommands.hset(key, status)
+    }
 
     @LogInput(level = DEBUG)
     override suspend fun abort(campaignKey: CampaignKey) {
@@ -110,6 +121,12 @@ internal class RedisCampaignReportStateKeeper(
     override suspend fun generateReport(campaignKey: CampaignKey): CampaignReport {
         val scenarios =
             redisSetCommands.smembers("$campaignKey-report:$RUNNING_SCENARIOS_KEY_POSTFIX").toSet(mutableSetOf())
+        val campaignForcedStatus =
+            redisHashCommands.hgetall("$campaignKey-report:$CAMPAIGN_FORCED_STATUS").map { it.key to it.value }.toList()
+                .toMap()
+        val campaignKnownStatus =
+            campaignForcedStatus[CAMPAIGN_FORCED_STATUS_RESULT]?.let { ExecutionStatus.valueOf(it) }
+        val campaignFailure = campaignForcedStatus[CAMPAIGN_FORCED_STATUS_FAILURE]
 
         return scenarios.map { scenarioName ->
             val rootKey = buildRedisReportKey(campaignKey, scenarioName)
@@ -152,7 +169,6 @@ internal class RedisCampaignReportStateKeeper(
             val startTimestamp = Instant.parse(scenarioData.remove(START_TIMESTAMP_FIELD))
             val endTimestamp = scenarioData.remove(END_TIMESTAMP_FIELD)?.let(Instant::parse)
             val abortTimestamp = scenarioData.remove(ABORTED_TIMESTAMP_FIELD)?.let(Instant::parse)
-            val status = if (abortTimestamp != null) ExecutionStatus.ABORTED else null
 
             val successfullyInitializedSteps =
                 redisListCommands.lrange("$rootKey$SUCCESSFUL_STEP_INITIALIZATION_KEY_POSTFIX", 0, -1)
@@ -164,10 +180,10 @@ internal class RedisCampaignReportStateKeeper(
                 }
             val initializationMessages = listOf(
                 ReportMessage(
-                    "_init",
-                    "_init",
-                    ReportMessageSeverity.INFO,
-                    "Steps successfully initialized: ${successfullyInitializedSteps.joinToString()}"
+                    stepName = "_init",
+                    messageId = "_init",
+                    severity = ReportMessageSeverity.INFO,
+                    message = "Steps successfully initialized: ${successfullyInitializedSteps.joinToString()}"
                 )
             ) + initializationFailures
 
@@ -182,6 +198,22 @@ internal class RedisCampaignReportStateKeeper(
                     ReportMessage(stepName, messageId, severity, message)
                 }
 
+            val allMessages = listOfNotNull(campaignFailure?.let {
+                ReportMessage(
+                    stepName = "",
+                    messageId = "",
+                    severity = ReportMessageSeverity.ERROR,
+                    message = it
+                )
+            }) + initializationMessages + executionFailuresDetails + messages
+
+            val status = when {
+                campaignKnownStatus == ExecutionStatus.ABORTED -> ExecutionStatus.ABORTED
+                campaignKnownStatus == ExecutionStatus.FAILED -> ExecutionStatus.FAILED
+                allMessages.any { it.severity == ReportMessageSeverity.ERROR } -> ExecutionStatus.FAILED
+                allMessages.any { it.severity == ReportMessageSeverity.WARN } -> ExecutionStatus.WARNING
+                else -> ExecutionStatus.SUCCESSFUL
+            }
             DefaultScenarioReportingExecutionState(
                 scenarioName = scenarioName,
                 start = startTimestamp,
@@ -192,9 +224,9 @@ internal class RedisCampaignReportStateKeeper(
                 end = endTimestamp,
                 abort = abortTimestamp,
                 status = status,
-                messages = initializationMessages + executionFailuresDetails + messages
+                messages = allMessages
             ).toReport(campaignKey)
-        }.toCampaignReport()
+        }.toCampaignReport(campaignKnownStatus)
     }
 
     /**
@@ -212,6 +244,12 @@ internal class RedisCampaignReportStateKeeper(
         const val STARTED_MINIONS_FIELD = "__started-minions"
 
         const val COMPLETED_MINIONS_FIELD = "__completed-minions"
+
+        const val CAMPAIGN_FORCED_STATUS = ":campaign-status"
+
+        const val CAMPAIGN_FORCED_STATUS_RESULT = "status"
+
+        const val CAMPAIGN_FORCED_STATUS_FAILURE = "failure"
 
         const val RUNNING_SCENARIOS_KEY_POSTFIX = ":scenarios-timestamps"
 

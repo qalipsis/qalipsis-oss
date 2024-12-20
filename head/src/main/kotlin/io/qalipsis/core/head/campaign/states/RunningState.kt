@@ -108,7 +108,6 @@ internal open class RunningState(
             feedback is CampaignScenarioShutdownFeedback -> {
                 expectedScenariosToComplete.remove(feedback.scenarioName)
                 if (expectedScenariosToComplete.isEmpty()) {
-                    context.campaignReportStateKeeper.complete(feedback.campaignKey)
                     CompletionState(campaign)
                 } else {
                     log.trace { "List of remaining scenarios in the campaign ${feedback.campaignKey}: $expectedScenariosToComplete" }

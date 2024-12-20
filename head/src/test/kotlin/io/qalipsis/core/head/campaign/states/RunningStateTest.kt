@@ -280,7 +280,6 @@ internal class RunningStateTest : AbstractStateTest() {
                 prop("campaign").isSameAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
             }
-            coVerifyOnce { campaignReportStateKeeper.complete("my-campaign") }
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 

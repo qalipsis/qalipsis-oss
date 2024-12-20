@@ -70,13 +70,15 @@ internal class RedisAbortingState(
                     log.error { "Aborting the factory ${feedback.nodeId} properly failed, please proceed manually." }
                 }
                 if (abortConfiguration.hard) {
+                    val message = "The campaign was aborted"
+                    context.campaignReportStateKeeper.complete(campaignKey, ExecutionStatus.ABORTED, message)
                     context.campaignService.close(
                         campaign.tenant,
                         campaignKey,
                         ExecutionStatus.ABORTED,
-                        "The campaign was aborted"
+                        message
                     )
-                    RedisFailureState(campaign, "The campaign was aborted", operations)
+                    RedisFailureState(campaign, message, operations)
                 } else {
                     RedisCompletionState(campaign, operations)
                 }

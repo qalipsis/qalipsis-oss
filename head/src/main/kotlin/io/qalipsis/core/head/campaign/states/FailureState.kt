@@ -71,6 +71,7 @@ internal open class FailureState(
                 log.error { "Properly shutting down the factory ${feedback.nodeId} failed, please proceed manually." }
             }
             if (expectedFeedbacks.isEmpty()) {
+                context.campaignReportStateKeeper.complete(campaignKey, ExecutionStatus.FAILED, error)
                 context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.FAILED, error)
                 DisabledState(campaign, false)
             } else {

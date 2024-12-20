@@ -64,7 +64,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
     }
 
     @Test
-    internal fun `should start and stop scenarios, then create a report`() = testDispatcherProvider.run {
+    internal fun `should start and stop scenarios with failures, then create a report`() = testDispatcherProvider.run {
         // when
         val beforeStart = Instant.now()
         initCampaignReportData("my-campaign", withFailures = true)
@@ -125,7 +125,129 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                 )
                                 key("message-1").isDataClassEqualTo(
                                     ReportMessage(
-                                        "my-step-1", "message-1", ReportMessageSeverity.WARN,
+                                        "my-step-1", "message-1", ReportMessageSeverity.INFO,
+                                        "This is the first message"
+                                    )
+                                )
+                                key("message-3").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "my-step-2", "message-3", ReportMessageSeverity.INFO,
+                                        "This is the third message"
+                                    )
+                                )
+                                key("message-4").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "my-step-2", "message-4", ReportMessageSeverity.INFO,
+                                        "This is the fourth message"
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    key("my-scenario-2").all {
+                        prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
+                        prop(ScenarioReport::end).isNotNull()
+                            .isBetween(beforeCompleteScenario2, beforeCompleteScenario3)
+                        prop(ScenarioReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
+                        prop(ScenarioReport::startedMinions).isEqualTo(32)
+                        prop(ScenarioReport::completedMinions).isEqualTo(0)
+                        prop(ScenarioReport::successfulExecutions).isEqualTo(32)
+                        prop(ScenarioReport::failedExecutions).isEqualTo(0)
+                        prop(ScenarioReport::messages).all {
+                            hasSize(2)
+                            transform { it.associateBy { it.messageId } }.all {
+                                key("_init").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "_init", "_init", ReportMessageSeverity.INFO,
+                                        "Steps successfully initialized: my-step-2"
+                                    )
+                                )
+                                key("message-2").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "my-step-1", "message-2", ReportMessageSeverity.INFO,
+                                        "This is the second message"
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    key("my-scenario-3").all {
+                        prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
+                        prop(ScenarioReport::end).isNotNull().isBetween(beforeCompleteScenario3, afterCompleteScenario3)
+                        prop(ScenarioReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
+                        prop(ScenarioReport::startedMinions).isEqualTo(0)
+                        prop(ScenarioReport::completedMinions).isEqualTo(0)
+                        prop(ScenarioReport::successfulExecutions).isEqualTo(0)
+                        prop(ScenarioReport::failedExecutions).isEqualTo(0)
+                        prop(ScenarioReport::messages).all {
+                            hasSize(1)
+                            index(0).isDataClassEqualTo(
+                                ReportMessage(
+                                    "_init", "_init", ReportMessageSeverity.INFO,
+                                    "Steps successfully initialized: my-step-1"
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    internal fun `should start and stop scenarios without failures, then create a report`() =
+        testDispatcherProvider.run {
+            // when
+            val beforeStart = Instant.now()
+            initCampaignReportData("my-campaign")
+            val afterStart = Instant.now()
+            val beforeCompleteScenario1 = Instant.now()
+            reportStateKeeper.complete("my-campaign", "my-scenario-1")
+            val beforeCompleteScenario2 = Instant.now()
+            reportStateKeeper.complete("my-campaign", "my-scenario-2")
+            val beforeCompleteScenario3 = Instant.now()
+            reportStateKeeper.complete("my-campaign", "my-scenario-3")
+            val afterCompleteScenario3 = Instant.now()
+            reportStateKeeper.complete("my-campaign")
+
+            val report = reportStateKeeper.generateReport("my-campaign")
+
+            // then
+            assertThat(report).all {
+                prop(CampaignReport::campaignKey).isEqualTo("my-campaign")
+                prop(CampaignReport::start).isNotNull().isBetween(beforeStart, afterStart)
+                prop(CampaignReport::end).isNotNull().isBetween(beforeCompleteScenario3, afterCompleteScenario3)
+                prop(CampaignReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
+                prop(CampaignReport::startedMinions).isEqualTo(54 + 32)
+                prop(CampaignReport::completedMinions).isEqualTo(43)
+                prop(CampaignReport::successfulExecutions).isEqualTo(21 + 43 + 32)
+                prop(CampaignReport::failedExecutions).isEqualTo(0)
+                prop(CampaignReport::scenariosReports).all {
+                    hasSize(3)
+                    transform { it.associateBy { it.scenarioName } }.all {
+                        key("my-scenario-1").all {
+                            prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
+                            prop(ScenarioReport::end).isNotNull()
+                                .isBetween(beforeCompleteScenario1, beforeCompleteScenario2)
+                            prop(ScenarioReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
+                            prop(ScenarioReport::startedMinions).isEqualTo(54)
+                            prop(ScenarioReport::completedMinions).isEqualTo(43)
+                            prop(ScenarioReport::successfulExecutions).isEqualTo(21 + 43)
+                            prop(ScenarioReport::failedExecutions).isEqualTo(0)
+                            prop(ScenarioReport::messages).all {
+                                hasSize(4)
+                                transform { it.associateBy { it.messageId } }.all {
+                                    key("_init").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "_init", "_init", ReportMessageSeverity.INFO,
+                                            "Steps successfully initialized: my-step-1, my-step-2"
+                                        )
+                                    )
+                                    key("message-1").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "my-step-1", "message-1", ReportMessageSeverity.INFO,
                                         "This is the first message"
                                     )
                                 )
@@ -200,10 +322,11 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
     internal fun `should start and abort, then create a report`() = testDispatcherProvider.run {
         // when
         val beforeStart = Instant.now()
-        initCampaignReportData("my-campaign", withFailures = false)
+        initCampaignReportData("my-campaign")
         val afterStart = Instant.now()
         val beforeAbort = Instant.now()
         reportStateKeeper.abort("my-campaign")
+        reportStateKeeper.complete("my-campaign", ExecutionStatus.ABORTED, "The campaign was aborted")
         val afterAbort = Instant.now()
 
         val report = reportStateKeeper.generateReport("my-campaign")
@@ -230,8 +353,14 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                         prop(ScenarioReport::successfulExecutions).isEqualTo(21 + 43)
                         prop(ScenarioReport::failedExecutions).isEqualTo(0)
                         prop(ScenarioReport::messages).all {
-                            hasSize(4)
+                            hasSize(5)
                             transform { it.associateBy { it.messageId } }.all {
+                                key("").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "", "", ReportMessageSeverity.ERROR,
+                                        "The campaign was aborted"
+                                    )
+                                )
                                 key("_init").isDataClassEqualTo(
                                     ReportMessage(
                                         "_init", "_init", ReportMessageSeverity.INFO,
@@ -240,7 +369,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                 )
                                 key("message-1").isDataClassEqualTo(
                                     ReportMessage(
-                                        "my-step-1", "message-1", ReportMessageSeverity.WARN,
+                                        "my-step-1", "message-1", ReportMessageSeverity.INFO,
                                         "This is the first message"
                                     )
                                 )
@@ -269,8 +398,14 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                         prop(ScenarioReport::successfulExecutions).isEqualTo(32)
                         prop(ScenarioReport::failedExecutions).isEqualTo(0)
                         prop(ScenarioReport::messages).all {
-                            hasSize(2)
+                            hasSize(3)
                             transform { it.associateBy { it.messageId } }.all {
+                                key("").isDataClassEqualTo(
+                                    ReportMessage(
+                                        "", "", ReportMessageSeverity.ERROR,
+                                        "The campaign was aborted"
+                                    )
+                                )
                                 key("_init").isDataClassEqualTo(
                                     ReportMessage(
                                         "_init", "_init", ReportMessageSeverity.INFO,
@@ -296,9 +431,149 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                         prop(ScenarioReport::successfulExecutions).isEqualTo(0)
                         prop(ScenarioReport::failedExecutions).isEqualTo(0)
                         prop(ScenarioReport::messages).all {
-                            hasSize(1)
+                            hasSize(2)
                             index(0).isDataClassEqualTo(
                                 ReportMessage(
+                                    "", "", ReportMessageSeverity.ERROR,
+                                    "The campaign was aborted"
+                                )
+                            )
+                            index(1).isDataClassEqualTo(
+                                ReportMessage(
+                                    "_init", "_init", ReportMessageSeverity.INFO,
+                                    "Steps successfully initialized: my-step-1"
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    internal fun `should start and stop with failure at completion, then create a report`() =
+        testDispatcherProvider.run {
+            // when
+            val beforeStart = Instant.now()
+            initCampaignReportData("my-campaign")
+            val afterStart = Instant.now()
+            val beforeAbort = Instant.now()
+            reportStateKeeper.abort("my-campaign")
+            reportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "The campaign failed")
+            val afterAbort = Instant.now()
+
+            val report = reportStateKeeper.generateReport("my-campaign")
+
+            // then
+            assertThat(report).all {
+                prop(CampaignReport::campaignKey).isEqualTo("my-campaign")
+                prop(CampaignReport::start).isNotNull().isBetween(beforeStart, afterStart)
+                prop(CampaignReport::end).isNotNull().isBetween(beforeAbort, afterAbort)
+                prop(CampaignReport::status).isEqualTo(ExecutionStatus.FAILED)
+                prop(CampaignReport::startedMinions).isEqualTo(54 + 32)
+                prop(CampaignReport::completedMinions).isEqualTo(43)
+                prop(CampaignReport::successfulExecutions).isEqualTo(21 + 43 + 32)
+                prop(CampaignReport::failedExecutions).isEqualTo(0)
+                prop(CampaignReport::scenariosReports).all {
+                    hasSize(3)
+                    transform { it.associateBy { it.scenarioName } }.all {
+                        key("my-scenario-1").all {
+                            prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
+                            prop(ScenarioReport::end).isNotNull().isBetween(beforeAbort, afterAbort)
+                            prop(ScenarioReport::status).isEqualTo(ExecutionStatus.FAILED)
+                            prop(ScenarioReport::startedMinions).isEqualTo(54)
+                            prop(ScenarioReport::completedMinions).isEqualTo(43)
+                            prop(ScenarioReport::successfulExecutions).isEqualTo(21 + 43)
+                            prop(ScenarioReport::failedExecutions).isEqualTo(0)
+                            prop(ScenarioReport::messages).all {
+                                hasSize(5)
+                                transform { it.associateBy { it.messageId } }.all {
+                                    key("").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "", "", ReportMessageSeverity.ERROR,
+                                            "The campaign failed"
+                                        )
+                                    )
+                                    key("_init").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "_init", "_init", ReportMessageSeverity.INFO,
+                                            "Steps successfully initialized: my-step-1, my-step-2"
+                                        )
+                                    )
+                                    key("message-1").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "my-step-1", "message-1", ReportMessageSeverity.INFO,
+                                            "This is the first message"
+                                        )
+                                    )
+                                    key("message-3").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "my-step-2", "message-3", ReportMessageSeverity.INFO,
+                                            "This is the third message"
+                                        )
+                                    )
+                                    key("message-4").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "my-step-2", "message-4", ReportMessageSeverity.INFO,
+                                            "This is the fourth message"
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        key("my-scenario-2").all {
+                            prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
+                            prop(ScenarioReport::end).isNotNull().isBetween(beforeAbort, afterAbort)
+                            prop(ScenarioReport::status).isEqualTo(ExecutionStatus.FAILED)
+                            prop(ScenarioReport::startedMinions).isEqualTo(32)
+                            prop(ScenarioReport::completedMinions).isEqualTo(0)
+                            prop(ScenarioReport::successfulExecutions).isEqualTo(32)
+                            prop(ScenarioReport::failedExecutions).isEqualTo(0)
+                            prop(ScenarioReport::messages).all {
+                                hasSize(3)
+                                transform { it.associateBy { it.messageId } }.all {
+                                    key("").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "", "", ReportMessageSeverity.ERROR,
+                                            "The campaign failed"
+                                        )
+                                    )
+                                    key("_init").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "_init", "_init", ReportMessageSeverity.INFO,
+                                            "Steps successfully initialized: my-step-2"
+                                        )
+                                    )
+                                    key("message-2").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "my-step-1", "message-2", ReportMessageSeverity.INFO,
+                                            "This is the second message"
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        key("my-scenario-3").all {
+                            prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
+                            prop(ScenarioReport::end).isNotNull().isBetween(beforeAbort, afterAbort)
+                            prop(ScenarioReport::status).isEqualTo(ExecutionStatus.FAILED)
+                            prop(ScenarioReport::startedMinions).isEqualTo(0)
+                            prop(ScenarioReport::completedMinions).isEqualTo(0)
+                            prop(ScenarioReport::successfulExecutions).isEqualTo(0)
+                            prop(ScenarioReport::failedExecutions).isEqualTo(0)
+                            prop(ScenarioReport::messages).all {
+                                hasSize(2)
+                            index(0).isDataClassEqualTo(
+                                ReportMessage(
+                                    "", "", ReportMessageSeverity.ERROR,
+                                    "The campaign failed"
+                                )
+                            )
+                                index(1).isDataClassEqualTo(
+                                    ReportMessage(
                                     "_init", "_init", ReportMessageSeverity.INFO,
                                     "Steps successfully initialized: my-step-1"
                                 )
@@ -328,7 +603,11 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
             assertThat(connection.sync().keys("my-campaign-2*").count()).isEqualTo(0)
         }
 
-    private suspend fun initCampaignReportData(campaign: String, withFailures: Boolean = false) {
+    private suspend fun initCampaignReportData(
+        campaign: String,
+        withFailures: Boolean = false,
+        withWarnings: Boolean = false
+    ) {
         reportStateKeeper.start(campaign, "my-scenario-1")
         reportStateKeeper.start(campaign, "my-scenario-2")
         reportStateKeeper.start(campaign, "my-scenario-3")
@@ -341,7 +620,11 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         setSuccessfulInitializedSteps(campaign, "my-scenario-3", "my-step-1")
 
         putMessage(
-            campaign, "my-scenario-1", "my-step-1", ReportMessageSeverity.WARN, "message-1",
+            campaign,
+            "my-scenario-1",
+            "my-step-1",
+            if (withWarnings) ReportMessageSeverity.WARN else ReportMessageSeverity.INFO,
+            "message-1",
             "This is the first message"
         )
         putMessage(

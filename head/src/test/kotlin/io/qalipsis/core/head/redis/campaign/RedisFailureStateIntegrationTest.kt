@@ -139,6 +139,7 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
                 typedProp<Boolean>("initialized").isFalse()
             }
             coVerifyOnce {
+                campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "this error")
                 campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "this error")
             }
             confirmVerified(campaignService, factoryService, campaignReportStateKeeper)
