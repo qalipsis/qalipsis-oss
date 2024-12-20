@@ -23,11 +23,15 @@ import ch.qos.logback.classic.AsyncAppender
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder
+import ch.qos.logback.classic.filter.ThresholdFilter
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
+import ch.qos.logback.core.ConsoleAppender
 import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy
 import ch.qos.logback.core.util.FileSize
+import io.micronaut.context.annotation.Property
+import io.qalipsis.api.config.EventsConfig
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.runtime.Configurer
 import jakarta.inject.Singleton
@@ -42,47 +46,71 @@ import java.nio.charset.StandardCharsets
  */
 @Singleton
 internal class LogbackConfigurer(
-    private val config: LoggingConfiguration
+    private val config: LoggingConfiguration,
+    @Property(name = EventsConfig.EXPORT_ENABLED, defaultValue = "false") private val enabledEventsPublisher: Boolean,
+    @Property(
+        name = "${EventsConfig.EXPORT_CONFIGURATION}.slf4j.enabled",
+        defaultValue = "false"
+    ) private val enabledSlf4JEventsPublisher: Boolean,
 ) : Configurer {
 
     override fun configure() {
-        val loggerContext = (LoggerFactory.getILoggerFactory() as LoggerContext)
-        val defaultPattern =
-            if (config.pattern.isNullOrBlank()) "%d{yyyy-MM-dd'T'HH:mm:ss.SSS,UTC}Z %5p --- [%t] %logger.%M.%L : %m%n}" else config.pattern
-        loggerContext.putProperty("LOG_PATTERN", defaultPattern)
+        if (!config.skip) {
+            val loggerContext = (LoggerFactory.getILoggerFactory() as LoggerContext)
+            val defaultPattern = config.console.pattern
 
-        val rootLogger = loggerContext.getLogger("ROOT")
-        // If the logs are expected in the console.
-        if (!config.console) {
-            log.info { "Disabling the console logs" }
-            rootLogger.detachAppender("console")
-        }
+            val rootLogger = loggerContext.getLogger("ROOT")
+            // If the logs are expected in the console.
+            if (!config.console.enabled) {
+                log.info { "Disabling the console logs" }
+                rootLogger.detachAppender("console")
+            } else if (rootLogger.getAppender("console") == null) {
+                val consoleAppender = ConsoleAppender<ILoggingEvent>()
+                consoleAppender.name = "console"
+                consoleAppender.encoder = PatternLayoutEncoder().also {
+                    it.pattern = config.console.pattern
+                    it.charset = StandardCharsets.UTF_8
+                }
+                consoleAppender.addFilter(ThresholdFilter().also {
+                    it.setLevel(config.console.minLogLevel)
+                })
+                consoleAppender.start()
+                rootLogger.addAppender(consoleAppender)
+            }
+            configureEventsLogging(loggerContext, defaultPattern)
 
-        // If the logs are expected in the file.
-        config.file?.let { configFile ->
-            if (!configFile.path.isNullOrBlank()) {
-                rootLogger.apply {
-                    addAppender(buildRollingFileAppender("fileAppender", loggerContext, configFile, defaultPattern))
+            // If the logs are expected in the file.
+            config.file?.let { configFile ->
+                if (!configFile.path.isNullOrBlank()) {
+                    rootLogger.apply {
+                        addAppender(buildRollingFileAppender("fileAppender", loggerContext, configFile, defaultPattern))
+                    }
                 }
             }
-        }
 
-        // Configuration of the events logging.
-        config.events?.let { configFile ->
-            if (!configFile.path.isNullOrBlank()) {
-                loggerContext.getLogger("events").apply {
-                    addAppender(buildRollingFileAppender("eventsAppender", loggerContext, configFile, defaultPattern))
-                    isAdditive = false
-                }
+            config.root?.let { level ->
+                loggerContext.getLogger("ROOT").level = Level.valueOf(level)
+            }
+
+            config.loggingLevels.forEach { (logger, level) ->
+                loggerContext.getLogger(logger).level = level
             }
         }
+    }
 
-        config.root?.let { level ->
-            loggerContext.getLogger("ROOT").level = Level.valueOf(level)
-        }
-
-        config.loggingLevels.forEach { (logger, level) ->
-            loggerContext.getLogger(logger).level = level
+    private fun configureEventsLogging(loggerContext: LoggerContext, defaultPattern: String) {
+        if (enabledEventsPublisher && enabledSlf4JEventsPublisher && !config.events.path.isNullOrBlank()) {
+            loggerContext.getLogger("events").apply {
+                addAppender(
+                    /* newAppender = */ buildRollingFileAppender(
+                        "eventsAppender",
+                        loggerContext,
+                        config.events,
+                        defaultPattern,
+                    )
+                )
+                isAdditive = false
+            }
         }
     }
 

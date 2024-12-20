@@ -76,6 +76,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
             qalipsisBootstrap.start(
                 arrayOf(
                     "head",
+                    "-e", "single-head",
                     "-c", "micronaut.server.port=$httpPort",
                     "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
                     "-c", "report.export.console.enabled=false",
@@ -118,6 +119,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                 arrayOf(
                     "head",
                     "--persistent",
+                    "-e", "single-head",
                     "-c", "micronaut.server.port=$httpPort",
                     "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
                     "-c", "report.export.console.enabled=false",
@@ -159,6 +161,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
             Qalipsis::class,
             arguments = arrayOf(
                 "head",
+                "-e", "single-head",
                 "-c", "micronaut.server.port=$httpPort",
                 "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
                 "-c", "logging.level.io.qalipsis.runtime.bootstrap.QalipsisApplicationContext=TRACE"
@@ -187,6 +190,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                 arrayOf(
                     "head",
                     "--autostart",
+                    "-e", "single-head",
                     "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
                     "-c", "report.export.console.enabled=false",
                     "-c", "report.export.junit.enabled=true",
@@ -229,7 +233,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                 }.getOrNull() != null
             }
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        assertThat(response.body()).isEqualTo("Welcome to Qalipsis")
+        assertThat(response.body()).isEqualTo("Welcome to QALIPSIS")
     }
 
     companion object {
