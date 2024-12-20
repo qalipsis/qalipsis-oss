@@ -44,6 +44,6 @@ internal class HomeController {
     @Hidden
     @Get(produces = [MediaType.TEXT_PLAIN])
     @Secured(SecurityRule.IS_ANONYMOUS)
-    fun plainHome() = "Welcome to Qalipsis"
+    fun plainHome() = "Welcome to QALIPSIS"
 
 }

@@ -49,6 +49,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val headConfig = arrayOf(
             "head",
             "--autostart",
+            "-e", "single-head",
             "-c", "campaign.required-factories=2",
             "-c", "campaign.start-offset=200ms",
             "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
@@ -106,6 +107,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val headConfig = arrayOf(
             "head",
             "--autostart",
+            "-e", "single-head",
             "-c", "campaign.required-factories=2",
             "-c", "campaign.start-offset=200ms",
             "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
@@ -160,6 +162,7 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         val headConfig = arrayOf(
             "head",
             "--autostart",
+            "-e", "single-head",
             "-c", "campaign.required-factories=2",
             "-c", "campaign.start-offset=200ms",
             "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",

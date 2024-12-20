@@ -30,26 +30,20 @@ internal class LoggingConfiguration(
     val environment: Environment
 ) {
 
+    /**
+     * When set to true, this whole configuration is ignored, defaults to false.
+     */
+    var skip: Boolean = false
+
     var root: String? = null
 
     var file: NormalLoggingFile? = null
 
-    var events: EventsLoggingFile? = null
+    var events: EventsLoggingFile = EventsLoggingFile()
 
-    var pattern: String? = null
-
-    var console: Boolean = false
+    var console: Console = Console()
 
     lateinit var loggingLevels: Map<String, Level>
-
-    @ConfigurationProperties("file")
-    class NormalLoggingFile : LoggingFile()
-
-    /**
-     * Configuration for the slf4j event publisher.
-     */
-    @ConfigurationProperties("events")
-    class EventsLoggingFile : LoggingFile()
 
     @PostConstruct
     fun init() {
@@ -62,6 +56,26 @@ internal class LoggingConfiguration(
         }
         loggingLevels = levels
     }
+
+    @ConfigurationProperties("console")
+    class Console {
+
+        var enabled: Boolean = true
+
+        var pattern: String = "%d{yyyy-MM-dd'T'HH:mm:ss.SSS,UTC}Z %5p --- [%t] %logger.%M.%L : %m%n}"
+
+        var minLogLevel: String = "${Level.INFO}"
+
+    }
+
+    @ConfigurationProperties("file")
+    class NormalLoggingFile : LoggingFile()
+
+    /**
+     * Configuration for the slf4j event publisher.
+     */
+    @ConfigurationProperties("events")
+    class EventsLoggingFile : LoggingFile()
 
     open class LoggingFile {
 
