@@ -46,6 +46,7 @@ internal open class CompletionState(
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
             expectedFeedbacks -= feedback.nodeId
             if (expectedFeedbacks.isEmpty()) {
+                context.campaignReportStateKeeper.complete(campaignKey, ExecutionStatus.SUCCESSFUL)
                 context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.SUCCESSFUL)
                 DisabledState(campaign)
             } else {

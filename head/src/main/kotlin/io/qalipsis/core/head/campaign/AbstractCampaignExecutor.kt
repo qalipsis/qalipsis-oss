@@ -116,6 +116,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
                     prepareAndExecute(runningCampaign, factories, configuration, tenant, selectedScenarios, scenarios)
                 } catch (e: Exception) {
                     log.error(e) { "An error occurred while preparing the campaign ${runningCampaign.key} to start" }
+                    campaignReportStateKeeper.complete(runningCampaign.key, ExecutionStatus.FAILED, e.message)
                     campaignService.close(tenant, runningCampaign.key, ExecutionStatus.FAILED, e.message)
                     throw e
                 }
@@ -123,6 +124,7 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         } catch (e: Exception) {
             log.error(e) { "An error occurred while preparing the campaign ${runningCampaign.key} to start" }
             tryAndLogOrNull(log) {
+                campaignReportStateKeeper.complete(runningCampaign.key, ExecutionStatus.FAILED, e.message)
                 campaignService.close(tenant, runningCampaign.key, ExecutionStatus.FAILED, e.message)
             }
             throw e

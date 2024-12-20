@@ -22,6 +22,7 @@ package io.qalipsis.core.head.orchestration
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.CampaignReport
+import io.qalipsis.api.report.ExecutionStatus
 
 /**
  * Service in charge of keep track of the campaign behaviors.
@@ -47,8 +48,16 @@ internal interface CampaignReportStateKeeper {
 
     /**
      * Notifies the completion of the whole campaign, whether successful or not.
+     *
+     * @param campaignKey the key to identify the campaign
+     * @param result the temporary result to set, defaults to [ExecutionStatus.SUCCESSFUL]
+     * @param failureReason the potential message to identify the failure, defaults to null
      */
-    suspend fun complete(campaignKey: CampaignKey)
+    suspend fun complete(
+        campaignKey: CampaignKey,
+        result: ExecutionStatus = ExecutionStatus.SUCCESSFUL,
+        failureReason: String? = null
+    )
 
     /**
      * Releases the campaign.

@@ -46,6 +46,7 @@ internal class RedisCompletionState(
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
             if (operations.markFeedbackForFactory(campaign.tenant, campaignKey, feedback.nodeId)) {
+                context.campaignReportStateKeeper.complete(campaignKey, ExecutionStatus.SUCCESSFUL)
                 context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.SUCCESSFUL)
                 RedisDisabledState(campaign, true, operations)
             } else {

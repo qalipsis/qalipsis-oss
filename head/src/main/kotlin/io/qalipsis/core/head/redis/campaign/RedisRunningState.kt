@@ -100,7 +100,6 @@ internal class RedisRunningState(
 
             feedback is CampaignScenarioShutdownFeedback -> {
                 if (operations.markFeedbackForScenario(campaign.tenant, feedback.campaignKey, feedback.scenarioName)) {
-                    context.campaignReportStateKeeper.complete(feedback.campaignKey)
                     RedisCompletionState(campaign, operations)
                 } else {
                     this

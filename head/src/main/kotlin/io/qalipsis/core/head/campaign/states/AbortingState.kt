@@ -74,13 +74,19 @@ internal open class AbortingState(
             }
             if (expectedFeedbacks.isEmpty()) {
                 if (abortConfiguration.hard) {
+                    val errorMessage = "The campaign was aborted"
+                    context.campaignReportStateKeeper.complete(
+                        campaignKey,
+                        ExecutionStatus.ABORTED,
+                        errorMessage
+                    )
                     context.campaignService.close(
                         campaign.tenant,
                         campaignKey,
                         ExecutionStatus.ABORTED,
-                        "The campaign was aborted"
+                        errorMessage
                     )
-                    FailureState(campaign, "The campaign was aborted")
+                    FailureState(campaign, errorMessage)
                 } else {
                     CompletionState(campaign)
                 }

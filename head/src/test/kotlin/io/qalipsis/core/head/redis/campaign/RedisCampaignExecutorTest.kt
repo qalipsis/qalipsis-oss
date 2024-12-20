@@ -77,12 +77,12 @@ import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
-import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
@@ -331,6 +331,7 @@ internal open class RedisCampaignExecutorTest {
                 factoryService.getActiveScenarios("my-tenant", setOf("scenario-1"))
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1"))
+                campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
                 campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
             }
 
