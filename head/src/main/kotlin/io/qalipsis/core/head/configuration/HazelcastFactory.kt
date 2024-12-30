@@ -30,6 +30,8 @@ import io.micronaut.context.annotation.Bean
 import io.micronaut.context.annotation.Factory
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.micronaut.context.env.Environment
+import io.micronaut.core.naming.conventions.StringConvention
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -50,14 +52,20 @@ import java.time.Instant
     Requires(notEnv = [ExecutionEnvironments.SINGLE_HEAD])
 )
 internal class HazelcastFactory(
-    @Nullable val redisSetAsyncCommands: RedisSortedSetAsyncCommands<String, String>?,
-    @Named(TaskExecutors.SCHEDULED) val taskScheduler: TaskScheduler,
+    private val environment: Environment,
+    @Nullable private val redisSetAsyncCommands: RedisSortedSetAsyncCommands<String, String>?,
+    @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
 ) {
 
     @Bean(preDestroy = "shutdown")
     fun buildHazelcastInstance(configuration: HazelcastConfiguration): HazelcastInstance {
         val config = YamlConfigBuilder(this::class.java.classLoader.getResourceAsStream("hazelcast-qalipsis.yml"))
             .build().also { hc ->
+                hc.setProperty("hazelcast.logging.type", "slf4j")
+                environment.getProperties("hazelcast.properties", StringConvention.RAW).forEach { (k, v) ->
+                    hc.setProperty(k, v.toString())
+                }
+
                 hc.clusterName = "qalipsis"
                 configureDefaultScheduler(hc, configuration)
 
@@ -145,10 +153,10 @@ internal class HazelcastFactory(
         }
 
         hc.networkConfig.join.tcpIpConfig.setEnabled(true)
-        tcpIpConfiguration.connectionTimeout?.let { connectionTimeout ->
-            hc.networkConfig.join.tcpIpConfig.setConnectionTimeoutSeconds(connectionTimeout.toSeconds().toInt())
-        }
         if (members.isNotEmpty()) {
+            tcpIpConfiguration.connectionTimeout?.let { connectionTimeout ->
+                hc.networkConfig.join.tcpIpConfig.setConnectionTimeoutSeconds(connectionTimeout.toSeconds().toInt())
+            }
             log.debug { "Connecting to the Hazelcast cluster with members: $members" }
             hc.networkConfig.join.tcpIpConfig.setMembers(members.toList())
         }

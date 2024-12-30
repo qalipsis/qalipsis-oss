@@ -9,6 +9,8 @@ import assertk.assertions.prop
 import com.hazelcast.cluster.Address
 import com.hazelcast.cluster.Member
 import com.hazelcast.config.ScheduledExecutorConfig
+import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.core.io.socket.SocketUtils
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
@@ -21,9 +23,13 @@ import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
+@OptIn(ExperimentalLettuceCoroutinesApi::class)
 @WithMockk
 @PropertySource(
-
+    Property(name = "hazelcast.properties.hazelcast.heartbeat.failuredetector.type", value = "deadline"),
+    Property(name = "hazelcast.properties.hazelcast.heartbeat.interval.seconds", value = "2"),
+    Property(name = "hazelcast.properties.hazelcast.max.no.heartbeat.seconds", value = "60"),
+    Property(name = "hazelcast.properties.hazelcast.diagnostics.enabled", value = "true")
 )
 @MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.HEAD], startApplication = false)
 internal class HazelcastFactoryIntegrationTest : AbstractRedisIntegrationTest() {
@@ -48,7 +54,7 @@ internal class HazelcastFactoryIntegrationTest : AbstractRedisIntegrationTest() 
             every { discoveryStrategy } returns HazelcastConfiguration.DiscoveryStrategy.TCP_IP_REDIS
             every { tcpIp } returns mockk {
                 every { timeout } returns Duration.ofSeconds(10)
-                every { connectionTimeout } returns Duration.ofSeconds(2)
+                every { connectionTimeout } returns Duration.ofSeconds(6)
             }
         })
 
@@ -67,7 +73,7 @@ internal class HazelcastFactoryIntegrationTest : AbstractRedisIntegrationTest() 
             every { discoveryStrategy } returns HazelcastConfiguration.DiscoveryStrategy.TCP_IP_REDIS
             every { tcpIp } returns mockk {
                 every { timeout } returns Duration.ofSeconds(10)
-                every { connectionTimeout } returns Duration.ofSeconds(2)
+                every { connectionTimeout } returns Duration.ofSeconds(6)
             }
         })
 

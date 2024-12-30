@@ -27,7 +27,7 @@ import javax.annotation.PostConstruct
 
 @ConfigurationProperties("logging")
 internal class LoggingConfiguration(
-    val environment: Environment
+    private val environment: Environment
 ) {
 
     /**
