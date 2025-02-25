@@ -7,19 +7,19 @@
           :class="{
             'cursor-not-allowed': hasOnlyOneScenarioOption
           }">
-          <div class="pr-2" :class="{ 'text-gray-500': hasOnlyOneScenarioOption }">
-            {{ selectedScenarioNamesLabel }}
+          <div 
+            class="pr-2 flex items-center"
+            :class="{
+              'text-gray-500': hasOnlyOneScenarioOption,
+              'hover:text-primary-500': !hasOnlyOneScenarioOption
+            }"
+          >
+            <span>{{ selectedScenarioNamesLabel }}</span>
+            <BaseIcon
+              icon="qls-icon-arrow-down"
+              class="text-xl pl-2"
+            />
           </div>
-          <BaseIcon
-            icon="/icons/icon-arrow-down-light-black.svg"
-            :class="
-              hasOnlyOneScenarioOption
-                ? TailwindClassHelper.grayColorFilterClass
-                : ''
-            "
-            :width="20"
-            :height="20"
-          />
         </div>
       </MenuButton>
       <transition

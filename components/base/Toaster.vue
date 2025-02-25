@@ -15,16 +15,16 @@
           >
             <BaseIcon
               :icon="ToastConfig.toastStatusToIcon[toast.status]"
-              class="w-16 h-16 pr-4 flex-shrink-0"
+              :class="ToastConfig.toastStatusIconToTailwindClass[toast.status]"
+              class="pr-4 flex-shrink-0"
             ></BaseIcon>
             <span>
               {{ toast.text }}
             </span>
             <div class="absolute top-2 right-2 cursor-pointer" @click="handleCloseButtonClick(toast.id)">
               <BaseIcon
-                icon="/icons/icon-close-black.svg"
-                class="w-4 h-4"
-                :class="TailwindClassHelper.grayColorFilterClass"
+                icon="qls-icon-close"
+                class="text-base text-gray-700 hover:text-gray-900"
               >
               </BaseIcon>
             </div>

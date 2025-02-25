@@ -13,7 +13,7 @@
                     class="ml-2"
                     text="New campaign" 
                     btn-style="outlined"
-                    :icon="'/icons/icon-plus-grey.svg'"
+                    icon="qls-icon-plus"
                     @click="handleCreateCampaignBtnClick" 
                 />
             </div>

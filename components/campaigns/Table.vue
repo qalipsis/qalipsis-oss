@@ -49,21 +49,19 @@
           <Popover class="relative">
             <PopoverButton class="outline-none">
               <div class="flex items-center invisible group-hover:visible">
-                <BaseIcon icon="/icons/icon-menu.svg" />
+                <BaseIcon icon="qls-icon-menu" class="text-2xl hover:text-primary-500 text-gray-700" />
               </div>
             </PopoverButton>
             <PopoverPanel
-              v-slot="{ close }"
               class="absolute right-0 z-10 py-2 bg-white w-fit shadow-xl rounded-md"
             >
               <PopoverButton class="outline-none">
                 <div class="flex items-center cursor-pointer hover:bg-primary-50">   
                   <div
-                    class="flex items-center h-full w-32 px-4 py-3"
-                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    class="flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700"
                     @click="handleRunNowBtnClick(record)"
                   >
-                    <BaseIcon icon="/icons/icon-time.svg" />
+                    <BaseIcon icon="qls-icon-time" class="text-xl" />
                     <span class="pl-2"> Run now </span>
                   </div>
                 </div>
@@ -71,10 +69,9 @@
               <PopoverButton class="outline-none">
                 <div class="flex items-center cursor-pointer hover:bg-primary-50">
                   <div 
-                    class="flex items-center h-full w-32 px-4 py-3"
-                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    class="flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700"
                     @click="handleAbortBtnClick(record)">
-                    <BaseIcon icon="/icons/icon-delete-small.svg" />
+                    <BaseIcon icon="qls-icon-delete" class="text-xl" />
                     <span class="pl-2"> Abort </span>
                   </div>
                 </div>

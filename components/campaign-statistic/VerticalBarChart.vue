@@ -1,7 +1,7 @@
 <template>
     <section class="vertical-bar-chart-section">
         <div class="vertical-bar-chart-header">
-            <BaseIcon icon="/icons/icon-chart-bold-pink.svg" />
+            <BaseIcon icon="qls-icon-chart-fill" class="text-2xl text-red-500"/>
             <span class="pl-2">Number of tests per day</span>
         </div>
         <div class="chart-wrapper">

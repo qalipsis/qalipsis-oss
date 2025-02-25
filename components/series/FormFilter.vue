@@ -30,11 +30,10 @@
             :disabled="disabled"
           />
         </div>
-        <div v-if="!disabled" class="flex-shrink-0 pt-11 pl-2 cursor-pointer h-24" @click="remove(index)">
+        <div v-if="!disabled" class="flex-shrink-0 pt-10 pl-2 cursor-pointer h-24" @click="remove(index)">
           <BaseIcon 
-            class="w-4 h-4"
-            :class="TailwindClassHelper.primaryColorFilterHoverClass"
-            icon="/icons/icon-delete-small.svg"
+            class="text-xl hover:text-primary-500 text-gray-700"
+            icon="qls-icon-delete"
           />
         </div>
       </div>

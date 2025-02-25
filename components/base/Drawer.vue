@@ -30,10 +30,9 @@
                     <BaseTitle :content="title"  />
                     <div 
                         class="w-10 h-10 cursor-pointer flex items-center justify-center"
-                        :class="TailwindClassHelper.primaryColorFilterHoverClass"
                         @click="handleCancelBtnClick"
                     >
-                        <img src="/icons/icon-close-black.svg" alt="">
+                        <BaseIcon icon="qls-icon-close" class="text-2xl hover:text-primary-500"></BaseIcon>
                     </div>
                 </header>
                 <div class="flex-grow h-full overflow-auto">

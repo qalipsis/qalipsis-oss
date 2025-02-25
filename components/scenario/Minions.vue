@@ -6,7 +6,7 @@
             <div>Completed minions: {{ completedMinions }}</div>
         </template>
         <div class="flex items-center cursor-pointer" @click="handleRowClick">
-            <BaseIcon icon="/icons/icon-two-users-grey.svg" />
+            <BaseIcon icon="qls-icon-two-users-stroke" class="text-xl text-gray-500" />
             <apexchart
                 height="24"
                 width="96"

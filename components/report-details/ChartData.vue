@@ -1,7 +1,7 @@
 <template>
     <section class="group mb-4">
         <div class="flex justify-end mb-2 invisible transition-all ease-in-out duration-300 group-hover:visible">
-            <BaseButton icon="/icons/icon-delete-small.svg" text="Delete" btn-style="outlined" @click="handleDeleteBtnClick"/>
+            <BaseButton icon="qls-icon-delete" text="Delete" btn-style="outlined" @click="handleDeleteBtnClick"/>
         </div>
         <SeriesMenu 
             :preselectedDataSeriesReferences="preselectedDataSeriesReferences"

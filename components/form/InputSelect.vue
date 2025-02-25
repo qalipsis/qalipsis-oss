@@ -37,10 +37,9 @@
                             :disabled="selectDisabled"
                         />
                         <BaseIcon
-                            icon="/icons/icon-arrow-down-light-black.svg"
-                            :class="selectDisabled ? TailwindClassHelper.grayColorFilterClass : ''"
-                            :width="20"
-                            :height="20"
+                            icon="qls-icon-arrow-down"
+                            class="text-xl"
+                            :class="selectDisabled ? 'text-gray-500' : ''"
                         />
                     </div>
                 </ListboxButton>

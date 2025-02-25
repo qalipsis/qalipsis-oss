@@ -39,7 +39,7 @@
           <Popover class="relative">
             <PopoverButton class="outline-none">
               <div class="flex items-center invisible group-hover:visible">
-                <BaseIcon icon="/icons/icon-menu.svg" />
+                <BaseIcon icon="qls-icon-menu" class="text-2xl hover:text-primary-500 text-gray-700" />
               </div>
             </PopoverButton>
             <PopoverPanel
@@ -50,11 +50,10 @@
                 class="flex items-center cursor-pointer hover:bg-primary-50"
               >
                 <div
-                  class="flex items-center h-full w-32 px-4 py-3"
-                  :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                  class="flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700"
                   @click="handleDeleteBtnClick(record as DataSeriesTableData)"
                 >
-                  <BaseIcon icon="/icons/icon-delete-small.svg" />
+                  <BaseIcon icon="qls-icon-delete" class="text-xl" />
                   <span class="pl-2"> Delete </span>
                 </div>
               </div>
@@ -63,11 +62,10 @@
                 class="flex items-center cursor-pointer hover:bg-primary-50"
               >
                 <div
-                  class="flex items-center h-full w-32 px-4 py-3"
-                  :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                  class="flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700"
                   @click="handleEditBtnClick(record as DataSeriesTableData)"
                 >
-                  <BaseIcon icon="/icons/icon-edit-small.svg" />
+                  <BaseIcon icon="qls-icon-edit" class="text-xl" />
                   <span class="pl-2"> Edit </span>
                 </div>
               </div>
@@ -75,13 +73,12 @@
                 class="flex items-center cursor-pointer hover:bg-primary-50"
               >
                 <div
-                  class="flex items-center h-full w-32 px-4 py-3"
-                  :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                  class="flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700"
                   @click="
                     handleDuplicateBtnClick(record as DataSeriesTableData)
                   "
                 >
-                  <BaseIcon icon="/icons/icon-duplicate.svg" />
+                  <BaseIcon icon="qls-icon-duplicate" class="text-xl" />
                   <span class="pl-2"> Duplicate </span>
                 </div>
               </div>

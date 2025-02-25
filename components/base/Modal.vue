@@ -27,13 +27,9 @@
                     <div 
                         v-if="closable"
                         class="absolute right-0 cursor-pointer"
-                        :class="[
-                            TailwindClassHelper.grayColorFilterClass,
-                            TailwindClassHelper.primaryColorFilterHoverClass
-                        ]"
                         @click="closeModal"
                     >
-                        <BaseIcon icon="/icons/icon-close-black.svg" />
+                        <BaseIcon icon="qls-icon-close" class="text-2xl hover:text-primary-500"></BaseIcon>
                     </div>
                 </header>
                 <div class="flex center p-4">

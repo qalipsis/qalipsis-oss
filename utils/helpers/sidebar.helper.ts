@@ -5,21 +5,21 @@ export class SidebarHelper {
         return [
             {
                 id: "campaigns",
-                icon: "/icons/icon-work-grey.svg",
+                icon: "qls-icon-work",
                 text: "Campaigns",
                 path: "campaigns",
                 permissions: [PermissionConstant.READ_CAMPAIGN]
             },
             {
                 id: "reports",
-                icon: "/icons/icon-chart-light-grey.svg",
+                icon: "qls-icon-chart-stroke",
                 text: "Reports",
                 path: "reports",
                 permissions: [PermissionConstant.READ_REPORT]
             },
             {
                 id: "series",
-                icon: "/icons/icon-category-grey.svg",
+                icon: "qls-icon-category",
                 text: "Series",
                 path: "series",
                 permissions: [PermissionConstant.READ_SERIES]

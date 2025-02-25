@@ -32,7 +32,7 @@
                     <BaseButton
                         text="Select campaigns"
                         btn-style="outlined"
-                        icon="/icons/icon-edit.svg"
+                        icon="qls-icon-edit"
                         class="mr-2 mb-1"
                         @click="handleCampaignSelectBtnClick"
                     />
@@ -66,14 +66,14 @@
             <div class="flex items-center">
                 <BaseButton
                     text="Add chart"
-                    icon="/icons/icon-plus-black.svg"
+                    icon="qls-icon-plus"
                     btn-style="outlined"
                     @click="handleAddChartBtnClick"
                 />
                 <BaseButton
                     text="Add table"
                     class="ml-4"
-                    icon="/icons/icon-plus-black.svg"
+                    icon="qls-icon-plus"
                     btn-style="outlined"
                     @click="handleAddTableBtnClick"
                 />

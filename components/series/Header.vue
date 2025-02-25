@@ -14,14 +14,14 @@
                     text="Delete all"
                     :disabled="deleteAllBtnDisabled"
                     btn-style="outlined"
-                    :icon="'/icons/icon-delete-small.svg'"
+                    icon="qls-icon-delete"
                     @click="handleDeleteSelectedSeriesBtnClick" 
                 />
                 <BaseButton 
                     class="ml-2"
                     text="Add Series" 
                     btn-style="outlined"
-                    :icon="'/icons/icon-plus-grey.svg'"
+                    icon="qls-icon-plus"
                     @click="handleCreateSeriesBtnClick" 
                 />
             </div>

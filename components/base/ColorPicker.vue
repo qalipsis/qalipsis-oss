@@ -3,7 +3,7 @@
         <header class="flex justify-between">
             <label class="text-gray-500">Color picker</label>
             <div class="cursor-pointer" @click="handleCloseBtnClick">
-                <img src="/icons/icon-close-black.svg" alt="close-button" class="w-4 h-4">
+                <BaseIcon icon="qls-icon-close" class="text-base hover:text-primary-500"></BaseIcon>
             </div>
         </header>
         <Sketch :model-value="hexCodeValue" @update:model-value="handleColorChange($event)"/>

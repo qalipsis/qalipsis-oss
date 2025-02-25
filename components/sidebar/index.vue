@@ -13,7 +13,7 @@
                 'left-16': collapsed
             }"
             @click="collapsed = !collapsed">
-            <BaseIcon :icon="collapsedIcon" />
+            <BaseIcon :icon="collapsedIcon" class="text-lg" />
         </div>
         <nav class="h-screen flex flex-col justify-between">
             <SidebarMenuItems
@@ -29,7 +29,7 @@ const menuItems = SidebarHelper.getMenuItems();
 const collapsed = ref(false);
 
 const collapsedIcon = computed(() => {
-    return collapsed.value ? "/icons/icon-arrow-right-light-black.svg" : "/icons/icon-arrow-left-light-black.svg";
+    return collapsed.value ? "qls-icon-arrow-right" : "qls-icon-arrow-left";
 })
 
 </script>

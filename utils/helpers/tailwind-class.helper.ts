@@ -1,8 +1,4 @@
 export class TailwindClassHelper {
-    static primaryColorFilterClass = '[filter:brightness(0%)_saturate(100%)_invert(61%)_sepia(38%)_saturate(657%)_hue-rotate(132deg)_brightness(89%)_contrast(91%)]';
-    static grayColorFilterClass = '[filter:brightness(0%)_saturate(100%)_invert(67%)_sepia(18%)_saturate(105%)_hue-rotate(145deg)_brightness(90%)_contrast(83%)]';
-    static primaryColorFilterHoverClass = 'hover:[filter:brightness(0%)_saturate(100%)_invert(61%)_sepia(38%)_saturate(657%)_hue-rotate(132deg)_brightness(89%)_contrast(91%)]';
-    static disableColorFilterClass = '[filter:brightness(0%)_saturate(100%)_invert(94%)_sepia(0%)_saturate(4147%)_hue-rotate(237deg)_brightness(102%)_contrast(83%)]';
     static searchInputBaseClass = 'flex items-center border border-solid h-10 rounded-md outline-none';
     static circleCheckBoxBaseClass = 'w-7 h-7 rounded-full border border-solid border-primary-400 text-center flex items-center justify-center cursor-pointer';
     static radioButtonClass = 'relative appearance-none w-4 h-4 border border-gray-300 rounded-full bg-white disabled:bg-gray-50 disabled:cursor-not-allowed enabled:hover:border-primary-500 cursor-pointer shrink-0 enabled:checked:border-primary-500'

@@ -9,12 +9,9 @@
         @click="emit('click')">
         <BaseIcon 
             v-if="icon"
-            class="w-6 h-6 pr-2"
+            class="pr-2"
+            :class="btnTextClass"
             :icon="icon"
-            :class="[
-                disabled ? TailwindClassHelper.grayColorFilterClass : '',
-                btnIconClass
-            ]"
         >
         </BaseIcon>
         <span :class="btnTextClass">

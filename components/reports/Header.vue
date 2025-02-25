@@ -14,14 +14,14 @@
                     text="Delete all"
                     btn-style="outlined"
                     :disabled="deleteAllBtnDisabled"
-                    :icon="'/icons/icon-delete-small.svg'"
+                    icon="qls-icon-delete"
                     @click="handleDeleteSelectedReportsBtnClick" 
                 />
                 <BaseButton 
                     class="ml-2"
                     text="Create report" 
                     btn-style="outlined"
-                    :icon="'/icons/icon-plus-grey.svg'"
+                    icon="qls-icon-plus"
                     @click="handleCreateReportBtnClick" 
                 />
             </div>

@@ -21,7 +21,7 @@
                 <BaseButton 
                     text="Select more series" 
                     btn-style="outlined"
-                    :icon="'/icons/icon-plus-grey.svg'"
+                    icon="qls-icon-plus"
                     @click="handleShowMoreBtnClick" 
                 />
             </template>

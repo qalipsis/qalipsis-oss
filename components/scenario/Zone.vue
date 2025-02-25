@@ -20,12 +20,12 @@
           />
         </div>
         <div
-          class="flex-shrink-0 flex items-center pt-8 px-2 cursor-pointer"
+          class="flex-shrink-0 flex items-center pt-8 px-2 cursor-pointer  hover:text-primary-500 text-gray-600"
           @click="handleDeleteBtnClick"
         >
           <BaseIcon
-            :class="TailwindClassHelper.primaryColorFilterHoverClass"
-            icon="/icons/icon-delete-small.svg"
+            class="text-xl"
+            icon="qls-icon-delete"
           />
         </div>
       </div>

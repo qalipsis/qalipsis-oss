@@ -7,8 +7,8 @@
             v-model="searchTerm"
             :placeholder="placeholder"
             @input="handleTextInputChange">
-        <div class="w-9 h-10 flex items-center justify-center cursor-pointer" @click="handleSearchIconClick">
-            <BaseIcon icon="/icons/icon-search.svg" />
+        <div class="w-9 h-9 flex items-center justify-center cursor-pointer" @click="handleSearchIconClick">
+            <BaseIcon icon="qls-icon-search" class="text-xl text-gray-500" />
         </div>
     </div>
 </template>

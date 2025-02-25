@@ -24,10 +24,9 @@
               "
             />
             <BaseIcon
-              icon="/icons/icon-arrow-down-light-black.svg"
-              :class="disabled ? TailwindClassHelper.grayColorFilterClass : ''"
-              :width="20"
-              :height="20"
+              icon="qls-icon-arrow-down"
+              class="text-xl"
+              :class="disabled ? 'text-gray-500' : ''"
             />
           </div>
         </ComboboxButton>

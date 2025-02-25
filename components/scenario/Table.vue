@@ -23,13 +23,12 @@
     <template #actionCell="{ record }">
       <div 
         class="flex items-center cursor-pointer h-8 invisible group-hover:visible"
-        :class="TailwindClassHelper.primaryColorFilterHoverClass"
         @click="handleConfigureBtnClick(record as ScenarioSummary)"
       >
         <BaseTooltip text="Configure">
             <BaseIcon 
-              icon="/icons/icon-setting-grey.svg"
-              ::class="TailwindClassHelper.primaryColorFilterHoverClass"
+              icon="qls-icon-setting"
+              class="text-2xl text-gray-600 hover:text-primary-500"
             />
         </BaseTooltip>
       </div>

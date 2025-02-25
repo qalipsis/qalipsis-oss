@@ -150,7 +150,7 @@
         </div>
         <div class="col-span-12 mt-2">
           <BaseButton
-            icon="/icons/icon-plus-grey.svg"
+            icon="qls-icon-plus"
             btn-style="outlined"
             class="w-full"
             text="Add new filter"

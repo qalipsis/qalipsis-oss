@@ -6,7 +6,7 @@
             @click="handleMenuItemClick('', '')"
         >
             <div class="w-12 h-12 flex items-center pl-2">
-                <BaseIcon icon="/icons/icon-logo.svg"/>
+                <BaseIcon icon="qls-icon-logo" class="text-4xl text-primary-500"/>
             </div>
             <div 
                 v-if="!collapsed"
@@ -34,17 +34,16 @@
                             @click="!menuItem.subMenuItems && handleMenuItemClick(menuItem.id, menuItem.path)"
                         >
                             <div
-                                class="flex items-center h-16 cursor-pointer pl-4 text-primary-950"
+                                class="flex items-center h-16 cursor-pointer pl-4 hover:text-primary-500"
                                 :class="[
-                                    TailwindClassHelper.primaryColorFilterHoverClass,
                                     activeMenuItemId === menuItem.id
-                                        ? TailwindClassHelper.primaryColorFilterClass
-                                        : ''
+                                        ? 'text-primary-600'
+                                        : 'text-primary-950'
                                 ]"
                             >
                                 <div class="flex items-center w-12 h-12 justify-center flex-shrink-0">
                                     <BaseIcon 
-                                        class="w-7 h-7"
+                                        class="text-3xl"
                                         :icon="menuItem.icon"
                                     />
                                 </div>

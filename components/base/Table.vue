@@ -48,15 +48,15 @@
               </div>
             </th>
           </template>
-          <th v-if="!refreshHidden || $slots.actionCell" class="min-w-16 px-2">
+          <th v-if="!refreshHidden || $slots.actionCell" class="w-40 px-2">
             <div
               class="flex items-center cursor-pointer"
               @click="emit('refresh')"
             >
               <BaseTooltip text="Refresh">
                 <BaseIcon
-                  icon="/icons/icon-refresh.svg"
-                  :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                  icon="qls-icon-refresh"
+                  class="text-2xl text-primary-950 hover:text-primary-500"
                 />
               </BaseTooltip>
             </div>
@@ -102,16 +102,16 @@
       </tbody>
     </table>
     <div v-if="displayRows.length === 0" class="w-full h-32">
-      <div class="h-full mt-10">
+      <div class="h-full mt-10 text-gray-300 ">
         <div class="flex items-center justify-center">
           <BaseIcon
-            class="w-10" icon="/icons/icon-document.svg"
-            :class="TailwindClassHelper.disableColorFilterClass"
+            icon="qls-icon-document"
+            class="text-3xl"
           >
           </BaseIcon>
         </div>
         <div class="flex items-center justify-center">
-          <span class="text-gray-300 font-extralight">No data</span>
+          <span class="font-extralight">No data</span>
         </div>
       </div>
     </div>

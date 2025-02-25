@@ -2,12 +2,12 @@
     <div class="flex items-center">
         <div 
             class="flex items-center cursor-pointer hover:text-primary-500" 
-            :class="[showChecked ? 'text-primary-500' : 'text-gray-500', TailwindClassHelper.primaryColorFilterHoverClass]"
+            :class="[showChecked ? 'text-primary-500' : 'text-gray-500']"
             @click="handleClick"
         >
             <BaseIcon
-                icon="/icons/icon-check-grey.svg"
-                :class="showChecked ? TailwindClassHelper.primaryColorFilterClass : ''"
+                icon="qls-icon-check-fill"
+                class="text-2xl"
             />
             <span 
                 class="text-sm"

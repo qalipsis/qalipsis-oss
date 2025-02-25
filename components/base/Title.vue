@@ -4,11 +4,10 @@
             <h1 class="font-medium text-2xl text-primary-950">{{ content }}</h1>
             <div 
                 v-if="editable" 
-                class="cursor-pointer px-1 pt-1"
-                :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                class="cursor-pointer px-1 pt-2"
                 @click="isEditing = true"
             >
-                <BaseIcon icon="/icons/icon-edit.svg"/>
+                <BaseIcon icon="qls-icon-edit" class="text-2xl text-gray-700 hover:text-primary-500"/>
             </div>
         </div>
     </template>

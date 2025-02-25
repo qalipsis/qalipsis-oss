@@ -3,9 +3,8 @@
         <div class="flex justify-between items-center w-full">
             <div class="flex items-center">
                 <BaseIcon 
-                    icon="/icons/icon-arrow-left-black.svg"
-                    class="cursor-pointer pr-2"
-                    :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                    icon="qls-icon-arrow-back"
+                    class="cursor-pointer pl-1 pr-5 hover:text-primary-500 text-2xl"
                     @click="navigateTo('/reports')"
                 />
                 <BaseTitle v-model:content="reportName" :editable="true" />

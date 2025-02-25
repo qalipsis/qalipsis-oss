@@ -23,9 +23,8 @@
                   <span class="pr-2">{{ selectedOption[optionLabelKey] }}</span>
                   <div @click="handleDeleteButtonClick(selectedOption)">
                     <BaseIcon
-                      class="w-3 h-3"
-                      icon="/icons/icon-close-black.svg"
-                      :class="TailwindClassHelper.primaryColorFilterHoverClass"
+                      class="text-xl hover:text-primary-500"
+                      icon="qls-icon-close"
                     ></BaseIcon>
                   </div>
                 </div>
@@ -51,9 +50,9 @@
                 :disabled="disabled"
               />
               <BaseIcon
-                icon="/icons/icon-arrow-down-light-black.svg"
+                icon="qls-icon-arrow-down"
                 :class="
-                  disabled ? TailwindClassHelper.grayColorFilterClass : ''
+                  disabled ? 'text-gray-500' : ''
                 "
                 :width="20"
                 :height="20"

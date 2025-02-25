@@ -6,7 +6,7 @@
             <div>Failed steps: {{ failedExecutions }}</div>
         </template>
         <div class="flex items-center cursor-pointer" @click="handleRowClick">
-            <BaseIcon icon="/icons/icon-chart-light-grey.svg" />
+            <BaseIcon icon="qls-icon-chart-stroke" class="text-xl text-gray-500" />
             <apexchart
                 :options="executionStepDonutChartOptions"
                 :series="executionStepDonutChartDataSeries"
