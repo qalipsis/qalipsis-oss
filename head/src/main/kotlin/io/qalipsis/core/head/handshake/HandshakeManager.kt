@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.handshake
 
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -45,28 +46,30 @@ internal class HandshakeManager(
     private val headChannel: HeadChannel,
     private val factoryService: FactoryService,
     private val headConfiguration: HeadConfiguration,
-    private val channelNameFactory: ChannelNameFactory
+    private val channelNameFactory: ChannelNameFactory,
+    private val idGenerator: IdGenerator
 ) : HeadStartupComponent, HandshakeRequestListener {
 
     override fun getStartupOrder() = Int.MIN_VALUE
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(handshakeRequest: HandshakeRequest) {
-        val nodeRegistrationId = handshakeRequest.nodeId
-        val actualNodeId = channelNameFactory.getUnicastChannelName(
-            tenant = handshakeRequest.tenant,
-            nodeId = nodeRegistrationId
-        )
+        val nodeRegistrationId = if (handshakeRequest.nodeId.isBlank() || handshakeRequest.nodeId.startsWith("_")) {
+            idGenerator.short()
+        } else {
+            handshakeRequest.nodeId
+        }
+        val unicastChannel = channelNameFactory.getUnicastChannelName(handshakeRequest)
 
         val response = HandshakeResponse(
             handshakeNodeId = handshakeRequest.nodeId,
-            nodeId = actualNodeId,
-            unicastChannel = headConfiguration.unicastChannelPrefix + actualNodeId,
+            nodeId = nodeRegistrationId,
+            unicastChannel = unicastChannel,
             heartbeatChannel = headConfiguration.heartbeatChannel,
             heartbeatPeriod = headConfiguration.heartbeatDelay
         )
-        log.info { "The factory $actualNodeId just started the handshake, persisting its state..." }
-        factoryService.register(actualNodeId, handshakeRequest, response)
+        log.info { "The factory $nodeRegistrationId just started the handshake, persisting its state..." }
+        factoryService.register(nodeRegistrationId, handshakeRequest, response)
 
         log.debug { "Sending handshake response $response to ${handshakeRequest.replyTo}" }
         headChannel.publishHandshakeResponse(handshakeRequest.replyTo, response)

@@ -151,6 +151,11 @@ fun Project.configureNotPlatform() {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
+
     publishing {
         publications {
             create<MavenPublication>("maven") {
@@ -239,8 +244,8 @@ fun Project.configureNotPlatform() {
             }
         }
 
-        artifacts {
-            if (project.plugins.hasPlugin("java-test-fixtures")) {
+        if (project.plugins.hasPlugin("java-test-fixtures")) {
+            artifacts {
                 archives(findByName("testFixturesSources") as Jar)
                 archives(findByName("testFixturesJavadoc") as Jar)
                 archives(findByName("testFixturesJar") as Jar)

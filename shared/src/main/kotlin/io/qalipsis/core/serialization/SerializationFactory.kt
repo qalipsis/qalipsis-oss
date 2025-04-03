@@ -106,6 +106,9 @@ internal class SerializationFactory {
                 minionHeadDelegationApiDirectives(this)
                 feedbacksSerializer(this)
                 executionProfileConfigurations(this)
+                polymorphic(SerializedRecord::class) {
+                    subclass(BinarySerializedRecord::class, BinarySerializedRecord.serializer())
+                }
                 configurers.forEach { it.configure(this) }
             }
         }

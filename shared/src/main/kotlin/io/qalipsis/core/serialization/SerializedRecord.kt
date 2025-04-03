@@ -19,82 +19,17 @@
 
 package io.qalipsis.core.serialization
 
-import io.qalipsis.api.serialization.SerializableClass
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import java.util.Base64
-import kotlin.reflect.KClass
 
 /**
- * Wrapper of a serialized record.
+ * Wrapper of a serialized record. Since the Kotlin serialization does not support nullable values for all the formats,
+ * all the fields are non-nullable.
  *
- * @property value serialized value
- * @property type concrete type of the original value
  * @property serializer qualifier of the serializer
  *
  * @author Eric Jessé
  */
-@Serializable
-class SerializedRecord(
-    @SerialName("v") @Serializable(with = OtherByteArrayKotlinSerializer::class) val value: ByteArray,
-    @SerialName("t") val type: SerializableClass,
-    @SerialName("s") val serializer: String,
-    @SerialName("m") val metadata: Map<String, String> = emptyMap()
-) {
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as SerializedRecord
-
-        if (!value.contentEquals(other.value)) return false
-        if (type != other.type) return false
-        if (serializer != other.serializer) return false
-        if (metadata != other.metadata) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = value.contentHashCode()
-        result = 31 * result + type.hashCode()
-        result = 31 * result + serializer.hashCode()
-        result = 31 * result + metadata.hashCode()
-        return result
-    }
-
-    companion object {
-
-        @JvmStatic
-        fun from(
-            value: ByteArray,
-            type: KClass<*>,
-            serializer: String,
-            metadata: Map<String, String> = emptyMap()
-        ) = SerializedRecord(value, SerializableClass(type.java), serializer, metadata)
-    }
-
-    object OtherByteArrayKotlinSerializer : KSerializer<ByteArray> {
-
-        private val base64Encoder = Base64.getEncoder()
-
-        private val base64Decoder = Base64.getDecoder()
-
-        override val descriptor = PrimitiveSerialDescriptor("QByteArray", PrimitiveKind.STRING)
-
-        override fun serialize(encoder: Encoder, value: ByteArray) {
-            encoder.encodeString(base64Encoder.encodeToString(value))
-        }
-
-        override fun deserialize(decoder: Decoder): ByteArray {
-            return base64Decoder.decode(decoder.decodeString())
-        }
-    }
-
+interface SerializedRecord {
+    val serializer: String
+    val type: Class<*>
 }

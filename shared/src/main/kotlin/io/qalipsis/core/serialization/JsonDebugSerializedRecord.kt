@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2022 AERIS IT Solutions GmbH
+ * Copyright (C) 2025 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,22 +17,14 @@
  *
  */
 
-package io.qalipsis.core.head.campaign
+package io.qalipsis.core.serialization
 
-import io.qalipsis.api.context.NodeId
-import io.qalipsis.core.annotations.LogInput
-import io.qalipsis.core.campaigns.RunningCampaign
-import io.qalipsis.core.handshake.HandshakeRequest
+import io.micronaut.core.annotation.Introspected
 
-interface ChannelNameFactory {
-
-    @LogInput
-    suspend fun getBroadcastChannelName(campaign: RunningCampaign): String
-
-    @LogInput
-    suspend fun getFeedbackChannelName(campaign: RunningCampaign): String
-
-    @LogInput
-    suspend fun getUnicastChannelName(handshakeRequest: HandshakeRequest): String
-
-}
+@Introspected
+data class JsonDebugSerializedRecord(
+    val value: String? = null,
+    override val type: Class<*> = Unit::class.java,
+    val metadata: Map<String, String>? = emptyMap(),
+    override val serializer: String = "",
+) : SerializedRecord

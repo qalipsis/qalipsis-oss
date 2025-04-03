@@ -65,11 +65,12 @@ internal class JacksonJsonRecordSerializer : RecordSerializer {
 
     override fun <T : Any> serialize(entity: T?, serializationContext: SerializationContext): SerializedRecord {
         val entityType = (entity!!)::class
-        return SerializedRecord.from(mapper.writeValueAsBytes(entity), entityType, QUALIFIER)
+        return BinarySerializedRecord.from(mapper.writeValueAsBytes(entity), entityType, QUALIFIER)
     }
 
     override fun <T : Any> deserialize(source: SerializedRecord, deserializationContext: DeserializationContext): T? {
-        return mapper.readValue(source.value, source.type.type) as T
+        source as BinarySerializedRecord
+        return mapper.readValue(source.value, source.serType.type) as T
     }
 
     companion object {

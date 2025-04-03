@@ -84,6 +84,8 @@ internal open class InitializationContext(
 
     @LogInput(Level.DEBUG)
     override suspend fun notify(response: HandshakeResponse) {
+        // Totally stops the handshake response consumption.
+        factoryChannel.unsubscribeHandshakeResponse(factoryConfiguration.handshake.responseChannel)
         log.trace { "Received $response" }
         persistNodeIdIfDifferent(response.nodeId)
         log.trace { "Factory configuration before the update: $factoryConfiguration" }
@@ -91,8 +93,6 @@ internal open class InitializationContext(
         communicationChannelConfiguration.unicastChannel = response.unicastChannel
         log.trace { "Factory configuration is now up-to-date: $factoryConfiguration" }
         factoryChannel.subscribeDirective(response.unicastChannel)
-        // Totally stops the handshake response consumption.
-        factoryChannel.unsubscribeHandshakeResponse(factoryConfiguration.handshake.responseChannel)
     }
 
     @KTestable

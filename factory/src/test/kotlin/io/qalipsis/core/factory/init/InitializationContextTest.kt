@@ -207,11 +207,11 @@ internal class InitializationContextTest {
 
         // then
         coVerifyOrder {
+            factoryChannel.unsubscribeHandshakeResponse("the-response-channel")
             initializationContext["persistNodeIdIfDifferent"]("the-actual-node-id")
             factoryConfiguration setProperty "nodeId" value "the-actual-node-id"
             communicationChannelConfiguration setProperty "unicastChannel" value "the-actual-channel"
             factoryChannel.subscribeDirective("the-actual-channel")
-            factoryChannel.unsubscribeHandshakeResponse("the-response-channel")
         }
     }
 

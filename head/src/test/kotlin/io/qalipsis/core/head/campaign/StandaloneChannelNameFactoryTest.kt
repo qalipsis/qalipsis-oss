@@ -26,8 +26,10 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -77,7 +79,16 @@ internal class StandaloneChannelNameFactoryTest {
     @Test
     internal fun `should get unicast channel name`() = testDispatcherProvider.run {
         // when
-        val result = standaloneChannelNameFactory.getUnicastChannelName(tenant = "my-tenant", nodeId = "node-id")
+        val result = standaloneChannelNameFactory.getUnicastChannelName(
+            HandshakeRequest(
+                tenant = "my-tenant",
+                nodeId = "node-id",
+                tags = mockk(),
+                zone = RandomStringUtils.randomAlphabetic(5),
+                scenarios = mockk(),
+                replyTo = RandomStringUtils.randomAlphabetic(5)
+            )
+        )
 
         // then
         assertThat(result).isEqualTo("_embedded_")

@@ -31,8 +31,10 @@ import io.mockk.spyk
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -94,7 +96,16 @@ internal class DefaultChannelNameFactoryTest {
         every { idGenerator.short() } returns "channel-name"
 
         // when
-        val result = defaultChannelNameFactory.getUnicastChannelName(tenant = "my-tenant", nodeId = " ")
+        val result = defaultChannelNameFactory.getUnicastChannelName(
+            HandshakeRequest(
+                nodeId = " ",
+                tenant = "my-tenant",
+                tags = mockk(),
+                zone = RandomStringUtils.randomAlphabetic(5),
+                scenarios = mockk(),
+                replyTo = RandomStringUtils.randomAlphabetic(5)
+            )
+        )
 
         // then
         assertThat(result).isEqualTo("channel-name")
@@ -109,7 +120,16 @@ internal class DefaultChannelNameFactoryTest {
         every { idGenerator.short() } returns "channel-name"
 
         // when
-        val result = defaultChannelNameFactory.getUnicastChannelName(tenant = "my-tenant", nodeId = "_node-id")
+        val result = defaultChannelNameFactory.getUnicastChannelName(
+            HandshakeRequest(
+                nodeId = "_node-id",
+                tenant = "my-tenant",
+                tags = mockk(),
+                zone = RandomStringUtils.randomAlphabetic(5),
+                scenarios = mockk(),
+                replyTo = RandomStringUtils.randomAlphabetic(5)
+            )
+        )
 
         // then
         assertThat(result).isEqualTo("channel-name")
@@ -121,7 +141,16 @@ internal class DefaultChannelNameFactoryTest {
     @Test
     internal fun `should get unicast channel name when a node id is not generated`() = testDispatcherProvider.run {
         // when
-        val result = defaultChannelNameFactory.getUnicastChannelName(tenant = "my-tenant", nodeId = "node-id")
+        val result = defaultChannelNameFactory.getUnicastChannelName(
+            HandshakeRequest(
+                tenant = "my-tenant",
+                nodeId = "node-id",
+                tags = mockk(),
+                zone = RandomStringUtils.randomAlphabetic(5),
+                scenarios = mockk(),
+                replyTo = RandomStringUtils.randomAlphabetic(5)
+            )
+        )
 
         // then
         assertThat(result).isEqualTo("node-id")

@@ -53,17 +53,19 @@ internal class SerialFormatRecordSerializer(
     override fun acceptsToSerialize(entity: Any?) = entity?.let { it::class in serializersByType.keys } ?: false
 
     override fun acceptsToDeserialize(record: SerializedRecord): Boolean {
+        record as BinarySerializedRecord
         return record.serializer in serializersQualifiers
     }
 
     override fun <T : Any> serialize(entity: T?, serializationContext: SerializationContext): SerializedRecord {
         val entityType = (entity!!)::class
         val serializer = getSerializer(entityType) as SerialFormatWrapper<T>
-        return SerializedRecord.from(serializer.serialize(entity), entityType, serializer.qualifier)
+        return BinarySerializedRecord.from(serializer.serialize(entity), entityType, serializer.qualifier)
     }
 
     override fun <T : Any> deserialize(source: SerializedRecord, deserializationContext: DeserializationContext): T? {
-        val serializer = getSerializer(source.type.type.kotlin, source.serializer) as SerialFormatWrapper<T>
+        source as BinarySerializedRecord
+        val serializer = getSerializer(source.serType.type.kotlin, source.serializer) as SerialFormatWrapper<T>
         return serializer.deserialize(source.value)
     }
 
