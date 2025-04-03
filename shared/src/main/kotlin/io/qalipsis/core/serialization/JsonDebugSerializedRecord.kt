@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2022 AERIS IT Solutions GmbH
+ * Copyright (C) 2025 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -19,15 +19,12 @@
 
 package io.qalipsis.core.serialization
 
-/**
- * Wrapper of a serialized record. Since the Kotlin serialization does not support nullable values for all the formats,
- * all the fields are non-nullable.
- *
- * @property serializer qualifier of the serializer
- *
- * @author Eric Jessé
- */
-interface SerializedRecord {
-    val serializer: String
-    val type: Class<*>
-}
+import io.micronaut.core.annotation.Introspected
+
+@Introspected
+data class JsonDebugSerializedRecord(
+    val value: String? = null,
+    override val type: Class<*> = Unit::class.java,
+    val metadata: Map<String, String>? = emptyMap(),
+    override val serializer: String = "",
+) : SerializedRecord

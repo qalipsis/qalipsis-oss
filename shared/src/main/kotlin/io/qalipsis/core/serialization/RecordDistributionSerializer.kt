@@ -66,7 +66,7 @@ internal class RecordDistributionSerializer(
 
     override fun <T> deserializeRecord(record: SerializedRecord): T? {
         return sortedSerializers.asSequence().filter { it.acceptsToDeserialize(record) }
-            .onEach { log.trace { "$it can deserialize the record of type ${record.type.type} and qualifier ${record.serializer}" } }
+            .onEach { log.trace { "$it can deserialize the record of type ${record.type} and qualifier ${record.serializer}" } }
             .firstNotNullOfOrNull { kotlin.runCatching { it.deserialize(record) as T? }.getOrNull() }
     }
 

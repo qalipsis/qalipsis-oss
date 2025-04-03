@@ -83,7 +83,7 @@ internal class SerialFormatRecordSerializerIntegrationTest {
 
     @Test
     internal fun `should not accept to deserialize record serialized with another one`() {
-        val record = SerializedRecord.from(ByteArray(0), MyClass::class, "another")
+        val record = BinarySerializedRecord.from(ByteArray(0), MyClass::class, "another")
         assertThat(serializer.acceptsToDeserialize(record)).isFalse()
     }
 

@@ -39,7 +39,7 @@ internal class NullRecordSerializer : RecordSerializer {
     }
 
     override fun <T : Any> serialize(entity: T?, serializationContext: SerializationContext): SerializedRecord {
-        return SerializedRecord.from(ByteArray(0), Unit::class, QUALIFIER)
+        return BinarySerializedRecord.from(ByteArray(0), Unit::class, QUALIFIER)
     }
 
     override fun <T : Any> deserialize(source: SerializedRecord, deserializationContext: DeserializationContext): T? {

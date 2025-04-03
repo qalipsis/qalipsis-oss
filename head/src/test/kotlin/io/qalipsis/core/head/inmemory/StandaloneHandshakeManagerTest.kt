@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2022 AERIS IT Solutions GmbH
+ * Copyright (C) 2025 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.head.handshake
+package io.qalipsis.core.head.inmemory
 
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
@@ -43,7 +43,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 
 @WithMockk
-internal class HandshakeManagerTest {
+internal class StandaloneHandshakeManagerTest {
 
     @RelaxedMockK
     private lateinit var headChannel: HeadChannel
@@ -61,7 +61,7 @@ internal class HandshakeManagerTest {
     private lateinit var idGenerator: IdGenerator
 
     @InjectMockKs
-    private lateinit var handshakeManager: HandshakeManager
+    private lateinit var handshakeManager: StandaloneHandshakeManager
 
     @BeforeEach
     internal fun setUp() {
@@ -89,8 +89,9 @@ internal class HandshakeManagerTest {
                     relaxedMockk { every { name } returns "scen-2" }),
                 tenant = "my-tenant"
             )
-            every { idGenerator.short() } returns "generated-node-id"
-            coEvery { channelNameFactory.getUnicastChannelName(any()) } returns "the-unicast-channel-prefix-this-id-the-actual-id"
+            coEvery {
+                channelNameFactory.getUnicastChannelName(any())
+            } returns "this-id-the-actual-id"
             val latch = Latch(true)
             coEvery {
                 headChannel.publishHandshakeResponse(
@@ -106,7 +107,7 @@ internal class HandshakeManagerTest {
             // then
             val expectedResponse = HandshakeResponse(
                 handshakeNodeId = "_temporary-node-id",
-                nodeId = "generated-node-id",
+                nodeId = "this-id-the-actual-id",
                 unicastChannel = "the-unicast-channel-prefix-this-id-the-actual-id",
                 heartbeatChannel = "the-heartbeat-channel",
                 heartbeatPeriod = Duration.ofSeconds(123)
@@ -114,7 +115,7 @@ internal class HandshakeManagerTest {
             coVerifyOrder {
                 channelNameFactory.getUnicastChannelName(refEq(handshakeRequest))
                 factoryService.register(
-                    actualNodeId = eq("generated-node-id"),
+                    actualNodeId = eq("this-id-the-actual-id"),
                     handshakeRequest = refEq(handshakeRequest),
                     handshakeResponse = expectedResponse
                 )
@@ -142,7 +143,7 @@ internal class HandshakeManagerTest {
                     tenant = "my-tenant",
                     zone = "en"
                 )
-                coEvery { channelNameFactory.getUnicastChannelName(any()) } returns "the-unicast-channel-prefix-a-real-id"
+                coEvery { channelNameFactory.getUnicastChannelName(any()) } returns "a-real-id"
 
                 // when
                 handshakeManager.notify(handshakeRequest = handshakeRequest)

@@ -45,19 +45,22 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalSerializationApi::class)
-internal class SerializedRecordSerializerTest {
+internal class BinarySerializedRecordSerializerTest {
 
     private val protobuf = SerializationFactory().protobuf()
 
     @Test
     internal fun `should serialize a record with a non empty value`() {
         // given
-        val record =
-            SerializedRecord("This is a test".encodeToByteArray(), SerializableClass(String::class.java), "string")
+        val record = BinarySerializedRecord(
+            "This is a test".encodeToByteArray(),
+            serType = SerializableClass(String::class.java),
+            serializer = "string"
+        )
 
         // when
         val serialized = protobuf.encodeToByteArray(record)
-        val deserialized = protobuf.decodeFromByteArray<SerializedRecord>(serialized)
+        val deserialized = protobuf.decodeFromByteArray<BinarySerializedRecord>(serialized)
 
         // then
         Assertions.assertEquals(record, deserialized)
@@ -66,11 +69,12 @@ internal class SerializedRecordSerializerTest {
     @Test
     internal fun `should serialize a record with an empty value`() {
         // given
-        val record = SerializedRecord(ByteArray(0), SerializableClass(String::class.java), "string")
+        val record =
+            BinarySerializedRecord(ByteArray(0), serType = SerializableClass(String::class.java), serializer = "string")
 
         // when
         val serialized = protobuf.encodeToByteArray(record)
-        val deserialized = protobuf.decodeFromByteArray<SerializedRecord>(serialized)
+        val deserialized = protobuf.decodeFromByteArray<BinarySerializedRecord>(serialized)
 
         // then
         Assertions.assertEquals(record, deserialized)
@@ -85,21 +89,20 @@ internal class SerializedRecordSerializerTest {
             executionProfileConfiguration = DefaultExecutionProfileConfiguration(),
             channel = "directives-broadcast"
         )
-        val record = SerializedRecord(
+        val record = BinarySerializedRecord(
             protobuf.encodeToByteArray(directive),
-            SerializableClass(MinionsRampUpPreparationDirective::class.java),
-            "string"
+            serType = SerializableClass(MinionsRampUpPreparationDirective::class.java),
+            serializer = "string"
         )
 
         // when
         val serialized = protobuf.encodeToByteArray(record)
-        val deserialized = protobuf.decodeFromByteArray<SerializedRecord>(serialized)
+        val deserialized = protobuf.decodeFromByteArray<BinarySerializedRecord>(serialized)
 
         // then
         Assertions.assertEquals(record, deserialized)
         val deserializedDirective = protobuf.decodeFromByteArray<MinionsRampUpPreparationDirective>(deserialized.value)
         Assertions.assertEquals(directive, deserializedDirective)
     }
-
 
 }

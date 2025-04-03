@@ -142,7 +142,7 @@ data class TransportableStepContext(
 
         if (input != null) {
             if (other.input == null) return false
-            if (!input.value.contentEquals(other.input.value)) return false
+            if (input != other.input) return false
         } else if (other.input != null) return false
         if (campaignKey != other.campaignKey) return false
         if (scenarioName != other.scenarioName) return false
@@ -161,7 +161,7 @@ data class TransportableStepContext(
     }
 
     override fun hashCode(): Int {
-        var result = input?.value?.contentHashCode() ?: 0
+        var result = input?.hashCode() ?: 0
         result = 31 * result + campaignKey.hashCode()
         result = 31 * result + scenarioName.hashCode()
         result = 31 * result + minionId.hashCode()

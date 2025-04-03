@@ -20,10 +20,10 @@
 package io.qalipsis.core.head.campaign
 
 import io.micronaut.context.annotation.Requires
-import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.handshake.HandshakeRequest
 import jakarta.inject.Singleton
 
 @Singleton
@@ -40,11 +40,11 @@ internal class DefaultChannelNameFactory(
         return FEEDBACK_CONTEXTS_CHANNEL
     }
 
-    override suspend fun getUnicastChannelName(tenant: String, nodeId: NodeId): String {
-        return if (nodeId.isBlank() || nodeId.startsWith("_")) {
+    override suspend fun getUnicastChannelName(handshakeRequest: HandshakeRequest): String {
+        return if (handshakeRequest.nodeId.isBlank() || handshakeRequest.nodeId.startsWith("_")) {
             idGenerator.short()
         } else {
-            nodeId
+            handshakeRequest.nodeId
         }
     }
 
