@@ -47,7 +47,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 
 const scenarioTaleStore = useScenarioTableStore();
 const toastStore = useToastStore();

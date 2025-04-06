@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+
 
 export const useSeriesTableStore = defineStore("SeriesTable", {
   state: (): TableStoreState<DataSeriesTableData> => {

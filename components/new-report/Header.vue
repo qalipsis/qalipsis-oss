@@ -44,7 +44,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
 
 const { createReport } = useReportApi();
 

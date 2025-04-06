@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+
 
 interface ScenarioTableState {
     currentPageIndex: number,

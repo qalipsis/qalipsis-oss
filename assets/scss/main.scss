@@ -1,9 +1,10 @@
+@use "./components";
+@use "./icons";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import "./components";
-@import "./icons";
 
 @layer base {
   * {

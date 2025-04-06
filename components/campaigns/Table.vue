@@ -94,7 +94,6 @@
 
 <script setup lang="ts">
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
-import { storeToRefs } from "pinia";
 
 const props = defineProps<{
   actionsEnabled?: boolean;

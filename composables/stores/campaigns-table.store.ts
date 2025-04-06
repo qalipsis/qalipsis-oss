@@ -1,4 +1,3 @@
-import { defineStore } from "pinia";
 
 export const useCampaignsTableStore = defineStore("CampaignsTable", {
     state: (): TableStoreState<CampaignTableData> => {

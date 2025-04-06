@@ -55,7 +55,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
 
 defineProps<{
     campaignDetails: CampaignExecutionDetails

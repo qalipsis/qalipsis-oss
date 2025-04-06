@@ -27,7 +27,6 @@
 
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
 
 const emit = defineEmits<{
     (e: "saved"): void

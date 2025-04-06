@@ -1,4 +1,3 @@
-import { defineStore } from "pinia";
 
 interface UserStoreState {
   user: User | null;
