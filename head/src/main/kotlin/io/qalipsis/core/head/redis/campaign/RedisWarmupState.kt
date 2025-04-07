@@ -26,6 +26,7 @@ import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
+import io.qalipsis.core.feedbacks.NodeExecutionFeedback
 import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
@@ -77,6 +78,11 @@ internal class RedisWarmupState(
                     this
                 }
             }
+        } else if (feedback is NodeExecutionFeedback && feedback.status == FeedbackStatus.FAILED) {
+            // Remove the node from the campaign to avoid wait for feedbacks from it, that
+            // would never come.
+            campaign.factories.remove(feedback.nodeId)
+            RedisFailureState(campaign, feedback.error ?: "", operations)
         } else {
             this
         }

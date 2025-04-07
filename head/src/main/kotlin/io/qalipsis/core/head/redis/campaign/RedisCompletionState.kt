@@ -25,6 +25,7 @@ import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
+import io.qalipsis.core.feedbacks.NodeExecutionFeedback
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.CompletionState
@@ -45,6 +46,17 @@ internal class RedisCompletionState(
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
+            if (operations.markFeedbackForFactory(campaign.tenant, campaignKey, feedback.nodeId)) {
+                context.campaignReportStateKeeper.complete(campaignKey, ExecutionStatus.SUCCESSFUL)
+                context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.SUCCESSFUL)
+                RedisDisabledState(campaign, true, operations)
+            } else {
+                this
+            }
+        } else if (feedback is NodeExecutionFeedback && feedback.status.isDone) {
+            // Remove the node from the campaign to avoid wait for feedbacks from it, that
+            // would never come.
+            campaign.factories.remove(feedback.nodeId)
             if (operations.markFeedbackForFactory(campaign.tenant, campaignKey, feedback.nodeId)) {
                 context.campaignReportStateKeeper.complete(campaignKey, ExecutionStatus.SUCCESSFUL)
                 context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.SUCCESSFUL)

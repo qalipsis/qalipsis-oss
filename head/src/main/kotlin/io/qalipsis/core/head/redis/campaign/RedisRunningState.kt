@@ -34,6 +34,7 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
+import io.qalipsis.core.feedbacks.NodeExecutionFeedback
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.RunningState
@@ -72,6 +73,17 @@ internal class RedisRunningState(
                 feedback.error ?: "",
                 operations
             )
+
+            feedback is NodeExecutionFeedback -> {
+                // Remove the node from the campaign to avoid wait for feedbacks from it, that
+                // would never come.
+                campaign.factories.remove(feedback.nodeId)
+                RedisFailureState(
+                    campaign,
+                    feedback.error ?: "",
+                    operations
+                )
+            }
 
             feedback is CompleteMinionFeedback -> RedisRunningState(
                 campaign, operations, true, listOf(
