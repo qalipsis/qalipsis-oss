@@ -30,6 +30,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNotSameAs
 import assertk.assertions.isSameAs
+import assertk.assertions.key
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.mockk.coEvery
@@ -38,6 +39,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.executionprofile.CompletionMode
+import io.qalipsis.core.campaigns.FactoryConfiguration
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.AbortRunningCampaign
@@ -47,6 +49,7 @@ import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
+import io.qalipsis.core.feedbacks.NodeExecutionFeedback
 import io.qalipsis.core.head.campaign.states.DisabledState
 import io.qalipsis.core.head.factory.FactoryHealth
 import io.qalipsis.core.heartbeat.Heartbeat
@@ -184,6 +187,37 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
             prop("error").isEqualTo("this is the error 2")
         }
 
+        confirmVerified(factoryService, campaignReportStateKeeper)
+    }
+
+    @Test
+    internal fun `should return a failure state when a node cannot be executed`() = testDispatcherProvider.run {
+        // given
+        campaign.factories.put("node-3", FactoryConfiguration("node-3-channel"))
+        val state = RedisMinionsScheduleRampUpState(campaign, operations)
+        state.run {
+            inject(campaignExecutionContext)
+            init()
+        }
+        val feedback = mockk<NodeExecutionFeedback> {
+            every { nodeId } returns "node-2"
+            every { status } returns FeedbackStatus.FAILED
+            every { error } returns "this is the error"
+        }
+
+        // when
+        val newState = state.process(feedback)
+
+        // then
+        assertThat(campaign.factories).all {
+            hasSize(2)
+            key("node-1").isNotNull()
+            key("node-3").isNotNull()
+        }
+        assertThat(newState).isInstanceOf(RedisFailureState::class).all {
+            prop("campaign").isSameAs(campaign)
+            prop("error").isEqualTo("this is the error")
+        }
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
 

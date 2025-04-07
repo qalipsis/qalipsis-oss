@@ -27,6 +27,7 @@ import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
+import io.qalipsis.core.feedbacks.NodeExecutionFeedback
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FailureState
@@ -64,6 +65,17 @@ internal class RedisFailureState(
                 if (feedback.status == FeedbackStatus.FAILED) {
                     log.error { "Stopping the factory ${feedback.nodeId} properly failed, please proceed manually." }
                 }
+                context.campaignReportStateKeeper.complete(campaignKey, ExecutionStatus.FAILED, error)
+                context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.FAILED, error)
+                RedisDisabledState(campaign, false, operations)
+            } else {
+                this
+            }
+        } else if (feedback is NodeExecutionFeedback && feedback.status.isDone) {
+            // Remove the node from the campaign to avoid wait for feedbacks from it, that
+            // would never come.
+            campaign.factories.remove(feedback.nodeId)
+            if (operations.markFeedbackForFactory(campaign.tenant, campaignKey, feedback.nodeId)) {
                 context.campaignReportStateKeeper.complete(campaignKey, ExecutionStatus.FAILED, error)
                 context.campaignService.close(campaign.tenant, campaignKey, ExecutionStatus.FAILED, error)
                 RedisDisabledState(campaign, false, operations)

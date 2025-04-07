@@ -30,6 +30,7 @@ import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
+import assertk.assertions.key
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.mockk.confirmVerified
@@ -42,6 +43,7 @@ import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
+import io.qalipsis.core.feedbacks.NodeExecutionFeedback
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -133,6 +135,102 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
             })
 
             // then
+            assertThat(newState).isInstanceOf(RedisDisabledState::class).all {
+                prop("campaign").isSameAs(campaign)
+                typedProp<Boolean>("isSuccessful").isFalse()
+                typedProp<Boolean>("initialized").isFalse()
+            }
+            coVerifyOnce {
+                campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "this error")
+                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "this error")
+            }
+            confirmVerified(campaignService, factoryService, campaignReportStateKeeper)
+        }
+
+    @Test
+    internal fun `should return the same state when a node cannot be executed and other feedback are expected`() =
+        testDispatcherProvider.run {
+            // given
+            campaign.factories.put("node-3", FactoryConfiguration("node-3-channel"))
+            var state = RedisFailureState(campaign, "this error", operations)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
+            val feedback = mockk<NodeExecutionFeedback> {
+                every { nodeId } returns "node-2"
+                every { status.isDone } returns true
+                every { error } returns "this is the error"
+            }
+
+            // when
+            val newState = state.process(feedback)
+
+            // then
+            assertThat(campaign.factories).all {
+                hasSize(2)
+                key("node-1").isNotNull()
+                key("node-3").isNotNull()
+            }
+            assertThat(newState).isSameAs(state)
+            confirmVerified(factoryService, campaignService, campaignReportStateKeeper)
+        }
+
+    @Test
+    internal fun `should return the disabled state when a node cannot be executed and all other feedbacks were received`() =
+        testDispatcherProvider.run {
+            // given
+            campaign.factories.put("node-3", FactoryConfiguration("node-3-channel"))
+            var state = RedisFailureState(campaign, "this error", operations)
+            state.run {
+                inject(campaignExecutionContext)
+                init()
+            }
+
+            // when
+            var newState = state.process(mockk<CampaignShutdownFeedback> {
+                every { nodeId } returns "node-1"
+                every { status } returns FeedbackStatus.IGNORED
+            })
+
+            // then
+            assertThat(newState).isSameAs(state)
+
+            // when
+            state = RedisFailureState(campaign, operations)
+            state.initialized = true
+            assertThat(state.run {
+                inject(campaignExecutionContext)
+                init()
+            }).isEmpty()
+            newState = state.process(mockk<CampaignShutdownFeedback> {
+                every { nodeId } returns "node-3"
+                every { status } returns FeedbackStatus.COMPLETED
+            })
+
+            // then
+            assertThat(newState).isSameAs(state)
+
+            // when
+            state = RedisFailureState(campaign, operations)
+            state.initialized = true
+            assertThat(state.run {
+                inject(campaignExecutionContext)
+                init()
+            }).isEmpty()
+            val feedback = mockk<NodeExecutionFeedback> {
+                every { nodeId } returns "node-2"
+                every { status.isDone } returns true
+                every { error } returns "this is the error"
+            }
+            newState = state.process(feedback)
+
+            // then
+            assertThat(campaign.factories).all {
+                hasSize(2)
+                key("node-1").isNotNull()
+                key("node-3").isNotNull()
+            }
             assertThat(newState).isInstanceOf(RedisDisabledState::class).all {
                 prop("campaign").isSameAs(campaign)
                 typedProp<Boolean>("isSuccessful").isFalse()
