@@ -1,7 +1,7 @@
 <template>
     <div class="flex items-center">
-        <BaseIcon icon="qls-icon-time" class="text-xl text-gray-500" />
-        <span class="text-gray-500 pl-1">{{ displayTimeText }}</span>
+        <BaseIcon icon="qls-icon-time" class="text-xl text-gray-500 dark:text-gray-100" />
+        <span class="text-gray-500 dark:text-gray-100 pl-1">{{ displayTimeText }}</span>
     </div>
 </template>
 

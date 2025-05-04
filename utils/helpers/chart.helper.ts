@@ -52,14 +52,14 @@ export class ChartHelper {
       labels: {
         show: true,
         style: {
-          colors: "#000",
+          cssClass: "fill-gray-800 dark:fill-gray-50",
         },
         formatter: (val: number, _: any) => val.toFixed(2),
       },
       title: {
         text: "Minions Count",
         style: {
-          cssClass: "apexcharts-yaxis-title",
+          cssClass: "fill-gray-800 dark:fill-gray-50",
         },
       },
     };

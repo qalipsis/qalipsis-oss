@@ -10,6 +10,7 @@ export { ScenariosTableConfig } from "./configs/scenarios-table.config";
 export { SeriesDetailsConfig } from "./configs/series-details.config";
 export { SeriesTableConfig } from "./configs/series-table.config";
 export { ToastConfig } from "./configs/toast.config";
+export { ThemeConfig } from "./configs/theme.config"
 
 // Helpers
 export { CampaignHelper } from "./helpers/campaign.helper";
@@ -42,7 +43,7 @@ export type {
   CampaignConfigurationForm
 } from "./types/campaign";
 export type { ChartData, ChartOptionData, ApexDataSeries } from "./types/chart";
-export type { Tag } from "./types/common";
+export type { Tag, TagStyleClass } from "./types/common";
 export type { CheckBoxExposeType } from "./types/checkbox";
 export type {
   DefaultCampaignConfiguration,

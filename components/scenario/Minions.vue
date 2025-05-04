@@ -6,14 +6,14 @@
             <div>Completed minions: {{ completedMinions }}</div>
         </template>
         <div class="flex items-center cursor-pointer" @click="handleRowClick">
-            <BaseIcon icon="qls-icon-two-users-stroke" class="text-xl text-gray-500" />
+            <BaseIcon icon="qls-icon-two-users-stroke" class="text-xl text-gray-500 dark:text-gray-100" />
             <apexchart
                 height="24"
                 width="96"
                 :options="chartOptions"
                 :series="minionBarChartDataSeries"
             />
-            <span class="text-gray-500 pl-1">
+            <span class="text-gray-500 dark:text-gray-100 pl-1">
                 {{ completedMinions }} / {{ startedMinions }} / {{ scheduledMinions }}
             </span>
         </div>

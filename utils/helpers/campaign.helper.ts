@@ -2,6 +2,82 @@ import type { ApexOptions } from "apexcharts";
 import { eachDayOfInterval, format, isSameDay, sub } from "date-fns";
 import { DateTime } from "luxon";
 import tinycolor from "tinycolor2";
+import type { TagStyleClass } from "../types/common";
+
+const defaultTagClass: TagStyleClass = {
+  backgroundCssClass: "bg-gray-100 dark:bg-gray-700",
+  textCssClass: "text-gray-700 dark:text-gray-100",
+}
+
+const tagClass: { [key in ExecutionStatus]: Tag } = {
+  SUCCESSFUL: {
+    text: "Successful",
+    backgroundCssClass: "bg-green-100 dark:bg-green-800",
+    textCssClass: "text-green-600 dark:text-green-100"
+  },
+  WARNING: {
+    text: "Warning",
+    backgroundCssClass: "bg-yellow-100 dark:bg-yellow-800",
+    textCssClass: "text-yellow-600 dark:text-yellow-100"
+  },
+  FAILED: {
+    text: "Failed",
+    backgroundCssClass: "bg-red-100 dark:bg-red-800",
+    textCssClass: "text-red-600 dark:text-red-100",
+  },
+  ABORTED: {
+    text: "Aborted",
+    backgroundCssClass: "bg-red-100 dark:bg-red-800",
+    textCssClass: "text-red-600 dark:text-red-100",
+  },
+  SCHEDULED: {
+    text: "Scheduled",
+    backgroundCssClass: "bg-gray-100 dark:bg-gray-700",
+    textCssClass: "text-green-600 dark:text-green-100"
+  },
+  QUEUED: {
+    text: "Queued",
+    backgroundCssClass: "bg-purple-100 dark:bg-purple-800",
+    textCssClass: "text-purple-600 dark:text-purple-100",
+  },
+  IN_PROGRESS: {
+    text: "In progress",
+    backgroundCssClass: "bg-purple-100 dark:bg-purple-800",
+    textCssClass: "text-purple-600 dark:text-purple-100",
+  },
+};
+
+const renderCampaignStaticTooltip: (options: any) => any = ({
+  series, seriesIndex, dataPointIndex, w
+}): string => {
+  const statisticContent: string[] = [];
+
+  series.forEach((s: any, idx: number) => {
+    if (idx === seriesIndex) {
+      const seriesContent = `
+        <div class="flex items-center justify-between gap-x-1">
+          <div class="w-3 h-3 rounded-full" style="background-color:${w.globals.colors[idx]}"></div>
+          <div class="flex items-center text-gray-950 dark:text-gray-200">
+            <span>${w.globals.seriesNames[idx]}:</span>
+            <span class="pl-1">${s[dataPointIndex]}</span>
+          </div>
+        </div>
+      `
+      statisticContent.push(seriesContent)
+    }
+  });
+
+  return `
+    <div class="px-4 py-2 min-w-36 rounded-lg text-gray-950 dark:bg-gray-900 dark:text-white font-light border-none">
+      <div class="w-full flex items-center pb-2 border-b border-solid border-gray-100 dark:border-gray-500">
+         <span>${w.globals.labels[dataPointIndex]}</span>
+      </div>
+      <div class="w-full flex items-center my-2">
+        ${statisticContent.join("")}
+      </div>
+    </div>
+  `;
+}
 
 const renderCampaignDetailsChartTooltip: (options: any) => any = ({
   seriesIndex,
@@ -21,13 +97,13 @@ const renderCampaignDetailsChartTooltip: (options: any) => any = ({
       series.data.forEach((point) => {
         if (point?.x === dt) {
           seriesContent.push(
-            `<div class="custom-tooltip__content">
-              <div class="custom-tooltip__marker" style="background-color:${series.color}"></div>
-              <div class="custom-tooltip__text">
-                <div class="custom-tooltip__text-name">
+            `<div class="w-full flex items-center">
+              <div class="w-3 h-3 pr-2 rounded-full border-2 border-solid border-white" style="background-color:${series.color}"></div>
+              <div class="flex flex-grow justify-between items-center py-2  font-normal text-xs text-gray-500">
+                <div class="pr-1">
                   ${series.name}:
                 </div>
-                <div class="custom-tooltip__text-y">
+                <div class="ml-2">
                   ${point.y}
                 </div>
               </div>
@@ -37,10 +113,10 @@ const renderCampaignDetailsChartTooltip: (options: any) => any = ({
       })
   );
 
-  return `<div class="custom-tooltip">
-        <div class="custom-tooltip__title">
-          <div class="custom-tooltip__title-day">${day}</div>
-          <div class="custom-tooltip__title-time">${time}</div>
+  return `<div class="p-4 min-w-72 rounded-xl bg-gray-900 text-white font-light">
+        <div class="w-full flex justify-between items-center pb-3 border-b border-solid border-gray-50">
+          <div class="text-sm font-normal">${day}</div>
+          <div class="text-sm font-normal">${time}</div>
         </div>
         ${seriesContent.join("")}
       </div>`;
@@ -182,9 +258,17 @@ export class CampaignHelper {
       },
       xaxis: {
         categories: xAxisCategories,
+        labels: {
+          style: {
+            cssClass: 'fill-gray-800 dark:fill-gray-100'
+          }
+        }
       },
       yaxis: {
         show: false,
+      },
+      tooltip: {
+        custom: renderCampaignStaticTooltip
       },
       dataLabels: {
         enabled: false,
@@ -328,55 +412,12 @@ export class CampaignHelper {
   }
 
   static toExecutionStatusTag(executionStatus: ExecutionStatus): Tag {
-    switch (executionStatus) {
-      case ExecutionStatusConstant.SUCCESSFUL:
-        return {
-          text: "Successful",
-          textCssClass: "text-green-600",
-          backgroundCssClass: "bg-primary-100",
-        };
-      case ExecutionStatusConstant.FAILED:
-        return {
-          text: "Failed",
-          textCssClass: "text-red-600",
-          backgroundCssClass: "bg-red-100",
-        };
-      case ExecutionStatusConstant.IN_PROGRESS:
-        return {
-          text: "In progress",
-          textCssClass: "text-purple-600",
-          backgroundCssClass: "bg-purple-100",
-        };
-      case ExecutionStatusConstant.SCHEDULED:
-        return {
-          text: "Scheduled",
-          textCssClass: "text-green-600",
-          backgroundCssClass: "bg-gray-100",
-        };
-      case ExecutionStatusConstant.WARNING:
-        return {
-          text: "Warning",
-          textCssClass: "text-yellow-400",
-          backgroundCssClass: "bg-yellow-200",
-        };
-      case ExecutionStatusConstant.ABORTED:
-        return {
-          text: "Aborted",
-          textCssClass: "text-red-600",
-          backgroundCssClass: "bg-red-100",
-        };
-      case ExecutionStatusConstant.QUEUED:
-        return {
-          text: "Queued",
-          textCssClass: "text-purple-600",
-          backgroundCssClass: "bg-purple-100",
-        };
-      default:
-        return {
-          text: executionStatus,
-          textCssClass: "text-grey",
-          backgroundCssClass: "bg-gray-100",
-        };
+    const tag: Tag = tagClass[executionStatus] ?? {
+      text: executionStatus,
+      backgroundCssClass: defaultTagClass.backgroundCssClass,
+      textCssClass: defaultTagClass.textCssClass
     }
+
+    return tag
   }
 }

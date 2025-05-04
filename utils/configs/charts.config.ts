@@ -4,7 +4,10 @@ import { format } from "date-fns";
 export class ChartsConfig {
     static DEFAULT_CHART_OPTIONS: ApexOptions = {
         noData: {
-            text: 'No data yet, the screen will be refreshed soon...'
+            text: 'No data yet, the screen will be refreshed soon...',
+            style: {
+                color: '#778392'
+            }
         },
         stroke: {
             curve: 'straight',
@@ -50,7 +53,7 @@ export class ChartsConfig {
                 text: 'Time',
                 offsetY: 75,
                 style: {
-                    cssClass: 'apexcharts-yaxis-title',
+                    cssClass: 'fill-gray-800 dark:fill-gray-100',
                 },
             },
             type: "datetime",
@@ -60,7 +63,7 @@ export class ChartsConfig {
             labels: {
                 format: "HH:mm:ss",
                 style: {
-                    colors: '#000000',
+                    cssClass: 'fill-gray-800 dark:fill-gray-100',
                 },
                 datetimeUTC: false,
             },

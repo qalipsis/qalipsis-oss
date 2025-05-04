@@ -4,7 +4,7 @@
           <div
             class="w-8 h-8 rounded-md flex items-center justify-center mr-2"
             :class="{
-              'hover:bg-gray-100 cursor-pointer': !leftArrowDisabled,
+              'hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer': !leftArrowDisabled,
               'cursor-not-allowed': leftArrowDisabled,
             }"
             @click="!leftArrowDisabled && handlePageNumberClick(currentPageIndex - 1)"
@@ -12,17 +12,17 @@
             <div
               class="border-r-2 border-b-2 -mr-1 border-solid p-1 rotate-[135deg]"
               :class="{
-                'border-gray-900': !leftArrowDisabled,
-                'border-gray-400': leftArrowDisabled,
+                'border-gray-900 dark:border-gray-400': !leftArrowDisabled,
+                'border-gray-400 dark:border-gray-800': leftArrowDisabled,
               }"
             ></div>
           </div>
           <template v-for="page in pages" :key="page">
             <div
-              class="w-8 h-8 flex items-center justify-center border border-solid rounded-md border-gray-300 mr-2 last:mr-0 cursor-pointer"
+              class="w-8 h-8 flex items-center justify-center border border-solid rounded-md mr-2 last:mr-0 cursor-pointer"
               :class="{
                 'text-primary-500 border-primary-500': page === currentPageIndex,
-                'hover:bg-gray-100': page !== currentPageIndex,
+                'hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600': page !== currentPageIndex,
               }"
               @click="handlePageNumberClick(page)"
             >
@@ -34,7 +34,7 @@
           <div
             class="w-8 h-8 rounded-md flex items-center justify-center"
             :class="{
-              'hover:bg-gray-100 cursor-pointer': !rightArrowDisabled,
+              'hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer': !rightArrowDisabled,
               'cursor-not-allowed': rightArrowDisabled,
             }"
             @click="
@@ -44,8 +44,8 @@
             <div
               class="border-r-2 border-b-2 -ml-1 border-solid p-1 -rotate-45"
               :class="{
-                'border-gray-900': !rightArrowDisabled,
-                'border-gray-400': rightArrowDisabled,
+                'border-gray-900 dark:border-gray-400': !rightArrowDisabled,
+                'border-gray-400 dark:border-gray-800': rightArrowDisabled,
               }"
             ></div>
           </div>
@@ -57,7 +57,7 @@
             <div>
               <input
                 type="text"
-                class="w-14 ml-1 py-1 px-2 outline-none border border-solid border-gray-200 rounded-md"
+                class="w-14 ml-1 py-1 px-2 outline-none border border-solid border-gray-200 rounded-md dark:bg-gray-900 dark:border-gray-700"
                 v-model="targetPage"
                 @keyup.enter="handleEnterEvent"
               />

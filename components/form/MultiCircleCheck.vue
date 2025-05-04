@@ -3,9 +3,9 @@
     <div
       v-for="option in options"
       :key="option.label"
-      class="w-7 h-7 rounded-full border solid border-primary-400 text-center flex items-center justify-center mr-1 mb-1 cursor-pointer"
+      class="w-8 h-8 rounded-full border solid border-primary-400 dark:border-gray-200 text-center flex items-center justify-center mr-1 mb-1 cursor-pointer"
       :class="{ 
-        'text-primary-950 bg-white': !selectedValues?.includes(option.value),
+        'bg-white dark:bg-transparent dark:text-gray-200': !selectedValues?.includes(option.value),
         'bg-primary-500 text-white': selectedValues?.includes(option.value) }
       "
       @click="handleBtnClick(option.value)"

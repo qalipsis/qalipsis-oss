@@ -1,6 +1,6 @@
 <template>
     <BaseContentWrapper>
-        <div class="shadow-md pt-2 pb-2 pr-4 pl-4 mb-2">
+        <BaseCard>
             <div class="flex justify-between">
                 <ScenarioDetails :scenarioReports="scenarioReports"/>
                 <template v-if="campaignDetails.status === 'IN_PROGRESS'">
@@ -13,7 +13,7 @@
                     </BasePermission>
                 </template>
             </div>
-        </div>
+        </BaseCard>
         <div class="shadow-md pt-2 pb-2 pr-4 pl-4 mb-2">
             <SeriesMenu 
                 :preselectedDataSeriesReferences="preselectedDataSeriesReferences"

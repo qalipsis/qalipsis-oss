@@ -21,7 +21,7 @@
         >
             <div
                 v-if="open" 
-                class="fixed top-20 left-0 right-0 bottom-0 z-10 w-fit max-w-[600px] transform-none bg-white rounded-md shadow-lg px-6 py-5 h-fit mx-auto">
+                class="fixed top-20 left-0 right-0 bottom-0 z-10 w-fit max-w-[600px] transform-none bg-white dark:bg-gray-950 rounded-md shadow-lg px-6 py-5 h-fit mx-auto">
                 <header class="relative w-full flex items-center justify-center p-5">
                     <BaseTitle :content="title" />
                     <div 

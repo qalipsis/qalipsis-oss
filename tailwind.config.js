@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'selector',
   content: [
     './components/**/*.{js,vue,ts}',
     './utils/**/*.ts',
@@ -12,29 +13,29 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        'sans': ['Outfit', 'sans-serif']
+        sans: ['Outfit', 'sans-serif'],
       },
       transitionProperty: {
-        'width': 'width',
-      }
+        width: 'width',
+      },
     },
     colors: {
       transparent: 'transparent',
-      'white': '#FFFFFF',
-      "primary": {
-        50: "#EBF9F9",
-        100: "#DBF5F5",
-        200: "#B3EAEA",
-        300: "#7FDBDB",
-        400: "#41C9CA",
-        500: "#34BBBB",
-        600: "#2FA8A8",
-        700: "#299494",
-        800: "#227C7C",
-        900: "#185858",
-        950: "#124040"
+      white: '#FFFFFF',
+      primary: {
+        50: '#EBF9F9',
+        100: '#D4F1F2',
+        200: '#ADE5E6',
+        300: '#82D8D9',
+        400: '#57CBCC',
+        500: '#39BABC',
+        600: '#2D9395',
+        700: '#227071',
+        800: '#17494A',
+        900: '#0C2727',
+        950: '#061314',
       },
-      'red': {
+      red: {
         50: '#FEF5F9',
         100: '#FEE7EF',
         200: '#FCCADC',
@@ -45,9 +46,9 @@ module.exports = {
         700: '#CF0C54',
         800: '#A90A44',
         900: '#820835',
-        950: '#520521'
+        950: '#520521',
       },
-      'green': {
+      green: {
         50: '#EEFBF8',
         100: '#D9F7EF',
         200: '#ACECDB',
@@ -58,22 +59,22 @@ module.exports = {
         700: '#208E70',
         800: '#1A755D',
         900: '#135342',
-        950: '#0E3F32'
+        950: '#0E3F32',
       },
-      'gray': {
-        50: '#F7F8F8',
-        100: '#ECEEEE',
-        200: '#DCDFDF',
-        300: '#C7CBCC',
-        400: '#AFB5B6',
-        500: '#939B9D',
-        600: '#848D8F',
-        700: '#727B7E',
-        800: '#5F6668',
-        900: '#414748',
-        950: '#2E3233'
+      gray: {
+        50: '#E6E8EB',
+        100: '#DADDE1',
+        200: '#C1C6CD',
+        300: '#A7AFB8',
+        400: '#919AA6',
+        500: '#778392',
+        600: '#626C79',
+        700: '#505863',
+        800: '#3B4149',
+        900: '#272B30',
+        950: '#1D2024',
       },
-      'purple': {
+      purple: {
         50: '#F7F1FE',
         100: '#F1E8FD',
         200: '#E1CBFB',
@@ -84,9 +85,9 @@ module.exports = {
         700: '#6E13DD',
         800: '#5B10B7',
         900: '#410B83',
-        950: '#25074B'
+        950: '#25074B',
       },
-      'yellow': {
+      yellow: {
         50: '#FFFBF0',
         100: '#FFF5DB',
         200: '#FFEBB8',
@@ -97,9 +98,9 @@ module.exports = {
         700: '#CC9200',
         800: '#AD7C00',
         900: '#7A5800',
-        950: '#5C4200'
-      }
-    }
+        950: '#5C4200',
+      },
+    },
   },
   plugins: [],
 }

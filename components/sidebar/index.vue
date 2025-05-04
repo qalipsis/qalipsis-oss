@@ -1,13 +1,13 @@
 <template>
     <div 
-        class="flex-grow-0 flex-shrink-0 relative border-r border-solid border-gray-100 transition-all duration-200"
+        class="flex-grow-0 flex-shrink-0 relative border-r border-solid border-gray-100 dark:border-gray-800 transition-all duration-200 bg-white dark:bg-gray-900 dark:text-gray-100"
         :class="{
             'basis-60': !collapsed,
             'basis-20': collapsed
         }"
     >
         <div 
-            class="absolute top-10 w-8 h-8 flex items-center justify-center cursor-pointer border border-solid border-gray-100 rounded-full bg-white"
+            class="absolute top-10 w-8 h-8 flex items-center justify-center cursor-pointer border border-solid border-gray-100 dark:border-gray-800 rounded-full bg-white dark:bg-gray-900"
             :class="{
                 'left-56': !collapsed,
                 'left-16': collapsed
@@ -20,6 +20,11 @@
                 :menu-items="menuItems"
                 :collapsed="collapsed"
             />
+            <div>
+                <SidebarThemeToggleButton
+                    :collapsed="collapsed"
+                />
+            </div>
         </nav>
     </div>
 </template>

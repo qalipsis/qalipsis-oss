@@ -5,6 +5,7 @@
       v-model="value"
       ref="dp"
       :format="format"
+      :dark="darkThemeEnabled"
       :min-date="minDate"
       :clearable="false"
       @update:model-value="handleDate"
@@ -30,15 +31,14 @@ const emit = defineEmits<{
   (e: "Change", v: Date): void;
 }>();
 
+const themeStore = useThemeStore();
+
 const dp = ref();
+const darkThemeEnabled = computed(() => themeStore.theme === 'dark');
 const { value, errorMessage } = useField<string>(
   () => props.formControlName,
   props.fieldValidationSchema
 );
-
-const handleDateSelect = () => {
-  dp.value.selectDate();
-};
 
 const handleDate = (modelData: Date) => {
   emit("Change", modelData);

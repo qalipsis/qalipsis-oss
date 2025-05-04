@@ -2,7 +2,7 @@
     <table class="scenario-details-table">
       <tr v-for="report in scenarioReports" :key="report.id" >
         <td>
-            <span class="text-gray-500">{{ report.name }}</span>
+            <span class="text-gray-500 dark:text-gray-100">{{ report.name }}</span>
         </td>
         <td>
           <ScenarioTag

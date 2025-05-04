@@ -54,7 +54,7 @@
           <div class="my-1">
             <BaseDivideLine />
           </div>
-          <span class="text-gray-500 text-sm pl-2">Scenarios</span>
+          <span class="text-gray-500 dark:text-gray-100 text-sm pl-2">Scenarios</span>
           <MenuItem
             v-for="scenario in scenarioOptions"
             :key="scenario.value"

@@ -9,7 +9,7 @@
     <form class="p-2">
       <div class="grid grid-cols-12 gap-2">
         <div class="col-span-12 mt-2 mb-4">
-          <span class="text-gray-500 text-base">Execution profile</span>
+          <span class="text-gray-500 dark:text-gray-100 text-base">Execution profile</span>
         </div>
         <div class="col-span-12">
           <template v-for="(_, index) in executionProfileFields">
@@ -51,7 +51,7 @@
           <BaseDivideLine />
         </div>
         <div class="col-span-12">
-          <span class="text-gray-500">Zone</span>
+          <span class="text-gray-500 dark:text-gray-100">Zone</span>
         </div>
         <div class="col-span-12">
           <ScenarioZone

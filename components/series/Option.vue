@@ -1,6 +1,6 @@
 <template>
     <div 
-        class="flex justify-between items-center border border-solid align-baseline border-gray-200 rounded-md h-10 py-1 px-2 w-full cursor-pointer hover:bg-gray-50"
+        class="flex justify-between items-center border border-solid align-baseline border-gray-200 rounded-md h-10 py-1 px-2 w-full cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
         :style="{ borderColor: isActive ? color : undefined }"
         @click="emits('click')"
     >
@@ -20,8 +20,8 @@
         </div>
         <BaseTag
             :text="dataTypeText"
-            :background-css-class="'bg-gray-100'"
-            :text-css-class="'capitalize'"
+            :background-css-class="'bg-gray-100 dark:bg-gray-700'"
+            :text-css-class="'capitalize dark:text-gray-100'"
         />
     </div>
 </template>

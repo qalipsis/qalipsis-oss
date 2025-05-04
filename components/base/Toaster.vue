@@ -1,6 +1,10 @@
 <template>
   <teleport to="body">
-    <ul v-if="toasts.length" class="fixed z-30 bottom-2 right-2">
+    <ul
+      v-if="toasts.length"
+      class="fixed z-30 bottom-2 right-2"
+      :class="{ 'dark': darkThemeEnabled }"
+    >
       <li v-for="toast in toasts" :key="toast.text">
         <transition
           appear
@@ -24,7 +28,7 @@
             <div class="absolute top-2 right-2 cursor-pointer" @click="handleCloseButtonClick(toast.id)">
               <BaseIcon
                 icon="qls-icon-close"
-                class="text-base text-gray-700 hover:text-gray-900"
+                class="text-base text-gray-700 hover:text-gray-900 dark:text-white dark:hover:text-gray-200"
               >
               </BaseIcon>
             </div>
@@ -37,6 +41,10 @@
 </template>
 
 <script setup lang="ts">
+defineProps<{
+  darkThemeEnabled?: boolean
+}>()
+
 
 const toastStore = useToastStore();
 const { toasts } = storeToRefs(toastStore);

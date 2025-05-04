@@ -10,7 +10,7 @@
             :value="value"
             :checked="isChecked"
         >
-        <label v-if="label" class="pl-1">{{ label }}</label>
+        <label v-if="label" class="pl-2 cursor-pointer" :for="value">{{ label }}</label>
     </div>
 </template>
 

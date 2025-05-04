@@ -1,5 +1,5 @@
 <template>
-    <section class="text-primary-950">
+    <section>
         <div 
             class="flex items-center pl-3 h-28 cursor-pointer w-full"
             @mouseenter="hoveredMenuItemId = ''"
@@ -30,15 +30,15 @@
                         @mouseenter="hoveredMenuItemId = menuItem.id"
                     >
                         <div 
-                            class="peer relative hover:bg-primary-50"
+                            class="peer relative hover:bg-primary-50 dark:hover:bg-gray-800"
                             @click="!menuItem.subMenuItems && handleMenuItemClick(menuItem.id, menuItem.path)"
                         >
                             <div
                                 class="flex items-center h-16 cursor-pointer pl-4 hover:text-primary-500"
                                 :class="[
                                     activeMenuItemId === menuItem.id
-                                        ? 'text-primary-600'
-                                        : 'text-primary-950'
+                                        ? 'text-primary-500'
+                                        : 'text-primary-900 dark:text-gray-100'
                                 ]"
                             >
                                 <div class="flex items-center w-12 h-12 justify-center flex-shrink-0">

@@ -2,6 +2,7 @@
   <div class="flex items-center">
     <input
       type="checkbox"
+      :id="formControlName"
       :class="[
         TailwindClassHelper.checkBoxClass,
         TailwindClassHelper.checkBoxMarkerClass
@@ -11,7 +12,7 @@
       :disabled="disabled"
       @change="emit('change', checkboxValue)"
     />
-    <label class="ml-2">{{ label }}</label>
+    <label class="ml-2 cursor-pointer" :for="formControlName" >{{ label }}</label>
     <FormErrorMessage :errorMessage="errorMessage" />
   </div>
 </template>

@@ -26,6 +26,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.qls-icon-moon:before {
+  content: "\e905";
+}
+.qls-icon-sun:before {
+  content: "\e925";
+}
 .qls-icon-activity:before {
   content: '\e901';
 }

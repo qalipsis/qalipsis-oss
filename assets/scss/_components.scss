@@ -1,69 +1,42 @@
-/* Tooltip */
-.custom-tooltip {
-    padding: 1rem;
-    min-width: 17.5rem;
-    border-radius: 10px;
-    background-color: #131616db;
-    color: #fff;
-    font-weight: 300;
-    font-family: Outfit;
-
-    &__title {
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: .75rem;
-        border-bottom: 1px solid #ffffff42;
-    
-        &-day, &-time {
-          font-size: 14px;
-          font-weight: 400;
-        }
-    }
-
-    &__content {
-        width: 100%;
-        display: flex;
-        align-items: center;
-    }
-
-    &__marker {
-        width: .75rem;
-        height: .75rem;
-        margin-right: .5rem;
-        border-radius: 50%;
-        border: 2px solid #fff;
-    }
-
-    &__text {
-        display: flex;
-        flex: 1 0 ;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 14px;
-        color: #fff;
-        padding: .5rem 0;
-        font-weight: 400;
-    
-        &-name {
-          color: #ffffffcc;
-          font-size: 14px;  
-          padding-right: .25rem;
-        }
-    }
-}
-
 /* Date picker */
 :root {
     .dp__theme_light {
-        --dp-primary-color: #41c9ca;
+        --dp-primary-color: #39BABC;
+        --dp-hover-color: #EBF9F9;
+        --dp-background-color: #fff;
         --dp-primary-disabled-color: #939b9d;
+        --dp-border-color: #C1C6CD;
+        --dp-border-color-hover: #39BABC;
+        --dp-border-color-focus: #39BABC;
+
+        .dp__input {
+            &:hover {
+                background-color: #EBF9F9;
+            }
+        }
+    }
+
+    .dp__theme_dark {
+        --dp-background-color: #272B30;
+        --dp-primary-color: #39BABC;
+        --dp-border-color: #C1C6CD;
+        --dp-border-color-hover: #39BABC;
+        --dp-border-color-focus: #39BABC;
+
+        .dp__input {
+            &:hover {
+                background-color: #3B4149;
+            }
+        }
+
+        .dp__arrow_top, .dp__menu  {
+            background-color: #1D2024;
+        }
     }
     
     .dp__input {
         --dp-border-radius: 8px;
-        line-height: 25px;
+        line-height: 26px;
     }
 
     .date-time-picker.has-error {

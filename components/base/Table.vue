@@ -1,7 +1,7 @@
 <template>
-  <section class="w-full">
+  <section class="w-full dark:text-gray-100 dark:bg-gray-900 rounded-lg">
     <table class="w-full text-sm">
-      <thead class="border-b border-solid border-gray-100">
+      <thead class="border-b border-solid border-gray-100 dark:border-gray-700">
         <tr>
           <th v-if="rowSelectionEnabled" class="w-9">
             <div class="p-2">
@@ -22,7 +22,7 @@
             <th
               class="group"
               :class="{
-                'hover:bg-primary-50 cursor-pointer':
+                'hover:bg-primary-50 dark:hover:bg-gray-800 cursor-pointer':
                   tableColumnConfig.sortingEnabled,
               }"
             >
@@ -56,7 +56,7 @@
               <BaseTooltip text="Refresh">
                 <BaseIcon
                   icon="qls-icon-refresh"
-                  class="text-2xl text-primary-950 hover:text-primary-500"
+                  class="text-2xl text-primary-900 dark:text-gray-100 hover:text-primary-500"
                 />
               </BaseTooltip>
             </div>
@@ -66,10 +66,10 @@
       <tbody>
         <tr 
           v-for="record in displayRows"
-          class="hover:bg-gray-50"
+          class="hover:bg-gray-50 dark:hover:bg-gray-800"
           :key="record[rowKey]"
           :class="[
-            currentPageSelectedRowKeys.includes(record[rowKey]) ? 'bg-primary-50' : '',
+            currentPageSelectedRowKeys.includes(record[rowKey]) ? 'bg-primary-50 dark:bg-gray-800' : '',
             rowClass ?? ''
           ]"
         >

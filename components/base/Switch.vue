@@ -2,7 +2,7 @@
     <div class="flex items-center">
         <div 
             class="flex items-center cursor-pointer hover:text-primary-500" 
-            :class="[showChecked ? 'text-primary-500' : 'text-gray-500']"
+            :class="[showChecked ? 'text-primary-500' : 'text-gray-500 dark:text-gray-100']"
             @click="handleClick"
         >
             <BaseIcon

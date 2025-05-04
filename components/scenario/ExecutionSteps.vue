@@ -6,14 +6,14 @@
             <div>Failed steps: {{ failedExecutions }}</div>
         </template>
         <div class="flex items-center cursor-pointer" @click="handleRowClick">
-            <BaseIcon icon="qls-icon-chart-stroke" class="text-xl text-gray-500" />
+            <BaseIcon icon="qls-icon-chart-stroke" class="text-xl text-gray-500 dark:text-gray-100" />
             <apexchart
                 :options="executionStepDonutChartOptions"
                 :series="executionStepDonutChartDataSeries"
                 :width="24"
                 :height="24"
             />
-            <span class="text-gray-500">
+            <span class="text-gray-500 dark:text-gray-100">
                 {{ successfulExecutions }}/{{ failedExecutions }}/{{ totalExecutions }}
             </span>
         </div>

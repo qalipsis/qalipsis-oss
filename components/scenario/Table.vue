@@ -28,7 +28,7 @@
         <BaseTooltip text="Configure">
             <BaseIcon 
               icon="qls-icon-setting"
-              class="text-2xl text-gray-600 hover:text-primary-500"
+              class="text-2xl text-gray-600 dark:text-gray-100 hover:text-primary-500"
             />
         </BaseTooltip>
       </div>

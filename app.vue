@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :class="{ 'dark': darkThemeEnabled }">
     <template v-if="canBeInitialized">
       <NuxtLayout>
         <NuxtPage />
@@ -8,7 +8,9 @@
     <template v-else>
       <PageLoader />
     </template>
-    <BaseToaster></BaseToaster>
+    <BaseToaster
+      :darkThemeEnabled="darkThemeEnabled"
+    ></BaseToaster>
   </div>
 </template>
 
@@ -17,6 +19,9 @@ const { fetchProfile, fetchPermissions } = useUserApi();
 
 const userStore = useUserStore();
 const toastStore = useToastStore();
+const themeStore = useThemeStore();
+
+const darkThemeEnabled = computed(() => themeStore.theme === 'dark');
 
 /**
  * A flag to indicate if the page can be rendered.

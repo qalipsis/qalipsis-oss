@@ -1,13 +1,13 @@
 <template>
     <template v-if="!isEditing">
         <div class="flex items-center">
-            <h1 class="font-medium text-2xl text-primary-950">{{ content }}</h1>
+            <h1 class="font-medium text-2xl dark:text-gray-100">{{ content }}</h1>
             <div 
                 v-if="editable" 
                 class="cursor-pointer px-1 pt-2"
                 @click="isEditing = true"
             >
-                <BaseIcon icon="qls-icon-edit" class="text-2xl text-gray-700 hover:text-primary-500"/>
+                <BaseIcon icon="qls-icon-edit" class="text-2xl text-gray-700 dark:text-gray-100 hover:text-primary-500"/>
             </div>
         </div>
     </template>
@@ -16,7 +16,7 @@
             <input 
                 type="text"
                 v-model="editingText"
-                class="border border-solid text-xl border-primary-400 rounded-md outline-none p-2"
+                class="border border-solid text-xl border-primary-400 bg-transparent rounded-md outline-none p-2"
                 @keydown.esc="handleEscKeyDown()"
                 @keydown.enter="handleEnterKeyDown()"
             >

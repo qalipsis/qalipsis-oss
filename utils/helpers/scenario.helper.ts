@@ -1,6 +1,5 @@
 import { format } from "date-fns";
 import {
-  ReportMessageSeverityConstant,
   StageExternalExecutionProfileConfiguration,
   type ExecutionProfileStage,
   type ReportMessage,
@@ -11,6 +10,31 @@ import {
   type Stage,
   type ZoneForm,
 } from "../types/scenario";
+import type { TagStyleClass } from "../types/common";
+
+const defaultTagClass: TagStyleClass = {
+  backgroundCssClass: "bg-gray-100 dark:bg-gray-700",
+  textCssClass: "text-gray-700 dark:text-gray-100",
+}
+
+const tagClass: { [key in ReportMessageSeverity]: TagStyleClass } = {
+  INFO: {
+    backgroundCssClass: "bg-purple-100 dark:bg-purple-600",
+    textCssClass: "text-purple-600 dark:text-purple-100",
+  },
+  WARN: {
+    backgroundCssClass: "bg-yellow-100 dark:bg-yellow-400",
+    textCssClass: "text-yellow-400 dark:text-yellow-100",
+  },
+  ERROR: {
+    backgroundCssClass: "bg-red-100 dark:bg-red-600",
+    textCssClass: "text-red-600 dark:text-red-100",
+  },
+  ABORT: {
+    backgroundCssClass: "bg-red-100 dark:bg-red-600",
+    textCssClass: "text-red-600 dark:text-red-100",
+  }
+}
 
 export class ScenarioHelper {
   static toScenarioConfigForm(campaignConfiguration: CampaignConfiguration): {
@@ -169,32 +193,12 @@ export class ScenarioHelper {
    * @returns A tag for displaying the severity on the table.
    */
   static toSeverityTag(severity: ReportMessageSeverity): Tag {
-    switch (severity) {
-      case ReportMessageSeverityConstant.INFO:
-        return {
-          text: severity,
-          backgroundCssClass: "bg-purple-100",
-          textCssClass: "text-purple-600",
-        };
-      case ReportMessageSeverityConstant.ERROR:
-      case ReportMessageSeverityConstant.ABORT:
-        return {
-          text: severity,
-          textCssClass: "text-red-600",
-          backgroundCssClass: "bg-red-100",
-        };
-      case ReportMessageSeverityConstant.WARN:
-        return {
-          text: severity,
-          textCssClass: "text-yellow-400",
-          backgroundCssClass: "bg-yellow-100",
-        };
-      default:
-        return {
-          text: severity,
-          textCssClass: "text-grey",
-          backgroundCssClass: "bg-gray-100",
-        };
+    return {
+      backgroundCssClass: tagClass[severity].backgroundCssClass 
+        ?? defaultTagClass.backgroundCssClass,
+      textCssClass: tagClass[severity].textCssClass 
+        ?? defaultTagClass.textCssClass,
+      text: severity
     }
   }
 

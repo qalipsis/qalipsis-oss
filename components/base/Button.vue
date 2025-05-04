@@ -35,11 +35,6 @@ const btnBaseClass = computed(() => props.btnStyle === "outlined" ?
     TailwindClassHelper.filledButtonBaseClass
 )
 
-const btnIconClass = computed(() => props.btnStyle === "outlined" ?
-    TailwindClassHelper.outlineButtonIconClass :
-    TailwindClassHelper.filledButtonIconClass
-)
-
 const btnTextClass = computed(() => props.btnStyle === "outlined" ?
     TailwindClassHelper.outlineButtonTextClass :
     TailwindClassHelper.filledButtonTextClass
