@@ -68,7 +68,7 @@ const renderCampaignStaticTooltip: (options: any) => any = ({
   });
 
   return `
-    <div class="px-4 py-2 min-w-36 rounded-lg text-gray-950 dark:bg-gray-900 dark:text-white font-light border-none">
+    <div class="px-4 py-2 min-w-36 rounded-md text-gray-950 dark:bg-gray-900 dark:text-white font-light border-none">
       <div class="w-full flex items-center pb-2 border-b border-solid border-gray-100 dark:border-gray-500">
          <span>${w.globals.labels[dataPointIndex]}</span>
       </div>
@@ -98,8 +98,8 @@ const renderCampaignDetailsChartTooltip: (options: any) => any = ({
         if (point?.x === dt) {
           seriesContent.push(
             `<div class="w-full flex items-center">
-              <div class="w-3 h-3 pr-2 rounded-full border-2 border-solid border-white" style="background-color:${series.color}"></div>
-              <div class="flex flex-grow justify-between items-center py-2  font-normal text-xs text-gray-500">
+              <div class="w-3 h-3 mr-2 rounded-full border-2 border-solid border-white" style="background-color:${series.color}"></div>
+              <div class="flex flex-grow justify-between items-center py-2  font-normal text-xs text-gray-200">
                 <div class="pr-1">
                   ${series.name}:
                 </div>
@@ -113,7 +113,7 @@ const renderCampaignDetailsChartTooltip: (options: any) => any = ({
       })
   );
 
-  return `<div class="p-4 min-w-72 rounded-xl bg-gray-900 text-white font-light">
+  return `<div class="p-4 min-w-72 rounded-md bg-gray-900 text-white font-light">
         <div class="w-full flex justify-between items-center pb-3 border-b border-solid border-gray-50">
           <div class="text-sm font-normal">${day}</div>
           <div class="text-sm font-normal">${time}</div>

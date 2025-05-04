@@ -35,6 +35,9 @@ export class ChartHelper {
       },
       title: {
         text: chartOptionData.isMinionsCountSeries ? "Minions count" : "",
+        style: {
+          cssClass: "fill-gray-800 dark:fill-gray-50",
+        },
       },
     };
   }

@@ -18,7 +18,7 @@
         <ul class="relative">
             <template v-for="menuItem in menuItems">
                 <div 
-                    class="absolute h-16 w-2 rounded-md bg-primary-500 z-10"
+                    class="absolute h-16 w-2 rounded-lg bg-primary-500 z-10"
                     :class="{
                         'invisible': activeMenuItemId !== menuItem.id,
                         'visible': activeMenuItemId === menuItem.id
@@ -61,7 +61,7 @@
                         <ul
                             v-if="menuItem.subMenuItems"
                             @mouseleave="hoveredMenuItemId = ''"
-                            class="absolute top-0 shadow-xl rounded-lg ml-1 bg-white z-10"
+                            class="absolute top-0 shadow-xl rounded-lg ml-1 bg-white dark:bg-gray-900 z-10"
                             :class="{
                                 'left-60': !collapsed,
                                 'left-20': collapsed,
@@ -72,9 +72,9 @@
                             <template v-for="subMenuItem in menuItem.subMenuItems">
                                 <BasePermission :permissions="subMenuItem.permissions">
                                     <li 
-                                        class="h-14 flex items-center justify-center cursor-pointer px-4 hover:text-primary-500 hover:bg-primary-50"
+                                        class="h-14 flex items-center justify-center cursor-pointer rounded-lg px-4 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-gray-800"
                                         :class="{
-                                            'bg-primary-50 text-primary-500': subMenuItem.id === activeSubMenuItemId                 
+                                            'bg-primary-50 text-primary-500 dark:bg-gray-800': subMenuItem.id === activeSubMenuItemId                 
                                         }"
                                         @click="handleSubMenuItemClick(menuItem.id, subMenuItem.id, subMenuItem.path)"
                                     >

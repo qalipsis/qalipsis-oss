@@ -18,7 +18,7 @@
                   v-for="selectedOption in selectedOptions"
                   :key="selectedOption[optionValueKey]"
                   :value="selectedOption[optionValueKey]"
-                  class="flex items-center px-2 py-1 rounded-lg text-sm bg-gray-100 mr-2 last:mr-0"
+                  class="flex items-center px-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 mr-2 last:mr-0"
                 >
                   <span class="pr-2">{{ selectedOption[optionLabelKey] }}</span>
                   <div @click="handleDeleteButtonClick(selectedOption)">
