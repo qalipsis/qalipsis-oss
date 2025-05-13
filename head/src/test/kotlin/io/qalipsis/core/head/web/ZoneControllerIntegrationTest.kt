@@ -33,7 +33,7 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.configuration.HeadConfiguration
+import io.qalipsis.core.head.zone.ZoneService
 import io.qalipsis.core.head.model.Zone
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
@@ -49,29 +49,29 @@ class ZoneControllerIntegrationTest {
     lateinit var httpClient: HttpClient
 
     @RelaxedMockK
-    private lateinit var headConfiguration: HeadConfiguration
+    private lateinit var zoneService: ZoneService
 
-    @MockBean(HeadConfiguration::class)
-    internal fun headConfiguration() = headConfiguration
+    @MockBean(ZoneService::class)
+    internal fun zoneService() = zoneService
 
     @Test
     fun `should list all the zones`() {
         // given
-        val zones = setOf(
+        val zones = listOf(
             Zone(
                 key = "fr",
                 title = "France",
                 description = "Western Europe country",
-                image = URL("http://images-from-france.fr/logo"),
+                imagePath = URL("http://images-from-france.fr/logo"),
             ),
             Zone(
                 key = "at",
                 title = "Austria",
                 description = "Central Europe country",
-                image = URL("http://images-from-austria.fr/logo"),
+                imagePath = URL("http://images-from-austria.fr/logo"),
             )
         )
-        coEvery { headConfiguration.cluster.zones } returns zones
+        coEvery { zoneService.list(any()) } returns zones
         val listRequest = HttpRequest.GET<Set<Zone>>("/")
 
         // when

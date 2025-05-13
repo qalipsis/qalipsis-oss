@@ -33,7 +33,6 @@ import io.qalipsis.core.head.campaign.ChannelNameFactory
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
-import io.qalipsis.core.head.model.Zone
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
@@ -69,7 +68,6 @@ internal class HandshakeManagerTest {
         every { headConfiguration.unicastChannelPrefix } returns "the-unicast-channel-prefix-"
         every { headConfiguration.heartbeatChannel } returns "the-heartbeat-channel"
         every { headConfiguration.heartbeatDelay } returns Duration.ofSeconds(123)
-        every { headConfiguration.cluster.zones } returns setOf(Zone("by", "belarus", "description"))
     }
 
     @JvmField

@@ -22,7 +22,6 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
-import io.micronaut.test.annotation.MockBean
 import io.mockk.coEvery
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
@@ -32,17 +31,18 @@ import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesMeter
-import io.qalipsis.core.head.configuration.HeadConfiguration
+import io.qalipsis.core.head.jdbc.entity.ZoneEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignsInstantsAndDuration
+import io.qalipsis.core.head.jdbc.repository.ZoneRepository
 import io.qalipsis.core.head.model.DataComponentType
-import io.qalipsis.core.head.model.Zone
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.math.BigDecimal
@@ -60,38 +60,36 @@ internal class ReportFileBuilderTest {
     private lateinit var timeSeriesDataQueryService: TimeSeriesDataQueryService
 
     @MockK
-    private lateinit var headConfiguration: HeadConfiguration
+    private lateinit var zoneRepository: ZoneRepository
 
     @MockK
     private lateinit var campaignRepository: CampaignRepository
 
-    @MockBean(HeadConfiguration::class)
-    internal fun headConfiguration() = headConfiguration
-
     @InjectMockKs
     private lateinit var reportFileBuilder: ReportFileBuilder
 
-    private val zones = setOf(
-        Zone(
-            "CAN",
-            "canada",
-            "This is US",
-            image = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
+    private val zones = flowOf(
+        ZoneEntity(
+            key = "CAN",
+            title = "canada",
+            description = "This is US",
+            imagePath = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
+
         ),
-        Zone(
-            "SA",
-            "southafrica",
-            "This is SA",
-            image = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
+        ZoneEntity(
+            key = "SA",
+            title = "southafrica",
+            description = "This is SA",
+            imagePath = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
         ),
-        Zone(
-            "GER",
-            "Frankfurt",
-            "This is frankfurt",
-            image = URL("https://imgc.artprintimages.com/img/print/lantern-press-germany-country-flag-letterpress_u-l-q1jqoq50.jpg?background=f3f3f3")
+        ZoneEntity(
+           key =  "GER",
+            title = "Frankfurt",
+            description = "This is frankfurt",
+            imagePath = URL("https://imgc.artprintimages.com/img/print/lantern-press-germany-country-flag-letterpress_u-l-q1jqoq50.jpg?background=f3f3f3")
         ),
-        Zone("DM", "Denmark", "This is Denmark"),
-        Zone("BAL", "Bali", "This is Bali")
+        ZoneEntity(key = "DM", title = "Denmark", description = "This is Denmark", imagePath = null),
+        ZoneEntity(key = "BAL", title = "Bali", description = "This is Bali", imagePath = null)
     )
 
     private val reportEntity = ReportEntity(
@@ -149,6 +147,10 @@ internal class ReportFileBuilderTest {
     @Test
     fun `should return a populated campaign report detail`() = testDispatcherProvider.runTest {
         //given
+        coEvery { zoneRepository.findZonesByTenant(any()) } returns listOf(
+            ZoneEntity(key = "FR", title = "France", description = "This is France", imagePath = null),
+            ZoneEntity(key = "EN", title = "England", description = "This is England", imagePath = null),
+        )
         val aggregationResult = mapOf(
             "data-series-1" to listOf
                 (
@@ -258,7 +260,7 @@ internal class ReportFileBuilderTest {
         )
         coEvery { timeSeriesDataQueryService.render(any(), any(), any()) } returns aggregationResult
         coEvery { timeSeriesDataQueryService.search(any(), any(), any()) } returns tableData
-        coEvery { headConfiguration.cluster.zones } returns zones
+        coEvery { zoneRepository.findAll() } returns zones
         coEvery { campaignRepository.findInstantsAndDuration(any(), any()) } returns campaignsInstantsAndDuration
 
         //when
