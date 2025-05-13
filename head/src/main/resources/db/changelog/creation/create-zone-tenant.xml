@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ QALIPSIS
+  ~ Copyright (C) 2025 AERIS IT Solutions GmbH
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ~
+  -->
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <changeSet id="22" author="Efrancisca">
+    <createSequence sequenceName="zone_tenant_seq" schemaName="qalipsis"/>
+    <createTable tableName="zone_tenant" schemaName="qalipsis">
+      <column name="zone_id" type="BIGINT" valueSequenceNext="zone_tenant_seq">
+        <constraints nullable="false"
+                     primaryKey="true"
+                     primaryKeyName="zone_tenant_pk"
+                     foreignKeyName="zone_tenant_zone_id_fk"
+                     referencedTableName="zone"
+                     referencedColumnNames="id" deleteCascade="true"/>
+      </column>
+      <column name="tenant_id" type="BIGINT" valueSequenceNext="zone_tenant_seq">
+        <constraints nullable="false"
+                     primaryKey="true"
+                     primaryKeyName="zone_tenant_pk"
+                     foreignKeyName="zone_tenant_tenant_id_fk"
+                     referencedTableName="tenant"
+                     referencedColumnNames="id" deleteCascade="true"/>
+      </column>
+    </createTable>
+  </changeSet>
+</databaseChangeLog>

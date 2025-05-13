@@ -47,7 +47,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Base64
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -117,7 +117,7 @@ internal class ReportTemplateFragmentTest {
                     "GER",
                     "Frankfurt",
                     "This is frankfurt",
-                    image = URL("https://imgc.artprintimages.com/img/print/lantern-press-germany-country-flag-letterpress_u-l-q1jqoq50.jpg?background=f3f3f3")
+                    imagePath = URL("https://imgc.artprintimages.com/img/print/lantern-press-germany-country-flag-letterpress_u-l-q1jqoq50.jpg?background=f3f3f3")
                 ),
                 Zone("DM", "Denmark", "This is Denmark"),
                 Zone("BAL", "Bali", "This is Bali")
@@ -200,13 +200,13 @@ internal class ReportTemplateFragmentTest {
                             "CAN",
                             "canada",
                             "This is US",
-                            image = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
+                            imagePath = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
                         ),
                         Zone(
                             "SA",
                             "southafrica",
                             "This is SA",
-                            image = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
+                            imagePath = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
                         ),
                     )
                 }
@@ -256,13 +256,13 @@ internal class ReportTemplateFragmentTest {
                         "CN",
                         "canada",
                         "This is US",
-                        image = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
+                        imagePath = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
                     ),
                     Zone(
                         "SA",
                         "southafrica",
                         "This is South",
-                        image = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
+                        imagePath = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
                     ),
                 )
             }
@@ -988,13 +988,13 @@ internal class ReportTemplateFragmentTest {
                         "CAN",
                         "canada",
                         "This is US",
-                        image = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
+                        imagePath = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
                     ),
                     Zone(
                         "SA",
                         "southafrica",
                         "This is SA",
-                        image = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
+                        imagePath = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
                     ),
                 )
             }
@@ -1392,13 +1392,13 @@ internal class ReportTemplateFragmentTest {
                         "CAN",
                         "canada",
                         "This is US",
-                        image = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
+                        imagePath = URL("https://a-z-animals.com/media/2022/12/canada-flag.jpg_s1024x1024wisk20cc9uxuIyIwh1CwOOdAJtjpf-aPClkQuwIJ4gqa_7QLt0.jpg")
                     ),
                     Zone(
                         "SA",
                         "southafrica",
                         "This is SA",
-                        image = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
+                        imagePath = URL("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqn7alntSsK69xJRsSehEaeRjoh5XweLF9uQ&usqp=CAU")
                     ),
                 )
             }

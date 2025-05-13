@@ -54,5 +54,9 @@ internal data class Zone(
     val description: String? = null,
 
     @field:Schema(description = "Image URL to display for the zone")
-    val image: URL? = null
+    val imagePath: URL? = null,
+
+    @field:Schema(description = "A boolean flag to specify if the zone is enabled for use or not")
+    val enabled: Boolean = true,
+
 )
