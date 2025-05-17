@@ -74,13 +74,6 @@ internal interface HeadConfiguration {
     interface ClusterConfiguration {
 
         /**
-         * Set of zones to use to execute the scenarios.
-         */
-        @get:NotNull
-        @get:Bindable(defaultValue = "")
-        val zones: Set<Zone>
-
-        /**
          * When the flag is set to true, the factories are started for a unique campaign and stopped
          * once it completes. The head should provide the convenient feedbacks to orchestrate them.
          */

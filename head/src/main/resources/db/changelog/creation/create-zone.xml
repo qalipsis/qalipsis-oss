@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ QALIPSIS
+  ~ Copyright (C) 2025 AERIS IT Solutions GmbH
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ~
+  -->
+
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+  <changeSet id="21" author="Efrancisca">
+    <createSequence sequenceName="zone_seq" schemaName="qalipsis"/>
+    <createTable tableName="zone" schemaName="qalipsis">
+      <column name="id" type="BIGINT" valueSequenceNext="zone_seq">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="zone_pk"/>
+      </column>
+      <column name="version" type="TIMESTAMP WITH TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="creation" type="TIMESTAMP WITH TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="key" type="varchar(20)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="unique_zone_key_idx"/>
+      </column>
+      <column name="title" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="description" type="varchar(80)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="image_path" type="varchar(80)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="enabled" type="BOOLEAN">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+</databaseChangeLog>

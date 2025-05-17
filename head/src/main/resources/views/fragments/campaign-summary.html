@@ -32,9 +32,9 @@
         <span class="float-left vertical-divider"></span>
         <div th:unless="${campaign.resolvedZones == null}" th:each="zone: ${campaign.resolvedZones}"
              class="float-left campaign-summary-top-third">
-      <span th:if="${zone.image != null}" class="zone float-left"
-            th:style="'background-image: url(' + ${zone.image}+ '); background-repeat: no-repeat, repeat; background-size: cover;'"></span>
-            <div th:unless="${zone.image != null}" class="zone float-left">
+      <span th:if="${zone.imagePath != null}" class="zone float-left"
+            th:style="'background-image: url(' + ${zone.imagePath}+ '); background-repeat: no-repeat, repeat; background-size: cover;'"></span>
+            <div th:unless="${zone.imagePath != null}" class="zone float-left">
                 <span class="zone-content" th:text="${zone.key}">KEY</span>
             </div>
             <div class="float-left">

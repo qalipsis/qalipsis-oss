@@ -24,6 +24,7 @@ import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isEqualTo
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
@@ -34,7 +35,7 @@ import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
-import io.qalipsis.core.head.configuration.HeadConfiguration
+import io.qalipsis.core.head.zone.ZoneService
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.Zone
@@ -62,16 +63,16 @@ internal class ValidationCampaignHookTest {
     private lateinit var campaignConstraints: DefaultCampaignConfiguration.Validation
 
     @RelaxedMockK
-    private lateinit var headConfiguration: HeadConfiguration
+    private lateinit var zoneService: ZoneService
 
     @InjectMockKs
     private lateinit var campaignHook: ValidationCampaignHook
 
     @BeforeEach
     internal fun setup() {
-        every { headConfiguration.cluster.zones } returns setOf(
-            Zone(key = "FR", title = "France", description = "description"),
-            Zone(key = "EN", title = "England", description = "description")
+        coEvery { zoneService.list(any()) } returns listOf(
+            Zone(key = "FR", title = "France", description = "description", imagePath = null),
+            Zone(key = "EN", title = "England", description = "description", imagePath = null)
         )
         every { campaignConstraints.maxMinionsCount } returns 10_000
         every { campaignConstraints.maxExecutionDuration } returns Duration.ofHours(1)
@@ -125,6 +126,10 @@ internal class ValidationCampaignHookTest {
     @Test
     internal fun `should accept a campaign with all fields`() = testDispatcherProvider.runTest {
         // given
+        coEvery { zoneService.list(any()) } returns listOf(
+            Zone(key = "FR", title = "France", description = "This is France", imagePath = null),
+            Zone(key = "EN", title = "England", description = "This is England", imagePath = null),
+        )
         val configuration = CampaignConfiguration(
             name = "my-campaign",
             speedFactor = 1.43,
@@ -553,6 +558,10 @@ internal class ValidationCampaignHookTest {
     internal fun `should deny a campaign when the requested zones distribution is not 100`() =
         testDispatcherProvider.runTest {
             // given
+            coEvery { zoneService.list(any()) } returns listOf(
+                Zone(key = "FR", title = "France", description = "This is France", imagePath = null),
+                Zone(key = "EN", title = "England", description = "This is England", imagePath = null),
+            )
             val configuration = CampaignConfiguration(
                 name = "my-campaign",
                 speedFactor = 1.43,
@@ -589,6 +598,10 @@ internal class ValidationCampaignHookTest {
     internal fun `should deny a campaign when fields are all incorrect`() = testDispatcherProvider.runTest {
         // given
         every { campaignConstraints.stage.minMinionsCount } returns 5
+        coEvery { zoneService.list(any()) } returns listOf(
+            Zone(key = "FR", title = "France", description = "This is France", imagePath = null),
+            Zone(key = "EN", title = "England", description = "This is England", imagePath = null),
+        )
         val configuration = CampaignConfiguration(
             name = "my-campaign",
             speedFactor = 1.43,

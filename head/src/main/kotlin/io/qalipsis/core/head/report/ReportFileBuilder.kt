@@ -22,11 +22,11 @@ package io.qalipsis.core.head.report
 import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesRecord
-import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignsInstantsAndDuration
+import io.qalipsis.core.head.jdbc.repository.ZoneRepository
 import io.qalipsis.core.head.model.DataComponentType
 import io.qalipsis.core.head.model.Zone
 import jakarta.inject.Singleton
@@ -39,7 +39,7 @@ import jakarta.inject.Singleton
 @Singleton
 internal class ReportFileBuilder(
     private val timeSeriesDataQueryService: TimeSeriesDataQueryService,
-    private val headConfiguration: HeadConfiguration,
+    private val zoneRepository: ZoneRepository,
     private val campaignRepository: CampaignRepository,
 ) {
     /**
@@ -57,7 +57,7 @@ internal class ReportFileBuilder(
         campaignData.forEach { campaign ->
             val zones = mutableSetOf<Zone>()
             campaign.resolvedZones =
-                headConfiguration.cluster.zones.filter { zone -> zone.key in campaign.zones }.toSet()
+                zoneRepository.findZonesByTenant(tenant).filter { zone -> zone.key in campaign.zones }.map { it.toModel() }.toSet()
             campaign.apply { resolvedZones = zones }
         }
         val tableData = mutableListOf<Collection<TimeSeriesRecord>>()

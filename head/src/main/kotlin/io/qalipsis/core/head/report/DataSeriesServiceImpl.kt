@@ -52,7 +52,7 @@ import kotlinx.coroutines.launch
 import io.qalipsis.api.query.Page as QalipsisPage
 
 /**
- * Default implementation of [DataSeriesService] interface
+ * Default implementation of [DataSeriesService] interface.
  *
  * @author Palina Bril
  */

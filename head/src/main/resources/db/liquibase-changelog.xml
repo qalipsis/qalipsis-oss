@@ -43,4 +43,6 @@
     <include file="changelog/creation/create-data-component-data-series.xml" relativeToChangelogFile="true"/>
     <include file="changelog/creation/create-report-task.xml" relativeToChangelogFile="true"/>
     <include file="changelog/creation/create-report-file.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/creation/create-zone.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/creation/create-zone-tenant.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

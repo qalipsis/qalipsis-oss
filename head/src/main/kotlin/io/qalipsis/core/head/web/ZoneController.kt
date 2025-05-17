@@ -27,12 +27,16 @@ import io.micronaut.http.annotation.Get
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.rules.SecurityRule
 import io.micronaut.validation.Validated
+import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.configuration.HeadConfiguration
+import io.qalipsis.core.head.zone.ZoneService
 import io.qalipsis.core.head.model.Zone
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import javax.validation.constraints.NotBlank
 
 
 /**
@@ -44,7 +48,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 @Version("1.0")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Controller("/zones")
-internal class ZoneController(val headConfiguration: HeadConfiguration) {
+internal class ZoneController(private val zoneService: ZoneService) {
 
     @Get
     @Operation(
@@ -61,7 +65,14 @@ internal class ZoneController(val headConfiguration: HeadConfiguration) {
     )
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Timed("zones-list")
-    suspend fun listZones(): List<Zone> {
-        return headConfiguration.cluster.zones.toList()
+    suspend fun listZones(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+    ): Collection<Zone> {
+        return zoneService.list(tenant)
     }
 }

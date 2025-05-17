@@ -21,9 +21,6 @@ package io.qalipsis.core.head.configuration
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.containsAll
-import assertk.assertions.hasSize
-import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import assertk.assertions.prop
@@ -31,11 +28,9 @@ import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.model.Zone
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.net.URL
 import java.time.Duration
 
 internal class HeadConfigurationIntegrationTest {
@@ -56,7 +51,6 @@ internal class HeadConfigurationIntegrationTest {
                 prop(HeadConfiguration::unicastChannelPrefix).isEqualTo("unicast-")
                 prop(HeadConfiguration::heartbeatChannel).isEqualTo("heartbeat")
                 prop(HeadConfiguration::heartbeatDelay).isEqualTo(Duration.ofSeconds(30))
-                prop(HeadConfiguration::cluster).prop(HeadConfiguration.ClusterConfiguration::zones).isEmpty()
             }
         }
     }
@@ -94,23 +88,6 @@ internal class HeadConfigurationIntegrationTest {
                 prop(HeadConfiguration::heartbeatDelay).isEqualTo(Duration.ofMinutes(3))
                 prop(HeadConfiguration::cluster).all {
                     prop(HeadConfiguration.ClusterConfiguration::onDemandFactories).isTrue()
-                    prop(HeadConfiguration.ClusterConfiguration::zones).all {
-                        hasSize(2)
-                        containsAll(
-                            Zone(
-                                key = "fr",
-                                title = "France",
-                                description = "Western Europe country",
-                                image = URL("http://images-from-france.fr/logo"),
-                            ),
-                            Zone(
-                                key = "at",
-                                title = "Austria",
-                                description = "Central Europe country",
-                                image = URL("http://images-from-austria.fr/logo"),
-                            )
-                        )
-                    }
                 }
             }
         }

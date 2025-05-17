@@ -22,7 +22,7 @@ package io.qalipsis.core.head.hook
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
-import io.qalipsis.core.head.configuration.HeadConfiguration
+import io.qalipsis.core.head.zone.ZoneService
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.web.handler.BulkIllegalArgumentException
 import jakarta.inject.Singleton
@@ -35,13 +35,13 @@ import jakarta.inject.Singleton
 @Singleton
 internal class ValidationCampaignHook(
     private val campaignConstraints: DefaultCampaignConfiguration.Validation,
-    private val headConfiguration: HeadConfiguration,
+    private val zoneService: ZoneService,
 ) : CampaignHook {
 
     override suspend fun preCreate(campaignConfiguration: CampaignConfiguration, runningCampaign: RunningCampaign) {
         val constraintsViolations = mutableListOf<String>()
         validateCampaign(campaignConfiguration, runningCampaign, constraintsViolations)
-        runningCampaign.scenarios.values.forEach { validateZones(it.zones, constraintsViolations) }
+        runningCampaign.scenarios.values.forEach { validateZones(runningCampaign.tenant, it.zones, constraintsViolations) }
         runningCampaign.scenarios.values.map { it.executionProfileConfiguration }
             .filterIsInstance<StageExecutionProfileConfiguration>()
             .forEach { validateStage(it, constraintsViolations) }
@@ -98,14 +98,13 @@ internal class ValidationCampaignHook(
         }
     }
 
-    private fun validateZones(zones: Map<String, Int>, constraintsViolations: MutableCollection<String>) {
-
-        /**
-         * Keys of the zones supported by the cluster.
-         */
-        val allowedZones = headConfiguration.cluster.zones.map { it.key }.toSet()
+    private suspend fun validateZones(tenant: String, zones: Map<String, Int>, constraintsViolations: MutableCollection<String>) {
 
         if (zones.isNotEmpty()) {
+            /**
+             * Keys of the zones supported by the cluster.
+             */
+            val allowedZones = zoneService.list(tenant).map { it.key }.toSet()
             if (!allowedZones.containsAll(zones.keys)) {
                 val unknownZones = zones.keys - allowedZones
                 constraintsViolations += "The requested zones ${unknownZones.joinToString()} are not known"
