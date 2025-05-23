@@ -29,6 +29,7 @@ import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.CampaignMeterRegistry
+import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.core.annotations.LogInput
@@ -73,10 +74,10 @@ internal class MinionsKeeperImpl(
     private val dagIdsBySingletonMinionId = ConcurrentHashMap<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>()
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val idleMinionsGauges = ConcurrentHashMap<ScenarioName, Double>()
+    private val idleMinionsGauges = ConcurrentHashMap<ScenarioName, Gauge>()
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    private val runningMinionsGauges = ConcurrentHashMap<ScenarioName, Double>()
+    private val runningMinionsGauges = ConcurrentHashMap<ScenarioName, Gauge>()
 
     override suspend fun close(campaign: Campaign) {
         log.debug { "Not completed minions: $minions" }
@@ -125,13 +126,13 @@ internal class MinionsKeeperImpl(
 
             if (rootDag != null) {
                 idleMinionsGauges.computeIfAbsent(minion.scenarioName) { scenario ->
-                    return@computeIfAbsent meterRegistry.gauge(
+                    meterRegistry.gauge(
                             scenarioName = scenario,
                             stepName = "",
                             name = "idle-minions",
                             tags = mapOf("scenario" to scenario),
-                        ).increment()
-                }
+                    )
+                }.increment()
 
                 rootDagsOfMinions[minionId] = rootDag.name
                 eventsLogger.debug(
@@ -189,16 +190,16 @@ internal class MinionsKeeperImpl(
                     stepName = "",
                     name = "idle-minions",
                     tags = mapOf("scenario" to scenario),
-                ).decrement(minionsToStart.size.toDouble())
-            }
+                )
+            }.decrement(minionsToStart.size.toDouble())
             runningMinionsGauges.computeIfAbsent(refMinion.scenarioName) { scenario ->
                 meterRegistry.gauge(
                     scenarioName = scenario,
                     stepName = "",
                     name = "running-minions",
                     tags = mapOf("scenario" to scenario),
-                ).increment(minionsToStart.size.toDouble())
-            }
+                )
+            }.increment(minionsToStart.size.toDouble())
         }
     }
 

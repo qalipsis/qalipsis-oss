@@ -23,6 +23,7 @@ import assertk.assertThat
 import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isLessThan
 import assertk.assertions.isTrue
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
@@ -101,7 +102,7 @@ internal class HandshakeBlockerTest {
 
     @Test
     @Timeout(5)
-    internal fun `should block forever when a handshake response occurs`() = testDispatcherProvider.run {
+    internal fun `should not block forever when a handshake response was received`() = testDispatcherProvider.run {
         // given
         every { handshakeConfiguration.timeout } returns Duration.ofMillis(100)
         val blocker = HandshakeBlocker(handshakeConfiguration, this)
@@ -112,7 +113,7 @@ internal class HandshakeBlockerTest {
         val duration = coMeasureTime { withTimeout(400) { blocker.join() } }
 
         // then
-        assertThat(duration).isBetween(Duration.ofMillis(350), Duration.ofMillis(450))
+        assertThat(duration).isLessThan(Duration.ofMillis(300))
     }
 
     @Test
@@ -132,12 +133,11 @@ internal class HandshakeBlockerTest {
 
     @Test
     @Timeout(5)
-    internal fun `release when a FactoryShutdownDirective occurs`() = testDispatcherProvider.run {
+    internal fun `should release when a FactoryShutdownDirective occurs`() = testDispatcherProvider.run {
         // given
-        every { handshakeConfiguration.timeout } returns Duration.ofMillis(100)
+        every { handshakeConfiguration.timeout } returns Duration.ofMillis(1000)
         val blocker = HandshakeBlocker(handshakeConfiguration, this)
         blocker.init()
-        blocker.notifySuccessfulRegistration()
 
         // when
         launch {

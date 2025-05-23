@@ -164,6 +164,7 @@ internal class CampaignAutoStarter(
 
     @LogInput
     suspend fun completeCampaign(directive: CompleteCampaignDirective) {
+        // TODO Use a CampaignHook instead of forcing that call in the DisabledState.
         if (directive.isSuccessful) {
             log.info { "The campaign ${directive.campaignKey} was completed: ${directive.message?.takeIf { it.isNotBlank() } ?: "<no detail>"}" }
         } else {

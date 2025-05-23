@@ -120,7 +120,7 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                 key("my-step-1_failure_0").isDataClassEqualTo(
                                     ReportMessage(
                                         "my-step-1", "my-step-1_failure_0", ReportMessageSeverity.ERROR,
-                                        "Count of errors this-is-an-error: 22 (100.0%)"
+                                        "Count of errors this-is-an-error: 22 (100.0% of all failures)"
                                     )
                                 )
                                 key("message-1").isDataClassEqualTo(

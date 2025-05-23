@@ -40,7 +40,7 @@ import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphRepository
-import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphSelectorRepository
+import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphTagRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.PostgresqlTemplateTest
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
@@ -68,7 +68,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     private lateinit var repository: DirectedAcyclicGraphRepository
 
     @Inject
-    private lateinit var selectorRepository: DirectedAcyclicGraphSelectorRepository
+    private lateinit var selectorRepository: DirectedAcyclicGraphTagRepository
 
     @BeforeAll
     internal fun setUpAll(
@@ -100,7 +100,7 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
             dag = DirectedAcyclicGraphEntity(
                 scenarioId = scenario.id,
                 name = "dag-1",
-                isRoot = false,
+                root = false,
                 singleton = false,
                 underLoad = true,
                 numberOfSteps = 21,

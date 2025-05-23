@@ -16,32 +16,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package io.qalipsis.core.serialization
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isEqualToWithGivenProperties
-import io.micronaut.context.annotation.Property
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
-import jakarta.inject.Inject
+import io.qalipsis.core.handshake.HandshakeRequest
 import org.junit.jupiter.api.Test
 
-@MicronautTest
-@Property(name = "streaming.serialization", value = "json")
-internal class JsonRecordDistributionSerializerIntegrationTest {
+internal class JsonRecordDistributionSerializerTest {
 
-    @Inject
-    lateinit var serializer: JsonRecordDistributionSerializer
+    private val serializer = JsonRecordDistributionSerializer()
 
     @Test
     fun `should serialize record`() {
         // when
         val serializedRecord =
-            """{"value":"{\"campaignKey\":\"test-tenant-1:cm7eyk68z00040p71uucrxv87\",\"status\":\"FAILED\",\"nodeId\":\"test-tenant-1:cm7eyk68z00040p71uucrxv87_my-new-scenario_default_1\",\"tenant\":\"test-tenant-1\",\"error\":\"A factory could not be started successfully\"}","type":"io.qalipsis.core.feedbacks.FactoryAssignmentFeedback","serializer":"json-debug"}"""
+            """{"value":"{\"campaignKey\":\"test-tenant-1:cm7eyk68z00040p71uucrxv87\",\"status\":\"FAILED\",\"nodeId\":\"test-tenant-1:cm7eyk68z00040p71uucrxv87_my-new-scenario_default_1\",\"tenant\":\"test-tenant-1\",\"error\":\"A factory could not be started successfully\"}","type":"io.qalipsis.core.feedbacks.FactoryAssignmentFeedback","metadata":{},"serializer":"json-debug"}"""
 
         val serialized = serializer.serialize(
             FactoryAssignmentFeedback(
@@ -78,6 +72,21 @@ internal class JsonRecordDistributionSerializerIntegrationTest {
                 it.nodeId = "test-tenant-1:cm7eyk68z00040p71uucrxv87_my-new-scenario_default_1"
             }
         )
+
+    }
+
+    @Test
+    fun `should deserialize a handshake request without tags on dags`() {
+        // given
+        val serializedRecord = """
+            {
+                "value": "{\"nodeId\":\"test-tenant-1:cm9h7r2n0000k0o520spcg5iz_my-new-scenario_default_1\",\"tags\":{\"source\":\"qalipsis.com\"},\"replyTo\":\"test-tenant-1:handshake-response\",\"scenarios\":[{\"name\":\"my-new-scenario\",\"description\":\"It does something extraordinary\",\"version\":\"0.1\",\"builtAt\":1744297487.679743000,\"minionsCount\":100,\"directedAcyclicGraphs\":[{\"name\":\"dag-1\",\"isSingleton\":false,\"isRoot\":true,\"isUnderLoad\":true,\"numberOfSteps\":5}],\"executionProfileConfiguration\":{\"execution-profile\":\"DefaultExecutionProfileConfiguration\"}},{\"name\":\"my-other-scenario\",\"description\":\"It also does something extraordinary\",\"version\":\"0.1\",\"builtAt\":1744297487.694055000,\"minionsCount\":100,\"directedAcyclicGraphs\":[{\"name\":\"dag-1\",\"isSingleton\":false,\"isRoot\":true,\"isUnderLoad\":true,\"numberOfSteps\":5}],\"executionProfileConfiguration\":{\"execution-profile\":\"DefaultExecutionProfileConfiguration\"}}],\"tenant\":\"test-tenant-1\"}",
+                "type": "io.qalipsis.core.handshake.HandshakeRequest",
+                "serializer": "json-debug"
+            }
+        """.trimIndent().encodeToByteArray()
+
+        val result = serializer.deserialize<HandshakeRequest>(serializedRecord)
 
     }
 }
