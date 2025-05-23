@@ -1,8 +1,5 @@
 -- Returns the channels to use to transport the step context to a remote factory.
 
--- Example of result:
--- TODO
-
 -- The script expects the following keys:
 -- 1. The prefix for the keys of the hash storing the assigned DAGs of a minion
 

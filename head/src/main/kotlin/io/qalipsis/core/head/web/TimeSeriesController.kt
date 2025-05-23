@@ -262,9 +262,9 @@ internal class TimeSeriesController(
         @Parameter(
             description = "Size of the time-buckets to perform the aggregations",
             required = false,
-            `in` = ParameterIn.QUERY
+            `in` = ParameterIn.QUERY,
         )
-        @Nullable @PositiveDuration @QueryValue("timeframe", defaultValue = "PT24H") timeframe: Duration
+        @PositiveDuration @QueryValue("timeframe", defaultValue = "PT24H") timeframe: Duration
     ): List<CampaignSummaryResult> {
         require(until == null || from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
         return widgetService.aggregateCampaignResult(tenant, from, until, timeOffset, timeframe)

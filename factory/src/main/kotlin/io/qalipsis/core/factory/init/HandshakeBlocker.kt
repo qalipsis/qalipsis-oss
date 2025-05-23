@@ -62,6 +62,8 @@ internal class HandshakeBlocker(
 
     private var running = true
 
+    private var registrationFailed = false
+
     override fun getStartupOrder() = Ordered.HIGHEST_PRECEDENCE
 
     override fun getOrder() = 0
@@ -71,6 +73,7 @@ internal class HandshakeBlocker(
             kotlin.runCatching {
                 delay(handshakeConfiguration.timeout.toMillis())
                 log.debug { "Releasing the handshake blocker, because no handshake response was received" }
+                registrationFailed = true
                 registeredLatch.release()
             }
         }
@@ -79,7 +82,8 @@ internal class HandshakeBlocker(
 
     @LogInput
     fun notifySuccessfulRegistration() {
-        timeoutJob.cancel()
+        log.debug { "Releasing the handshake blocker, after a successful registration" }
+        cancel()
     }
 
     @LogInput
@@ -95,7 +99,7 @@ internal class HandshakeBlocker(
 
     override suspend fun await(): Optional<Int> {
         // Returns the code 101 when the registration could not be completed.
-        return if (running && !registeredLatch.isLocked) {
+        return if (running && registrationFailed) {
             log.error { "The factory was not successfully registered to a head" }
             Optional.of(101)
         } else {

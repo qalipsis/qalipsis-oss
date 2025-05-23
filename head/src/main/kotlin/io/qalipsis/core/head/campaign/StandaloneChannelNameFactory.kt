@@ -22,7 +22,6 @@ package io.qalipsis.core.head.campaign
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.handshake.HandshakeRequest
 import jakarta.inject.Singleton
 
 @Singleton
@@ -37,7 +36,7 @@ internal class StandaloneChannelNameFactory : ChannelNameFactory {
         return FEEDBACK_CONTEXTS_CHANNEL
     }
 
-    override suspend fun getUnicastChannelName(handshakeRequest: HandshakeRequest): String {
+    override suspend fun getUnicastChannelName(tenant: String, nodeId: String): String {
         return STANDALONE_FACTORY_NAME
     }
 

@@ -56,17 +56,11 @@ internal class ClusterDeploymentIntegrationTest : AbstractDeploymentIntegrationT
             "-c", "report.export.console.enabled=false",
             "-c", "report.export.junit.enabled=false",
             "-c", "report.export.junit.folder=build/test-results/standalone-deployment",
-            //"-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            //"-c", "logging.level.io.qalipsis.core.head.campaign.AbstractCampaignExecutor=TRACE",
-            //"-c", "logging.level.io.qalipsis.core.head.redis.RedisHeadChannel=TRACE",
         )
         val factoryConfig = arrayOf(
             "factory",
             "-s", "deployment-test",
             "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
-            //"-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
-            //"-c", "logging.level.io.qalipsis.core.factory.orchestration.directives.listeners=TRACE",
-            //"-c", "logging.level.io.qalipsis.core.factory.redis.RedisFactoryChannel=TRACE"
         )
 
         log.info { "Starting the head..." }

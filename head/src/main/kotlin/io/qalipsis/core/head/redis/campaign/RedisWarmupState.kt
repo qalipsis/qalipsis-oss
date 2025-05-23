@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
@@ -40,6 +41,7 @@ internal class RedisWarmupState(
 ) : WarmupState(campaign) {
 
     override suspend fun doInit(): List<Directive> {
+        log.debug { "Initializing the status ${this::class.simpleName} for the campaign ${campaign.key}" }
         operations.setState(campaign.tenant, campaignKey, CampaignRedisState.WARMUP_STATE)
         operations.prepareAssignmentsForFeedbackExpectations(campaign)
         return super.doInit().also {
@@ -92,5 +94,9 @@ internal class RedisWarmupState(
         return abort(campaign) {
             RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
         }
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

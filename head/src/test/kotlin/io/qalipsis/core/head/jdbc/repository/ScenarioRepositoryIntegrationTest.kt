@@ -232,7 +232,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     DirectedAcyclicGraphEntity(
                         scenarioId = scenario2.id,
                         name = "dag-A",
-                        isRoot = true,
+                        root = true,
                         singleton = false,
                         underLoad = true,
                         numberOfSteps = 13
@@ -245,7 +245,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     DirectedAcyclicGraphEntity(
                         scenarioId = scenario3.id,
                         name = "dag-1",
-                        isRoot = true,
+                        root = true,
                         singleton = false,
                         underLoad = true,
                         numberOfSteps = 13
@@ -253,7 +253,7 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
                     DirectedAcyclicGraphEntity(
                         scenarioId = scenario3.id,
                         name = "dag-2",
-                        isRoot = true,
+                        root = true,
                         singleton = false,
                         underLoad = true,
                         numberOfSteps = 13

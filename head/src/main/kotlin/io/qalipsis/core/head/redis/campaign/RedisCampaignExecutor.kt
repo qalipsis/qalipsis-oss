@@ -39,7 +39,6 @@ import io.qalipsis.core.head.campaign.states.AbstractCampaignExecutionState
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.HeadChannel
-import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.lock.LockProvider
@@ -65,7 +64,6 @@ internal class RedisCampaignExecutor(
     factoryService: FactoryService,
     campaignService: CampaignService,
     campaignReportStateKeeper: CampaignReportStateKeeper,
-    headConfiguration: HeadConfiguration,
     campaignConstraintsProvider: CampaignConstraintsProvider,
     campaignHooks: Collection<CampaignHook>,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
@@ -78,7 +76,6 @@ internal class RedisCampaignExecutor(
     factoryService,
     campaignService,
     campaignReportStateKeeper,
-    headConfiguration,
     coroutineScope,
     campaignExecutionContext,
     campaignConstraintsProvider,
@@ -88,7 +85,7 @@ internal class RedisCampaignExecutor(
 ) {
 
     @LogInputAndOutput
-    override suspend fun create(
+    override suspend fun createInitialState(
         campaign: RunningCampaign,
         factories: Collection<Factory>,
         scenarios: List<ScenarioSummary>
