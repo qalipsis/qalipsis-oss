@@ -41,6 +41,7 @@ import jakarta.inject.Singleton
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 
 /**
  * Default implementation of [MeterRegistry] that stores the [Meter]s into memory.
@@ -58,12 +59,19 @@ internal class InMemoryCumulativeMeterRegistry(
     @KTestable
     private val meters = ConcurrentHashMap<Meter.Id, Meter<*>>()
 
+    /**
+     * Cache to store global meters and prevent duplication.
+     */
+    @KTestable
+    private val globalMeters = ConcurrentHashMap<Meter.Id, Meter<*>>()
+
     private var snapshotsConverter: (Collection<MeterSnapshot>) -> Collection<MeterSnapshot> = NO_OP_SNAPSHOTS_CONVERTER
 
     private var meterConverter: MeterConverter = NO_OP_SCENARIO_METER_CONVERTER
 
     override suspend fun init(campaign: Campaign) {
         meters.clear()
+        globalMeters.clear()
         super.init(campaign)
         if (campaign.scenarios.size == 1) {
             // When there is a unique scenario running in the campaign, we let the meters being created normally.
@@ -75,37 +83,45 @@ internal class InMemoryCumulativeMeterRegistry(
             // scenario tag to create a campaign-level meter. Both are encapsulated into a composite meter and updated
             // simultaneously.
             snapshotsConverter = NO_OP_SNAPSHOTS_CONVERTER
-            meterConverter = CompositeDecorator(this)
+            meterConverter = CompositeDecorator(meterReporter, globalMeters)
         }
     }
 
     override fun counter(meterId: Meter.Id): Counter {
-        return meters.computeIfAbsent(meterId) {
-            meterConverter.decorate(InMemoryCumulativeCounter(meterId, meterReporter))
+        return globalMeters.getOrElse(meterId) {
+            meters.computeIfAbsent(meterId) {
+                meterConverter.decorate(InMemoryCumulativeCounter(meterId, meterReporter))
+            }
         } as Counter
     }
 
     override fun timer(meterId: Meter.Id, percentiles: Set<Double>): Timer {
-        return meters.computeIfAbsent(meterId) {
-            meterConverter.decorate(InMemoryCumulativeTimer(meterId, meterReporter, percentiles = percentiles))
+        return globalMeters.getOrElse(meterId) {
+            meters.computeIfAbsent(meterId) {
+                meterConverter.decorate(InMemoryCumulativeTimer(meterId, meterReporter, percentiles = percentiles))
+            }
         } as Timer
     }
 
     override fun gauge(meterId: Meter.Id): Gauge {
-        return meters.computeIfAbsent(meterId) {
-            meterConverter.decorate(InMemoryGauge(meterId, meterReporter))
+        return globalMeters.getOrElse(meterId) {
+            meters.computeIfAbsent(meterId) {
+                meterConverter.decorate(InMemoryGauge(meterId, meterReporter))
+            }
         } as Gauge
     }
 
     override fun summary(meterId: Meter.Id, percentiles: Set<Double>): DistributionSummary {
-        return meters.computeIfAbsent(meterId) {
-            meterConverter.decorate(
-                InMemoryCumulativeDistributionSummary(
-                    id = meterId,
-                    meterReporter = meterReporter,
-                    percentiles = percentiles
+        return globalMeters.getOrElse(meterId) {
+            meters.computeIfAbsent(meterId) {
+                meterConverter.decorate(
+                    InMemoryCumulativeDistributionSummary(
+                        id = meterId,
+                        meterReporter = meterReporter,
+                        percentiles = percentiles
+                    )
                 )
-            )
+            }
         } as DistributionSummary
     }
 
@@ -114,26 +130,30 @@ internal class InMemoryCumulativeMeterRegistry(
     }
 
     override fun rate(meterId: Meter.Id): Rate {
-        return meters.computeIfAbsent(meterId) {
-            meterConverter.decorate(
-                InMemoryCumulativeRate(
-                    id = meterId,
-                    meterReporter = meterReporter
+        return globalMeters.getOrElse(meterId) {
+            meters.computeIfAbsent(meterId) {
+                meterConverter.decorate(
+                    InMemoryCumulativeRate(
+                        id = meterId,
+                        meterReporter = meterReporter
+                    )
                 )
-            )
+            }
         } as Rate
     }
 
     override fun throughput(meterId: Meter.Id, unit: ChronoUnit, percentiles: Set<Double>): Throughput {
-        return meters.computeIfAbsent(meterId) {
-            meterConverter.decorate(
-                InMemoryCumulativeThroughput(
-                    id = meterId,
-                    meterReporter = meterReporter,
-                    unit = unit,
-                    percentiles = percentiles
+        return globalMeters.getOrElse(meterId) {
+            meters.computeIfAbsent(meterId) {
+                meterConverter.decorate(
+                    InMemoryCumulativeThroughput(
+                        id = meterId,
+                        meterReporter = meterReporter,
+                        unit = unit,
+                        percentiles = percentiles
+                    )
                 )
-            )
+            }
         } as Throughput
     }
 
@@ -143,6 +163,7 @@ internal class InMemoryCumulativeMeterRegistry(
 
     override suspend fun close(campaign: Campaign) {
         meters.clear()
+        globalMeters.clear()
         snapshotsConverter = NO_OP_SNAPSHOTS_CONVERTER
         meterConverter = NO_OP_SCENARIO_METER_CONVERTER
         super.close(campaign)
@@ -154,7 +175,11 @@ internal class InMemoryCumulativeMeterRegistry(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private class CompositeDecorator(private val meterRegistry: MeterRegistry) : MeterConverter {
+    private class CompositeDecorator(
+        val meterReporter: MeterReporter,
+        val globalMeterCache: ConcurrentMap<Meter.Id, Meter<*>>
+    ) :
+        MeterConverter {
 
         override fun <T : Meter<*>> decorate(meter: T): T {
             return if ("scenario" in meter.id.tags) {
@@ -162,31 +187,82 @@ internal class InMemoryCumulativeMeterRegistry(
                 val globalMeterId = meter.id.copy(tags = globalTags)
 
                 when (meter) {
-                    is Gauge -> CompositeGauge(scenarioMeter = meter, globalMeter = meterRegistry.gauge(globalMeterId))
-                    is Timer -> CompositeTimer(
-                        scenarioMeter = meter,
-                        globalMeter = meterRegistry.timer(globalMeterId, meter.percentiles.toSet())
-                    )
+                    is Gauge -> {
+                        val globalMeter = globalMeterCache.computeIfAbsent(globalMeterId) {
+                            InMemoryGauge(
+                                globalMeterId,
+                                meterReporter
+                            )
+                        }
+                        CompositeGauge(scenarioMeter = meter, globalMeter = globalMeter as Gauge)
+                    }
 
-                    is DistributionSummary -> CompositeDistributionSummary(
-                        scenarioMeter = meter,
-                        globalMeter = meterRegistry.summary(globalMeterId, meter.percentiles.toSet())
-                    )
+                    is Timer -> {
+                        val globalMeter = globalMeterCache.computeIfAbsent(globalMeterId) {
+                            InMemoryCumulativeTimer(
+                                globalMeterId,
+                                meterReporter,
+                                meter.percentiles.toSet()
+                            )
+                        }
+                        CompositeTimer(
+                            scenarioMeter = meter,
+                            globalMeter = globalMeter as Timer
+                        )
+                    }
 
-                    is Counter -> CompositeCounter(
-                        scenarioMeter = meter,
-                        globalMeter = meterRegistry.counter(globalMeterId)
-                    )
+                    is DistributionSummary -> {
+                        val globalMeter = globalMeterCache.computeIfAbsent(
+                            globalMeterId
+                        ) {
+                            InMemoryCumulativeDistributionSummary(
+                                globalMeterId,
+                                meterReporter,
+                                meter.percentiles.toSet()
+                            )
+                        }
+                        CompositeDistributionSummary(
+                            scenarioMeter = meter,
+                            globalMeter = globalMeter as DistributionSummary
+                        )
+                    }
 
-                    is Rate -> CompositeRate(
-                        scenarioMeter = meter,
-                        globalMeter = meterRegistry.rate(globalMeterId)
-                    )
+                    is Counter -> {
+                        val globalMeter = globalMeterCache.computeIfAbsent(
+                            globalMeterId
+                        ) { InMemoryCumulativeCounter(globalMeterId, meterReporter) }
+                        CompositeCounter(
+                            scenarioMeter = meter,
+                            globalMeter = globalMeter as Counter
+                        )
+                    }
 
-                    is Throughput -> CompositeThroughput(
-                        scenarioMeter = meter,
-                        globalMeter = meterRegistry.throughput(globalMeterId, meter.unit, meter.percentiles.toSet())
-                    )
+                    is Rate -> {
+                        val globalMeter = globalMeterCache.computeIfAbsent(
+                            globalMeterId
+                        ) { InMemoryCumulativeRate(globalMeterId, meterReporter) }
+                        CompositeRate(
+                            scenarioMeter = meter,
+                            globalMeter = globalMeter as Rate
+                        )
+                    }
+
+                    is Throughput -> {
+                        val globalMeter = globalMeterCache.computeIfAbsent(
+                            globalMeterId
+                        ) {
+                            InMemoryCumulativeThroughput(
+                                globalMeterId,
+                                meterReporter,
+                                meter.unit,
+                                meter.percentiles.toSet()
+                            )
+                        }
+                        CompositeThroughput(
+                            scenarioMeter = meter,
+                            globalMeter = globalMeter as Throughput
+                        )
+                    }
 
                     else -> IllegalArgumentException("The meter of type ${meter::class} is not supported")
                 } as T

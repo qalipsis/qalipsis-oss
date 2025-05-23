@@ -715,7 +715,7 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
 
             // then
             assertThat(assignedMinions).all {
-                prop(Map<*, *>::size).isGreaterThan(337) // All the minions, includinf the singletons.
+                prop(Map<*, *>::size).isGreaterThan(337) // All the minions, including the singletons.
 
                 transform("Minions under load") { assignedMinions.keys.filterNot { it.contains("-singleton-") } }
                     .hasSize(337)
