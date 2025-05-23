@@ -47,6 +47,8 @@ import io.qalipsis.core.directives.SingleUseDirectiveReference
 import io.qalipsis.core.executionprofile.AcceleratingExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.ImmediateExecutionProfileConfiguration
+import io.qalipsis.core.executionprofile.PercentageStageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.ProgressiveVolumeExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
@@ -214,15 +216,23 @@ internal class SerializationFactory {
     private fun executionProfileConfigurations(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
         return builderAction.apply {
             polymorphic(ExecutionProfileConfiguration::class) {
-                subclass(RegularExecutionProfileConfiguration::class, RegularExecutionProfileConfiguration.serializer())
                 subclass(
                     AcceleratingExecutionProfileConfiguration::class,
                     AcceleratingExecutionProfileConfiguration.serializer()
                 )
                 subclass(
+                    ImmediateExecutionProfileConfiguration::class,
+                    ImmediateExecutionProfileConfiguration.serializer()
+                )
+                subclass(
+                    PercentageStageExecutionProfileConfiguration::class,
+                    PercentageStageExecutionProfileConfiguration.serializer()
+                )
+                subclass(
                     ProgressiveVolumeExecutionProfileConfiguration::class,
                     ProgressiveVolumeExecutionProfileConfiguration.serializer()
                 )
+                subclass(RegularExecutionProfileConfiguration::class, RegularExecutionProfileConfiguration.serializer())
                 subclass(StageExecutionProfileConfiguration::class, StageExecutionProfileConfiguration.serializer())
                 subclass(
                     TimeFrameExecutionProfileConfiguration::class,

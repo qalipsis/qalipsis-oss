@@ -52,6 +52,7 @@ internal class RedisFailureState(
     )
 
     override suspend fun doInit(): List<Directive> {
+        log.debug { "Initializing the status ${this::class.simpleName} for the campaign ${campaign.key}" }
         operations.setState(campaign.tenant, campaignKey, CampaignRedisState.FAILURE_STATE)
         operations.prepareFactoriesForFeedbackExpectations(campaign)
         return super.doInit().also {

@@ -63,7 +63,6 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
-import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.lock.InMemoryLockProviderImpl
@@ -109,9 +108,6 @@ internal open class RedisCampaignExecutorTest {
     lateinit var campaignReportStateKeeper: CampaignReportStateKeeper
 
     @MockK
-    lateinit var headConfiguration: HeadConfiguration
-
-    @MockK
     private lateinit var campaignExecutionContext: CampaignExecutionContext
 
     @RelaxedMockK
@@ -153,7 +149,6 @@ internal open class RedisCampaignExecutorTest {
             factoryService,
             campaignService,
             campaignReportStateKeeper,
-            headConfiguration,
             campaignConstraintsProvider,
             campaignExecutionContext,
             operations
@@ -205,7 +200,7 @@ internal open class RedisCampaignExecutorTest {
                 coEvery { init() } returns listOf(directive1, directive2)
                 justRun { inject(any()) }
             }
-            coEvery { campaignExecutor.create(refEq(runningCampaign), any(), any()) } returns initialState
+            coEvery { campaignExecutor.createInitialState(refEq(runningCampaign), any(), any()) } returns initialState
 
             val countDown = SuspendedCountLatch(2)
             coEvery { headChannel.publishDirective(any()) } coAnswers { countDown.decrement() }
@@ -232,7 +227,7 @@ internal open class RedisCampaignExecutorTest {
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-2")
-                campaignExecutor.create(
+                campaignExecutor.createInitialState(
                     runningCampaign,
                     listOf(factory1, factory2, factory3),
                     listOf(scenario1, scenario2)
@@ -248,7 +243,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations,
@@ -270,7 +264,7 @@ internal open class RedisCampaignExecutorTest {
         val factory3 = mockk<Factory>()
 
         // when
-        val initialState = campaignExecutor.create(
+        val initialState = campaignExecutor.createInitialState(
             runningCampaign,
             listOf(factory1, factory2, factory3),
             listOf(scenario1, scenario2)
@@ -288,7 +282,6 @@ internal open class RedisCampaignExecutorTest {
             factoryService,
             campaignService,
             campaignReportStateKeeper,
-            headConfiguration,
             campaignConstraintsProvider,
             campaignExecutionContext,
             operations
@@ -340,7 +333,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -374,7 +366,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -413,7 +404,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -452,7 +442,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -491,7 +480,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -530,7 +518,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -569,7 +556,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -608,7 +594,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -647,7 +632,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -686,7 +670,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -767,7 +750,6 @@ internal open class RedisCampaignExecutorTest {
             factoryService,
             campaignService,
             campaignReportStateKeeper,
-            headConfiguration,
             campaignConstraintsProvider,
             campaignExecutionContext,
             operations
@@ -849,7 +831,6 @@ internal open class RedisCampaignExecutorTest {
             factoryService,
             campaignService,
             campaignReportStateKeeper,
-            headConfiguration,
             campaignConstraintsProvider,
             campaignExecutionContext,
             operations
@@ -889,7 +870,6 @@ internal open class RedisCampaignExecutorTest {
             factoryService,
             campaignService,
             campaignReportStateKeeper,
-            headConfiguration,
             campaignConstraintsProvider,
             campaignExecutionContext,
             operations
@@ -983,7 +963,6 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 operations
@@ -1075,38 +1054,18 @@ internal open class RedisCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext
             )
         }
 
-    protected open fun redisCampaignExecutor(scope: CoroutineScope) =
+    protected open fun redisCampaignExecutor(scope: CoroutineScope, lockProvider: LockProvider = this.lockProvider) =
         spyk(
             RedisCampaignExecutor(
                 headChannel = headChannel,
                 factoryService = factoryService,
                 campaignService = campaignService,
                 campaignReportStateKeeper = campaignReportStateKeeper,
-                headConfiguration = headConfiguration,
-                campaignConstraintsProvider = campaignConstraintsProvider,
-                campaignHooks = listOf(campaignHook1, campaignHook2),
-                coroutineScope = scope,
-                campaignExecutionContext = campaignExecutionContext,
-                redisOperations = operations,
-                lockProvider = lockProvider,
-                channelNameFactory = channelNameFactory
-            ), recordPrivateCalls = true
-        )
-
-    protected open fun redisCampaignExecutor(scope: CoroutineScope, lockProvider: LockProvider) =
-        spyk(
-            RedisCampaignExecutor(
-                headChannel = headChannel,
-                factoryService = factoryService,
-                campaignService = campaignService,
-                campaignReportStateKeeper = campaignReportStateKeeper,
-                headConfiguration = headConfiguration,
                 campaignConstraintsProvider = campaignConstraintsProvider,
                 campaignHooks = listOf(campaignHook1, campaignHook2),
                 coroutineScope = scope,

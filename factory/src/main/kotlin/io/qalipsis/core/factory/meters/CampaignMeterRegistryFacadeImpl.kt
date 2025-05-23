@@ -43,9 +43,6 @@ import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import jakarta.inject.Named
 import jakarta.inject.Singleton
-import java.time.Duration
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -53,6 +50,9 @@ import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import java.time.Duration
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 /**
  * Implementation of meter registry.
@@ -71,7 +71,7 @@ internal class CampaignMeterRegistryFacadeImpl(
     private val additionalTags = mutableMapOf<String, String>()
 
     @KTestable
-    private lateinit var currentCampaignKey: CampaignKey
+    private var currentCampaignKey: CampaignKey? = null
 
     @KTestable
     private lateinit var ticker: ReceiveChannel<*>
@@ -84,6 +84,7 @@ internal class CampaignMeterRegistryFacadeImpl(
         if (publisherFactories.isNotEmpty()) {
             // Additional tags to force to all the created meters.
             additionalTags.putAll(factoryConfiguration.tags)
+            additionalTags[TENANT_KEY] = factoryConfiguration.tenant
             factoryConfiguration.zone?.takeIf { it.isNotBlank() }?.let { zone ->
                 additionalTags["zone"] = zone
             }
@@ -104,17 +105,27 @@ internal class CampaignMeterRegistryFacadeImpl(
         ticker = ticker(stepMillis, stepMillis, mode = TickerMode.FIXED_PERIOD)
         coroutineScope.launch {
             for (event in ticker) {
-                val snapshots = meterRegistry.snapshots(Instant.now().truncatedTo(ChronoUnit.SECONDS))
-                publishSnapshots(snapshots)
+                try {
+                    val snapshots = meterRegistry.snapshots(Instant.now().truncatedTo(ChronoUnit.SECONDS))
+                    publishSnapshots(snapshots)
+                } catch (e: Exception) {
+                    logger.error(e) { "An error occurred while publishing the meters: ${e.message}" }
+                }
             }
         }
     }
 
     override suspend fun close(campaign: Campaign) {
+        logger.debug { "Closing the meter registry attached to the campaign $currentCampaignKey" }
         ticker.cancel()
+        logger.debug { "Extracting the long-run snapshots for the campaign $currentCampaignKey" }
         val snapshots = meterRegistry.summarize(Instant.now().truncatedTo(ChronoUnit.SECONDS))
+        logger.debug { "Publishing the ${snapshots.size} long-run snapshots for the campaign $currentCampaignKey" }
         publishSnapshots(snapshots).joinAll()
+        logger.debug { "Shutting down the publication of meters for the campaign $currentCampaignKey" }
         publishers.forEach { it.stop() }
+        logger.debug { "The publication of meters has been shut down for the campaign $currentCampaignKey" }
+        currentCampaignKey = null
     }
 
     @KTestable
@@ -149,7 +160,7 @@ internal class CampaignMeterRegistryFacadeImpl(
             Meter.Id(
                 meterName = name,
                 tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey,
+                    CAMPAIGN_KEY to currentCampaignKey!!,
                     SCENARIO_NAME to scenarioName,
                     STEP_NAME to stepName
                 ),
@@ -172,7 +183,7 @@ internal class CampaignMeterRegistryFacadeImpl(
             Meter.Id(
                 meterName = name,
                 tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey,
+                    CAMPAIGN_KEY to currentCampaignKey!!,
                     SCENARIO_NAME to scenarioName,
                     STEP_NAME to stepName
                 ),
@@ -199,7 +210,7 @@ internal class CampaignMeterRegistryFacadeImpl(
             Meter.Id(
                 meterName = name,
                 tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey,
+                    CAMPAIGN_KEY to currentCampaignKey!!,
                     SCENARIO_NAME to scenarioName,
                     STEP_NAME to stepName
                 ),
@@ -229,7 +240,7 @@ internal class CampaignMeterRegistryFacadeImpl(
             Meter.Id(
                 meterName = name,
                 tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey,
+                    CAMPAIGN_KEY to currentCampaignKey!!,
                     SCENARIO_NAME to scenarioName,
                     STEP_NAME to stepName
                 ),
@@ -252,7 +263,8 @@ internal class CampaignMeterRegistryFacadeImpl(
         return meterRegistry.throughput(
             meterId,
             unit,
-            (percentiles.takeIf { it.isNotEmpty() } ?: measurementConfiguration.throughput.percentiles.orEmpty()).toSet())
+            (percentiles.takeIf { it.isNotEmpty() }
+                ?: measurementConfiguration.throughput.percentiles.orEmpty()).toSet())
     }
 
     override fun summary(
@@ -266,7 +278,7 @@ internal class CampaignMeterRegistryFacadeImpl(
             meterId = Meter.Id(
                 meterName = name,
                 tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey,
+                    CAMPAIGN_KEY to currentCampaignKey!!,
                     SCENARIO_NAME to scenarioName,
                     STEP_NAME to stepName
                 ),
@@ -301,7 +313,7 @@ internal class CampaignMeterRegistryFacadeImpl(
             meterId = Meter.Id(
                 meterName = name,
                 tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey,
+                    CAMPAIGN_KEY to currentCampaignKey!!,
                     SCENARIO_NAME to scenarioName,
                     STEP_NAME to stepName
                 ),
@@ -335,12 +347,20 @@ internal class CampaignMeterRegistryFacadeImpl(
     private fun tagsAsMap(tags: Array<out String>): Map<String, String> {
         return tags.toList().windowed(2, 2, false).associate {
             it[0] to it[1]
-        } + (CAMPAIGN_KEY to currentCampaignKey) // The scenario and step tags should normally be already added by the caller function
+        }.let {
+            if (currentCampaignKey != null) {
+                it + (CAMPAIGN_KEY to currentCampaignKey!!) // The scenario and step tags should normally be already added by the caller function
+            } else {
+                it
+            }
+        }
     }
 
     companion object {
 
         val logger = logger()
+
+        const val TENANT_KEY = "tenant"
 
         const val CAMPAIGN_KEY = "campaign"
 

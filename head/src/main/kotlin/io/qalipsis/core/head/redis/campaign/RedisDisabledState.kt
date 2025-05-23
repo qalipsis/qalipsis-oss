@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.head.campaign.states.DisabledState
@@ -30,11 +31,17 @@ internal class RedisDisabledState(
     isSuccessful: Boolean = true,
     private val operations: CampaignRedisOperations
 ) : DisabledState(campaign, isSuccessful) {
+
     override suspend fun doInit(): List<Directive> {
+        log.debug { "Initializing the status ${this::class.simpleName} for the campaign ${campaign.key}" }
         return try {
             super.doInit()
         } finally {
             operations.clean(campaign)
         }
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

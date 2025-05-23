@@ -30,12 +30,8 @@ import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
-import io.qalipsis.core.handshake.RegistrationDirectedAcyclicGraph
-import io.qalipsis.core.handshake.RegistrationScenario
 import io.qalipsis.core.head.jdbc.SelectorEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
-import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
-import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
@@ -43,8 +39,6 @@ import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignFactoryRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
-import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphRepository
-import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphSelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryTagRepository
@@ -55,7 +49,6 @@ import io.qalipsis.core.heartbeat.Heartbeat
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.count
-import kotlinx.coroutines.flow.toList
 import java.time.Instant
 
 /**
@@ -75,11 +68,10 @@ internal class ClusterFactoryService(
     private val factoryTagRepository: FactoryTagRepository,
     private val factoryStateRepository: FactoryStateRepository,
     private val scenarioRepository: ScenarioRepository,
-    private val directedAcyclicGraphRepository: DirectedAcyclicGraphRepository,
-    private val directedAcyclicGraphSelectorRepository: DirectedAcyclicGraphSelectorRepository,
     private val campaignRepository: CampaignRepository,
     private val campaignFactoryRepository: CampaignFactoryRepository,
-    private val tenantRepository: TenantRepository
+    private val tenantRepository: TenantRepository,
+    private val scenarioDetailsUpdater: ScenarioDetailsUpdater,
 ) : FactoryService {
 
     /**
@@ -93,7 +85,11 @@ internal class ClusterFactoryService(
     ) {
         val tenantId = tenantRepository.findIdByReference(handshakeRequest.tenant)
         val existingFactory = saveFactory(tenantId, actualNodeId, handshakeRequest, handshakeResponse)
-        saveScenariosAndDependencies(handshakeRequest.tenant, handshakeRequest.scenarios, existingFactory)
+        scenarioDetailsUpdater.saveOrUpdateScenarios(
+            handshakeRequest.tenant,
+            handshakeRequest.scenarios,
+            existingFactory
+        )
     }
 
     /**
@@ -147,127 +143,6 @@ internal class ClusterFactoryService(
         }
 
     /**
-     * Persists new factory and factory_selector entities
-     */
-    private suspend fun saveNewFactory(
-        tenantId: Long,
-        actualNodeId: String,
-        handshakeRequest: HandshakeRequest,
-        handshakeResponse: HandshakeResponse
-    ): FactoryEntity {
-        val factoryEntity = factoryRepository.save(
-            FactoryEntity(
-                nodeId = actualNodeId,
-                registrationTimestamp = Instant.now(),
-                registrationNodeId = handshakeRequest.nodeId,
-                unicastChannel = handshakeResponse.unicastChannel,
-                tenantId = tenantId,
-                zone = handshakeRequest.zone
-            )
-        )
-        if (handshakeRequest.tags.isNotEmpty()) {
-            factoryTagRepository.saveAll(handshakeRequest.tags.map { (key, value) ->
-                FactoryTagEntity(factoryEntity.id, key, value)
-            }).count()
-        }
-        return factoryEntity
-    }
-
-    /**
-     * Creates, updates and deletes scenario-specific entities with accordance to scenarios from handshakeRequest
-     */
-    private suspend fun saveScenariosAndDependencies(
-        tenantReference: String,
-        registrationScenarios: List<RegistrationScenario>,
-        existingFactory: FactoryEntity
-    ) {
-        val inputScenarios = registrationScenarios.associateBy { it.name }.toMutableMap()
-        val existingScenarios = scenarioRepository.findByFactoryId(tenantReference, existingFactory.id)
-        if (existingScenarios.isNotEmpty()) {
-            directedAcyclicGraphRepository.deleteByScenarioIdIn(existingScenarios.map { it.id })
-            directedAcyclicGraphSelectorRepository.deleteByDirectedAcyclicGraphIdIn(existingScenarios.flatMap { it.dags }
-                .map { it.id })
-        }
-
-        val (keptScenarios, obsoleteScenarios) = existingScenarios.partition { it.name in inputScenarios.keys }
-        if (obsoleteScenarios.isNotEmpty()) {
-            scenarioRepository.deleteAll(obsoleteScenarios)
-        }
-        val livingScenarios = mutableListOf<ScenarioEntity>()
-        if (keptScenarios.isNotEmpty()) {
-            livingScenarios += scenarioRepository.updateAll(keptScenarios.map {
-                it.copy(enabled = true, defaultMinionsCount = inputScenarios.remove(it.name)!!.minionsCount)
-            }).toList()
-        }
-        if (inputScenarios.isNotEmpty()) {
-            livingScenarios += scenarioRepository.saveAll(inputScenarios.map { (_, scenario) ->
-                ScenarioEntity(
-                    factoryId = existingFactory.id,
-                    scenarioName = scenario.name,
-                    scenarioDescription = scenario.description,
-                    scenarioVersion = scenario.version,
-                    builtAt = scenario.builtAt,
-                    defaultMinionsCount = scenario.minionsCount
-                )
-            }).toList()
-        }
-
-        val livingScenariosByName = livingScenarios.associateBy { it.name }
-        val dagsToSave = prepareDagsOfLivingScenarios(registrationScenarios, livingScenariosByName)
-        saveDagsAndTags(dagsToSave, registrationScenarios.flatMap { it.directedAcyclicGraphs })
-    }
-
-    /**
-     * Converts DirectedAcyclicGraphSummary entities to DirectedAcyclicGraphEntity
-     */
-    private fun prepareDagsOfLivingScenarios(
-        registrationScenarios: List<RegistrationScenario>,
-        livingScenariosByName: Map<String, ScenarioEntity>
-    ): List<DirectedAcyclicGraphEntity> {
-        return if (livingScenariosByName.isNotEmpty()) {
-            val dagsToSave = registrationScenarios.flatMap { scenario ->
-                scenario.directedAcyclicGraphs.map { dag ->
-                    DirectedAcyclicGraphEntity(
-                        scenarioId = livingScenariosByName[scenario.name]!!.id,
-                        name = dag.name,
-                        singleton = dag.isSingleton,
-                        underLoad = dag.isUnderLoad,
-                        numberOfSteps = dag.numberOfSteps,
-                        isRoot = dag.isRoot
-                    )
-                }
-            }
-            dagsToSave
-        } else {
-            emptyList()
-        }
-    }
-
-    /**
-     * Saves actual directed_acyclic_graph and directed_acyclic_graph_selector entities
-     */
-    private suspend fun saveDagsAndTags(
-        dagsToSave: List<DirectedAcyclicGraphEntity>,
-        registrationDags: List<RegistrationDirectedAcyclicGraph>
-    ) {
-        if (dagsToSave.isNotEmpty()) {
-            val dagsEntities = directedAcyclicGraphRepository.saveAll(dagsToSave).toList().associateBy { it.name }
-            val dagsTagsToSave = registrationDags.flatMap { dag ->
-                dag.tags.map { (key, value) ->
-                    DirectedAcyclicGraphTagEntity(
-                        dagId = dagsEntities[dag.name]!!.id,
-                        selectorKey = key,
-                        selectorValue = value
-                    )
-                }
-            }
-            if (dagsTagsToSave.isNotEmpty()) {
-                directedAcyclicGraphSelectorRepository.saveAll(dagsTagsToSave).collect()
-            }
-        }
-    }
-
-    /**
      * Methods merging tags of any kind.
      */
     private suspend fun <T : SelectorEntity<*>> mergeTags(
@@ -292,6 +167,33 @@ internal class ClusterFactoryService(
         if (toSave.isNotEmpty()) {
             repository.saveAll(toSave as Iterable<T>).collect()
         }
+    }
+
+    /**
+     * Persists new factory and factory_selector entities
+     */
+    private suspend fun saveNewFactory(
+        tenantId: Long,
+        actualNodeId: String,
+        handshakeRequest: HandshakeRequest,
+        handshakeResponse: HandshakeResponse
+    ): FactoryEntity {
+        val factoryEntity = factoryRepository.save(
+            FactoryEntity(
+                nodeId = actualNodeId,
+                registrationTimestamp = Instant.now(),
+                registrationNodeId = handshakeRequest.nodeId,
+                unicastChannel = handshakeResponse.unicastChannel,
+                tenantId = tenantId,
+                zone = handshakeRequest.zone
+            )
+        )
+        if (handshakeRequest.tags.isNotEmpty()) {
+            factoryTagRepository.saveAll(handshakeRequest.tags.map { (key, value) ->
+                FactoryTagEntity(factoryEntity.id, key, value)
+            }).count()
+        }
+        return factoryEntity
     }
 
     @LogInput

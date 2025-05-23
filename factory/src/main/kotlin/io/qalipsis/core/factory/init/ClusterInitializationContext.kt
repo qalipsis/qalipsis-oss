@@ -20,6 +20,7 @@
 package io.qalipsis.core.factory.init
 
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.FactoryChannel
@@ -44,7 +45,13 @@ internal class ClusterInitializationContext(
 
     @LogInput
     override suspend fun notify(response: HandshakeResponse) {
+        log.debug { "A response was received" }
         super.notify(response)
+        log.debug { "Releasing the handshake blocker" }
         handshakeBlocker.notifySuccessfulRegistration()
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

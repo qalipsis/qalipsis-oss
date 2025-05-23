@@ -88,7 +88,7 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
 
     @Test
     @Timeout(10)
-    internal fun `should start factory and shut down after the handshake timeout`() {
+    internal fun `should start factory and shut down after the handshake timeout in dry-run mode`() {
         // when
         val exitCodeFuture = CompletableFuture.supplyAsync {
             QalipsisBootstrap().start(
@@ -96,7 +96,8 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
                     "factory",
                     "-c",
                     "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
-                    "-c", "factory.handshake.timeout=10ms"
+                    "-c", "factory.handshake.timeout=10ms",
+                    "-c", "dry-run.enabled=true"
                 )
             )
         }
@@ -104,6 +105,27 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
         // then
         val exitCode = exitCodeFuture.get()
         assertThat(exitCode).isEqualTo(101)
+    }
+
+    @Test
+    @Timeout(10)
+    internal fun `should start factory and remain active after the handshake timeout in normal mode`() {
+        // when
+        val exitCodeFuture = CompletableFuture.supplyAsync {
+            QalipsisBootstrap().start(
+                arrayOf(
+                    "factory",
+                    "-c", "streaming.platform=redis",
+                    "-c",
+                    "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
+                    "-c", "factory.handshake.timeout=10ms",
+                    "-c", "dry-run.enabled=false"
+                )
+            )
+        }
+
+        // then
+        assertThrows<TimeoutException> { exitCodeFuture.get(8, TimeUnit.SECONDS) }
     }
 
     @Test
@@ -116,7 +138,9 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
                     "factory",
                     "-c",
                     "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
-                    "-s", "no-scenario"
+                    "-c", "factory.handshake.timeout=10s",
+                    "-s", "no-scenario",
+                    "-c", "logging.level.io.qalipsis.runtime.bootstrap=TRACE",
                 )
             )
         }

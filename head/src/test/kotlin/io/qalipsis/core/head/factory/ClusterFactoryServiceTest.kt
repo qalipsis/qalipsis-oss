@@ -27,6 +27,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -43,7 +44,6 @@ import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.handshake.RegistrationScenario
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
-import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
@@ -51,8 +51,6 @@ import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignFactoryRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
-import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphRepository
-import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphSelectorRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryTagRepository
@@ -98,10 +96,7 @@ internal class ClusterFactoryServiceTest {
     private lateinit var scenarioRepository: ScenarioRepository
 
     @RelaxedMockK
-    private lateinit var directedAcyclicGraphRepository: DirectedAcyclicGraphRepository
-
-    @RelaxedMockK
-    private lateinit var directedAcyclicGraphSelectorRepository: DirectedAcyclicGraphSelectorRepository
+    private lateinit var scenarioDetailsUpdater: ScenarioDetailsUpdater
 
     @RelaxedMockK
     private lateinit var campaignRepository: CampaignRepository
@@ -523,358 +518,6 @@ internal class ClusterFactoryServiceTest {
         }
 
     @Test
-    fun `should create new scenario and dags`() = testDispatcherProvider.run {
-        //given
-        val actualNodeId = "boo"
-        val selectorKey = "test-selector-key"
-        val selectorValue = "test-selector-value"
-
-        val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
-        val newRegistrationScenario = RegistrationScenario(
-            name = "new-test-scenario",
-            version = "0.1",
-            builtAt = Instant.now(),
-            minionsCount = 1,
-            directedAcyclicGraphs = listOf(graphSummary)
-        )
-        val handshakeRequest = HandshakeRequest(
-            nodeId = "testNodeId",
-            tags = mapOf(selectorKey to selectorValue),
-            replyTo = "",
-            scenarios = listOf(newRegistrationScenario)
-        )
-        val now = getTimeMock()
-        val selector = FactoryTagEntity(-1, selectorKey, selectorValue)
-        val factoryEntity = FactoryEntity(
-            nodeId = actualNodeId,
-            registrationTimestamp = now,
-            registrationNodeId = handshakeRequest.nodeId,
-            unicastChannel = "unicast",
-            tags = listOf(selector),
-            tenantId = 1
-        )
-        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
-        val scenarioEntity = createScenario(now, factoryEntity.id, dag, name = newRegistrationScenario.name)
-
-        coEvery { factoryRepository.findByNodeIdIn(any(), listOf(actualNodeId)) } returns listOf(factoryEntity)
-        coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns emptyList()
-        coEvery { factoryStateRepository.save(any()) } returnsArgument 0
-        coEvery { directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id)) } returns 1
-        coEvery { scenarioRepository.deleteAll(any()) } returns 1
-        coEvery { scenarioRepository.saveAll(any<Iterable<ScenarioEntity>>()) } returns flowOf(scenarioEntity)
-        coEvery { directedAcyclicGraphRepository.deleteAll(any()) } returns 1
-        coEvery { directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>()) } returns flowOf()
-
-        // when
-        clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "saveScenariosAndDependencies",
-            "my-tenant",
-            handshakeRequest.scenarios,
-            factoryEntity
-        )
-
-        //then
-        coVerifyOrder {
-            scenarioRepository.findByFactoryId("my-tenant", factoryEntity.id)
-            scenarioRepository.saveAll(any<Iterable<ScenarioEntity>>())
-            directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>())
-        }
-        confirmVerified(
-            tenantRepository,
-            scenarioRepository,
-            factoryStateRepository,
-            directedAcyclicGraphRepository
-        )
-    }
-
-    @Test
-    fun `should update scenario and dags`() = testDispatcherProvider.run {
-        //given
-        val actualNodeId = "boo"
-        val selectorKey = "test-selector-key"
-        val selectorValue = "test-selector-value"
-
-        val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
-        val newRegistrationScenario = RegistrationScenario(
-            name = "test",
-            version = "0.1",
-            builtAt = Instant.now(),
-            minionsCount = 1,
-            directedAcyclicGraphs = listOf(graphSummary)
-        )
-        val handshakeRequest = HandshakeRequest(
-            nodeId = "testNodeId",
-            tags = mapOf(selectorKey to selectorValue),
-            replyTo = "",
-            scenarios = listOf(newRegistrationScenario)
-        )
-        val now = getTimeMock()
-        val selector = FactoryTagEntity(-1, selectorKey, selectorValue)
-        val factoryEntity = FactoryEntity(
-            nodeId = actualNodeId,
-            registrationTimestamp = now,
-            registrationNodeId = handshakeRequest.nodeId,
-            unicastChannel = "unicast",
-            tags = listOf(selector),
-            tenantId = 1
-        )
-        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
-        val scenarioEntity = createScenario(now, factoryEntity.id, dag)
-
-        coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
-        coEvery { factoryStateRepository.save(any()) } returnsArgument 0
-        coEvery { directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id)) } returns 1
-        coEvery { scenarioRepository.updateAll(any<Iterable<ScenarioEntity>>()) } returns flowOf(scenarioEntity)
-        coEvery { directedAcyclicGraphRepository.deleteAll(any()) } returns 1
-        coEvery { directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>()) } returns flowOf()
-
-        // when
-        clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "saveScenariosAndDependencies",
-            "my-tenant",
-            handshakeRequest.scenarios,
-            factoryEntity
-        )
-
-        //then
-        coVerifyOrder {
-            scenarioRepository.findByFactoryId("my-tenant", factoryEntity.id)
-            directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id))
-            scenarioRepository.updateAll(listOf(scenarioEntity.copy(enabled = true)))
-            directedAcyclicGraphRepository.saveAll(handshakeRequest.scenarios.flatMap { it.directedAcyclicGraphs }
-                .map { dag ->
-                    DirectedAcyclicGraphEntity(
-                        scenarioId = 1,
-                        name = dag.name,
-                        singleton = dag.isSingleton,
-                        underLoad = dag.isUnderLoad,
-                        numberOfSteps = dag.numberOfSteps,
-                        version = now,
-                        isRoot = false
-                    )
-                })
-        }
-        confirmVerified(
-            scenarioRepository,
-            directedAcyclicGraphRepository
-        )
-    }
-
-    @Test
-    fun `should update scenario and dags and dag tags`() = testDispatcherProvider.run {
-        //given
-        val actualNodeId = "boo"
-        val selectorKey = "test-selector-key"
-        val selectorValue = "test-selector-value"
-
-        val graphSummary = DirectedAcyclicGraphSummary(
-            name = "new-test-dag-id",
-            tags = mapOf("test_dag_selector1" to "test_dag_selector_value1")
-        )
-        val newRegistrationScenario = RegistrationScenario(
-            name = "test",
-            version = "0.1",
-            builtAt = Instant.now(),
-            minionsCount = 1,
-            directedAcyclicGraphs = listOf(graphSummary)
-        )
-        val handshakeRequest = HandshakeRequest(
-            nodeId = "testNodeId",
-            tags = mapOf(selectorKey to selectorValue),
-            replyTo = "",
-            scenarios = listOf(newRegistrationScenario)
-        )
-        val now = getTimeMock()
-        val selector = FactoryTagEntity(-1, selectorKey, selectorValue)
-        val factoryEntity = FactoryEntity(
-            nodeId = actualNodeId,
-            registrationTimestamp = now,
-            registrationNodeId = handshakeRequest.nodeId,
-            unicastChannel = "unicast",
-            tags = listOf(selector),
-            tenantId = 1
-        )
-        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
-        val scenarioEntity = createScenario(now, factoryEntity.id, dag)
-        val savedDag = DirectedAcyclicGraphEntity(
-            scenarioId = scenarioEntity.id,
-            name = graphSummary.name,
-            isRoot = graphSummary.isRoot,
-            singleton = true,
-            underLoad = true,
-            numberOfSteps = 1,
-            version = now,
-            tags = graphSummary.tags.map { DirectedAcyclicGraphTagEntity(1, it.key, it.value) })
-
-        coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
-        coEvery { factoryStateRepository.save(any()) } returnsArgument 0
-        coEvery { directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id)) } returns 1
-        coEvery { scenarioRepository.updateAll(any<Iterable<ScenarioEntity>>()) } returns flowOf(scenarioEntity)
-        coEvery { directedAcyclicGraphRepository.deleteAll(any()) } returns 1
-        coEvery { directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>()) } returns flowOf(
-            savedDag
-        )
-
-        // when
-        clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "saveScenariosAndDependencies",
-            "my-tenant",
-            handshakeRequest.scenarios,
-            factoryEntity
-        )
-
-        //then
-        coVerifyOrder {
-            scenarioRepository.findByFactoryId("my-tenant", factoryEntity.id)
-            directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id))
-            directedAcyclicGraphSelectorRepository.deleteByDirectedAcyclicGraphIdIn(scenarioEntity.dags.map { it.id })
-            scenarioRepository.updateAll(listOf(scenarioEntity.copy(enabled = true)))
-            directedAcyclicGraphRepository.saveAll(handshakeRequest.scenarios.flatMap { it.directedAcyclicGraphs }
-                .map { dag ->
-                    DirectedAcyclicGraphEntity(
-                        scenarioId = 1,
-                        name = dag.name,
-                        singleton = dag.isSingleton,
-                        underLoad = dag.isUnderLoad,
-                        numberOfSteps = dag.numberOfSteps,
-                        version = now,
-                        isRoot = false
-                    )
-                })
-            directedAcyclicGraphSelectorRepository.saveAll(
-                listOf(
-                    DirectedAcyclicGraphTagEntity(
-                        id = -1,
-                        directedAcyclicGraphId = -1,
-                        key = "test_dag_selector1",
-                        value = graphSummary.tags["test_dag_selector1"]!!
-                    )
-                )
-            )
-        }
-        confirmVerified(
-            scenarioRepository,
-            directedAcyclicGraphRepository,
-            directedAcyclicGraphSelectorRepository
-        )
-    }
-
-    @Test
-    fun `should save dags and dag tags`() = testDispatcherProvider.run {
-        //given
-        val now = getTimeMock()
-
-        val graphSummary = DirectedAcyclicGraphSummary(
-            name = "new-test-dag-id",
-            tags = mapOf("test_dag_selector1" to "test_dag_selector_value1")
-        )
-        val directedAcyclicGraphs = listOf(graphSummary)
-        val savedDag = DirectedAcyclicGraphEntity(
-            scenarioId = 1,
-            name = graphSummary.name,
-            isRoot = false,
-            singleton = true,
-            underLoad = true,
-            numberOfSteps = 1,
-            version = now,
-            tags = graphSummary.tags.map { DirectedAcyclicGraphTagEntity(1, it.key, it.value) })
-        val expectedDagEntity = DirectedAcyclicGraphEntity(
-            scenarioId = 1,
-            name = "new-test-dag-id",
-            isRoot = false,
-            singleton = true,
-            underLoad = true,
-            numberOfSteps = 1,
-            version = now,
-            tags = listOf(
-                DirectedAcyclicGraphTagEntity(
-                    id = -1,
-                    directedAcyclicGraphId = 1,
-                    key = "test_dag_selector1",
-                    value = "test_dag_selector_value1"
-                )
-            )
-        )
-
-        coEvery { directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>()) } returns flowOf(
-            savedDag
-        )
-
-        // when
-        clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "saveDagsAndTags",
-            listOf(savedDag),
-            directedAcyclicGraphs
-        )
-
-        //then
-        coVerifyOrder {
-
-            directedAcyclicGraphRepository.saveAll(listOf(expectedDagEntity))
-            directedAcyclicGraphSelectorRepository.saveAll(expectedDagEntity.tags.map {
-                it.copy(
-                    directedAcyclicGraphId = savedDag.id
-                )
-            })
-        }
-        confirmVerified(
-            directedAcyclicGraphRepository,
-            directedAcyclicGraphSelectorRepository
-        )
-    }
-
-    @Test
-    fun `should save dags without dag tags`() = testDispatcherProvider.run {
-        //given
-        val now = getTimeMock()
-
-        val graphSummary = DirectedAcyclicGraphSummary(name = "new-test-dag-id")
-        val directedAcyclicGraphs = listOf(graphSummary)
-        val savedDag = DirectedAcyclicGraphEntity(
-            scenarioId = 1,
-            name = graphSummary.name,
-            isRoot = false,
-            singleton = true,
-            underLoad = true,
-            numberOfSteps = 1,
-            version = now
-        )
-        val expectedDagEntity = DirectedAcyclicGraphEntity(
-            scenarioId = 1,
-            name = "new-test-dag-id",
-            isRoot = false,
-            singleton = true,
-            underLoad = true,
-            numberOfSteps = 1,
-            version = now,
-            tags = emptyList()
-        )
-
-        coEvery { directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>()) } returns flowOf(
-            savedDag
-        )
-
-        // when
-        clusterFactoryService.coInvokeInvisible<ClusterFactoryService>(
-            "saveDagsAndTags",
-            listOf(savedDag),
-            directedAcyclicGraphs
-        )
-
-        //then
-        coVerifyOrder {
-            directedAcyclicGraphRepository.saveAll(listOf(expectedDagEntity))
-        }
-        coVerifyNever {
-            directedAcyclicGraphSelectorRepository.saveAll(any<Iterable<DirectedAcyclicGraphTagEntity>>())
-        }
-        confirmVerified(
-            directedAcyclicGraphRepository,
-            directedAcyclicGraphSelectorRepository
-        )
-    }
-
-    @Test
     fun `should update existing channels, scenario and dags`() = testDispatcherProvider.run {
         //given
         val actualNodeId = "boo"
@@ -916,17 +559,14 @@ internal class ClusterFactoryServiceTest {
         )
 
         val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
-        val scenarioEntity = createScenario(now, factoryEntity.id, dag, true)
 
         coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123
         coEvery { factoryRepository.findByNodeIdIn(any(), listOf(actualNodeId)) } returns listOf(factoryEntity)
-        coEvery { scenarioRepository.findByFactoryId(any(), factoryEntity.id) } returns listOf(scenarioEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
         coEvery { factoryRepository.save(any()) } returnsArgument 0
         val savedFactoryEntity = slot<FactoryEntity>()
         coEvery { factoryRepository.save(capture(savedFactoryEntity)) } returnsArgument 0
-        coEvery { directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id)) } returns 1
-        coEvery { scenarioRepository.updateAll(any<Iterable<ScenarioEntity>>()) } returns flowOf(scenarioEntity)
+        coJustRun { scenarioDetailsUpdater.saveOrUpdateScenarios(any(), any(), any()) }
 
         // when
         clusterFactoryService.register(actualNodeId, handshakeRequest, handshakeResponse)
@@ -945,17 +585,14 @@ internal class ClusterFactoryServiceTest {
             factoryRepository.findByNodeIdIn("my-tenant", listOf(actualNodeId))
             factoryRepository.save(any())
             factoryStateRepository.save(any())
-            scenarioRepository.findByFactoryId("my-tenant", factoryEntity.id)
-            directedAcyclicGraphRepository.deleteByScenarioIdIn(listOf(scenarioEntity.id))
-            scenarioRepository.updateAll(listOf(scenarioEntity))
-            directedAcyclicGraphRepository.saveAll(any<Iterable<DirectedAcyclicGraphEntity>>())
+            scenarioDetailsUpdater.saveOrUpdateScenarios(any(), any(), any())
         }
         confirmVerified(
             factoryRepository,
             tenantRepository,
             scenarioRepository,
             factoryStateRepository,
-            directedAcyclicGraphRepository
+            scenarioDetailsUpdater
         )
     }
 
@@ -1454,31 +1091,4 @@ internal class ClusterFactoryServiceTest {
         return now
     }
 
-    private fun createScenario(
-        now: Instant,
-        factoryId: Long,
-        dag: DirectedAcyclicGraphSummary,
-        enabled: Boolean = false,
-        name: String = "test"
-    ) =
-        ScenarioEntity(
-            id = 1,
-            version = now,
-            factoryId = factoryId,
-            name = name,
-            scenarioVersion = "0.1",
-            builtAt = Instant.now(),
-            defaultMinionsCount = 1,
-            enabled = enabled,
-            dags = listOf(
-                DirectedAcyclicGraphEntity(
-                    -1,
-                    dag.name,
-                    dag.isRoot,
-                    dag.isSingleton,
-                    dag.isUnderLoad,
-                    dag.numberOfSteps,
-                    dag.tags.map { (key, value) -> DirectedAcyclicGraphTagEntity(-1, key, value) })
-            )
-        )
 }

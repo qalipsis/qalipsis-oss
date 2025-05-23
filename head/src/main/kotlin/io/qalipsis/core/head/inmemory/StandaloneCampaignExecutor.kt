@@ -20,7 +20,9 @@
 package io.qalipsis.core.head.inmemory
 
 import io.aerisconsulting.catadioptre.KTestable
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.micronaut.context.annotation.Secondary
 import io.qalipsis.api.Executors
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -35,7 +37,6 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.EmptyState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.communication.HeadChannel
-import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.lock.LockProvider
@@ -52,13 +53,15 @@ import kotlinx.coroutines.CoroutineScope
  * @author Eric Jessé
  */
 @Singleton
-@Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_HEAD])
+@Secondary
+@Requirements(
+    Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_HEAD])
+)
 internal class StandaloneCampaignExecutor(
     headChannel: HeadChannel,
     factoryService: FactoryService,
     campaignService: CampaignService,
     campaignReportStateKeeper: CampaignReportStateKeeper,
-    headConfiguration: HeadConfiguration,
     campaignConstraintsProvider: CampaignConstraintsProvider,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) coroutineScope: CoroutineScope,
     campaignExecutionContext: CampaignExecutionContext,
@@ -70,7 +73,6 @@ internal class StandaloneCampaignExecutor(
     factoryService,
     campaignService,
     campaignReportStateKeeper,
-    headConfiguration,
     coroutineScope,
     campaignExecutionContext,
     campaignConstraintsProvider,
@@ -91,7 +93,7 @@ internal class StandaloneCampaignExecutor(
         return super.start(tenant, configurer, configuration)
     }
 
-    override suspend fun create(
+    override suspend fun createInitialState(
         campaign: RunningCampaign,
         factories: Collection<Factory>,
         scenarios: List<ScenarioSummary>

@@ -39,7 +39,6 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.communication.HeadChannel
-import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.lock.LockProvider
@@ -47,6 +46,7 @@ import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import kotlinx.coroutines.CoroutineScope
+import org.slf4j.event.Level
 import java.time.Instant
 import javax.validation.constraints.NotBlank
 
@@ -60,7 +60,6 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     private val factoryService: FactoryService,
     private val campaignService: CampaignService,
     private val campaignReportStateKeeper: CampaignReportStateKeeper,
-    private val headConfiguration: HeadConfiguration,
     private val coroutineScope: CoroutineScope,
     private val campaignExecutionContext: C,
     private val campaignConstraintsProvider: CampaignConstraintsProvider,
@@ -164,8 +163,9 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
             campaignService.startScenario(tenant, runningCampaign.key, it, start)
             campaignReportStateKeeper.start(runningCampaign.key, it)
         }
-        val campaignStartState = create(runningCampaign, factories, scenarios)
-        log.info { "Starting the campaign ${configuration.name} with scenarios ${scenarios.map { it.name }} on factories ${factories.map { it.nodeId }}" }
+        log.debug { "Initializing the state for the campaign ${runningCampaign.key}" }
+        val campaignStartState = createInitialState(runningCampaign, factories, scenarios)
+        log.info { "Starting the campaign ${configuration.name} with key ${runningCampaign.key} with scenarios ${scenarios.map { it.name }} on factories ${factories.map { it.nodeId }}" }
         campaignStartState.inject(campaignExecutionContext)
         lockProvider.withLock(campaignKey = runningCampaign.key) {
             log.trace { "Initializing the campaign state for start $campaignStartState" }
@@ -206,7 +206,8 @@ internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         return start(tenant, configurer, campaign)
     }
 
-    abstract suspend fun create(
+    @LogInputAndOutput(level = Level.DEBUG)
+    abstract suspend fun createInitialState(
         campaign: RunningCampaign,
         factories: Collection<Factory>,
         scenarios: List<ScenarioSummary>,

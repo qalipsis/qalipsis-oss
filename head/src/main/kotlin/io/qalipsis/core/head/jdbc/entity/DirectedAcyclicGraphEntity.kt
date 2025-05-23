@@ -61,13 +61,13 @@ internal data class DirectedAcyclicGraphEntity(
     constructor(
         scenarioId: Long,
         name: String,
-        isRoot: Boolean,
+        root: Boolean,
         singleton: Boolean,
         underLoad: Boolean,
         numberOfSteps: Int,
         tags: List<DirectedAcyclicGraphTagEntity> = emptyList(),
         version: Instant = Instant.now()
-    ) : this(-1, version, scenarioId, name, isRoot, singleton, underLoad, numberOfSteps, tags)
+    ) : this(-1, version, scenarioId, name, root, singleton, underLoad, numberOfSteps, tags)
 
     fun toModel(): DirectedAcyclicGraphSummary {
         return DirectedAcyclicGraphSummary(

@@ -78,11 +78,12 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                     "head",
                     "-e", "single-head",
                     "-c", "micronaut.server.port=$httpPort",
-                    "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
                     "-c", "report.export.console.enabled=false",
                     "-c", "report.export.junit.enabled=true",
                     "-c", "report.export.junit.folder=build/test-results/standalone-deployment"
-                )
+                ) + REDIS_CONTAINER.testProperties().flatMap { (key, value) ->
+                    listOf("-c", "$key=$value")
+                }
             )
         }
 
@@ -121,11 +122,12 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                     "--persistent",
                     "-e", "single-head",
                     "-c", "micronaut.server.port=$httpPort",
-                    "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
                     "-c", "report.export.console.enabled=false",
                     "-c", "report.export.junit.enabled=true",
                     "-c", "report.export.junit.folder=build/test-results/standalone-deployment"
-                ) + PGSQL_CONTAINER.testProperties().flatMap { (key, value) ->
+                ) + REDIS_CONTAINER.testProperties().flatMap { (key, value) ->
+                    listOf("-c", "$key=$value")
+                } + PGSQL_CONTAINER.testProperties().flatMap { (key, value) ->
                     listOf("-c", "$key=$value")
                 }.toTypedArray()
             )
@@ -163,9 +165,10 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                 "head",
                 "-e", "single-head",
                 "-c", "micronaut.server.port=$httpPort",
-                "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
                 "-c", "logging.level.io.qalipsis.runtime.bootstrap.QalipsisApplicationContext=TRACE"
-            ),
+            ) + REDIS_CONTAINER.testProperties().flatMap { (key, value) ->
+                listOf("-c", "$key=$value")
+            },
             jvmOptions = arrayOf("-Xmx256m")
         )
 
@@ -191,11 +194,12 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                     "head",
                     "--autostart",
                     "-e", "single-head",
-                    "-c", "redis.uri=${REDIS_CONTAINER.testProperties()["redis.uri"]}",
                     "-c", "report.export.console.enabled=false",
                     "-c", "report.export.junit.enabled=true",
                     "-c", "report.export.junit.folder=build/test-results/standalone-deployment"
-                )
+                ) + REDIS_CONTAINER.testProperties().flatMap { (key, value) ->
+                    listOf("-c", "$key=$value")
+                }
             )
         }
         Thread.sleep(3000)

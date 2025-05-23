@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.campaign
 
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.handshake.HandshakeRequest
 
@@ -31,7 +32,11 @@ interface ChannelNameFactory {
     @LogInput
     suspend fun getFeedbackChannelName(campaign: RunningCampaign): String
 
-    @LogInput
-    suspend fun getUnicastChannelName(handshakeRequest: HandshakeRequest): String
+    suspend fun getUnicastChannelName(handshakeRequest: HandshakeRequest): String {
+        return getUnicastChannelName(handshakeRequest.tenant, handshakeRequest.nodeId)
+    }
+
+    @LogInputAndOutput
+    suspend fun getUnicastChannelName(tenant: String, nodeId: String): String
 
 }

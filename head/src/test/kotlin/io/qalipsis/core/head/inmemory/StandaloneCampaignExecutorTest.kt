@@ -61,7 +61,6 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
-import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.inmemory.catadioptre.currentCampaignState
@@ -76,12 +75,12 @@ import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
-import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 
 @WithMockk
 @Timeout(5)
@@ -102,9 +101,6 @@ internal class StandaloneCampaignExecutorTest {
 
     @RelaxedMockK
     private lateinit var campaignReportStateKeeper: CampaignReportStateKeeper
-
-    @RelaxedMockK
-    private lateinit var headConfiguration: HeadConfiguration
 
     @RelaxedMockK
     private lateinit var campaignExecutionContext: CampaignExecutionContext
@@ -148,7 +144,6 @@ internal class StandaloneCampaignExecutorTest {
             factoryService,
             campaignService,
             campaignReportStateKeeper,
-            headConfiguration,
             campaignConstraintsProvider,
             campaignExecutionContext
         )
@@ -200,7 +195,7 @@ internal class StandaloneCampaignExecutorTest {
                 coEvery { init() } returns listOf(directive1, directive2)
                 justRun { inject(any()) }
             }
-            coEvery { campaignExecutor.create(refEq(runningCampaign), any(), any()) } returns initialState
+            coEvery { campaignExecutor.createInitialState(refEq(runningCampaign), any(), any()) } returns initialState
 
             val countDown = SuspendedCountLatch(2)
             coEvery { headChannel.publishDirective(any()) } coAnswers { countDown.decrement() }
@@ -228,7 +223,7 @@ internal class StandaloneCampaignExecutorTest {
                 campaignReportStateKeeper.start("my-campaign", "scenario-1")
                 campaignService.startScenario("my-tenant", "my-campaign", "scenario-2", any())
                 campaignReportStateKeeper.start("my-campaign", "scenario-2")
-                campaignExecutor.create(
+                campaignExecutor.createInitialState(
                     runningCampaign,
                     listOf(factory1, factory2, factory3),
                     listOf(scenario1, scenario2)
@@ -245,7 +240,6 @@ internal class StandaloneCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
                 campaignHook1,
@@ -265,7 +259,7 @@ internal class StandaloneCampaignExecutorTest {
         val factory3 = mockk<Factory>()
 
         // when
-        val initialState = campaignExecutor.create(
+        val initialState = campaignExecutor.createInitialState(
             runningCampaign,
             listOf(factory1, factory2, factory3),
             listOf(scenario1, scenario2)
@@ -283,7 +277,6 @@ internal class StandaloneCampaignExecutorTest {
             factoryService,
             campaignService,
             campaignReportStateKeeper,
-            headConfiguration,
             campaignConstraintsProvider,
             campaignExecutionContext
         )
@@ -316,7 +309,6 @@ internal class StandaloneCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext
             )
@@ -327,7 +319,8 @@ internal class StandaloneCampaignExecutorTest {
         testDispatcherProvider.run {
             // given
             val campaignExecutor = standaloneCampaignExecutor(this)
-            campaignExecutor.setProperty("currentCampaignState",
+            campaignExecutor.setProperty(
+                "currentCampaignState",
                 relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
                     every { isCompleted } returns false
                 })
@@ -342,7 +335,6 @@ internal class StandaloneCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext
             )
@@ -472,7 +464,6 @@ internal class StandaloneCampaignExecutorTest {
             factoryService,
             campaignService,
             campaignReportStateKeeper,
-            headConfiguration,
             campaignConstraintsProvider,
             campaignExecutionContext
         )
@@ -511,7 +502,6 @@ internal class StandaloneCampaignExecutorTest {
             factoryService,
             campaignService,
             campaignReportStateKeeper,
-            headConfiguration,
             campaignConstraintsProvider,
             campaignExecutionContext
         )
@@ -606,7 +596,6 @@ internal class StandaloneCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext
             )
@@ -702,37 +691,18 @@ internal class StandaloneCampaignExecutorTest {
                 factoryService,
                 campaignService,
                 campaignReportStateKeeper,
-                headConfiguration,
                 campaignConstraintsProvider,
                 campaignExecutionContext
             )
         }
 
-    private fun standaloneCampaignExecutor(scope: CoroutineScope) =
+    private fun standaloneCampaignExecutor(scope: CoroutineScope, spiedLockProvider: LockProvider = this.lockProvider) =
         spyk(
             StandaloneCampaignExecutor(
                 headChannel = headChannel,
                 factoryService = factoryService,
                 campaignService = campaignService,
                 campaignReportStateKeeper = campaignReportStateKeeper,
-                headConfiguration = headConfiguration,
-                campaignConstraintsProvider = campaignConstraintsProvider,
-                coroutineScope = scope,
-                campaignExecutionContext = campaignExecutionContext,
-                campaignHooks = listOf(campaignHook1, campaignHook2),
-                lockProvider = lockProvider,
-                channelNameFactory = channelNameFactory
-            ), recordPrivateCalls = true
-        )
-
-    private fun standaloneCampaignExecutor(scope: CoroutineScope, spiedLockProvider: LockProvider) =
-        spyk(
-            StandaloneCampaignExecutor(
-                headChannel = headChannel,
-                factoryService = factoryService,
-                campaignService = campaignService,
-                campaignReportStateKeeper = campaignReportStateKeeper,
-                headConfiguration = headConfiguration,
                 campaignConstraintsProvider = campaignConstraintsProvider,
                 coroutineScope = scope,
                 campaignExecutionContext = campaignExecutionContext,

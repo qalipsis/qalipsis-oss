@@ -209,6 +209,7 @@ internal class QalipsisApplicationContext(
                 var exitStatus = Optional.empty<Int>()
                 while (exitStatus.isEmpty && processExitCodeSuppliersIterator.hasNext()) {
                     val supplier = processExitCodeSuppliersIterator.next()
+                    log.debug { "Awaiting exit status from ${supplier::class.simpleName}" }
                     exitStatus = supplier.await()
                     exitStatus.ifPresent {
                         log.debug { "Status $it returned by ${supplier::class.simpleName}" }
@@ -223,9 +224,13 @@ internal class QalipsisApplicationContext(
      * Stops the embedded server if it is still running.
      */
     fun shutdown() {
-        tryAndLogOrNull(log) {
+        try {
             if (applicationContext.isRunning) {
                 applicationContext.close()
+            }
+        } catch (e: Exception) {
+            if (e !is UninitializedPropertyAccessException) {
+                log.error(e) { "An error occurred while stopping the application: ${e.message}" }
             }
         }
         tryAndLogOrNull(log) {
