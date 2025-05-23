@@ -45,6 +45,7 @@ import io.qalipsis.core.factory.meters.CompositeCounter
 import io.qalipsis.core.factory.meters.CompositeDistributionSummary
 import io.qalipsis.core.factory.meters.CompositeGauge
 import io.qalipsis.core.factory.meters.CompositeTimer
+import io.qalipsis.core.factory.meters.inmemory.catadioptre.globalMeterCache
 import io.qalipsis.core.factory.meters.inmemory.catadioptre.meters
 import io.qalipsis.core.reporter.MeterReporter
 import io.qalipsis.test.assertk.prop
@@ -198,7 +199,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("globalMeter").isNotNull()
                     .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
-            assertThat(registry.meters()).hasSize(3)
+
+            assertThat(registry.meters() + registry.globalMeterCache()).hasSize(3)
         }
 
     @Test
@@ -249,7 +251,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("globalMeter").isNotNull()
                     .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
-            assertThat(registry.meters()).hasSize(3)
+            assertThat(registry.meters() + registry.globalMeterCache()).hasSize(3)
         }
 
     @Test
@@ -323,7 +325,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("globalMeter").isNotNull()
                     .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
-            assertThat(registry.meters()).hasSize(3)
+            assertThat(registry.meters() + registry.globalMeterCache()).hasSize(3)
         }
 
     @Test
@@ -456,7 +458,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("globalMeter").isNotNull()
                     .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
-            assertThat(registry.meters()).hasSize(3)
+            assertThat(registry.meters() + registry.globalMeterCache()).hasSize(3)
         }
 
     @Test
@@ -520,7 +522,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("globalMeter").isNotNull()
                     .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
-            assertThat(registry.meters()).hasSize(3)
+            assertThat(registry.meters() + registry.globalMeterCache()).hasSize(3)
         }
 
     @Test
@@ -593,7 +595,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
             prop("globalMeter").isNotNull()
                 .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
         }
-        assertThat(registry.meters()).hasSize(3)
+        assertThat(registry.meters() + registry.globalMeterCache()).hasSize(3)
     }
 
     @Test
