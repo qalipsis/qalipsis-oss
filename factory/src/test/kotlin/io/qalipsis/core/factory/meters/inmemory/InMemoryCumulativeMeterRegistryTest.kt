@@ -45,6 +45,7 @@ import io.qalipsis.core.factory.meters.CompositeCounter
 import io.qalipsis.core.factory.meters.CompositeDistributionSummary
 import io.qalipsis.core.factory.meters.CompositeGauge
 import io.qalipsis.core.factory.meters.CompositeTimer
+import io.qalipsis.core.factory.meters.inmemory.catadioptre.globalMeters
 import io.qalipsis.core.factory.meters.inmemory.catadioptre.meters
 import io.qalipsis.core.reporter.MeterReporter
 import io.qalipsis.test.assertk.prop
@@ -73,6 +74,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
     @AfterEach
     fun tearDown() = testDispatcherProvider.runTest {
         registry.meters().clear()
+        registry.globalMeters().clear()
         unmockkConstructor(
             InMemoryCumulativeTimer::class,
             InMemoryCumulativeDistributionSummary::class,
@@ -183,6 +185,39 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 }
             }
 
+            assertThat(registry.meters().size).isEqualTo(1)
+            val (id, meter) = registry.meters().toList()[0]
+            assertThat(id).all {
+                prop(Meter.Id::type).isEqualTo(MeterType.TIMER)
+                prop(Meter.Id::meterName).isEqualTo("test")
+                typedProp<Map<String, String>>("tags").all {
+                    hasSize(3)
+                    key("a").isEqualTo("b")
+                    key("c").isEqualTo("d")
+                    key("scenario").isEqualTo("the scenario")
+                }
+            }
+            assertThat(meter).isInstanceOf(CompositeTimer::class.java).all {
+                prop(CompositeTimer::id).isEqualTo(id1)
+                prop(CompositeTimer::percentiles).isEmpty()
+            }
+
+            assertThat(registry.globalMeters().size).isEqualTo(1)
+            val (globalId, globalMeter) = registry.globalMeters().toList()[0]
+            assertThat(globalId).all {
+                prop(Meter.Id::type).isEqualTo(MeterType.TIMER)
+                prop(Meter.Id::meterName).isEqualTo("test")
+                typedProp<Map<String, String>>("tags").all {
+                    hasSize(2)
+                    key("a").isEqualTo("b")
+                    key("c").isEqualTo("d")
+                }
+            }
+            assertThat(globalMeter).isInstanceOf(InMemoryCumulativeTimer::class.java).all {
+                prop(InMemoryCumulativeTimer::id).isEqualTo(id1.copy(tags = id1.tags - "scenario"))
+                prop(InMemoryCumulativeTimer::percentiles).isEmpty()
+            }
+
             // when
             val id2 =
                 Meter.Id("test", MeterType.TIMER, mapOf("a" to "b", "c" to "d", "scenario" to "the other scenario"))
@@ -198,7 +233,16 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("globalMeter").isNotNull()
                     .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
-            assertThat(registry.meters()).hasSize(3)
+            assertThat(registry.meters().size).isEqualTo(2)
+            assertThat(registry.meters()[id2]).isNotNull().all {
+                isInstanceOf(CompositeTimer::class.java).all {
+                    prop(CompositeTimer::id).isEqualTo(id2)
+                    prop(CompositeTimer::percentiles).isEmpty()
+                }
+            }
+
+            assertThat(registry.meters()).hasSize(2)
+            assertThat(registry.globalMeters()).hasSize(1)
         }
 
     @Test
@@ -231,6 +275,39 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 }
             }
 
+            assertThat(registry.meters().size).isEqualTo(1)
+            val (id, meter) = registry.meters().toList()[0]
+            assertThat(id).all {
+                prop(Meter.Id::type).isEqualTo(MeterType.TIMER)
+                prop(Meter.Id::meterName).isEqualTo("test")
+                typedProp<Map<String, String>>("tags").all {
+                    hasSize(3)
+                    key("a").isEqualTo("b")
+                    key("c").isEqualTo("d")
+                    key("scenario").isEqualTo("the scenario")
+                }
+            }
+            assertThat(meter).isInstanceOf(CompositeTimer::class.java).all {
+                prop(CompositeTimer::id).isEqualTo(id1)
+                prop(CompositeTimer::percentiles).containsAll(20.0, 55.0)
+            }
+
+            assertThat(registry.globalMeters().size).isEqualTo(1)
+            val (globalId, globalMeter) = registry.globalMeters().toList()[0]
+            assertThat(globalId).all {
+                prop(Meter.Id::type).isEqualTo(MeterType.TIMER)
+                prop(Meter.Id::meterName).isEqualTo("test")
+                typedProp<Map<String, String>>("tags").all {
+                    hasSize(2)
+                    key("a").isEqualTo("b")
+                    key("c").isEqualTo("d")
+                }
+            }
+            assertThat(globalMeter).isInstanceOf(InMemoryCumulativeTimer::class.java).all {
+                prop(InMemoryCumulativeTimer::id).isEqualTo(id1.copy(tags = id1.tags - "scenario"))
+                prop(InMemoryCumulativeTimer::percentiles).containsAll(20.0, 55.0)
+            }
+
             // when
             val id2 =
                 Meter.Id("test", MeterType.TIMER, mapOf("a" to "b", "c" to "d", "scenario" to "the other scenario"))
@@ -249,7 +326,16 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("globalMeter").isNotNull()
                     .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
-            assertThat(registry.meters()).hasSize(3)
+            assertThat(registry.meters().size).isEqualTo(2)
+            assertThat(registry.meters()[id2]).isNotNull().all {
+                isInstanceOf(CompositeTimer::class.java).all {
+                    prop(CompositeTimer::id).isEqualTo(id2)
+                    prop(CompositeTimer::percentiles).containsAll(21.0, 86.0)
+                }
+            }
+
+            assertThat(registry.meters()).hasSize(2)
+            assertThat(registry.globalMeters()).hasSize(1)
         }
 
     @Test
@@ -309,6 +395,37 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 }
             }
 
+            assertThat(registry.meters().size).isEqualTo(1)
+            val (id, meter) = registry.meters().toList()[0]
+            assertThat(id).all {
+                prop(Meter.Id::type).isEqualTo(MeterType.GAUGE)
+                prop(Meter.Id::meterName).isEqualTo("test")
+                typedProp<Map<String, String>>("tags").all {
+                    hasSize(3)
+                    key("a").isEqualTo("b")
+                    key("c").isEqualTo("d")
+                    key("scenario").isEqualTo("the scenario")
+                }
+            }
+            assertThat(meter).isInstanceOf(CompositeGauge::class.java).all {
+                prop(CompositeGauge::id).isEqualTo(id1)
+            }
+
+            assertThat(registry.globalMeters().size).isEqualTo(1)
+            val (globalId, globalMeter) = registry.globalMeters().toList()[0]
+            assertThat(globalId).all {
+                prop(Meter.Id::type).isEqualTo(MeterType.GAUGE)
+                prop(Meter.Id::meterName).isEqualTo("test")
+                typedProp<Map<String, String>>("tags").all {
+                    hasSize(2)
+                    key("a").isEqualTo("b")
+                    key("c").isEqualTo("d")
+                }
+            }
+            assertThat(globalMeter).isInstanceOf(InMemoryGauge::class.java).all {
+                prop(InMemoryGauge::id).isEqualTo(id1.copy(tags = id1.tags - "scenario"))
+            }
+
             // when
             val id2 =
                 Meter.Id("test", MeterType.GAUGE, mapOf("a" to "b", "c" to "d", "scenario" to "the other scenario"))
@@ -323,7 +440,14 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("globalMeter").isNotNull()
                     .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
-            assertThat(registry.meters()).hasSize(3)
+            assertThat(registry.meters()[id2]).isNotNull().all {
+                isInstanceOf(CompositeGauge::class.java).all {
+                    prop(CompositeGauge::id).isEqualTo(id2)
+                }
+            }
+
+            assertThat(registry.meters()).hasSize(2)
+            assertThat(registry.globalMeters()).hasSize(1)
         }
 
     @Test
@@ -438,6 +562,37 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 }
             }
 
+            assertThat(registry.meters().size).isEqualTo(1)
+            val (id, meter) = registry.meters().toList()[0]
+            assertThat(id).all {
+                prop(Meter.Id::type).isEqualTo(MeterType.DISTRIBUTION_SUMMARY)
+                prop(Meter.Id::meterName).isEqualTo("test")
+                typedProp<Map<String, String>>("tags").all {
+                    hasSize(3)
+                    key("a").isEqualTo("b")
+                    key("c").isEqualTo("d")
+                    key("scenario").isEqualTo("the scenario")
+                }
+            }
+            assertThat(meter).isInstanceOf(CompositeDistributionSummary::class.java).all {
+                prop(CompositeDistributionSummary::id).isEqualTo(id1)
+            }
+
+            assertThat(registry.globalMeters().size).isEqualTo(1)
+            val (globalId, globalMeter) = registry.globalMeters().toList()[0]
+            assertThat(globalId).all {
+                prop(Meter.Id::type).isEqualTo(MeterType.DISTRIBUTION_SUMMARY)
+                prop(Meter.Id::meterName).isEqualTo("test")
+                typedProp<Map<String, String>>("tags").all {
+                    hasSize(2)
+                    key("a").isEqualTo("b")
+                    key("c").isEqualTo("d")
+                }
+            }
+            assertThat(globalMeter).isInstanceOf(InMemoryCumulativeDistributionSummary::class.java).all {
+                prop(InMemoryCumulativeDistributionSummary::id).isEqualTo(id1.copy(tags = id1.tags - "scenario"))
+            }
+
             // when
             val id2 = Meter.Id(
                 "test",
@@ -456,7 +611,14 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("globalMeter").isNotNull()
                     .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
-            assertThat(registry.meters()).hasSize(3)
+            assertThat(registry.meters().size).isEqualTo(2)
+            assertThat(registry.meters()[id2]).isNotNull().all {
+                isInstanceOf(CompositeDistributionSummary::class.java).all {
+                    prop(CompositeDistributionSummary::id).isEqualTo(id2)
+                }
+            }
+            assertThat(registry.meters()).hasSize(2)
+            assertThat(registry.globalMeters()).hasSize(1)
         }
 
     @Test
@@ -498,6 +660,38 @@ internal class InMemoryCumulativeMeterRegistryTest {
                     }
                 }
             }
+            assertThat(registry.meters().size).isEqualTo(1)
+            val (id, meter) = registry.meters().toList()[0]
+            assertThat(id).all {
+                prop(Meter.Id::type).isEqualTo(MeterType.DISTRIBUTION_SUMMARY)
+                prop(Meter.Id::meterName).isEqualTo("test")
+                typedProp<Map<String, String>>("tags").all {
+                    hasSize(3)
+                    key("a").isEqualTo("b")
+                    key("c").isEqualTo("d")
+                    key("scenario").isEqualTo("the scenario")
+                }
+            }
+            assertThat(meter).isInstanceOf(CompositeDistributionSummary::class.java).all {
+                prop(CompositeDistributionSummary::id).isEqualTo(id1)
+                prop(CompositeDistributionSummary::percentiles).containsAll(20.0, 55.0)
+            }
+
+            assertThat(registry.globalMeters().size).isEqualTo(1)
+            val (globalId, globalMeter) = registry.globalMeters().toList()[0]
+            assertThat(globalId).all {
+                prop(Meter.Id::type).isEqualTo(MeterType.DISTRIBUTION_SUMMARY)
+                prop(Meter.Id::meterName).isEqualTo("test")
+                typedProp<Map<String, String>>("tags").all {
+                    hasSize(2)
+                    key("a").isEqualTo("b")
+                    key("c").isEqualTo("d")
+                }
+            }
+            assertThat(globalMeter).isInstanceOf(InMemoryCumulativeDistributionSummary::class.java).all {
+                prop(InMemoryCumulativeDistributionSummary::id).isEqualTo(id1.copy(tags = id1.tags - "scenario"))
+                prop(InMemoryCumulativeDistributionSummary::percentiles).containsAll(20.0, 55.0)
+            }
 
             // when
             val id2 = Meter.Id(
@@ -520,7 +714,15 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("globalMeter").isNotNull()
                     .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
-            assertThat(registry.meters()).hasSize(3)
+            assertThat(registry.meters().size).isEqualTo(2)
+            assertThat(registry.meters()[id2]).isNotNull().all {
+                isInstanceOf(CompositeDistributionSummary::class.java).all {
+                    prop(CompositeDistributionSummary::id).isEqualTo(id2)
+                    prop(CompositeDistributionSummary::percentiles).containsAll(21.0, 35.0)
+                }
+            }
+            assertThat(registry.meters()).hasSize(2)
+            assertThat(registry.globalMeters()).hasSize(1)
         }
 
     @Test
@@ -578,6 +780,36 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop("meterReporter").isSameAs(meterReporter)
             }
         }
+        assertThat(registry.meters().size).isEqualTo(1)
+        val (id, meter) = registry.meters().toList()[0]
+        assertThat(id).all {
+            prop(Meter.Id::type).isEqualTo(MeterType.COUNTER)
+            prop(Meter.Id::meterName).isEqualTo("test")
+            typedProp<Map<String, String>>("tags").all {
+                hasSize(3)
+                key("a").isEqualTo("b")
+                key("c").isEqualTo("d")
+                key("scenario").isEqualTo("the scenario")
+            }
+        }
+        assertThat(meter).isInstanceOf(CompositeCounter::class.java).all {
+            prop(CompositeCounter::id).isEqualTo(id1)
+        }
+
+        assertThat(registry.globalMeters().size).isEqualTo(1)
+        val (globalId, globalMeter) = registry.globalMeters().toList()[0]
+        assertThat(globalId).all {
+            prop(Meter.Id::type).isEqualTo(MeterType.COUNTER)
+            prop(Meter.Id::meterName).isEqualTo("test")
+            typedProp<Map<String, String>>("tags").all {
+                hasSize(2)
+                key("a").isEqualTo("b")
+                key("c").isEqualTo("d")
+            }
+        }
+        assertThat(globalMeter).isInstanceOf(InMemoryCumulativeCounter::class.java).all {
+            prop(InMemoryCumulativeCounter::id).isEqualTo(id1.copy(tags = id1.tags - "scenario"))
+        }
 
         // when
         val id2 =
@@ -593,7 +825,14 @@ internal class InMemoryCumulativeMeterRegistryTest {
             prop("globalMeter").isNotNull()
                 .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
         }
-        assertThat(registry.meters()).hasSize(3)
+        assertThat(registry.meters().size).isEqualTo(2)
+        assertThat(registry.meters()[id2]).isNotNull().all {
+            isInstanceOf(CompositeCounter::class.java).all {
+                prop(CompositeCounter::id).isEqualTo(id2)
+            }
+        }
+        assertThat(registry.meters()).hasSize(2)
+        assertThat(registry.globalMeters()).hasSize(1)
     }
 
     @Test
