@@ -32,6 +32,7 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.report.DefaultScenarioReportingExecutionState
@@ -71,7 +72,7 @@ internal class RedisCampaignReportStateKeeper(
         }.count()
     }
 
-    @LogInput(level = DEBUG)
+    @LogInputAndOutput(level = DEBUG)
     override suspend fun start(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         val key = "$campaignKey-report:$RUNNING_SCENARIOS_KEY_POSTFIX"
         redisSetCommands.sadd(key, scenarioName)
@@ -82,7 +83,7 @@ internal class RedisCampaignReportStateKeeper(
         )
     }
 
-    @LogInput(level = DEBUG)
+    @LogInputAndOutput(level = DEBUG)
     override suspend fun complete(campaignKey: CampaignKey, scenarioName: ScenarioName) {
         redisHashCommands.hset(
             buildRedisReportKey(campaignKey, scenarioName),
@@ -91,6 +92,7 @@ internal class RedisCampaignReportStateKeeper(
         )
     }
 
+    @LogInputAndOutput(level = DEBUG)
     override suspend fun complete(campaignKey: CampaignKey, result: ExecutionStatus, failureReason: String?) {
         // Saved the provided status and the potential error message.
         val key = "$campaignKey-report:$CAMPAIGN_FORCED_STATUS"
@@ -103,7 +105,7 @@ internal class RedisCampaignReportStateKeeper(
         redisHashCommands.hset(key, status)
     }
 
-    @LogInput(level = DEBUG)
+    @LogInputAndOutput(level = DEBUG)
     override suspend fun abort(campaignKey: CampaignKey) {
         val scenarios =
             redisSetCommands.smembers("$campaignKey-report:$RUNNING_SCENARIOS_KEY_POSTFIX").toSet(mutableSetOf())
@@ -161,7 +163,7 @@ internal class RedisCampaignReportStateKeeper(
                                 stepName,
                                 "${stepName}_failure_$index",
                                 ReportMessageSeverity.ERROR,
-                                "Count of errors $errorType: $count (${count.percentOf(totalFailures)}%)"
+                                "Count of errors $errorType: $count (${count.percentOf(totalFailures)}% of all failures)"
                             )
                         }
                     }

@@ -23,6 +23,7 @@ import assertk.assertThat
 import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isNull
 import assertk.assertions.isSameAs
 import assertk.assertions.isTrue
 import io.aerisconsulting.catadioptre.coInvokeInvisible
@@ -58,8 +59,6 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.verifyOnce
-import java.time.Duration
-import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import org.apache.commons.lang3.RandomStringUtils
@@ -67,6 +66,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 
 @WithMockk
 internal class CampaignMeterRegistryFacadeImplTest {
@@ -101,6 +102,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
             //given
             every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
             every { factoryConfiguration.zone } returns "at"
+            every { factoryConfiguration.tenant } returns "my-tenant"
             // Stores the timestamp in ms, when the publication is triggered, in order to verify the period.
             val publicationTimestamps = mutableListOf<Long>()
             // Latch to wait until all publications are completed.
@@ -152,7 +154,8 @@ internal class CampaignMeterRegistryFacadeImplTest {
                 mapOf(
                     "tag-1" to "value-1",
                     "tag-2" to "value-2",
-                    "zone" to "at"
+                    "zone" to "at",
+                    "tenant" to "my-tenant"
                 )
             )
             // Verifies that the publication occurs on a regular basis.
@@ -199,6 +202,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
             //given
             every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
             every { factoryConfiguration.zone } returns "at"
+            every { factoryConfiguration.tenant } returns "my-tenant"
             val job1 = mockk<Job> { coEvery { join() } coAnswers { delay(100) } }
             val job2 = mockk<Job> { coJustRun { join() } }
             val campaignMeterRegistry = spyk(
@@ -236,6 +240,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
 
             //then
             assertThat(campaignMeterRegistry.ticker().isClosedForReceive).isTrue()
+            assertThat(campaignMeterRegistry.currentCampaignKey()).isNull()
             coVerifyOrder {
                 campaignMeterRegistry.init(campaign)
                 publisherFactory1.getPublisher()
@@ -267,6 +272,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.zone } returns null
         every { factoryConfiguration.tags } returns emptyMap()
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = listOf(publisherFactory1, publisherFactory2),
             meterRegistry = meterRegistry,
@@ -311,6 +317,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.zone } returns null
         every { factoryConfiguration.tags } returns emptyMap()
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = listOf(publisherFactory1, publisherFactory2),
             meterRegistry = meterRegistry,
@@ -355,6 +362,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.zone } returns null
         every { factoryConfiguration.tags } returns emptyMap()
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = listOf(publisherFactory1, publisherFactory2),
             meterRegistry = meterRegistry,
@@ -391,6 +399,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -447,6 +456,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -502,6 +512,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -558,6 +569,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -613,6 +625,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -671,6 +684,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -729,6 +743,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -786,6 +801,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -844,6 +860,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -902,6 +919,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -959,6 +977,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -1019,6 +1038,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
             // given
             every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
             every { factoryConfiguration.zone } returns "at"
+            every { factoryConfiguration.tenant } returns "my-tenant"
             val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
                 publisherFactories = emptyList(),
                 meterRegistry = meterRegistry,
@@ -1079,6 +1099,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -1138,6 +1159,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -1196,6 +1218,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,
@@ -1251,6 +1274,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         // given
         every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
         every { factoryConfiguration.zone } returns "at"
+        every { factoryConfiguration.tenant } returns "my-tenant"
         val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
             publisherFactories = emptyList(),
             meterRegistry = meterRegistry,

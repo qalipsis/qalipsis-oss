@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.directives.Directive
@@ -37,6 +38,7 @@ internal class RedisCompletionState(
 ) : CompletionState(campaign) {
 
     override suspend fun doInit(): List<Directive> {
+        log.debug { "Initializing the status ${this::class.simpleName} for the campaign ${campaign.key}" }
         operations.setState(campaign.tenant, campaignKey, CampaignRedisState.COMPLETION_STATE)
         operations.prepareFactoriesForFeedbackExpectations(campaign)
         return super.doInit().also {
@@ -67,5 +69,9 @@ internal class RedisCompletionState(
         } else {
             this
         }
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

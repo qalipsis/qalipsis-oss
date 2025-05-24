@@ -39,7 +39,7 @@ import jakarta.inject.Singleton
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
-internal class ObjectMapperCreationListener : BeanCreatedEventListener<ObjectMapper> {
+internal class JacksonObjectMapperCreationListener : BeanCreatedEventListener<ObjectMapper> {
 
     override fun onCreated(event: BeanCreatedEvent<ObjectMapper>): ObjectMapper {
         event.bean.apply {
@@ -70,11 +70,11 @@ internal class ObjectMapperCreationListener : BeanCreatedEventListener<ObjectMap
             disable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES)
 
             // Null fields are ignored.
-            setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            setSerializationInclusion(JsonInclude.Include.ALWAYS)
             setDefaultPropertyInclusion(
                 JsonInclude.Value.construct(
-                    JsonInclude.Include.NON_NULL,
-                    JsonInclude.Include.NON_NULL
+                    JsonInclude.Include.ALWAYS,
+                    JsonInclude.Include.ALWAYS
                 )
             )
 

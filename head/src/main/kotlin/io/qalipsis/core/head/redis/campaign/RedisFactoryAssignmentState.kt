@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.redis.campaign
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.AbortRunningCampaign
@@ -42,6 +43,7 @@ internal class RedisFactoryAssignmentState(
 ) : FactoryAssignmentState(campaign, factories, scenarios) {
 
     override suspend fun doInit(): List<Directive> {
+        log.debug { "Initializing the status ${this::class.simpleName} for the campaign ${campaign.key}" }
         // Persists the current state.
         operations.setState(campaign.tenant, campaignKey, CampaignRedisState.FACTORY_DAGS_ASSIGNMENT_STATE)
         val directives = super.doInit()
@@ -79,5 +81,9 @@ internal class RedisFactoryAssignmentState(
         return abort(campaign) {
             RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
         }
+    }
+
+    private companion object {
+        val log = logger()
     }
 }

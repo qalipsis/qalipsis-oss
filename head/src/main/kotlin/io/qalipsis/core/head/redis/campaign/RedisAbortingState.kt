@@ -55,6 +55,7 @@ internal class RedisAbortingState(
     )
 
     override suspend fun doInit(): List<Directive> {
+        log.debug { "Initializing the status ${this::class.simpleName} for the campaign ${campaign.key}" }
         campaign.message = "Aborting campaign"
         operations.setState(campaign.tenant, campaignKey, CampaignRedisState.ABORTING_STATE)
         // Prepared the feedback expectations.
