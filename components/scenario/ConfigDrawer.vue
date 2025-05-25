@@ -202,10 +202,12 @@ const handleConfirmBtnClick = handleSubmit(
 const _initZoneOptions = async () => {
   // Prepares the available zone options for configuring the scenario.
   const zones = await fetchZones();
-  zoneOptions.value = zones.map(zone => ({
-    label: zone.title,
-    value: zone.key
-  }));
+  zoneOptions.value = zones
+    .filter(zone => zone.enabled)
+    .map(zone => ({
+      label: zone.title,
+      value: zone.key
+    }));
 }
 
 const handleExecutionProfileChange = (

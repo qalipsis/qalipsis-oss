@@ -26,4 +26,7 @@ export class TailwindClassHelper {
     static formDropdownOptionClass = 'w-full relative py-2 px-3 rounded-md mb-1 hover:bg-primary-50 dark:hover:bg-gray-700';
     static formDropdownOptionActiveClass = "bg-gray-100 dark:bg-gray-800 after:content-[''] after:absolute after:w-2 after:h-2 after:rounded-full after:right-2 after:top-auto after:bg-primary-500";
     static toastBaseClass = 'w-56 h-32 rounded-md shadow-lg';
+    static menuPanelBaseClass = 'absolute right-0 z-10 py-2 bg-white dark:bg-gray-900 w-fit shadow-xl rounded-md';
+    static menuWrapperBaseClass = 'flex items-center cursor-pointer hover:bg-primary-50 dark:hover:bg-gray-800';
+    static menuItemBaseClass = 'flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700 dark:text-gray-100';
 }

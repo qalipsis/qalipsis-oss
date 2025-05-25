@@ -405,5 +405,9 @@ export interface Zone {
     /**
      * Image URL to display for the zone
      */
-    image: string;
+    imagePath: string;
+    /**
+     * A flag to indicate if the zone is enabled.
+     */
+    enabled: boolean;
 }

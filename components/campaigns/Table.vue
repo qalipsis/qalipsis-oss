@@ -39,39 +39,44 @@
         </template>
       </template>
       <template #actionCell="{ record }">
-        <div 
-          v-if="
-            actionsEnabled &&
-            record.status === 'SCHEDULED'
-          "
+        <div
+          v-if="actionsEnabled && record.status === 'SCHEDULED'"
           class="cursor-pointer"
         >
           <Popover class="relative">
             <PopoverButton class="outline-none">
               <div class="flex items-center invisible group-hover:visible">
-                <BaseIcon icon="qls-icon-menu" class="text-2xl hover:text-primary-500 text-gray-700" />
+                <BaseIcon
+                  icon="qls-icon-menu"
+                  class="text-2xl hover:text-primary-500 text-gray-700"
+                />
               </div>
             </PopoverButton>
-            <PopoverPanel
-              class="absolute right-0 z-10 py-2 bg-white w-fit shadow-xl rounded-md"
-            >
+            <PopoverPanel :class="TailwindClassHelper.menuPanelBaseClass">
               <PopoverButton class="outline-none">
-                <div class="flex items-center cursor-pointer hover:bg-primary-50">   
+                <div :class="TailwindClassHelper.menuWrapperBaseClass">
                   <div
-                    class="flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700"
+                    :class="TailwindClassHelper.menuItemBaseClass"
                     @click="handleRunNowBtnClick(record)"
                   >
-                    <BaseIcon icon="qls-icon-time" class="text-xl" />
+                    <BaseIcon
+                      icon="qls-icon-time"
+                      class="text-xl"
+                    />
                     <span class="pl-2"> Run now </span>
                   </div>
                 </div>
               </PopoverButton>
               <PopoverButton class="outline-none">
-                <div class="flex items-center cursor-pointer hover:bg-primary-50">
-                  <div 
-                    class="flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700"
-                    @click="handleAbortBtnClick(record)">
-                    <BaseIcon icon="qls-icon-delete" class="text-xl" />
+                <div :class="TailwindClassHelper.menuWrapperBaseClass">
+                  <div
+                    :class="TailwindClassHelper.menuItemBaseClass"
+                    @click="handleAbortBtnClick(record)"
+                  >
+                    <BaseIcon
+                      icon="qls-icon-delete"
+                      class="text-xl"
+                    />
                     <span class="pl-2"> Abort </span>
                   </div>
                 </div>
@@ -81,158 +86,153 @@
         </div>
       </template>
     </BaseTable>
-    <BaseModal 
+    <BaseModal
       title="Abort campaign"
       confirmBtnText="Abort"
       v-model:open="campaignAbortModalOpen"
       :closable="true"
-      @confirmBtnClick="handleConfirmAbortBtnClick">
+      @confirmBtnClick="handleConfirmAbortBtnClick"
+    >
       <span>{{ campaignAbortModalContent }}</span>
     </BaseModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue';
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 
 const props = defineProps<{
-  actionsEnabled?: boolean;
-  rowSelectionEnabled?: boolean;
-  maxSelectedRows?: number;
+  actionsEnabled?: boolean
+  rowSelectionEnabled?: boolean
+  maxSelectedRows?: number
   extraQueryParams?: { [key: string]: string }
-}>();
+}>()
 
-const userStore = useUserStore();
-const campaignsTableStore = useCampaignsTableStore();
-const toastStore = useToastStore();
+const userStore = useUserStore()
+const campaignsTableStore = useCampaignsTableStore()
+const toastStore = useToastStore()
 
-const { dataSource, totalElements, pageSize, currentPageIndex } = storeToRefs(campaignsTableStore);
-const { fetchCampaignConfig, createCampaign, abortCampaign } = useCampaignApi();
+const { dataSource, totalElements, pageSize, currentPageIndex } = storeToRefs(campaignsTableStore)
+const { fetchCampaignConfig, createCampaign, abortCampaign } = useCampaignApi()
 
-const selectedRowKeys = computed(() => campaignsTableStore.selectedRowKeys);
+const selectedRowKeys = computed(() => campaignsTableStore.selectedRowKeys)
 
-const campaignAbortModalOpen = ref(false);
-const campaignAbortModalContent = ref("");
+const campaignAbortModalOpen = ref(false)
+const campaignAbortModalContent = ref('')
 
-let selectedCampaignTableData: CampaignTableData;
+let selectedCampaignTableData: CampaignTableData
 
 onMounted(() => {
-  _fetchTableData();
-});
+  _fetchTableData()
+})
 
 onBeforeUnmount(() => {
-  campaignsTableStore.$reset();
-});
+  campaignsTableStore.$reset()
+})
 
 watch(
   () => userStore.currentTenantReference,
   () => {
-    campaignsTableStore.$reset();
-    _fetchTableData();
+    campaignsTableStore.$reset()
+    _fetchTableData()
   }
-);
+)
 
 const handlePaginationChange = (pageIndex: number) => {
   campaignsTableStore.$patch({
     currentPageIndex: pageIndex,
-  });
-  _fetchTableData();
+  })
+  _fetchTableData()
 }
 
 const handleSelectionChange = (tableSelection: TableSelection) => {
   campaignsTableStore.$patch({
     selectedRows: tableSelection.selectedRows,
-    selectedRowKeys: tableSelection.selectedRowKeys
-  });
+    selectedRowKeys: tableSelection.selectedRowKeys,
+  })
 }
 
 const disableRow = (campaign: CampaignTableData): boolean => {
-  let disabled = false;
+  let disabled = false
   const selectableStatuses: ExecutionStatus[] = [
     ExecutionStatusConstant.SUCCESSFUL,
     ExecutionStatusConstant.FAILED,
     ExecutionStatusConstant.ABORTED,
     ExecutionStatusConstant.WARNING,
-  ];
+  ]
 
   if (campaign.status && !selectableStatuses.includes(campaign.status)) {
-    disabled = true;
+    disabled = true
   } else if (props.maxSelectedRows && selectedRowKeys.value) {
     // When the max number of row selection is specified, the row is disabled when it is not yet selected.
-    disabled =
-      selectedRowKeys.value.length >= props.maxSelectedRows &&
-      !selectedRowKeys.value.includes(campaign.key);
+    disabled = selectedRowKeys.value.length >= props.maxSelectedRows && !selectedRowKeys.value.includes(campaign.key)
   } else {
-    disabled = campaign.disabled ?? false;
+    disabled = campaign.disabled ?? false
   }
 
-  return disabled;
+  return disabled
 }
 
 const handleSorterChange = (tableSorter: TableSorter | null) => {
-  const sort = tableSorter
-    ? `${tableSorter.key}:${tableSorter.direction}`
-    : '';
+  const sort = tableSorter ? `${tableSorter.key}:${tableSorter.direction}` : ''
   campaignsTableStore.$patch({
     sort: sort,
-  });
-  _fetchTableData();
+  })
+  _fetchTableData()
 }
 
 const handleRefreshBtnClick = () => {
-  _fetchTableData();
+  _fetchTableData()
 }
 
 const handleAbortBtnClick = (campaignTableData: CampaignTableData) => {
-  selectedCampaignTableData = campaignTableData;
-  campaignAbortModalContent.value = `Do you want to abort the scheduled campaign "${campaignTableData.name}"?`;
-  campaignAbortModalOpen.value = true;
+  selectedCampaignTableData = campaignTableData
+  campaignAbortModalContent.value = `Do you want to abort the scheduled campaign "${campaignTableData.name}"?`
+  campaignAbortModalOpen.value = true
 }
 
 const handleConfirmAbortBtnClick = async () => {
   try {
-    await abortCampaign(selectedCampaignTableData.key, true);
-    await _fetchTableData();
-    campaignAbortModalOpen.value = false;
-    toastStore.success({ text: `The scheduled campaign "${selectedCampaignTableData.name}" has been successfully aborted` });
+    await abortCampaign(selectedCampaignTableData.key, true)
+    await _fetchTableData()
+    campaignAbortModalOpen.value = false
+    toastStore.success({
+      text: `The scheduled campaign "${selectedCampaignTableData.name}" has been successfully aborted`,
+    })
   } catch (error) {
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
 
-const handleRunNowBtnClick = async (
-  campaignTableData: CampaignTableData,
-) => {
+const handleRunNowBtnClick = async (campaignTableData: CampaignTableData) => {
   try {
     // Fetches the campaign config
-    const campaignConfig = await fetchCampaignConfig(campaignTableData.key);
+    const campaignConfig = await fetchCampaignConfig(campaignTableData.key)
     // Creates the campaign
-    const campaign = await createCampaign(campaignConfig);
+    const campaign = await createCampaign(campaignConfig)
     // navigate to the campaign details
-    navigateTo(`/campaigns/${campaign.key}`);
+    navigateTo(`/campaigns/${campaign.key}`)
   } catch (error) {
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-};
+}
 
-const handleNameClick = (
-  campaignTableData: CampaignTableData
-) => {
-  if (!props.actionsEnabled) return;
+const handleNameClick = (campaignTableData: CampaignTableData) => {
+  if (!props.actionsEnabled) return
 
-  const pageLink = campaignTableData.status === ExecutionStatusConstant.SCHEDULED
-    ? `/campaigns/config/${campaignTableData.key}`
-    : `campaigns/${campaignTableData.key}`;
+  const pageLink =
+    campaignTableData.status === ExecutionStatusConstant.SCHEDULED
+      ? `/campaigns/config/${campaignTableData.key}`
+      : `campaigns/${campaignTableData.key}`
 
-  navigateTo(pageLink);
-};
+  navigateTo(pageLink)
+}
 
 const _fetchTableData = async () => {
   try {
-    await campaignsTableStore.fetchCampaignsTableDataSource(props.extraQueryParams);
+    await campaignsTableStore.fetchCampaignsTableDataSource(props.extraQueryParams)
   } catch (error) {
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
-
 </script>

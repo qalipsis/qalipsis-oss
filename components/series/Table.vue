@@ -34,51 +34,60 @@
       </template>
     </template>
     <template #actionCell="{ record }">
-      <div v-if="!tableActionsHidden" class="cursor-pointer">
+      <div
+        v-if="!tableActionsHidden"
+        class="cursor-pointer"
+      >
         <BasePermission :permissions="[PermissionConstant.WRITE_SERIES]">
           <Popover class="relative">
             <PopoverButton class="outline-none">
               <div class="flex items-center invisible group-hover:visible">
-                <BaseIcon icon="qls-icon-menu" class="text-2xl hover:text-primary-500 text-gray-700" />
+                <BaseIcon
+                  icon="qls-icon-menu"
+                  class="text-2xl hover:text-primary-500 text-gray-700"
+                />
               </div>
             </PopoverButton>
-            <PopoverPanel
-              class="absolute right-0 z-10 py-2 bg-white w-fit shadow-xl rounded-md"
-            >
+            <PopoverPanel :class="TailwindClassHelper.menuPanelBaseClass">
               <div
                 v-if="!record.disabled"
-                class="flex items-center cursor-pointer hover:bg-primary-50"
+                :class="TailwindClassHelper.menuWrapperBaseClass"
               >
                 <div
-                  class="flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700"
+                  :class="TailwindClassHelper.menuItemBaseClass"
                   @click="handleDeleteBtnClick(record as DataSeriesTableData)"
                 >
-                  <BaseIcon icon="qls-icon-delete" class="text-xl" />
+                  <BaseIcon
+                    icon="qls-icon-delete"
+                    class="text-xl"
+                  />
                   <span class="pl-2"> Delete </span>
                 </div>
               </div>
               <div
                 v-if="!record.disabled"
-                class="flex items-center cursor-pointer hover:bg-primary-50"
+                :class="TailwindClassHelper.menuWrapperBaseClass"
               >
                 <div
-                  class="flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700"
+                  :class="TailwindClassHelper.menuItemBaseClass"
                   @click="handleEditBtnClick(record as DataSeriesTableData)"
                 >
-                  <BaseIcon icon="qls-icon-edit" class="text-xl" />
+                  <BaseIcon
+                    icon="qls-icon-edit"
+                    class="text-xl"
+                  />
                   <span class="pl-2"> Edit </span>
                 </div>
               </div>
-              <div
-                class="flex items-center cursor-pointer hover:bg-primary-50"
-              >
+              <div :class="TailwindClassHelper.menuWrapperBaseClass">
                 <div
-                  class="flex items-center h-full w-32 px-4 py-3 hover:text-primary-500 text-gray-700"
-                  @click="
-                    handleDuplicateBtnClick(record as DataSeriesTableData)
-                  "
+                  :class="TailwindClassHelper.menuItemBaseClass"
+                  @click="handleDuplicateBtnClick(record as DataSeriesTableData)"
                 >
-                  <BaseIcon icon="qls-icon-duplicate" class="text-xl" />
+                  <BaseIcon
+                    icon="qls-icon-duplicate"
+                    class="text-xl"
+                  />
                   <span class="pl-2"> Duplicate </span>
                 </div>
               </div>
@@ -102,49 +111,48 @@
 </template>
 
 <script setup lang="ts">
-import { Popover, PopoverButton, PopoverPanel } from "@headlessui/vue";
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 
 const props = defineProps<{
-  tableActionsHidden?: boolean;
-  maxSelectedRows?: number;
-  selectedDataSeriesReferences?: string[];
-}>();
+  tableActionsHidden?: boolean
+  maxSelectedRows?: number
+  selectedDataSeriesReferences?: string[]
+}>()
 
-const seriesTableStore = useSeriesTableStore();
-const toastStore = useToastStore();
+const seriesTableStore = useSeriesTableStore()
+const toastStore = useToastStore()
 
-const { dataSource, totalElements, currentPageIndex, pageSize } =
-  storeToRefs(seriesTableStore);
-const userStore = useUserStore();
+const { dataSource, totalElements, currentPageIndex, pageSize } = storeToRefs(seriesTableStore)
+const userStore = useUserStore()
 
-const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys);
+const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys)
 
-const selectedDataSeries = ref<DataSeriesTableData>();
-const formDrawerOpen = ref(false);
-const dataSeriesReferences = ref<string[]>([]);
-const deleteModalContent = ref("");
-const modalOpen = ref(false);
+const selectedDataSeries = ref<DataSeriesTableData>()
+const formDrawerOpen = ref(false)
+const dataSeriesReferences = ref<string[]>([])
+const deleteModalContent = ref('')
+const modalOpen = ref(false)
 
 onMounted(() => {
   if (props.selectedDataSeriesReferences) {
     seriesTableStore.$patch({
       selectedRowKeys: props.selectedDataSeriesReferences,
-    });
+    })
   }
-  _fetchTableData();
-});
+  _fetchTableData()
+})
 
 onBeforeUnmount(() => {
-  seriesTableStore.$reset();
-});
+  seriesTableStore.$reset()
+})
 
 watch(
   () => userStore.currentTenantReference,
   () => {
-    seriesTableStore.$reset();
-    _fetchTableData();
+    seriesTableStore.$reset()
+    _fetchTableData()
   }
-);
+)
 
 const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
   /**
@@ -153,80 +161,76 @@ const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
    * 2. The max number of row selection is specified and the selected row is more than the max number.
    * 3. The row is disabled
    */
-  const isMinionCount =
-    dataSeriesTableData.reference ===
-    SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE;
-  let disabled = false;
+  const isMinionCount = dataSeriesTableData.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
+  let disabled = false
 
   if (isMinionCount) {
-    disabled = true;
+    disabled = true
   } else if (props.maxSelectedRows) {
     // When the max number of row selection is specified, the row is disabled when it is not yet selected.
     disabled =
       selectedRowKeys.value.length > props.maxSelectedRows &&
-      !selectedRowKeys.value.includes(dataSeriesTableData.reference);
+      !selectedRowKeys.value.includes(dataSeriesTableData.reference)
   } else {
-    disabled = dataSeriesTableData.disabled;
+    disabled = dataSeriesTableData.disabled
   }
 
-  return disabled;
-};
+  return disabled
+}
 
 const handleSorterChange = (tableSorter: TableSorter | null) => {
-  const sort = tableSorter ? `${tableSorter.key}:${tableSorter.direction}` : "";
+  const sort = tableSorter ? `${tableSorter.key}:${tableSorter.direction}` : ''
   seriesTableStore.$patch({
     sort: sort,
-  });
-  _fetchTableData();
-};
+  })
+  _fetchTableData()
+}
 
 const handlePaginationChange = (pageIndex: number) => {
   seriesTableStore.$patch({
     currentPageIndex: pageIndex,
-  });
-  _fetchTableData();
-};
+  })
+  _fetchTableData()
+}
 
 const handleSelectionChange = (tableSelection: TableSelection) => {
   seriesTableStore.$patch({
     selectedRows: tableSelection.selectedRows,
     selectedRowKeys: tableSelection.selectedRowKeys,
-  });
-};
+  })
+}
 
 const handleEditBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
-  formDrawerOpen.value = true;
-  selectedDataSeries.value = dataSeriesTableData;
-};
+  formDrawerOpen.value = true
+  selectedDataSeries.value = dataSeriesTableData
+}
 
 const handleRefreshBtnClick = () => {
-  _fetchTableData();
-};
+  _fetchTableData()
+}
 
-const handleDuplicateBtnClick = async (
-  dataSeriesTableData: DataSeriesTableData
-) => {
+const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData) => {
   try {
-    const { duplicateDataSeries } = useDataSeriesApi();
-    await duplicateDataSeries(dataSeriesTableData);
-    toastStore.success({ text: `The data series ${dataSeriesTableData.displayName} has been successfully copied` });
+    const { duplicateDataSeries } = useDataSeriesApi()
+    await duplicateDataSeries(dataSeriesTableData)
+    toastStore.success({ text: `The data series ${dataSeriesTableData.displayName} has been successfully copied` })
   } catch (error) {
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-  _fetchTableData();
-};
+  _fetchTableData()
+}
 
 const handleDeleteBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
-  dataSeriesReferences.value = [dataSeriesTableData.key];
-  deleteModalContent.value = dataSeriesTableData.displayName;
-  modalOpen.value = true;
-};
+  dataSeriesReferences.value = [dataSeriesTableData.key]
+  deleteModalContent.value = dataSeriesTableData.displayName
+  modalOpen.value = true
+}
 
 const _fetchTableData = async () => {
   try {
-    await seriesTableStore.fetchDataSeriesTableDataSource();
+    await seriesTableStore.fetchDataSeriesTableDataSource()
   } catch (error) {
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) });
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-};
+}
 </script>
