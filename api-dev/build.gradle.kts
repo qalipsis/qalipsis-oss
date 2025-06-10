@@ -22,7 +22,7 @@ plugins {
     `java-test-fixtures`
 }
 
-description = "Components to support Qalipsis API development"
+description = "Components to support QALIPSIS API development"
 
 kapt {
     useBuildCache = false

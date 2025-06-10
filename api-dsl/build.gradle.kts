@@ -21,7 +21,7 @@ plugins {
     `java-test-fixtures`
 }
 
-description = "Qalipsis API Kotlin DSL"
+description = "QALIPSIS API Kotlin DSL"
 
 kapt {
     useBuildCache = false

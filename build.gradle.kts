@@ -18,23 +18,28 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
+import org.jetbrains.kotlin.gradle.plugin.extraProperties
+import org.jreleaser.model.Active
+import org.jreleaser.model.Signing
+import org.jreleaser.model.api.deploy.maven.MavenCentralMavenDeployer
 
 plugins {
     idea
-    java
-    kotlin("jvm") version "1.8.21"
-    kotlin("plugin.serialization") version "1.8.21"
-    kotlin("kapt") version "1.8.21"
-    kotlin("plugin.allopen") version "1.8.21"
+    kotlin("jvm") version "1.9.25"
+    kotlin("plugin.serialization") version "1.9.25"
+    kotlin("kapt") version "1.9.25"
+    kotlin("plugin.allopen") version "1.9.25"
+    `maven-publish`
+    id("org.jreleaser") version "1.18.0"
+    id("com.github.jk1.dependency-license-report") version "2.9"
+    id("com.palantir.git-version") version "3.0.0"
+}
 
-    id("nebula.contacts") version "6.0.0"
-    id("nebula.info") version "11.4.1"
-    id("nebula.maven-publish") version "18.4.0"
-    id("nebula.maven-scm") version "18.4.0"
-    id("nebula.maven-manifest") version "18.4.0"
-    id("nebula.maven-apache-license") version "18.4.0"
-    id("com.github.jk1.dependency-license-report") version "1.17"
-    signing
+description = "QALIPSIS API"
+
+repositories {
+    mavenLocal()
+    mavenCentral()
 }
 
 licenseReport {
@@ -49,95 +54,91 @@ licenseReport {
         arrayOf<com.github.jk1.license.filter.DependencyFilter>(com.github.jk1.license.filter.LicenseBundleNormalizer())
 }
 
-description = "Qalipsis API"
-
-/**
- * Target version of the generated JVM bytecode.
- */
-val target = JavaVersion.VERSION_11
-
-java {
-    sourceCompatibility = target
-    targetCompatibility = target
-
-    withSourcesJar()
-    withJavadocJar()
-}
 
 tasks.withType<Wrapper> {
     distributionType = Wrapper.DistributionType.BIN
-    gradleVersion = "6.8.1"
+    gradleVersion = "8.14.1"
 }
 
 val testNumCpuCore: String? by project
+
+jreleaser {
+    gitRootSearch.set(true)
+
+    release {
+        // One least one enabled release provider is mandatory, so let's use Github and disable
+        // all the options.
+        github {
+            skipRelease.set(true)
+            skipTag.set(true)
+            uploadAssets.set(Active.NEVER)
+            token.set("dummy")
+        }
+    }
+
+    val enableSign = !extraProperties.has("qalipsis.sign") || extraProperties.get("qalipsis.sign") != "false"
+    if (enableSign) {
+        signing {
+            active.set(Active.ALWAYS)
+            mode.set(Signing.Mode.MEMORY)
+            armored = true
+        }
+    }
+
+    deploy {
+        maven {
+            mavenCentral {
+                register("qalipsis-releases") {
+                    active.set(Active.RELEASE_PRERELEASE)
+                    namespace.set("io.qalipsis")
+                    applyMavenCentralRules.set(true)
+                    stage.set(MavenCentralMavenDeployer.Stage.UPLOAD)
+                    stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.path)
+                }
+            }
+            nexus2 {
+                register("qalipsis-snapshots") {
+                    active.set(Active.SNAPSHOT)
+                    url.set("https://central.sonatype.com/repository/maven-snapshots/")
+                    snapshotUrl.set("https://central.sonatype.com/repository/maven-snapshots/")
+                    applyMavenCentralRules.set(true)
+                    snapshotSupported.set(true)
+                    closeRepository.set(true)
+                    releaseRepository.set(true)
+                    stagingRepository(layout.buildDirectory.dir("staging-deploy").get().asFile.path)
+                }
+            }
+        }
+    }
+}
 
 allprojects {
     group = "io.qalipsis"
     version = File(rootDir, "project.version").readText().trim()
 
-    apply(plugin = "nebula.contacts")
-    apply(plugin = "nebula.info")
-    apply(plugin = "nebula.maven-publish")
-    apply(plugin = "nebula.maven-scm")
-    apply(plugin = "nebula.maven-manifest")
-    apply(plugin = "nebula.maven-developer")
-    apply(plugin = "nebula.maven-apache-license")
-    apply(plugin = "signing")
-    apply(plugin = "nebula.javadoc-jar")
-    apply(plugin = "nebula.source-jar")
-
-    infoBroker {
-        excludedManifestProperties = listOf(
-            "Manifest-Version", "Module-Owner", "Module-Email", "Module-Source",
-            "Built-OS", "Build-Host", "Build-Job", "Build-Host", "Build-Job", "Build-Number", "Build-Id", "Build-Url",
-            "Built-Status"
-        )
-    }
-
-    contacts {
-        addPerson("eric.jesse@aeris-consulting.com", delegateClosureOf<nebula.plugin.contacts.Contact> {
-            moniker = "Eric Jessé"
-            github = "ericjesse"
-            role("Owner")
-        })
-    }
+    apply(plugin = "maven-publish")
+    apply(plugin = "com.palantir.git-version")
 
     repositories {
         mavenLocal()
         mavenCentral()
     }
 
-    val signingKeyId = "signing.keyId"
-    if (System.getProperty(signingKeyId) != null || System.getenv(signingKeyId) != null) {
-        signing {
-            publishing.publications.forEach { sign(it) }
-        }
-    }
-
-    val ossrhUsername: String? by project
-    val ossrhPassword: String? by project
+    // https://jreleaser.org/guide/latest/examples/maven/maven-central.html#_gradle
     publishing {
         repositories {
             maven {
-                val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-                val snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-                name = "sonatype"
-                // See https://docs.gradle.org/current/userguide/single_versions.html#version_ordering.
-                url = uri(if (project.version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
-                credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
-                }
+                // Local repository to store the artifacts before they are released by JReleaser.
+                name = "PreRelease"
+                setUrl(rootProject.layout.buildDirectory.dir("staging-deploy"))
             }
         }
     }
 
     if (isNotPlatform()) {
-        logger.lifecycle("Applying the Java configuration on $name")
         configureNotPlatform()
-    } else {
-        logger.lifecycle("Ignoring the Java configuration on $name")
     }
+
 }
 
 /**
@@ -149,18 +150,22 @@ fun Project.isNotPlatform() = !name.contains("platform")
  * Applies the configuration for non-platform modules.
  */
 fun Project.configureNotPlatform() {
-    apply(plugin = "java")
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+
+    kotlin {
+        javaToolchains {
+            jvmToolchain(11)
+        }
+    }
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        withJavadocJar()
+        withSourcesJar()
     }
 
     tasks {
-
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             kotlinOptions {
-                jvmTarget = target.majorVersion
                 javaParameters = true
                 freeCompilerArgs += listOf(
                     "-Xopt-in=kotlin.RequiresOptIn",
@@ -171,7 +176,13 @@ fun Project.configureNotPlatform() {
             }
         }
 
-        val replacedPropertiesInResources = mapOf("project.version" to project.version)
+        val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
+        val gitDetails = versionDetails()
+        val replacedPropertiesInResources = mapOf(
+            "project.version" to project.version,
+            "git.commit" to gitDetails.gitHash,
+            "git.branch" to (gitDetails.branchName ?: "<Unknown>")
+        )
         withType<ProcessResources> {
             filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to replacedPropertiesInResources)
         }
@@ -230,6 +241,47 @@ fun Project.configureNotPlatform() {
         }
     }
 
+    val project = this@configureNotPlatform
+    project.afterEvaluate {
+        publishing {
+            publications {
+                create<MavenPublication>("maven") {
+                    from(components["java"])
+                    pom {
+                        name.set(project.name)
+                        description.set(project.description)
+
+                        if (version.toString().endsWith("-SNAPSHOT")) {
+                            this.withXml {
+                                this.asNode().appendNode("distributionManagement").appendNode("repository").apply {
+                                    this.appendNode("id", "central-snapshots")
+                                    this.appendNode("name", "Central Portal Snapshots")
+                                    this.appendNode("url", "https://central.sonatype.com/repository/maven-snapshots")
+                                }
+                            }
+                        }
+                        url.set("https://qalipsis.io")
+                        licenses {
+                            license {
+                                name.set("Apache License, Version 2.0 (Apache-2.0)")
+                                url.set("http://https://opensource.org/license/apache-2-0")
+                            }
+                        }
+                        developers {
+                            developer {
+                                id.set("ericjesse")
+                                name.set("Eric Jessé")
+                            }
+                        }
+                        scm {
+                            connection.set("scm:git:https://github.com/qalipsis/qalipsis-api.git")
+                            url.set("https://github.com/qalipsis/qalipsis-api.git/")
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 val testTasks = subprojects.flatMap {
@@ -245,6 +297,6 @@ val testTasks = subprojects.flatMap {
 
 tasks.register("testReport", TestReport::class) {
     this.group = "verification"
-    destinationDirectory.set(file("${buildDir}/reports/tests"))
+    destinationDirectory.set(project.layout.buildDirectory.dir("reports/tests"))
     testResults.from(*(testTasks.toTypedArray()))
 }

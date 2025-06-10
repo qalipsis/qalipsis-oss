@@ -1,1 +1,1 @@
-description = "Qalipsis - API Parent library"
+description = "QALIPSIS - API Parent library"

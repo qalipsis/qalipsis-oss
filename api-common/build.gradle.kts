@@ -22,7 +22,7 @@ plugins {
     `java-test-fixtures`
 }
 
-description = "Qalipsis API - Common module"
+description = "QALIPSIS API - Common module"
 
 allOpen {
     annotations(
@@ -57,7 +57,7 @@ dependencies {
     kapt("io.aeris-consulting:catadioptre-annotations")
 
     implementation("com.google.guava:guava")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm")
     implementation("org.apache.commons:commons-text:1.11.0")
     testImplementation("io.aeris-consulting:catadioptre-kotlin")
 

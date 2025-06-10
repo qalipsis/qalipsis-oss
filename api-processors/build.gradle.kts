@@ -20,7 +20,7 @@ plugins {
     kotlin("plugin.serialization")
 }
 
-description = "Qalipsis compile time processors"
+description = "QALIPSIS compile time processors"
 
 kapt {
     includeCompileClasspath = true
@@ -35,7 +35,7 @@ dependencies {
     implementation("com.squareup:kotlinpoet:1.13.2")
 
     api("io.micronaut:micronaut-inject-java")
-    api("org.jetbrains.kotlinx:kotlinx-serialization-core")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm")
     compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json")
     compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     api("io.micronaut:micronaut-validation")

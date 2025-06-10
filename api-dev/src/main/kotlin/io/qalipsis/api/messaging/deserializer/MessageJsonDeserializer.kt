@@ -39,7 +39,7 @@ class MessageJsonDeserializer<V : Any>(
     init {
         mapper.registerModule(BeanIntrospectionModule())
         mapper.registerModule(JavaTimeModule())
-        mapper.registerModule(KotlinModule())
+        mapper.registerModule(KotlinModule.Builder().build())
         mapper.registerModule(Jdk8Module())
 
         mapperConfiguration?.let {

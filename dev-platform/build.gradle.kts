@@ -18,28 +18,30 @@ plugins {
     `java-platform`
 }
 
-val kotlin = "1.8.21"
-val kotlinCoroutines = "1.7.1"
-val kotlinSerialization = "1.5.1"
+description = "Platform for QALIPSIS Core modules"
 
-val micronaut = "3.9.+"
-val jackson = "2.15.1"
-val klogging = "2.1.23"
-val logback = "1.4.+"
-val guava = "29.0-jre"
-val caffeineCache = "3.1.6"
+val kotlin = "1.9.25"
+val kotlinCoroutines = "1.8.1"
+val kotlinSerialization = "1.6.3"
+
+val micronaut = "3.9.7"
+val jackson = "2.18.4"
+val klogging = "3.0.5"
+val logback = "1.4.14"
+val guava = "33.4.8-jre"
+val caffeineCache = "3.2.0"
 val cuid = "0.1.1"
-val commonsLang = "3.+"
+val commonsLang = "3.17.0"
 
-val netty = "4.1.93.Final"
+val netty = "4.2.1.Final"
 val bouncycastle = "1.70"
 val postgresqlDriver = "42.3.1"
 
-val testContainers = "1.+"
-val mockk = "1.10.+"
-val catadioptre = "0.5.+"
-val awaitility = "4.2.+"
-val assertk = "0.26.1"
+val testContainers = "1.21.1"
+val mockk = "1.14.2"
+val catadioptre = "0.6.3"
+val awaitility = "4.2.2"
+val assertk = "0.28.1"
 
 javaPlatform {
     allowDependencies()
@@ -52,7 +54,7 @@ dependencies {
     api(platform("org.testcontainers:testcontainers-bom:$testContainers"))
     api(platform("io.netty:netty-bom:$netty"))
     api("org.jetbrains.kotlin:kotlin-stdlib:$kotlin")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutines")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$kotlinCoroutines")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:$kotlinCoroutines")
 
     // Libraries that could be brought by other dependencies and break the compilation or execution.
@@ -64,7 +66,7 @@ dependencies {
     constraints {
         // Platform modules.
         api("org.jetbrains.kotlin:kotlin-reflect:$kotlin")
-        api("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinSerialization")
+        api("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:$kotlinSerialization")
         api("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinSerialization")
         api("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinSerialization")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinCoroutines")
@@ -98,6 +100,27 @@ publishing {
     publications {
         create<MavenPublication>("qalipsisDevPlatform") {
             from(components["javaPlatform"])
+            pom {
+                name.set(project.name)
+                description.set(project.description)
+                url.set("https://qalipsis.io")
+                licenses {
+                    license {
+                        name.set("Apache License, Version 2.0 (Apache-2.0)")
+                        url.set("http://https://opensource.org/license/apache-2-0")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("ericjesse")
+                        name.set("Eric Jessé")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:https://github.com/qalipsis/qalipsis-api.git")
+                    url.set("https://github.com/qalipsis/qalipsis-api.git/")
+                }
+            }
         }
     }
 }
