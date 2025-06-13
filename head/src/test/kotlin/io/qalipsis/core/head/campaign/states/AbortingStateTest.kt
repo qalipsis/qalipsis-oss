@@ -25,7 +25,7 @@ import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.isTrue
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -98,7 +98,7 @@ internal class AbortingStateTest : AbstractStateTest() {
 
             // then
             assertThat(newState).isInstanceOf(CompletionState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
             }
             confirmVerified(campaignService, factoryService, campaignReportStateKeeper)
@@ -124,8 +124,8 @@ internal class AbortingStateTest : AbstractStateTest() {
 
             // then
             assertThat(newState).isInstanceOf(FailureState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("error").isSameAs("The campaign was aborted")
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("error").isSameInstanceAs("The campaign was aborted")
                 typedProp<Boolean>("initialized").isFalse()
             }
             coVerifyOnce {
@@ -158,8 +158,8 @@ internal class AbortingStateTest : AbstractStateTest() {
 
             // then
             assertThat(newState).isInstanceOf(AbortingState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("error").isSameAs("this error")
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("error").isSameInstanceAs("this error")
                 typedProp<Boolean>("initialized").isTrue()
             }
             confirmVerified(factoryService, campaignReportStateKeeper)

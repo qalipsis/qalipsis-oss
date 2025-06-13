@@ -27,7 +27,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.getProperty
@@ -91,13 +91,13 @@ internal class StageStepStartSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(StageStep::class).all {
             prop(StageStep<*, *>::name).isNotNull()
-            prop("retryPolicy").isSameAs(mockedRetryPolicy)
+            prop("retryPolicy").isSameInstanceAs(mockedRetryPolicy)
         }
         // The name is set in the spec.
         assertThat(spec.name).isEqualTo(creationContext.createdStep!!.name)
         assertThat(converter).typedProp<Map<String, StageStep<*, *>>>("startStepsById").all {
             hasSize(1)
-            key(creationContext.createdStep!!.name).isSameAs(creationContext.createdStep)
+            key(creationContext.createdStep!!.name).isSameInstanceAs(creationContext.createdStep)
         }
     }
 
@@ -116,12 +116,12 @@ internal class StageStepStartSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(StageStep::class).all {
             prop(StageStep<*, *>::name).isEqualTo("my-step")
-            prop("retryPolicy").isSameAs(mockedRetryPolicy)
+            prop("retryPolicy").isSameInstanceAs(mockedRetryPolicy)
         }
         assertThat(spec.name).isEqualTo("my-step")
         assertThat(converter).typedProp<Map<String, StageStep<*, *>>>("startStepsById").all {
             hasSize(1)
-            key("my-step").isSameAs(creationContext.createdStep)
+            key("my-step").isSameInstanceAs(creationContext.createdStep)
         }
     }
 
@@ -147,7 +147,7 @@ internal class StageStepStartSpecificationConverterTest :
             .all {
                 prop(StageStepSpecificationConverter.GroupEndProxy<*>::name).isNotNull()
                 prop("retryPolicy").isNull()
-                prop("start").isSameAs(stageStep)
+                prop("start").isSameInstanceAs(stageStep)
             }
         assertThat(converter).typedProp<Map<String, StageStep<*, *>>>("startStepsById").isEmpty()
     }
@@ -176,7 +176,7 @@ internal class StageStepStartSpecificationConverterTest :
             .all {
                 prop(StageStepSpecificationConverter.GroupEndProxy<*>::name).isNotNull()
                 prop("retryPolicy").isNull()
-                prop("start").isSameAs(stageStep)
+                prop("start").isSameInstanceAs(stageStep)
             }
         assertThat(converter).typedProp<Map<String, StageStep<*, *>>>("startStepsById").isEmpty()
     }

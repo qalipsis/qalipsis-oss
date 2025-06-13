@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.steps.CatchExhaustedContextStepSpecification
@@ -74,7 +74,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CatchExhaustedContextStep::class).all {
             prop(CatchExhaustedContextStep<*>::name).isEqualTo("my-step")
-            prop("block").isSameAs(blockSpecification)
+            prop("block").isSameInstanceAs(blockSpecification)
         }
     }
 
@@ -93,7 +93,7 @@ internal class CatchExhaustedContextStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(CatchExhaustedContextStep::class).all {
             prop(CatchExhaustedContextStep<*>::name).isEmpty()
-            prop("block").isSameAs(blockSpecification)
+            prop("block").isSameInstanceAs(blockSpecification)
         }
     }
 }

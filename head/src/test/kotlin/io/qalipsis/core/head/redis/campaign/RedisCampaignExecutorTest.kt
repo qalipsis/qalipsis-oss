@@ -28,7 +28,7 @@ import assertk.assertions.index
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
@@ -212,7 +212,7 @@ internal open class RedisCampaignExecutorTest {
             countDown.await()
 
             // then
-            assertThat(result).isSameAs(runningCampaign)
+            assertThat(result).isSameInstanceAs(runningCampaign)
             coVerifyOrder {
                 factoryService.getActiveScenarios("my-tenant", setOf("scenario-1", "scenario-2"))
                 campaignService.create("my-tenant", "my-user", refEq(campaign))
@@ -272,7 +272,7 @@ internal open class RedisCampaignExecutorTest {
 
         // then
         assertThat(initialState).isInstanceOf(RedisFactoryAssignmentState::class).all {
-            prop("campaign").isSameAs(runningCampaign)
+            prop("campaign").isSameInstanceAs(runningCampaign)
             typedProp<Collection<Factory>>("factories").containsOnly(factory1, factory2, factory3)
             typedProp<Collection<ScenarioSummary>>("scenarios").containsOnly(scenario1, scenario2)
         }
@@ -390,9 +390,9 @@ internal open class RedisCampaignExecutorTest {
 
             // then
             assertThat(state).isInstanceOf(RedisFactoryAssignmentState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("operations").isSameAs(operations)
-                prop("context").isSameAs(campaignExecutionContext)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("operations").isSameInstanceAs(operations)
+                prop("context").isSameInstanceAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
             coVerifyOrder {
@@ -428,9 +428,9 @@ internal open class RedisCampaignExecutorTest {
 
             // then
             assertThat(state).isInstanceOf(RedisMinionsAssignmentState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("operations").isSameAs(operations)
-                prop("context").isSameAs(campaignExecutionContext)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("operations").isSameInstanceAs(operations)
+                prop("context").isSameInstanceAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
             coVerifyOrder {
@@ -466,9 +466,9 @@ internal open class RedisCampaignExecutorTest {
 
             // then
             assertThat(state).isInstanceOf(RedisWarmupState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("operations").isSameAs(operations)
-                prop("context").isSameAs(campaignExecutionContext)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("operations").isSameInstanceAs(operations)
+                prop("context").isSameInstanceAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
             coVerifyOrder {
@@ -504,9 +504,9 @@ internal open class RedisCampaignExecutorTest {
 
             // then
             assertThat(state).isInstanceOf(RedisMinionsScheduleRampUpState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("operations").isSameAs(operations)
-                prop("context").isSameAs(campaignExecutionContext)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("operations").isSameInstanceAs(operations)
+                prop("context").isSameInstanceAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
             coVerifyOrder {
@@ -542,9 +542,9 @@ internal open class RedisCampaignExecutorTest {
 
             // then
             assertThat(state).isInstanceOf(RedisRunningState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("operations").isSameAs(operations)
-                prop("context").isSameAs(campaignExecutionContext)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("operations").isSameInstanceAs(operations)
+                prop("context").isSameInstanceAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
             coVerifyOrder {
@@ -580,9 +580,9 @@ internal open class RedisCampaignExecutorTest {
 
             // then
             assertThat(state).isInstanceOf(RedisCompletionState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("operations").isSameAs(operations)
-                prop("context").isSameAs(campaignExecutionContext)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("operations").isSameInstanceAs(operations)
+                prop("context").isSameInstanceAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
             coVerifyOrder {
@@ -618,9 +618,9 @@ internal open class RedisCampaignExecutorTest {
 
             // then
             assertThat(state).isInstanceOf(RedisFailureState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("operations").isSameAs(operations)
-                prop("context").isSameAs(campaignExecutionContext)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("operations").isSameInstanceAs(operations)
+                prop("context").isSameInstanceAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
             coVerifyOrder {
@@ -656,9 +656,9 @@ internal open class RedisCampaignExecutorTest {
 
             // then
             assertThat(state).isInstanceOf(RedisAbortingState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("operations").isSameAs(operations)
-                prop("context").isSameAs(campaignExecutionContext)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("operations").isSameInstanceAs(operations)
+                prop("context").isSameInstanceAs(campaignExecutionContext)
                 typedProp<Boolean>("initialized").isTrue()
             }
             coVerifyOrder {
@@ -857,7 +857,7 @@ internal open class RedisCampaignExecutorTest {
         val result = campaignExecutor.replay("my-tenant", "my-user", "my-campaign")
 
         // then
-        assertThat(result).isSameAs(runningCampaign)
+        assertThat(result).isSameInstanceAs(runningCampaign)
         coExcludeRecords { campaignExecutor.replay("my-tenant", "my-user", "my-campaign") }
         coVerifyOrder {
             campaignService.retrieveConfiguration("my-tenant", "my-campaign")

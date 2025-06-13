@@ -29,7 +29,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -76,7 +76,7 @@ internal class StageStepTest {
 
         // then
         assertThat(stageStep).all {
-            prop("head").isSameAs(tailStep)
+            prop("head").isSameInstanceAs(tailStep)
             prop(StageStep<Double, String>::next).isEmpty()
         }
 
@@ -86,11 +86,11 @@ internal class StageStepTest {
 
         // then
         assertThat(stageStep).all {
-            prop("head").isSameAs(tailStep)
+            prop("head").isSameInstanceAs(tailStep)
             prop(StageStep<Double, String>::next).all {
                 hasSize(2)
-                index(0).isSameAs(stepAfter1)
-                index(1).isSameAs(stepAfter2)
+                index(0).isSameInstanceAs(stepAfter1)
+                index(1).isSameInstanceAs(stepAfter2)
             }
         }
     }

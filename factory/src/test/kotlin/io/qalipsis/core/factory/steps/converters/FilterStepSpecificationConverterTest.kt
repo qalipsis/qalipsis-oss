@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.mockk.every
 import io.qalipsis.api.steps.FilterStepSpecification
@@ -73,8 +73,8 @@ internal class FilterStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FilterStep::class).all {
             prop(FilterStep<*>::name).isEqualTo("my-step")
-            prop("retryPolicy").isSameAs(mockedRetryPolicy)
-            prop("specification").isSameAs(blockSpecification)
+            prop("retryPolicy").isSameInstanceAs(mockedRetryPolicy)
+            prop("specification").isSameInstanceAs(blockSpecification)
         }
     }
 
@@ -93,8 +93,8 @@ internal class FilterStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FilterStep::class).all {
             prop(FilterStep<*>::name).isEmpty()
-            prop("retryPolicy").isSameAs(mockedRetryPolicy)
-            prop("specification").isSameAs(blockSpecification)
+            prop("retryPolicy").isSameInstanceAs(mockedRetryPolicy)
+            prop("specification").isSameInstanceAs(blockSpecification)
         }
     }
 }

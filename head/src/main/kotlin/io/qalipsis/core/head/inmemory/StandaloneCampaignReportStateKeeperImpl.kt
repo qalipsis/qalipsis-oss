@@ -45,13 +45,13 @@ import io.qalipsis.core.head.report.toCampaignExecutionDetails
 import io.qalipsis.core.head.report.toCampaignReport
 import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.annotation.Nullable
+import jakarta.annotation.PreDestroy
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import org.slf4j.event.Level
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
-import javax.annotation.PreDestroy
 
 @Singleton
 @Requires(env = [STANDALONE])

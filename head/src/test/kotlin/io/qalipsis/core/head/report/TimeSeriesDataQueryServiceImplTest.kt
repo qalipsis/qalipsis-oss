@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.containsAll
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
@@ -174,7 +174,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             val result = timeSeriesDataQueryService.render("my-tenant", setOf("ds-1", "ds-2"), providedRequest)
 
             // then
-            assertThat(result).isSameAs(aggregationResult)
+            assertThat(result).isSameInstanceAs(aggregationResult)
             coVerifyOrder {
                 dataSeriesRepository.findAllByTenantAndReferences("my-tenant", setOf("ds-1", "ds-2"))
                 campaignRepository.findInstantsAndDuration("my-tenant", setOf("camp-1", "camp-2"))
@@ -448,7 +448,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             val result = timeSeriesDataQueryService.search("my-tenant", setOf("ds-1", "ds-2"), providedRequest)
 
             // then
-            assertThat(result).isSameAs(retrievalResult)
+            assertThat(result).isSameInstanceAs(retrievalResult)
             coVerifyOrder {
                 dataSeriesRepository.findAllByTenantAndReferences("my-tenant", setOf("ds-1", "ds-2"))
                 campaignRepository.findInstantsAndDuration("my-tenant", setOf("camp-1", "camp-2"))

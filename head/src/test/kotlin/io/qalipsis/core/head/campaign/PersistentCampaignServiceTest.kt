@@ -26,7 +26,7 @@ import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
@@ -132,7 +132,7 @@ internal class PersistentCampaignServiceTest {
         val result = persistentCampaignService.create("my-tenant", "my-user", campaign)
 
         // then
-        assertThat(result).isSameAs(runningCampaign)
+        assertThat(result).isSameInstanceAs(runningCampaign)
         coVerifyOrder {
             campaignPreparator.convertAndSaveCampaign(
                 refEq("my-tenant"),
@@ -213,7 +213,7 @@ internal class PersistentCampaignServiceTest {
             persistentCampaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "This is the failure")
 
         // then
-        assertThat(result).isSameAs(convertedCampaign)
+        assertThat(result).isSameInstanceAs(convertedCampaign)
         coVerifyOnce {
             campaignRepository.complete("my-tenant", "my-campaign", ExecutionStatus.FAILED, "This is the failure")
             campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "This is the failure")
@@ -707,7 +707,7 @@ internal class PersistentCampaignServiceTest {
         val retrievedConfiguration = persistentCampaignService.retrieveConfiguration("my-tenant", "my-campaign")
 
         // then
-        assertThat(retrievedConfiguration).isSameAs(campaignConfiguration)
+        assertThat(retrievedConfiguration).isSameInstanceAs(campaignConfiguration)
         coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
 
         confirmVerified(

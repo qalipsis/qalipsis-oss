@@ -27,7 +27,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotSameAs
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
@@ -146,7 +146,7 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(FailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error 1")
         }
 
@@ -159,7 +159,7 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(FailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error 2")
         }
 
@@ -186,7 +186,7 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
 
             // then
             assertThat(newState).isInstanceOf(FailureState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 prop("error").isEqualTo("")
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -206,7 +206,7 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
             val newState = state.process(mockk<Feedback>())
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
@@ -236,7 +236,7 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
                 })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             newState =
@@ -248,7 +248,7 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
             // then
             assertThat(newState).isInstanceOf(WarmupState::class).all {
                 isNotSameAs(state)
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -275,8 +275,8 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(DisabledState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("isSuccessful").isSameAs(false)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("isSuccessful").isSameInstanceAs(false)
         }
         coVerifyOrder {
             factoryService.getFactoriesHealth(refEq("my-tenant"), mutableSetOf("node-1", "node-2", "node-3"))
@@ -312,9 +312,9 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(AbortingState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("abortConfiguration").isSameAs(abortRunningCampaign)
-            prop("error").isSameAs("The campaign was aborted")
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+            prop("error").isSameInstanceAs("The campaign was aborted")
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1"))
         coVerifyOrder {
@@ -351,9 +351,9 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(AbortingState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("abortConfiguration").isSameAs(abortRunningCampaign)
-            prop("error").isSameAs("The campaign was aborted")
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+            prop("error").isSameInstanceAs("The campaign was aborted")
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
         coVerifyOrder {
@@ -390,8 +390,8 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(DisabledState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("isSuccessful").isSameAs(false)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("isSuccessful").isSameInstanceAs(false)
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
         coVerifyOrder {

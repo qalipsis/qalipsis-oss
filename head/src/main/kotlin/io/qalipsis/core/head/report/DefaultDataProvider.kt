@@ -24,8 +24,8 @@ import io.qalipsis.api.report.DataField
 import io.qalipsis.api.report.EventMetadataProvider
 import io.qalipsis.api.report.MeterMetadataProvider
 import io.qalipsis.core.head.jdbc.entity.Defaults
+import jakarta.annotation.Nullable
 import jakarta.inject.Singleton
-import javax.annotation.Nullable
 
 /**
  * Default implementation of [DataProvider].

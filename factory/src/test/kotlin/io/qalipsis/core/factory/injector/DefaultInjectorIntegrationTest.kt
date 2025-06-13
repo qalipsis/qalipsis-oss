@@ -20,9 +20,10 @@
 package io.qalipsis.core.factory.injector
 
 import assertk.assertThat
-import assertk.assertions.containsAll
+import assertk.assertions.containsExactlyInAnyOrder
+import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
@@ -67,7 +68,7 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.getProperty(propertyName, requiredType)
 
         // then
-        assertThat(result.get().javaClass).isSameAs(requiredType)
+        assertThat(result.get().javaClass).isSameInstanceAs(requiredType)
         assertThat(result.get()).isEqualTo(propertyValue)
     }
 
@@ -82,7 +83,7 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.getProperty(propertyName, requiredType)
 
         // then
-        assertThat(result.get().javaClass).isSameAs(requiredType)
+        assertThat(result.get().javaClass).isSameInstanceAs(requiredType)
         assertThat(result.get()).isEqualTo(propertyValue)
     }
 
@@ -97,8 +98,8 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.getProperty(propertyName, requiredType)
 
         // then
-        assertThat(result.get().javaClass).isSameAs(requiredType)
-        assertThat(result.get()).isSameAs(propertyValue)
+        assertThat(result.get().javaClass).isSameInstanceAs(requiredType)
+        assertThat(result.get()).isSameInstanceAs(propertyValue)
     }
 
     @Test
@@ -113,7 +114,7 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.getProperty(propertyName, requiredType, defaultValue)
 
         // then
-        assertThat(result.javaClass).isSameAs(requiredType)
+        assertThat(result.javaClass).isSameInstanceAs(requiredType)
         assertThat(result).isEqualTo(propertyValue)
     }
 
@@ -128,7 +129,7 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.getProperty(propertyName, requiredType, defaultValue)
 
         // then
-        assertThat(result.javaClass).isSameAs(requiredType)
+        assertThat(result.javaClass).isSameInstanceAs(requiredType)
         assertThat(result).isEqualTo(defaultValue)
     }
 
@@ -143,7 +144,7 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.getRequiredProperty(propertyName, requiredType)
 
         // then
-        assertThat(result.javaClass).isSameAs(requiredType)
+        assertThat(result.javaClass).isSameInstanceAs(requiredType)
         assertThat(result).isEqualTo(propertyValue)
     }
 
@@ -156,7 +157,7 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.getBean(requiredType)
 
         // then
-        assertThat(result.javaClass).isSameAs(requiredType)
+        assertThat(result.javaClass).isSameInstanceAs(requiredType)
     }
 
     @Test
@@ -168,7 +169,7 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.getBean(requiredType, Qualifiers.byName("classToInject"))
 
         // then
-        assertThat(result.javaClass).isSameAs(ClassToInject::class.java)
+        assertThat(result.javaClass).isSameInstanceAs(ClassToInject::class.java)
     }
 
     @Test
@@ -180,7 +181,7 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.findBean(requiredType)
 
         // then
-        assertThat(result.get().javaClass).isSameAs(requiredType)
+        assertThat(result.get().javaClass).isSameInstanceAs(requiredType)
     }
 
     @Test
@@ -192,7 +193,7 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.findBean(requiredType, Qualifiers.byName("otherClassToInject"))
 
         // then
-        assertThat(result.get().javaClass).isSameAs(OtherClassToInject::class.java)
+        assertThat(result.get().javaClass).isSameInstanceAs(OtherClassToInject::class.java)
     }
 
     @Test
@@ -204,8 +205,11 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.getBeansOfType(requiredType)
 
         // then
-        assertThat { result.size == 2 }
-        assertThat(result.map { it.javaClass }).containsAll(ClassToInject::class.java, OtherClassToInject::class.java)
+        assertThat(result).hasSize(2)
+        assertThat(result.map { it.javaClass }).containsExactlyInAnyOrder(
+            ClassToInject::class.java,
+            OtherClassToInject::class.java
+        )
     }
 
     @Test
@@ -217,8 +221,8 @@ internal class DefaultInjectorIntegrationTest {
         val result = defaultInjector.getBeansOfType(requiredType, Qualifiers.byName("classToInject"))
 
         // then
-        assertThat { result.size == 1 }
-        assertThat(result.map { it.javaClass }).containsAll(ClassToInject::class.java)
+        assertThat(result).hasSize(1)
+        assertThat(result.map { it.javaClass }).containsExactlyInAnyOrder(ClassToInject::class.java)
     }
 
 }

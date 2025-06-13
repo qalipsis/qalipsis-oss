@@ -28,7 +28,7 @@ import assertk.assertions.index
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.setProperty
@@ -206,8 +206,8 @@ internal class StandaloneCampaignExecutorTest {
             countDown.await()
 
             // then
-            assertThat(result).isSameAs(runningCampaign)
-            assertThat(campaignExecutor.currentCampaignState()).isSameAs(initialState)
+            assertThat(result).isSameInstanceAs(runningCampaign)
+            assertThat(campaignExecutor.currentCampaignState()).isSameInstanceAs(initialState)
             coVerifyOrder {
                 campaignExecutor.start("my-tenant", "my-user", refEq(campaign))
                 factoryService.getActiveScenarios(any(), setOf("scenario-1", "scenario-2"))
@@ -267,7 +267,7 @@ internal class StandaloneCampaignExecutorTest {
 
         // then
         assertThat(initialState).isInstanceOf(FactoryAssignmentState::class).all {
-            prop("campaign").isSameAs(runningCampaign)
+            prop("campaign").isSameInstanceAs(runningCampaign)
             typedProp<Collection<Factory>>("factories").containsOnly(factory1, factory2, factory3)
             typedProp<Collection<ScenarioSummary>>("scenarios").containsOnly(scenario1, scenario2)
         }
@@ -489,7 +489,7 @@ internal class StandaloneCampaignExecutorTest {
         val result = campaignExecutor.replay("my-tenant", "my-user", "my-campaign")
 
         // then
-        assertThat(result).isSameAs(runningCampaign)
+        assertThat(result).isSameInstanceAs(runningCampaign)
         coExcludeRecords { campaignExecutor.replay("my-tenant", "my-user", "my-campaign") }
         coVerifyOrder {
             campaignService.retrieveConfiguration("my-tenant", "my-campaign")

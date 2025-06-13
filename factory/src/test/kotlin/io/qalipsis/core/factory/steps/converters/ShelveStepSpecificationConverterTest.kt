@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.states.SharedStateRegistry
@@ -76,8 +76,8 @@ internal class ShelveStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ShelveStep::class).all {
             prop(ShelveStep<*>::name).isEqualTo("my-step")
-            prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
-            prop("specification").isSameAs(blockSpecification)
+            prop("sharedStateRegistry").isSameInstanceAs(sharedStateRegistry)
+            prop("specification").isSameInstanceAs(blockSpecification)
         }
     }
 
@@ -94,8 +94,8 @@ internal class ShelveStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ShelveStep::class).all {
             prop(ShelveStep<*>::name).isEmpty()
-            prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
-            prop("specification").isSameAs(blockSpecification)
+            prop("sharedStateRegistry").isSameInstanceAs(sharedStateRegistry)
+            prop("specification").isSameInstanceAs(blockSpecification)
         }
     }
 }

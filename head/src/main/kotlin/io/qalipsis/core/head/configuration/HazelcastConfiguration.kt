@@ -27,8 +27,8 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.core.bind.annotation.Bindable
 import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import jakarta.annotation.Nullable
 import java.time.Duration
-import javax.annotation.Nullable
 import javax.validation.Valid
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank

@@ -26,7 +26,7 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.key
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
@@ -122,7 +122,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(FailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error")
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
@@ -148,7 +148,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
 
             // then
             assertThat(newState).isInstanceOf(FailureState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 prop("error").isEqualTo("")
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -168,7 +168,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             val newState = state.process(mockk<Feedback>())
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
@@ -204,7 +204,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             coVerifyOrder {
                 campaign.unassignScenarioOfFactory("scenario-2", "node-1")
                 campaign.contains("node-1")
@@ -245,7 +245,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             coVerifyOrder {
                 campaign.unassignScenarioOfFactory("scenario-2", "node-1")
                 campaign.contains("node-1")
@@ -285,7 +285,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             newState = state.process(mockk<MinionsAssignmentFeedback> {
@@ -295,7 +295,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             newState = state.process(mockk<MinionsAssignmentFeedback> {
@@ -306,7 +306,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
 
             // then
             assertThat(newState).isInstanceOf(MinionsScheduleRampUpState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
             }
             verifyOnce { campaign.unassignScenarioOfFactory(any(), any()) }
@@ -334,8 +334,8 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(DisabledState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("isSuccessful").isSameAs(false)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("isSuccessful").isSameInstanceAs(false)
         }
         coVerifyOrder {
             factoryService.getFactoriesHealth(refEq("my-tenant"), mutableSetOf("node-1", "node-2", "node-3"))
@@ -371,9 +371,9 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(AbortingState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("abortConfiguration").isSameAs(abortRunningCampaign)
-            prop("error").isSameAs("The campaign was aborted")
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+            prop("error").isSameInstanceAs("The campaign was aborted")
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1"))
         coVerifyOrder {
@@ -410,9 +410,9 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(AbortingState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("abortConfiguration").isSameAs(abortRunningCampaign)
-            prop("error").isSameAs("The campaign was aborted")
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+            prop("error").isSameInstanceAs("The campaign was aborted")
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
         coVerifyOrder {
@@ -449,8 +449,8 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(DisabledState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("isSuccessful").isSameAs(false)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("isSuccessful").isSameInstanceAs(false)
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
         coVerifyOrder {

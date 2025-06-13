@@ -23,7 +23,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
@@ -92,10 +92,10 @@ internal class ReportingStepDecoratorConverterTest {
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ReportingStepDecorator::class).all {
-            prop("reportLiveStateRegistry").isSameAs(reportLiveStateRegistry)
-            prop("decorated").isSameAs(decoratedStep)
-            prop("eventsLogger").isSameAs(eventsLogger)
-            prop("meterRegistry").isSameAs(meterRegistry)
+            prop("reportLiveStateRegistry").isSameInstanceAs(reportLiveStateRegistry)
+            prop("decorated").isSameInstanceAs(decoratedStep)
+            prop("eventsLogger").isSameInstanceAs(eventsLogger)
+            prop("meterRegistry").isSameInstanceAs(meterRegistry)
             prop("reportErrors").isEqualTo(true)
         }
     }
@@ -112,10 +112,10 @@ internal class ReportingStepDecoratorConverterTest {
 
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(ReportingStepDecorator::class).all {
-            prop("reportLiveStateRegistry").isSameAs(reportLiveStateRegistry)
-            prop("decorated").isSameAs(decoratedStep)
-            prop("eventsLogger").isSameAs(eventsLogger)
-            prop("meterRegistry").isSameAs(meterRegistry)
+            prop("reportLiveStateRegistry").isSameInstanceAs(reportLiveStateRegistry)
+            prop("decorated").isSameInstanceAs(decoratedStep)
+            prop("eventsLogger").isSameInstanceAs(eventsLogger)
+            prop("meterRegistry").isSameInstanceAs(meterRegistry)
             prop("reportErrors").isEqualTo(false)
         }
     }

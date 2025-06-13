@@ -27,7 +27,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.isTrue
 import assertk.assertions.key
 import assertk.assertions.prop
@@ -59,10 +59,6 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.time.QalipsisTimeAssertions
 import io.qalipsis.test.time.coMeasureTime
-import java.time.Duration
-import java.time.Instant
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -70,6 +66,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * @author Eric Jessé
@@ -173,7 +173,7 @@ internal class MinionsKeeperImplTest {
                 prop(MinionImpl::isStarted).isFalse()
             }
             assertThat(minionsKeeper).all {
-                typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isSameAs(minionSlot.captured)
+                typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isSameInstanceAs(minionSlot.captured)
                 typedProp<Map<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions").key("my-minion")
                     .isEqualTo("my-dag-2")
                 typedProp<Map<ScenarioName, MutableCollection<MinionImpl>>>("idleSingletonsMinions").isEmpty()
@@ -275,13 +275,13 @@ internal class MinionsKeeperImplTest {
             prop(MinionImpl::isStarted).isFalse()
         }
         assertThat(minionsKeeper).all {
-            typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isSameAs(minionSlot.captured)
+            typedProp<Map<MinionId, MinionImpl>>("minions").key("my-minion").isSameInstanceAs(minionSlot.captured)
             typedProp<Map<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions").key("my-minion")
                 .isEqualTo("my-dag-1")
             typedProp<Map<ScenarioName, MutableCollection<MinionImpl>>>("idleSingletonsMinions").key("my-scenario")
                 .containsOnly(minionSlot.captured)
             typedProp<Table<ScenarioName, DirectedAcyclicGraphName, MinionImpl>>("singletonMinionsByDagId").transform { it["my-scenario", "my-dag-1"] }
-                .isSameAs(minionSlot.captured)
+                .isSameInstanceAs(minionSlot.captured)
             typedProp<Map<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>>("dagIdsBySingletonMinionId").key("my-minion")
                 .isEqualTo("my-scenario" to "my-dag-1")
         }
@@ -322,7 +322,7 @@ internal class MinionsKeeperImplTest {
             typedProp<Map<ScenarioName, MutableCollection<MinionImpl>>>("idleSingletonsMinions").key("my-scenario")
                 .containsOnly(createdMinion)
             typedProp<Table<ScenarioName, DirectedAcyclicGraphName, MinionImpl>>("singletonMinionsByDagId").transform { it["my-scenario", "my-dag-1"] }
-                .isSameAs(createdMinion)
+                .isSameInstanceAs(createdMinion)
             typedProp<Map<MinionId, Pair<ScenarioName, DirectedAcyclicGraphName>>>("dagIdsBySingletonMinionId").key("my-minion")
                 .isEqualTo("my-scenario" to "my-dag-1")
         }

@@ -29,7 +29,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
@@ -112,8 +112,8 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
 
             // then
             assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("error").isSameAs("The campaign was aborted")
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("error").isSameInstanceAs("The campaign was aborted")
                 typedProp<Boolean>("initialized").isFalse()
             }
             coVerifyOnce {
@@ -148,7 +148,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
 
             // then
             assertThat(newState).isInstanceOf(RedisCompletionState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
             }
             confirmVerified(campaignService, factoryService, campaignReportStateKeeper)
@@ -173,8 +173,8 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
 
         // then
         assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("error").isSameAs("The campaign was aborted")
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("error").isSameInstanceAs("The campaign was aborted")
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
@@ -209,7 +209,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
                 key("node-1").isNotNull()
                 key("node-3").isNotNull()
             }
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             confirmVerified(factoryService, campaignService, campaignReportStateKeeper)
         }
 
@@ -236,7 +236,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             state = RedisAbortingState(
@@ -256,7 +256,7 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             state = RedisAbortingState(
@@ -284,8 +284,8 @@ internal class RedisAbortingStateIntegrationTest : AbstractRedisStateIntegration
                 key("node-3").isNotNull()
             }
             assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("error").isSameAs("The campaign was aborted")
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("error").isSameInstanceAs("The campaign was aborted")
                 typedProp<Boolean>("initialized").isFalse()
             }
             coVerifyOnce {

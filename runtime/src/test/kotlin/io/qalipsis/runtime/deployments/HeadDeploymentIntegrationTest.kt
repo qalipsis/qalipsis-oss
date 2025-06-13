@@ -36,7 +36,7 @@ import io.qalipsis.core.postgres.PostgresRuntimeConfiguration.testProperties
 import io.qalipsis.core.redis.RedisRuntimeConfiguration
 import io.qalipsis.runtime.Qalipsis
 import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
-import org.awaitility.kotlin.await
+import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
@@ -228,7 +228,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
             .uri(URI.create("http://localhost:$httpPort"))
             .headers(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN)
             .build()
-        await.await("Querying homepage")
+        await("Querying homepage")
             .atMost(Duration.ofSeconds(20))
             .pollInterval(Duration.ofSeconds(2))
             .until {

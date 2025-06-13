@@ -25,7 +25,7 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -119,14 +119,14 @@ internal class InnerJoinStepSpecificationConverterTest :
         creationContext.createdStep!!.let {
             assertEquals("my-step", it.name)
             assertThat(it).isInstanceOf(InnerJoinStep::class).all {
-                prop("coroutineScope").isSameAs(coroutineScope)
-                prop("leftKeyExtractor").isSameAs(primaryKeyExtractor)
+                prop("coroutineScope").isSameInstanceAs(coroutineScope)
+                prop("leftKeyExtractor").isSameInstanceAs(primaryKeyExtractor)
                 typedProp<Collection<RightCorrelation<*>>>("rightCorrelations").all {
                     hasSize(1)
                     transform { correlations -> correlations.first() }.all {
                         prop("sourceStepName").isEqualTo("the-other-step")
-                        prop("topic").isSameAs(topic)
-                        prop("keyExtractor").isSameAs(rightKeyExtractor)
+                        prop("topic").isSameInstanceAs(topic)
+                        prop("keyExtractor").isSameInstanceAs(rightKeyExtractor)
                     }
                 }
             }
@@ -180,13 +180,13 @@ internal class InnerJoinStepSpecificationConverterTest :
         creationContext.createdStep!!.let {
             assertNotNull(it.name)
             assertThat(it).isInstanceOf(InnerJoinStep::class).all {
-                prop("leftKeyExtractor").isSameAs(primaryKeyExtractor)
+                prop("leftKeyExtractor").isSameInstanceAs(primaryKeyExtractor)
                 typedProp<Collection<RightCorrelation<*>>>("rightCorrelations").all {
                     hasSize(1)
                     transform { correlations -> correlations.first() }.all {
                         prop("sourceStepName").isEqualTo("the-other-step")
-                        prop("topic").isSameAs(topic)
-                        prop("keyExtractor").isSameAs(rightKeyExtractor)
+                        prop("topic").isSameInstanceAs(topic)
+                        prop("keyExtractor").isSameInstanceAs(rightKeyExtractor)
                     }
                 }
             }

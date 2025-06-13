@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.micronaut.core.io.ResourceLoader
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
@@ -51,11 +51,6 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
-import java.io.File
-import java.math.BigDecimal
-import java.nio.file.Files
-import java.time.Duration
-import java.time.Instant
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
@@ -63,6 +58,11 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.context.Context
+import java.io.File
+import java.math.BigDecimal
+import java.nio.file.Files
+import java.time.Duration
+import java.time.Instant
 
 
 @WithMockk
@@ -160,7 +160,12 @@ internal class ThymeleafReportServiceImplTest {
         val chartImages = listOf("This is chart 1", "This is chart 2")
 
         //when
-        val context = templateReportService.buildContext(campaignReportDetail, chartImages, "valid-font-url", Files.createTempDirectory(tempDirectory).toAbsolutePath())
+        val context = templateReportService.buildContext(
+            campaignReportDetail,
+            chartImages,
+            "valid-font-url",
+            Files.createTempDirectory(tempDirectory).toAbsolutePath()
+        )
 
         //then
         assertThat(context.getVariable("title")).isEqualTo("Test title")
@@ -172,7 +177,7 @@ internal class ThymeleafReportServiceImplTest {
     }
 
     @Test
-    fun `Generates a pdf when given a HTML string`() {
+    fun `Generates a pdf when given a HTML string`() = testDispatcherProvider.runTest {
 
         //when
         val result = templateReportService.generatePdfFromHtml(html)
@@ -182,13 +187,13 @@ internal class ThymeleafReportServiceImplTest {
     }
 
     @Test
-    fun `Throws an exception for empty HTML file`() {
+    fun `Throws an exception for empty HTML file`() = testDispatcherProvider.runTest {
         //when
         val caught = assertThrows<IllegalArgumentException> { templateReportService.generatePdfFromHtml("") }
 
         //then
         assertThat(caught).all {
-            prop(IllegalArgumentException::message).isNotNull().isSameAs("HTML File is empty")
+            prop(IllegalArgumentException::message).isNotNull().isSameInstanceAs("HTML File is empty")
         }
     }
 
@@ -245,7 +250,7 @@ internal class ThymeleafReportServiceImplTest {
     }
 
     @Test
-    fun `should render a template when given the right parameters`() {
+    fun `should render a template when given the right parameters`() = testDispatcherProvider.runTest {
         //given
         val dataSeriesEntity = DataSeriesEntity(
             reference = "my-data-series",

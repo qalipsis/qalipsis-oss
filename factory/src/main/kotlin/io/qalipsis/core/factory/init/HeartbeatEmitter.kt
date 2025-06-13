@@ -32,6 +32,7 @@ import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.heartbeat.Heartbeat
+import jakarta.annotation.PreDestroy
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -42,7 +43,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
-import javax.annotation.PreDestroy
 
 /**
  * Generates an heartbeat on a regular basis.

@@ -29,7 +29,7 @@ import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNotSameAs
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
@@ -170,7 +170,7 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
 
         // then
         assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(runningCampaign)
+            prop("campaign").isSameInstanceAs(runningCampaign)
             prop("error").isEqualTo("this is the error 1")
         }
 
@@ -183,7 +183,7 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
 
         // then
         assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(runningCampaign)
+            prop("campaign").isSameInstanceAs(runningCampaign)
             prop("error").isEqualTo("this is the error 2")
         }
 
@@ -215,7 +215,7 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
             key("node-3").isNotNull()
         }
         assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error")
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
@@ -245,7 +245,7 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
 
             // then
             assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-                prop("campaign").isSameAs(runningCampaign)
+                prop("campaign").isSameInstanceAs(runningCampaign)
                 prop("error").isEqualTo("")
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -269,7 +269,7 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
             val newState = state.process(mockk())
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
@@ -298,7 +298,7 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
                 })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             newState =
@@ -310,7 +310,7 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
             // then
             assertThat(newState).isInstanceOf(RedisWarmupState::class).all {
                 isNotSameAs(state)
-                prop("campaign").isSameAs(runningCampaign)
+                prop("campaign").isSameInstanceAs(runningCampaign)
                 typedProp<Boolean>("initialized").isFalse()
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -337,8 +337,8 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
 
         // then
         assertThat(newState).isInstanceOf(DisabledState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("isSuccessful").isSameAs(false)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("isSuccessful").isSameInstanceAs(false)
         }
         coVerifyOrder {
             factoryService.getFactoriesHealth(refEq("my-tenant"), mutableSetOf("node-1", "node-2", "node-3"))
@@ -374,10 +374,10 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
 
         // then
         assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("abortConfiguration").isSameAs(abortRunningCampaign)
-            prop("error").isSameAs("The campaign was aborted")
-            prop("operations").isSameAs(operations)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+            prop("error").isSameInstanceAs("The campaign was aborted")
+            prop("operations").isSameInstanceAs(operations)
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1"))
         coVerifyOrder {
@@ -415,10 +415,10 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
 
             // then
             assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("abortConfiguration").isSameAs(abortRunningCampaign)
-                prop("error").isSameAs("The campaign was aborted")
-                prop("operations").isSameAs(operations)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+                prop("error").isSameInstanceAs("The campaign was aborted")
+                prop("operations").isSameInstanceAs(operations)
             }
             assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
             coVerifyOrder {
@@ -456,8 +456,8 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
 
             // then
             assertThat(newState).isInstanceOf(DisabledState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("isSuccessful").isSameAs(false)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("isSuccessful").isSameInstanceAs(false)
             }
             assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
             coVerifyOrder {

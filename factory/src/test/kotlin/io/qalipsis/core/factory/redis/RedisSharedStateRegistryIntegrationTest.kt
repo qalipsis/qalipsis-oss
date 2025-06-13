@@ -19,9 +19,14 @@
 
 package io.qalipsis.core.factory.redis
 
+import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsAll
+import assertk.assertions.containsAtLeast
 import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
+import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.api.states.SharedStateDefinition
@@ -45,7 +50,7 @@ import java.time.Duration
 @WithMockk
 @ExperimentalLettuceCoroutinesApi
 @MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
-internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegrationTest() {
+internal class RedisSharedStateRegistryIntegrationTest : AbstractRedisIntegrationTest() {
 
     @Inject
     private lateinit var serializer: DistributionSerializer
@@ -67,9 +72,18 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
         val payload2 = Person("Mike", 20)
         val payload3 = Person("Paul", 25)
 
-        redisCoroutinesCommands.set("$KEY_PREFIX:${definition1.minionId}:${definition1.sharedStateName}", serializer.serialize(payload1).decodeToString())
-        redisCoroutinesCommands.set("$KEY_PREFIX:${definition2.minionId}:${definition2.sharedStateName}", serializer.serialize(payload2).decodeToString())
-        redisCoroutinesCommands.set("$KEY_PREFIX:${definition3.minionId}:${definition3.sharedStateName}", serializer.serialize(payload3).decodeToString())
+        redisCoroutinesCommands.set(
+            "$KEY_PREFIX:${definition1.minionId}:${definition1.sharedStateName}",
+            serializer.serialize(payload1).decodeToString()
+        )
+        redisCoroutinesCommands.set(
+            "$KEY_PREFIX:${definition2.minionId}:${definition2.sharedStateName}",
+            serializer.serialize(payload2).decodeToString()
+        )
+        redisCoroutinesCommands.set(
+            "$KEY_PREFIX:${definition3.minionId}:${definition3.sharedStateName}",
+            serializer.serialize(payload3).decodeToString()
+        )
     }
 
     @AfterEach
@@ -114,9 +128,9 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
         val result = registry.get<Person>(definition)
 
         //then
-        assertThat {
-            result?.name.equals("Mike")
-            result?.age == (20)
+        assertThat(result).isNotNull().all {
+            prop(Person::name).isEqualTo("Mike")
+            prop(Person::age).isEqualTo(20)
         }
     }
 
@@ -169,7 +183,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
         //then
         assertThat(result).hasSize(3)
-        assertThat(result).containsAll(
+        assertThat(result).containsAtLeast(
             Pair("$KEY_PREFIX:${nonExistingDefinition.minionId}:${nonExistingDefinition.sharedStateName}", null),
             Pair("$KEY_PREFIX:${definition1.minionId}:${definition1.sharedStateName}", payload1),
             Pair("$KEY_PREFIX:${definition3.minionId}:${definition3.sharedStateName}", payload3)
@@ -204,9 +218,9 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
         val result = registry.remove<Person>(definition)
 
         //then
-        assertThat {
-            result?.name.equals("Ann")
-            result?.age == (22)
+        assertThat(result).isNotNull().all {
+            prop(Person::name).isEqualTo("Ann")
+            prop(Person::age).isEqualTo(22)
         }
     }
 
@@ -239,7 +253,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
         //then
         assertThat(result).hasSize(2)
-        assertThat(result).containsAll(
+        assertThat(result).containsAtLeast(
             Pair("$KEY_PREFIX:${definition1.minionId}:${definition1.sharedStateName}", payload1),
             Pair("$KEY_PREFIX:${definition3.minionId}:${definition3.sharedStateName}", payload3)
         )
@@ -257,7 +271,7 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
 
         //then
         assertThat(result).hasSize(2)
-        assertThat(result).containsAll(
+        assertThat(result).containsAtLeast(
             Pair("$KEY_PREFIX:${definition1.minionId}:${definition1.sharedStateName}", null),
             Pair("$KEY_PREFIX:${definition2.minionId}:${definition2.sharedStateName}", null)
         )
@@ -278,9 +292,9 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
             redisCoroutinesCommands.get("$KEY_PREFIX:${definition.minionId}:${definition.sharedStateName}")?.let {
                 serializer.deserialize<Person>(it.encodeToByteArray())
             }
-        assertThat {
-            record?.name.equals("Nick")
-            record?.age == (30)
+        assertThat(record).isNotNull().all {
+            prop(Person::name).isEqualTo("Nick")
+            prop(Person::age).isEqualTo(30)
         }
     }
 
@@ -313,20 +327,22 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
         registry.set(mapOf(definition1 to payload1, definition2 to payload2))
 
         //then
-        val record1 = redisCoroutinesCommands.get("$KEY_PREFIX:${definition1.minionId}:${definition1.sharedStateName}")?.let {
-            serializer.deserialize<Person>(it.encodeToByteArray())
-        }
-        val record2 = redisCoroutinesCommands.get("$KEY_PREFIX:${definition2.minionId}:${definition2.sharedStateName}")?.let {
-            serializer.deserialize<Person>(it.encodeToByteArray())
-        }
+        val record1 =
+            redisCoroutinesCommands.get("$KEY_PREFIX:${definition1.minionId}:${definition1.sharedStateName}")?.let {
+                serializer.deserialize<Person>(it.encodeToByteArray())
+            }
+        val record2 =
+            redisCoroutinesCommands.get("$KEY_PREFIX:${definition2.minionId}:${definition2.sharedStateName}")?.let {
+                serializer.deserialize<Person>(it.encodeToByteArray())
+            }
 
-        assertThat {
-            record1?.name.equals("Nick")
-            record1?.age == (30)
+        assertThat(record1).isNotNull().all {
+            prop(Person::name).isEqualTo("Nick")
+            prop(Person::age).isEqualTo(30)
         }
-        assertThat{
-            record2?.name.equals("Peter")
-            record2?.age == (25)
+        assertThat(record2).isNotNull().all {
+            prop(Person::name).isEqualTo("Peter")
+            prop(Person::age).isEqualTo(25)
         }
     }
 
@@ -397,7 +413,8 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
                 definition2 to payload2,
                 definition3 to payload3,
                 definition4 to payload3
-            ))
+            )
+        )
 
         // when
         registry.clear(listOf(definition1.minionId, definition2.minionId))
@@ -409,8 +426,8 @@ internal class RedisSharedStateRegistryIntegrationTest: AbstractRedisIntegration
         Assertions.assertTrue(registry.contains(definition4))
     }
 
-    companion object{
-        val KEY_PREFIX = "shared-state-registry"
+    companion object {
+        const val KEY_PREFIX = "shared-state-registry"
     }
 
 }

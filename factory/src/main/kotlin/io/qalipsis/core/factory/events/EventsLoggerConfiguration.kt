@@ -25,7 +25,7 @@ import io.micronaut.context.env.Environment
 import io.micronaut.core.naming.conventions.StringConvention
 import io.qalipsis.api.events.EventLevel
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import javax.annotation.PostConstruct
+import jakarta.annotation.PostConstruct
 
 
 /**

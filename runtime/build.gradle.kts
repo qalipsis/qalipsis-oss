@@ -57,12 +57,11 @@ dependencies {
 
     implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
-    implementation("net.logstash.logback:logstash-logback-encoder:7.2")
 
     api("ch.qos.logback:logback-classic")
     api("info.picocli:picocli")
     api("io.micronaut.picocli:micronaut-picocli")
-    api("javax.annotation:javax.annotation-api")
+    api("jakarta.annotation:jakarta.annotation-api")
     api("io.micronaut.micrometer:micronaut-micrometer-core")
     api("io.micronaut:micronaut-management")
     api("io.micronaut:micronaut-validation")
@@ -84,10 +83,12 @@ dependencies {
     testImplementation("io.mockk:mockk")
     testImplementation("io.qalipsis:qalipsis-test:$apiVersion")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
-    testImplementation("javax.annotation:javax.annotation-api")
+    testImplementation("jakarta.annotation:jakarta.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
     testImplementation("org.testcontainers:postgresql")
-    testImplementation("org.awaitility:awaitility-kotlin")
+    testImplementation("org.awaitility:awaitility-kotlin") {
+        exclude(group = "org.jetbrains.kotlin")
+    }
 
     kaptTest(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     kaptTest("io.micronaut:micronaut-inject-java")

@@ -29,7 +29,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
@@ -120,7 +120,7 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             state = RedisFailureState(campaign, operations)
@@ -136,7 +136,7 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
 
             // then
             assertThat(newState).isInstanceOf(RedisDisabledState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("isSuccessful").isFalse()
                 typedProp<Boolean>("initialized").isFalse()
             }
@@ -172,7 +172,7 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
                 key("node-1").isNotNull()
                 key("node-3").isNotNull()
             }
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             confirmVerified(factoryService, campaignService, campaignReportStateKeeper)
         }
 
@@ -194,7 +194,7 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             state = RedisFailureState(campaign, operations)
@@ -209,7 +209,7 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             state = RedisFailureState(campaign, operations)
@@ -232,7 +232,7 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
                 key("node-3").isNotNull()
             }
             assertThat(newState).isInstanceOf(RedisDisabledState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("isSuccessful").isFalse()
                 typedProp<Boolean>("initialized").isFalse()
             }

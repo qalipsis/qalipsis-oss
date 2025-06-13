@@ -25,7 +25,7 @@ import assertk.assertions.each
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
@@ -121,14 +121,14 @@ internal class SingletonStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).all {
             isInstanceOf(NoMoreNextStepDecorator::class)
-            prop("decorated").isSameAs(decoratedStep)
+            prop("decorated").isSameInstanceAs(decoratedStep)
         }
 
         val decoratedAdditionSlot = slot<Step<*, *>>()
         verifyOnce { decoratedStep.addNext(capture(decoratedAdditionSlot)) }
 
         assertThat(decoratedAdditionSlot.captured).isInstanceOf(TopicMirrorStep::class).all {
-            prop("topic").isSameAs(dataTransferTopic)
+            prop("topic").isSameInstanceAs(dataTransferTopic)
         }
         // Verifies the predicate always return true.
         val predicate: (context: StepContext<*, *>, value: Any?) -> Boolean =
@@ -143,19 +143,19 @@ internal class SingletonStepSpecificationConverterTest :
         assertThat(singletonSpec.nextSteps).each { spec ->
             spec.all {
                 isInstanceOf(SingletonProxyStepSpecification::class)
-                prop("topic").isSameAs(dataTransferTopic)
+                prop("topic").isSameInstanceAs(dataTransferTopic)
                 transform { it.nextSteps }.hasSize(1)
             }
         }
 
         // The original specifications for the next steps are pushed as next of the new SingletonProxyStepSpecification.
         assertThat(singletonSpec.nextSteps[0]).all {
-            prop("next").isSameAs(nextSpec1)
-            transform { it.nextSteps[0] }.isSameAs(nextSpec1)
+            prop("next").isSameInstanceAs(nextSpec1)
+            transform { it.nextSteps[0] }.isSameInstanceAs(nextSpec1)
         }
         assertThat(singletonSpec.nextSteps[1]).all {
-            prop("next").isSameAs(nextSpec2)
-            transform { it.nextSteps[0] }.isSameAs(nextSpec2)
+            prop("next").isSameInstanceAs(nextSpec2)
+            transform { it.nextSteps[0] }.isSameInstanceAs(nextSpec2)
         }
         assertThat(topicConfiguration.captured).all {
             prop("type").isEqualTo(TopicType.LOOP)
@@ -176,7 +176,7 @@ internal class SingletonStepSpecificationConverterTest :
         converter.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
-        assertThat(creationContext.createdStep!!).isSameAs(decoratedStep)
+        assertThat(creationContext.createdStep!!).isSameInstanceAs(decoratedStep)
     }
 
 
@@ -214,7 +214,7 @@ internal class SingletonStepSpecificationConverterTest :
         creationContext.createdStep!!.let { step ->
             assertNotNull(step.name)
             assertThat(step).isInstanceOf(SingletonProxyStep::class).all {
-                typedProp<Topic<String>>("topic").isSameAs(dataTransferTopic)
+                typedProp<Topic<String>>("topic").isSameInstanceAs(dataTransferTopic)
             }
         }
     }
@@ -242,8 +242,8 @@ internal class SingletonStepSpecificationConverterTest :
             assertNotNull(step.name)
             assertThat(step).isInstanceOf(TopicDataPushStep::class).all {
                 prop("parentStepName").isEqualTo("my-singleton")
-                prop("topic").isSameAs(dataTransferTopic)
-                prop("coroutineScope").isSameAs(campaignCoroutineScope)
+                prop("topic").isSameInstanceAs(dataTransferTopic)
+                prop("coroutineScope").isSameInstanceAs(campaignCoroutineScope)
             }
         }
     }

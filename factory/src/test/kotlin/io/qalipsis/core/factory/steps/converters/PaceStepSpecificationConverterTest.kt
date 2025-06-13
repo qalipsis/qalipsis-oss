@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.qalipsis.api.steps.PaceStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
@@ -71,7 +71,7 @@ internal class PaceStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(PaceStep::class).all {
             prop(PaceStep<*>::name).isEqualTo("my-step")
-            prop("specification").isSameAs(blockSpecification)
+            prop("specification").isSameInstanceAs(blockSpecification)
         }
     }
 
@@ -89,7 +89,7 @@ internal class PaceStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(PaceStep::class).all {
             prop(PaceStep<*>::name).isEmpty()
-            prop("specification").isSameAs(blockSpecification)
+            prop("specification").isSameInstanceAs(blockSpecification)
         }
     }
 }

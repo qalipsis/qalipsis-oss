@@ -25,7 +25,7 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -114,12 +114,12 @@ internal class ZipStepSpecificationConverterTest :
         creationContext.createdStep!!.let {
             assertEquals("my-step", it.name)
             assertThat(it).isInstanceOf(ZipStep::class).all {
-                prop("coroutineScope").isSameAs(coroutineScope)
+                prop("coroutineScope").isSameInstanceAs(coroutineScope)
                 typedProp<Collection<RightSource<*>>>("rightSources").all {
                     hasSize(1)
                     transform { correlations -> correlations.first() }.all {
                         prop("sourceStepName").isEqualTo("the-other-step")
-                        prop("topic").isSameAs(topic)
+                        prop("topic").isSameInstanceAs(topic)
                     }
                 }
             }
@@ -174,7 +174,7 @@ internal class ZipStepSpecificationConverterTest :
                     hasSize(1)
                     transform { correlations -> correlations.first() }.all {
                         prop("sourceStepName").isEqualTo("the-other-step")
-                        prop("topic").isSameAs(topic)
+                        prop("topic").isSameInstanceAs(topic)
                     }
                 }
             }
