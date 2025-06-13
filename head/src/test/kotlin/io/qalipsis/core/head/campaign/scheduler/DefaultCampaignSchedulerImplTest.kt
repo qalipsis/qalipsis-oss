@@ -4,7 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
@@ -265,7 +265,7 @@ internal class DefaultCampaignSchedulerImplTest {
                     prop(CampaignEntity::softTimeout).isNull()
                     prop(CampaignEntity::configurer).isEqualTo(1L)
                     prop(CampaignEntity::tenantId).isEqualTo(123L)
-                    prop(CampaignEntity::configuration).isSameAs(configuration)
+                    prop(CampaignEntity::configuration).isSameInstanceAs(configuration)
                     prop(CampaignEntity::result).isEqualTo(SUCCESSFUL)
                     prop(CampaignEntity::start).isEqualTo(nextSchedule)
                 }
@@ -468,7 +468,7 @@ internal class DefaultCampaignSchedulerImplTest {
         latch.await()
 
         // then
-        assertThat(result).isSameAs(runningCampaign)
+        assertThat(result).isSameInstanceAs(runningCampaign)
         coVerifyOrder {
             factoryService.getActiveScenarios(refEq("my-tenant"), setOf("scenario-1", "scenario-2"))
             campaignPreparator.convertAndSaveCampaign(
@@ -690,7 +690,7 @@ internal class DefaultCampaignSchedulerImplTest {
             val result = defaultCampaignSchedulerImpl.update("my-tenant", "my-user", campaignKey, updateConfiguration)
 
             // then
-            assertThat(result).isSameAs(runningCampaign)
+            assertThat(result).isSameInstanceAs(runningCampaign)
             coVerifyOrder {
                 defaultCampaignSchedulerImpl.update(
                     refEq("my-tenant"),

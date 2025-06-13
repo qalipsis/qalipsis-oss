@@ -25,7 +25,7 @@ import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
@@ -142,7 +142,7 @@ internal class CampaignPreparatorTest {
         )
 
         // then
-        assertThat(result).isSameAs(runningCampaign)
+        assertThat(result).isSameInstanceAs(runningCampaign)
         coVerifyOrder {
             campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
             hook1.preCreate(refEq(campaign), refEq(runningCampaign))
@@ -159,7 +159,7 @@ internal class CampaignPreparatorTest {
                     prop(CampaignEntity::softTimeout).isNull()
                     prop(CampaignEntity::configurer).isEqualTo(199L)
                     prop(CampaignEntity::tenantId).isEqualTo(8165L)
-                    prop(CampaignEntity::configuration).isSameAs(campaign)
+                    prop(CampaignEntity::configuration).isSameInstanceAs(campaign)
                     prop(CampaignEntity::result).isEqualTo(QUEUED)
                 }
             })
@@ -413,7 +413,7 @@ internal class CampaignPreparatorTest {
         )
 
         // then
-        assertThat(result).isSameAs(runningCampaign)
+        assertThat(result).isSameInstanceAs(runningCampaign)
         coVerifyOrder {
             campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(configuration))
             hook1.preSchedule(refEq(configuration), refEq(runningCampaign))
@@ -430,7 +430,7 @@ internal class CampaignPreparatorTest {
                     prop(CampaignEntity::softTimeout).isNull()
                     prop(CampaignEntity::configurer).isEqualTo(199L)
                     prop(CampaignEntity::tenantId).isEqualTo(8165L)
-                    prop(CampaignEntity::configuration).isSameAs(configuration)
+                    prop(CampaignEntity::configuration).isSameInstanceAs(configuration)
                     prop(CampaignEntity::result).isEqualTo(SCHEDULED)
                 }
             })

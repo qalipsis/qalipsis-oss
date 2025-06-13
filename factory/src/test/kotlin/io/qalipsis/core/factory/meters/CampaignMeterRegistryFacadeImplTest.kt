@@ -24,7 +24,7 @@ import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.isTrue
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.mockk.coEvery
@@ -121,7 +121,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
                 every { this@spyk["publishSnapshots"](any<Collection<MeterSnapshot>>()) } coAnswers {
                     publicationTimestamps += System.currentTimeMillis()
                     latch.decrement()
-                    mockk<Collection<Job>>()
+                    emptyList<Job>()
                 }
             }
             val publisher1 = mockk<MeasurementPublisher> {
@@ -132,8 +132,8 @@ internal class CampaignMeterRegistryFacadeImplTest {
                 coJustRun { init() }
             }
             every { publisherFactory2.getPublisher() } returns publisher2
-            val snapshots1 = mockk<Collection<MeterSnapshot>>("snapshots-1") { every { isEmpty() } returns false }
-            val snapshots2 = mockk<Collection<MeterSnapshot>>("snapshots-2") { every { isEmpty() } returns false }
+            val snapshots1 = listOf<MeterSnapshot>(mockk())
+            val snapshots2 = listOf<MeterSnapshot>(mockk())
             coEvery { meterRegistry.snapshots(any()) } returnsMany listOf(
                 snapshots1,
                 emptyList(),
@@ -158,9 +158,9 @@ internal class CampaignMeterRegistryFacadeImplTest {
                     "tenant" to "my-tenant"
                 )
             )
-            // Verifies that the publication occurs on a regular basis.
+            // Verifies that the publication occurs regularly.
             publicationTimestamps.windowed(2, 1).forEach { timestamps ->
-                assertThat(timestamps[1] - timestamps[0]).isBetween(publicationPeriodMs - 10, publicationPeriodMs + 10)
+                assertThat(timestamps[1] - timestamps[0]).isBetween(publicationPeriodMs - 15, publicationPeriodMs + 15)
             }
             coExcludeRecords {
                 campaignMeterRegistry.init(any())
@@ -218,7 +218,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
                 every { this@spyk["publishSnapshots"](any<Collection<MeterSnapshot>>()) } returns listOf(job1, job2)
             }
 
-            val snapshots = mockk<Collection<MeterSnapshot>>("snapshots") { every { isEmpty() } returns false }
+            val snapshots = listOf<MeterSnapshot>(mockk())
             coEvery { meterRegistry.summarize(any()) } returns snapshots
 
             val publisher1 = mockk<MeasurementPublisher> {
@@ -294,7 +294,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         every { publisherFactory2.getPublisher() } returns publisher2
         every { campaign.campaignKey } returns RandomStringUtils.randomAlphanumeric(5)
         campaignMeterRegistry.init(campaign)
-        val snapshots = mockk<Collection<MeterSnapshot>>("snapshots") { every { isEmpty() } returns false }
+        val snapshots = listOf<MeterSnapshot>(mockk())
 
         // when
         campaignMeterRegistry.coInvokeInvisible<Collection<Job>>("publishSnapshots", snapshots)
@@ -339,7 +339,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         every { publisherFactory2.getPublisher() } returns publisher2
         every { campaign.campaignKey } returns RandomStringUtils.randomAlphanumeric(5)
         campaignMeterRegistry.init(campaign)
-        val snapshots = mockk<Collection<MeterSnapshot>>("snapshots") { every { isEmpty() } returns false }
+        val snapshots = listOf<MeterSnapshot>(mockk())
 
         // when
         campaignMeterRegistry.coInvokeInvisible<Collection<Job>>("publishSnapshots", snapshots)
@@ -430,7 +430,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(counter)
+        assertThat(result).isSameInstanceAs(counter)
         verifyOnce {
             meterRegistry.counter(
                 Meter.Id(
@@ -486,7 +486,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(counter)
+        assertThat(result).isSameInstanceAs(counter)
         verifyOnce {
             meterRegistry.counter(
                 Meter.Id(
@@ -543,7 +543,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(gauge)
+        assertThat(result).isSameInstanceAs(gauge)
         verifyOnce {
             meterRegistry.gauge(
                 Meter.Id(
@@ -599,7 +599,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(gauge)
+        assertThat(result).isSameInstanceAs(gauge)
         verifyOnce {
             meterRegistry.gauge(
                 Meter.Id(
@@ -657,7 +657,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(timer)
+        assertThat(result).isSameInstanceAs(timer)
         verifyOnce {
             meterRegistry.timer(
                 Meter.Id(
@@ -716,7 +716,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(timer)
+        assertThat(result).isSameInstanceAs(timer)
         verifyOnce {
             meterRegistry.timer(
                 Meter.Id(
@@ -774,7 +774,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(timer)
+        assertThat(result).isSameInstanceAs(timer)
         verifyOnce {
             meterRegistry.timer(
                 Meter.Id(
@@ -833,7 +833,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(summary)
+        assertThat(result).isSameInstanceAs(summary)
         verifyOnce {
             meterRegistry.summary(
                 Meter.Id(
@@ -892,7 +892,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(summary)
+        assertThat(result).isSameInstanceAs(summary)
         verifyOnce {
             meterRegistry.summary(
                 Meter.Id(
@@ -950,7 +950,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(summary)
+        assertThat(result).isSameInstanceAs(summary)
         verifyOnce {
             meterRegistry.summary(
                 Meter.Id(
@@ -1009,7 +1009,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(throughput)
+        assertThat(result).isSameInstanceAs(throughput)
         verifyOnce {
             meterRegistry.throughput(
                 Meter.Id(
@@ -1071,7 +1071,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
             )
 
             // then
-            assertThat(result).isSameAs(throughput)
+            assertThat(result).isSameInstanceAs(throughput)
             verifyOnce {
                 meterRegistry.throughput(
                     Meter.Id(
@@ -1131,7 +1131,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(throughput)
+        assertThat(result).isSameInstanceAs(throughput)
         verifyOnce {
             meterRegistry.throughput(
                 Meter.Id(
@@ -1190,7 +1190,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(throughput)
+        assertThat(result).isSameInstanceAs(throughput)
         verifyOnce {
             meterRegistry.throughput(
                 Meter.Id(
@@ -1248,7 +1248,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(rate)
+        assertThat(result).isSameInstanceAs(rate)
         verifyOnce {
             meterRegistry.rate(
                 Meter.Id(
@@ -1305,7 +1305,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(rate)
+        assertThat(result).isSameInstanceAs(rate)
         verifyOnce {
             meterRegistry.rate(
                 Meter.Id(

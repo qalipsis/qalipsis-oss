@@ -25,7 +25,7 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.mockk.every
 import io.qalipsis.api.steps.CollectionStepSpecification
@@ -73,7 +73,7 @@ internal class CollectionStepSpecificationConverterTest :
             prop("retryPolicy").isNull()
             prop("timeout").isNull()
             prop("batchSize").isEqualTo(Int.MAX_VALUE)
-            prop("coroutineScope").isSameAs(campaignCoroutineScope)
+            prop("coroutineScope").isSameInstanceAs(campaignCoroutineScope)
         }
     }
 
@@ -93,7 +93,7 @@ internal class CollectionStepSpecificationConverterTest :
             prop("retryPolicy").isNull()
             prop("timeout").isEqualTo(Duration.ofSeconds(123))
             prop("batchSize").isEqualTo(7127654)
-            prop("coroutineScope").isSameAs(campaignCoroutineScope)
+            prop("coroutineScope").isSameInstanceAs(campaignCoroutineScope)
         }
     }
 

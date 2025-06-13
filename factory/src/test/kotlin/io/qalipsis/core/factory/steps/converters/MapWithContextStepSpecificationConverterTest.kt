@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.mockk.every
 import io.qalipsis.api.context.StepContext
@@ -72,8 +72,8 @@ internal class MapWithContextStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(MapWithContextStep::class).all {
             prop(MapWithContextStep<*, *>::name).isEqualTo("my-step")
-            prop(MapWithContextStep<*, *>::retryPolicy).isSameAs(mockedRetryPolicy)
-            prop("block").isSameAs(blockSpecification)
+            prop(MapWithContextStep<*, *>::retryPolicy).isSameInstanceAs(mockedRetryPolicy)
+            prop("block").isSameInstanceAs(blockSpecification)
         }
     }
 
@@ -92,8 +92,8 @@ internal class MapWithContextStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(MapWithContextStep::class).all {
             prop(MapWithContextStep<*, *>::name).isEmpty()
-            prop(MapWithContextStep<*, *>::retryPolicy).isSameAs(mockedRetryPolicy)
-            prop("block").isSameAs(blockSpecification)
+            prop(MapWithContextStep<*, *>::retryPolicy).isSameInstanceAs(mockedRetryPolicy)
+            prop("block").isSameInstanceAs(blockSpecification)
         }
     }
 

@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isEqualTo
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
@@ -40,11 +40,11 @@ import io.qalipsis.core.head.web.handler.BulkIllegalArgumentException
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
-import java.time.Duration
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 
 @WithMockk
 internal class InMemoryCampaignServiceTest {
@@ -105,7 +105,7 @@ internal class InMemoryCampaignServiceTest {
 
 
         // then
-        assertThat(result).isSameAs(runningCampaign)
+        assertThat(result).isSameInstanceAs(runningCampaign)
         coVerifyOrder {
             campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(configuration))
             hook1.preCreate(refEq(configuration), refEq(runningCampaign))

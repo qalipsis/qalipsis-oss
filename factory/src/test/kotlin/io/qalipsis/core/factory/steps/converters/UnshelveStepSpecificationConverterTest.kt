@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.states.SharedStateRegistry
@@ -79,8 +79,8 @@ internal class UnshelveStepSpecificationConverterTest :
         creationContext.createdStep!!.let {
             assertEquals("my-step", it.name)
             assertThat(it).isInstanceOf(UnshelveStep::class).all {
-                prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
-                prop("names").isSameAs(keys)
+                prop("sharedStateRegistry").isSameInstanceAs(sharedStateRegistry)
+                prop("names").isSameInstanceAs(keys)
                 prop("delete").isEqualTo(true)
             }
         }
@@ -99,8 +99,8 @@ internal class UnshelveStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(UnshelveStep::class).all {
             prop(UnshelveStep<*>::name).isEmpty()
-            prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
-            prop("names").isSameAs(keys)
+            prop("sharedStateRegistry").isSameInstanceAs(sharedStateRegistry)
+            prop("names").isSameInstanceAs(keys)
             prop("delete").isEqualTo(false)
         }
     }
@@ -121,7 +121,7 @@ internal class UnshelveStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(SingularUnshelveStep::class).all {
             prop(SingularUnshelveStep<*, *>::name).isEmpty()
-            prop("sharedStateRegistry").isSameAs(sharedStateRegistry)
+            prop("sharedStateRegistry").isSameInstanceAs(sharedStateRegistry)
             prop("shelveName").isEqualTo("value-1")
             prop("delete").isEqualTo(true)
         }

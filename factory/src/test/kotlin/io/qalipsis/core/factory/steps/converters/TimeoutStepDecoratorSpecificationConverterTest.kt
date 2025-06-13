@@ -23,7 +23,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
@@ -87,8 +87,8 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(TimeoutStepDecorator::class).all {
             prop("timeout").isEqualTo(Duration.ofMillis(123))
-            prop("decorated").isSameAs(decoratedStep)
-            prop("meterRegistry").isSameAs(meterRegistry)
+            prop("decorated").isSameInstanceAs(decoratedStep)
+            prop("meterRegistry").isSameInstanceAs(meterRegistry)
         }
     }
 
@@ -103,6 +103,6 @@ internal class TimeoutStepDecoratorSpecificationConverterTest {
         decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
-        assertThat(creationContext.createdStep).isSameAs(decoratedStep)
+        assertThat(creationContext.createdStep).isSameInstanceAs(decoratedStep)
     }
 }

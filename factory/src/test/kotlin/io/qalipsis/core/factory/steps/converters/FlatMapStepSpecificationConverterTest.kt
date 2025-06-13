@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.mockk.every
 import io.qalipsis.api.steps.FlatMapStepSpecification
@@ -75,8 +75,8 @@ internal class FlatMapStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FlatMapStep::class).all {
             prop(FlatMapStep<*, *>::name).isEqualTo("my-step")
-            prop("retryPolicy").isSameAs(mockedRetryPolicy)
-            prop("block").isSameAs(blockSpecification)
+            prop("retryPolicy").isSameInstanceAs(mockedRetryPolicy)
+            prop("block").isSameInstanceAs(blockSpecification)
         }
     }
 
@@ -95,8 +95,8 @@ internal class FlatMapStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(FlatMapStep::class).all {
             prop(FlatMapStep<*, *>::name).isEmpty()
-            prop("retryPolicy").isSameAs(mockedRetryPolicy)
-            prop("block").isSameAs(blockSpecification)
+            prop("retryPolicy").isSameInstanceAs(mockedRetryPolicy)
+            prop("block").isSameInstanceAs(blockSpecification)
         }
     }
 

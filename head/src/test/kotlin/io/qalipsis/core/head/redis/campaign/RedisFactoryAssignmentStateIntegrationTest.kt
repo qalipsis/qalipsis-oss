@@ -30,7 +30,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
@@ -155,7 +155,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                             }
                         }
                     }
-                    prop(FactoryAssignmentDirective::runningCampaign).isSameAs(campaign)
+                    prop(FactoryAssignmentDirective::runningCampaign).isSameInstanceAs(campaign)
                     prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-1")
                 }
             }
@@ -172,7 +172,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                             }
                         }
                     }
-                    prop(FactoryAssignmentDirective::runningCampaign).isSameAs(campaign)
+                    prop(FactoryAssignmentDirective::runningCampaign).isSameInstanceAs(campaign)
                     prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-2")
                 }
             }
@@ -239,7 +239,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                                 }
                             }
                         }
-                        prop(FactoryAssignmentDirective::runningCampaign).isSameAs(campaign)
+                        prop(FactoryAssignmentDirective::runningCampaign).isSameInstanceAs(campaign)
                         prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-1")
                     }
                 }
@@ -256,7 +256,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
                                 }
                             }
                         }
-                        prop(FactoryAssignmentDirective::runningCampaign).isSameAs(campaign)
+                        prop(FactoryAssignmentDirective::runningCampaign).isSameInstanceAs(campaign)
                         prop(FactoryAssignmentDirective::channel).isEqualTo("unicast-channel-2")
                     }
                 }
@@ -293,7 +293,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
             key("node-3").isNotNull()
         }
         assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error")
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
@@ -318,7 +318,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
 
         // then
         assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error")
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
@@ -344,7 +344,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
 
             // then
             assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 prop("error").isEqualTo("")
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -364,7 +364,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
             val newState = state.process(mockk<Feedback>())
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
@@ -389,7 +389,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             coVerifyOnce {
                 campaign.unassignFactory("node-1")
                 factoryService.releaseFactories(refEq(campaign), listOf("node-1"))
@@ -409,7 +409,7 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
 
             // then
             assertThat(newState).isInstanceOf(RedisMinionsAssignmentState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
             }
             verifyNever { campaign.unassignFactory("node-2") }
@@ -437,8 +437,8 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
 
         // then
         assertThat(newState).isInstanceOf(DisabledState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("isSuccessful").isSameAs(false)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("isSuccessful").isSameInstanceAs(false)
         }
         coVerifyOrder {
             factoryService.getFactoriesHealth(refEq("my-tenant"), mutableSetOf("node-1", "node-2", "node-3"))
@@ -475,10 +475,10 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
 
             // then
             assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("abortConfiguration").isSameAs(abortRunningCampaign)
-                prop("error").isSameAs("The campaign was aborted")
-                prop("operations").isSameAs(operations)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+                prop("error").isSameInstanceAs("The campaign was aborted")
+                prop("operations").isSameInstanceAs(operations)
             }
             assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1"))
             coVerifyOrder {
@@ -516,10 +516,10 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
 
             // then
             assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("abortConfiguration").isSameAs(abortRunningCampaign)
-                prop("error").isSameAs("The campaign was aborted")
-                prop("operations").isSameAs(operations)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+                prop("error").isSameInstanceAs("The campaign was aborted")
+                prop("operations").isSameInstanceAs(operations)
             }
             assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
             coVerifyOrder {
@@ -557,8 +557,8 @@ internal class RedisFactoryAssignmentStateIntegrationTest : AbstractRedisStateIn
 
             // then
             assertThat(newState).isInstanceOf(DisabledState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("isSuccessful").isSameAs(false)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("isSuccessful").isSameInstanceAs(false)
             }
             assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
             coVerifyOrder {

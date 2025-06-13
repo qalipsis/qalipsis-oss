@@ -46,6 +46,7 @@ import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.core.lifetime.HeadStartupComponent
 import io.qalipsis.core.lifetime.ProcessBlocker
+import jakarta.annotation.PreDestroy
 import jakarta.inject.Provider
 import jakarta.inject.Singleton
 import kotlinx.coroutines.delay
@@ -53,7 +54,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.slf4j.event.Level
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.annotation.PreDestroy
 
 /**
  * Component to automatically starts the execution of a campaign with all the scenarios as soon as

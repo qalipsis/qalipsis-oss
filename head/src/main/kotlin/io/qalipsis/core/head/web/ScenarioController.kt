@@ -37,7 +37,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import javax.annotation.Nullable
+import jakarta.annotation.Nullable
 import javax.validation.constraints.NotBlank
 
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
@@ -74,7 +74,7 @@ internal class ScenarioController(
             description = "Field of the scenarios to use in order to sort the results, can be name, default_minions_count or enabled, add the postfix `:desc` to the field name to reverse the order",
             required = false,
             `in` = ParameterIn.QUERY
-        ) @Nullable @QueryValue sort: String
+        ) @Nullable @QueryValue sort: String?
     ): List<ScenarioSummary> {
         return factoryService.getAllActiveScenarios(tenant, sort).toList()
     }

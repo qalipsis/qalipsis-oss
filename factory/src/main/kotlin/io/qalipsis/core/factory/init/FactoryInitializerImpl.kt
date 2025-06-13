@@ -60,6 +60,8 @@ import io.qalipsis.core.factory.steps.PipeStep
 import io.qalipsis.core.factory.steps.RunnerAware
 import io.qalipsis.core.lifetime.ExitStatusException
 import io.qalipsis.core.lifetime.FactoryStartupComponent
+import jakarta.annotation.Nullable
+import jakarta.annotation.PreDestroy
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
@@ -70,8 +72,6 @@ import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import javax.annotation.Nullable
-import javax.annotation.PreDestroy
 import javax.validation.Valid
 
 /**
@@ -369,6 +369,7 @@ internal class FactoryInitializerImpl(
     /**
      * Inject relevant dependencies in the step.
      */
+    @KTestable
     private fun injectDependencies(step: Step<*, *>) {
         if (step is MinionsKeeperAware) {
             step.minionsKeeper = minionsKeeper
@@ -397,6 +398,7 @@ internal class FactoryInitializerImpl(
     /**
      * Adds a random name to the step if none was specified.
      */
+    @KTestable
     private fun addMissingStepName(spec: StepSpecification<Any?, Any?, *>) {
         if (spec.name.isBlank()) {
             // Generates a name with an underscore to specify an anonymous one.
@@ -407,8 +409,9 @@ internal class FactoryInitializerImpl(
         }
     }
 
-    private fun buildNewStepName() = "${idGenerator.short()}"
+    private fun buildNewStepName() = idGenerator.short()
 
+    @KTestable
     private suspend fun decorateStep(context: StepCreationContextImpl<StepSpecification<Any?, Any?, *>>) {
         context.createdStep?.let {
             // ErrorProcessingStep should not be decorated.

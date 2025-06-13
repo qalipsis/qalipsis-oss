@@ -29,7 +29,7 @@ import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotSameAs
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
@@ -250,7 +250,7 @@ internal class ReportServiceImplTest {
             )
 
             // then
-            assertThat(result).isSameAs(convertedReport)
+            assertThat(result).isSameInstanceAs(convertedReport)
             coVerifyOrder {
                 reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(refEq("my-tenant"), refEq("report-name"))
                 idGenerator.short()
@@ -362,7 +362,7 @@ internal class ReportServiceImplTest {
         )
 
         // then
-        assertThat(result).isSameAs(convertedReport)
+        assertThat(result).isSameInstanceAs(convertedReport)
         val savedReportDataComponent = slot<List<ReportDataComponentEntity>>()
         coVerifyOrder {
             reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(refEq("my-tenant"), refEq("report-name"))
@@ -885,7 +885,7 @@ internal class ReportServiceImplTest {
             )
 
             // then
-            assertThat(result).isSameAs(convertedReport)
+            assertThat(result).isSameInstanceAs(convertedReport)
             coVerifyOrder {
                 userRepository.findIdByUsername(refEq("the-user"))
                 reportRepository.getReportIfUpdatable(

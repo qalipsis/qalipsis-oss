@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.qalipsis.api.steps.StepCreationContext
@@ -74,10 +74,10 @@ internal class VerificationStepSpecificationConverterTest :
         assertThat(spec.reporting.reportErrors).isTrue()
         assertThat(creationContext.createdStep!!).isInstanceOf(VerificationStep::class).all {
             prop(VerificationStep<*, *>::name).isEqualTo("my-step")
-            prop("reportLiveStateRegistry").isSameAs(campaignReportLiveStateRegistry)
-            prop("eventsLogger").isSameAs(eventsLogger)
-            prop("meterRegistry").isSameAs(meterRegistry)
-            prop("assertionBlock").isSameAs(blockSpecification)
+            prop("reportLiveStateRegistry").isSameInstanceAs(campaignReportLiveStateRegistry)
+            prop("eventsLogger").isSameInstanceAs(eventsLogger)
+            prop("meterRegistry").isSameInstanceAs(meterRegistry)
+            prop("assertionBlock").isSameInstanceAs(blockSpecification)
         }
     }
 
@@ -94,9 +94,9 @@ internal class VerificationStepSpecificationConverterTest :
         // then
         assertThat(creationContext.createdStep!!).isInstanceOf(VerificationStep::class).all {
             prop(VerificationStep<*, *>::name).isEmpty()
-            prop("eventsLogger").isSameAs(eventsLogger)
-            prop("meterRegistry").isSameAs(meterRegistry)
-            prop("assertionBlock").isSameAs(blockSpecification)
+            prop("eventsLogger").isSameInstanceAs(eventsLogger)
+            prop("meterRegistry").isSameInstanceAs(meterRegistry)
+            prop("assertionBlock").isSameInstanceAs(blockSpecification)
         }
     }
 }

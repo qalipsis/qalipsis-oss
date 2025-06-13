@@ -118,7 +118,7 @@ internal class InMemoryGaugeTest {
         val result = gauge.measure()
 
         // then
-        assertThat(result.size()).isEqualTo(1)
+        assertThat(result).hasSize(1)
         assertThat(result.containsAll(listOf(MeasurementMetric(10.0, Statistic.COUNT))))
     }
 

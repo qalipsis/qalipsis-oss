@@ -28,10 +28,9 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.coInvokeInvisible
-import io.aerisconsulting.catadioptre.invokeInvisible
 import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.coVerify
@@ -42,7 +41,6 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.impl.annotations.SpyK
 import io.mockk.justRun
 import io.mockk.spyk
-import io.mockk.verify
 import io.mockk.verifyOrder
 import io.qalipsis.api.exceptions.InvalidSpecificationException
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
@@ -62,7 +60,10 @@ import io.qalipsis.api.steps.StepSpecificationDecoratorConverter
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
+import io.qalipsis.core.factory.init.catadioptre.addMissingStepName
 import io.qalipsis.core.factory.init.catadioptre.convertScenario
+import io.qalipsis.core.factory.init.catadioptre.decorateStep
+import io.qalipsis.core.factory.init.catadioptre.injectDependencies
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
@@ -145,9 +146,7 @@ internal class FactoryInitializerImplTest {
     @RelaxedMockK
     private lateinit var factoryConfiguration: FactoryConfiguration
 
-    private val stepStartTimeout: Duration = Duration.ofSeconds(30)
-
-    private val conversionTimeout: Duration = Duration.ofSeconds(1)
+    private val conversionTimeout: Duration = Duration.ofSeconds(2)
 
     private val factoryInitializer: FactoryInitializerImpl by lazy(LazyThreadSafetyMode.NONE) {
         spyk(
@@ -165,7 +164,7 @@ internal class FactoryInitializerImplTest {
                 factoryChannel,
                 factoryConfiguration,
                 handshakeBlocker,
-                Duration.ofSeconds(1)
+                conversionTimeout
             ), recordPrivateCalls = true
         )
     }
@@ -229,7 +228,7 @@ internal class FactoryInitializerImplTest {
         }
 
         // then
-        assertThat(caught).isSameAs(exception)
+        assertThat(caught).isSameInstanceAs(exception)
         verifyOrder {
             factoryInitializer.refresh()
             handshakeBlocker.cancel()
@@ -291,7 +290,7 @@ internal class FactoryInitializerImplTest {
         coVerifyOnce {
             (stepConverter1).support(refEq(stepSpecification))
             (stepConverter2).support(refEq(stepSpecification))
-            factoryInitializer["addMissingStepName"](refEq(stepSpecification))
+            factoryInitializer.addMissingStepName(refEq(stepSpecification))
             (stepConverter2).convert<Any?, Any?>(refEq(context))
         }
         coVerifyNever {
@@ -350,7 +349,7 @@ internal class FactoryInitializerImplTest {
         } answers {
             (firstArg() as StepCreationContext<*>).createdStep(PipeStep<Any?>("step-${atomicInteger.incrementAndGet()}"))
         }
-        coEvery { factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
+        coEvery { factoryInitializer.decorateStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
         val deadEndStep1 = relaxedMockk<DeadEndStep<*>> { }
         every { dagTransitionStepFactory.createDeadEnd(any(), "dag-1") } returns deadEndStep1
         val deadEndStep2 = relaxedMockk<DeadEndStep<*>> { }
@@ -372,7 +371,7 @@ internal class FactoryInitializerImplTest {
             prop(DirectedAcyclicGraph::rootStep)
                 .transform { it.forceGet() }.prop(Step<*, *>::next)
                 .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
-                .index(0).isSameAs(deadEndStep1)
+                .index(0).isSameInstanceAs(deadEndStep1)
         }
         assertThat(scenario["dag-2"]).isNotNull().all {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(4)
@@ -380,15 +379,15 @@ internal class FactoryInitializerImplTest {
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.prop(Step<*, *>::next)
                 .index(0).prop(Step<*, *>::next)
                 .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
-                .index(0).isSameAs(deadEndStep2)
+                .index(0).isSameInstanceAs(deadEndStep2)
         }
         // 3 steps were created.
         coVerifyExactly(3) {
-            factoryInitializer["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
-            factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+            factoryInitializer.convertSingleStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+            factoryInitializer.decorateStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
         }
         coVerifyExactly(6) {
-            factoryInitializer["injectDependencies"](any<Step<*, *>>())
+            factoryInitializer.injectDependencies(any<Step<*, *>>())
         }
     }
 
@@ -422,7 +421,7 @@ internal class FactoryInitializerImplTest {
         } answers {
             (firstArg() as StepCreationContext<*>).createdStep(BlackHoleStep<Any?>("step-${atomicInteger.incrementAndGet()}"))
         }
-        coEvery { factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
+        coEvery { factoryInitializer.decorateStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
         val deadEndStep = relaxedMockk<DeadEndStep<*>> { }
         every { dagTransitionStepFactory.createDeadEnd(any(), "dag-1") } returns deadEndStep
         val dagTransitionStep = relaxedMockk<DagTransitionStep<*>> { }
@@ -445,30 +444,30 @@ internal class FactoryInitializerImplTest {
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.isInstanceOf(BlackHoleStep::class)
                 .prop(Step<*, *>::next)
                 .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
-                .index(0).isSameAs(deadEndStep)
+                .index(0).isSameInstanceAs(deadEndStep)
         }
         assertThat(scenario["dag-2"]).isNotNull().all {
             prop(DirectedAcyclicGraph::stepsCount).isEqualTo(4)
             prop(DirectedAcyclicGraph::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
             prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.isInstanceOf(BlackHoleStep::class)
                 .prop(Step<*, *>::next).all {
-                hasSize(1)
-                index(0).isInstanceOf(BlackHoleStep::class).prop(Step<*, *>::next).all {
                     hasSize(1)
-                    index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
+                    index(0).isInstanceOf(BlackHoleStep::class).prop(Step<*, *>::next).all {
                         hasSize(1)
-                        index(0).isSameAs(dagTransitionStep)
+                        index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
+                            hasSize(1)
+                            index(0).isSameInstanceAs(dagTransitionStep)
+                        }
                     }
                 }
-            }
         }
         // 3 steps were created.
         coVerifyExactly(3) {
-            factoryInitializer["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
-            factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+            factoryInitializer.convertSingleStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+            factoryInitializer.decorateStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
         }
         coVerifyExactly(6) {
-            factoryInitializer["injectDependencies"](any<Step<*, *>>())
+            factoryInitializer.injectDependencies(any<Step<*, *>>())
         }
         coVerifyOnce {
             dagTransitionStepFactory.createTransition(any(), "dag-2", "dag-1", true)
@@ -513,7 +512,7 @@ internal class FactoryInitializerImplTest {
             } answers {
                 (firstArg() as StepCreationContext<*>).createdStep(BlackHoleStep<Any?>("step-${atomicInteger.incrementAndGet()}"))
             }
-            coEvery { factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
+            coEvery { factoryInitializer.decorateStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
             val deadEndStep1 = relaxedMockk<DeadEndStep<*>> { }
             every { dagTransitionStepFactory.createDeadEnd(any(), "dag-1") } returns deadEndStep1
             val deadEndStep2 = relaxedMockk<DeadEndStep<*>> { }
@@ -545,37 +544,37 @@ internal class FactoryInitializerImplTest {
                 prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.isInstanceOf(BlackHoleStep::class)
                     .prop(Step<*, *>::next)
                     .index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next)
-                    .index(0).isSameAs(deadEndStep1)
+                    .index(0).isSameInstanceAs(deadEndStep1)
             }
             assertThat(scenario["dag-2"]).isNotNull().all {
                 prop(DirectedAcyclicGraph::stepsCount).isEqualTo(6)
                 prop(DirectedAcyclicGraph::tags).isEqualTo(mapOf("key1" to "value1", "key2" to "value2"))
                 prop(DirectedAcyclicGraph::rootStep).transform { it.forceGet() }.isInstanceOf(BlackHoleStep::class)
                     .prop(Step<*, *>::next).all {
-                    hasSize(1)
-                    index(0).isInstanceOf(BlackHoleStep::class).prop(Step<*, *>::next).all {
-                        hasSize(2)
-                        index(0).prop(Step<*, *>::next).all {
-                            hasSize(1)
-                            index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
+                        hasSize(1)
+                        index(0).isInstanceOf(BlackHoleStep::class).prop(Step<*, *>::next).all {
+                            hasSize(2)
+                            index(0).prop(Step<*, *>::next).all {
                                 hasSize(1)
-                                index(0).isSameAs(deadEndStep2)
+                                index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
+                                    hasSize(1)
+                                    index(0).isSameInstanceAs(deadEndStep2)
+                                }
+                            }
+                            index(1).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
+                                hasSize(1)
+                                index(0).isSameInstanceAs(dagTransitionStep)
                             }
                         }
-                        index(1).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
-                            hasSize(1)
-                            index(0).isSameAs(dagTransitionStep)
-                        }
                     }
-                }
             }
             // 4 steps were created.
             coVerifyExactly(4) {
-                factoryInitializer["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
-                factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+                factoryInitializer.convertSingleStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+                factoryInitializer.decorateStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
             }
             coVerifyExactly(8) {
-                factoryInitializer["injectDependencies"](any<Step<*, *>>())
+                factoryInitializer.injectDependencies(any<Step<*, *>>())
             }
 
             coVerifyOnce {
@@ -608,7 +607,7 @@ internal class FactoryInitializerImplTest {
             every { directedAcyclicGraphName } returns "dag-2"
             every { nextSteps } returns mutableListOf(stepSpecification2)
         }
-        coEvery { factoryInitializer["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {
+        coEvery { factoryInitializer.convertSingleStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {
             val context: StepCreationContext<*> = firstArg()
             if (context.stepSpecification.name != "step-3") {
                 context.createdStep(relaxedMockk {
@@ -616,7 +615,7 @@ internal class FactoryInitializerImplTest {
                 })
             }
         }
-        coEvery { factoryInitializer["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
+        coEvery { factoryInitializer.decorateStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>()) } answers {}
 
         // when
         factoryInitializer.coInvokeInvisible<Void>(
@@ -631,9 +630,9 @@ internal class FactoryInitializerImplTest {
         assertEquals(0, scenario["dag-2"]!!.stepsCount)
         coVerifyExactly(2) {
             // 2 steps were tried.
-            (factoryInitializer)["convertSingleStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
-            (factoryInitializer)["decorateStep"](any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
-            (factoryInitializer)["injectDependencies"](any<Step<*, *>>())
+            (factoryInitializer).convertSingleStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+            (factoryInitializer).decorateStep(any<StepCreationContextImpl<StepSpecification<Any?, Any?, *>>>())
+            (factoryInitializer).injectDependencies(any<Step<*, *>>())
         }
     }
 
@@ -651,7 +650,7 @@ internal class FactoryInitializerImplTest {
         }
         val latch = Latch(true)
         coEvery {
-            factoryInitializer["convertNextSteps"](
+            factoryInitializer.convertNextSteps(
                 any<ConfiguredScenarioSpecification>(),
                 any<Scenario>(),
                 any<Step<*, *>>(),
@@ -668,12 +667,12 @@ internal class FactoryInitializerImplTest {
         assertThat(scenario).all {
             prop(Scenario::name).isEqualTo("my-scenario")
             prop(Scenario::minionsCount).isEqualTo(123)
-            prop(Scenario::executionProfile).isSameAs(scenarioSpecification.executionProfile)
-            prop(Scenario::defaultRetryPolicy).isSameAs(scenarioSpecification.retryPolicy)
+            prop(Scenario::executionProfile).isSameInstanceAs(scenarioSpecification.executionProfile)
+            prop(Scenario::defaultRetryPolicy).isSameInstanceAs(scenarioSpecification.retryPolicy)
         }
 
         coVerify {
-            factoryInitializer["convertNextSteps"](
+            factoryInitializer.convertNextSteps(
                 any<ConfiguredScenarioSpecification>(),
                 any<Scenario>(),
                 any<Step<*, *>>(),
@@ -700,7 +699,7 @@ internal class FactoryInitializerImplTest {
 
         // then
         coVerifyNever {
-            factoryInitializer["convertNextSteps"](
+            factoryInitializer.convertNextSteps(
                 any<ConfiguredScenarioSpecification>(),
                 any<Scenario>(),
                 any<Step<*, *>>(),
@@ -723,13 +722,13 @@ internal class FactoryInitializerImplTest {
         val scenario1: Scenario = relaxedMockk { }
         val scenario2: Scenario = relaxedMockk { }
         every {
-            factoryInitializer invoke ("convertScenario") withArguments listOf(
+            factoryInitializer.convertScenario(
                 eq("scenario-1"),
                 refEq(scenarioSpecification1)
             )
         } returns scenario1
         every {
-            factoryInitializer invoke ("convertScenario") withArguments listOf(
+            factoryInitializer.convertScenario(
                 eq("scenario-2"),
                 refEq(scenarioSpecification2)
             )
@@ -741,10 +740,10 @@ internal class FactoryInitializerImplTest {
 
         // then
         val publishedScenarios: MutableList<Collection<Scenario>> = mutableListOf()
-        verify {
-            factoryInitializer["convertScenario"](eq("scenario-2"), refEq(scenarioSpecification2))
-            factoryInitializer["convertScenario"](eq("scenario-1"), refEq(scenarioSpecification1))
-            initializationContext["startHandshake"](capture(publishedScenarios))
+        coVerify {
+            factoryInitializer.convertScenario(eq("scenario-2"), refEq(scenarioSpecification2))
+            factoryInitializer.convertScenario(eq("scenario-1"), refEq(scenarioSpecification1))
+            initializationContext.startHandshake(capture(publishedScenarios))
         }
         publishedScenarios.toSet().let {
             assertEquals(2, it.flatten().size)
@@ -757,7 +756,7 @@ internal class FactoryInitializerImplTest {
     @Timeout(4)
     internal fun `should generate an exception when the conversion is too long`() {
         // given
-        every { scenarioSpecificationsKeeper.reload() } answers { Thread.sleep(1500) }
+        every { scenarioSpecificationsKeeper.reload() } answers { Thread.sleep(2500) }
 
         // when
         assertThrows<TimeoutException> {
@@ -780,7 +779,7 @@ internal class FactoryInitializerImplTest {
 
         // then
         assertThat(caught).all {
-            prop(ExitStatusException::cause).isNotNull().isSameAs(exception)
+            prop(ExitStatusException::cause).isNotNull().isSameInstanceAs(exception)
             prop(ExitStatusException::exitStatus).isEqualTo(103)
         }
     }
@@ -824,7 +823,7 @@ internal class FactoryInitializerImplTest {
         }
 
         // when
-        factoryInitializer.invokeInvisible<Void>("addMissingStepName", stepSpecification)
+        factoryInitializer.addMissingStepName(stepSpecification)
 
         // then
         assertThat(stepSpecification.name.trim()).isNotEmpty()
@@ -839,7 +838,7 @@ internal class FactoryInitializerImplTest {
         }
 
         // when
-        factoryInitializer.invokeInvisible<Void>("addMissingStepName", stepSpecification)
+        factoryInitializer.addMissingStepName(stepSpecification)
 
         // then
         assertThat(stepSpecification.name.trim()).isNotEmpty()
@@ -854,7 +853,7 @@ internal class FactoryInitializerImplTest {
         }
 
         // when
-        factoryInitializer.invokeInvisible<Void>("addMissingStepName", stepSpecification)
+        factoryInitializer.addMissingStepName(stepSpecification)
 
         // then
         assertThat(stepSpecification.name).isEqualTo("   a step for my name   ")

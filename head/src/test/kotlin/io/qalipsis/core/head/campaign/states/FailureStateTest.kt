@@ -25,7 +25,7 @@ import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
@@ -89,7 +89,7 @@ internal class FailureStateTest : AbstractStateTest() {
 
             // then
             assertThat(newState).all {
-                isSameAs(state)
+                isSameInstanceAs(state)
                 typedProp<Collection<NodeId>>("expectedFeedbacks").containsOnly("node-2")
             }
 
@@ -101,7 +101,7 @@ internal class FailureStateTest : AbstractStateTest() {
 
             // then
             assertThat(newState).isInstanceOf(DisabledState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("isSuccessful").isFalse()
                 typedProp<Boolean>("initialized").isFalse()
             }

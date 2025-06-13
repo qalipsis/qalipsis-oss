@@ -27,8 +27,8 @@ import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.head.orchestration.FactoryWorkflowAssignmentResolver
+import jakarta.annotation.Nullable
 import jakarta.inject.Singleton
-import javax.annotation.Nullable
 
 /**
  * Context containing the required components for the execution of a campaign state.

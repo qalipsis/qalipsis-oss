@@ -27,7 +27,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotSameAs
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.aerisconsulting.catadioptre.getProperty
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
@@ -75,7 +75,7 @@ internal class RunningStateTest : AbstractStateTest() {
         }
 
         // then
-        assertThat(directives).isSameAs(initDirectives)
+        assertThat(directives).isSameInstanceAs(initDirectives)
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
 
@@ -97,7 +97,7 @@ internal class RunningStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(FailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error 1")
         }
 
@@ -110,7 +110,7 @@ internal class RunningStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(FailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error 2")
         }
 
@@ -123,7 +123,7 @@ internal class RunningStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(FailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error 3")
         }
 
@@ -150,7 +150,7 @@ internal class RunningStateTest : AbstractStateTest() {
 
             // then
             assertThat(newState).isInstanceOf(FailureState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 prop("error").isEqualTo("")
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -170,7 +170,7 @@ internal class RunningStateTest : AbstractStateTest() {
             val newState = state.process(mockk<Feedback>())
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
@@ -193,7 +193,7 @@ internal class RunningStateTest : AbstractStateTest() {
             // then
             assertThat(newState).isInstanceOf(RunningState::class).all {
                 isNotSameAs(state)
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
                 typedProp<Collection<Directive>>("directivesForInit").all {
                     hasSize(1)
@@ -206,7 +206,7 @@ internal class RunningStateTest : AbstractStateTest() {
                         )
                     )
                 }
-                prop("expectedScenariosToComplete").isSameAs(state.getProperty("expectedScenariosToComplete"))
+                prop("expectedScenariosToComplete").isSameInstanceAs(state.getProperty("expectedScenariosToComplete"))
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
@@ -230,7 +230,7 @@ internal class RunningStateTest : AbstractStateTest() {
             // then
             assertThat(newState).isInstanceOf(RunningState::class).all {
                 isNotSameAs(state)
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
                 typedProp<Collection<Directive>>("directivesForInit").all {
                     hasSize(1)
@@ -242,7 +242,7 @@ internal class RunningStateTest : AbstractStateTest() {
                         )
                     )
                 }
-                prop("expectedScenariosToComplete").isSameAs(state.getProperty("expectedScenariosToComplete"))
+                prop("expectedScenariosToComplete").isSameInstanceAs(state.getProperty("expectedScenariosToComplete"))
             }
             coVerifyOnce { campaignReportStateKeeper.complete("my-campaign", "the scenario") }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -266,7 +266,7 @@ internal class RunningStateTest : AbstractStateTest() {
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             confirmVerified(factoryService, campaignReportStateKeeper)
 
             // when
@@ -277,7 +277,7 @@ internal class RunningStateTest : AbstractStateTest() {
 
             // then
             assertThat(newState).isInstanceOf(CompletionState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -304,8 +304,8 @@ internal class RunningStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(DisabledState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("isSuccessful").isSameAs(false)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("isSuccessful").isSameInstanceAs(false)
         }
         coVerifyOrder {
             factoryService.getFactoriesHealth(refEq("my-tenant"), mutableSetOf("node-1", "node-2", "node-3"))
@@ -341,9 +341,9 @@ internal class RunningStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(AbortingState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("abortConfiguration").isSameAs(abortRunningCampaign)
-            prop("error").isSameAs("The campaign was aborted")
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+            prop("error").isSameInstanceAs("The campaign was aborted")
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1"))
         coVerifyOrder {
@@ -380,9 +380,9 @@ internal class RunningStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(AbortingState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("abortConfiguration").isSameAs(abortRunningCampaign)
-            prop("error").isSameAs("The campaign was aborted")
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+            prop("error").isSameInstanceAs("The campaign was aborted")
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
         coVerifyOrder {
@@ -419,8 +419,8 @@ internal class RunningStateTest : AbstractStateTest() {
 
         // then
         assertThat(newState).isInstanceOf(DisabledState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("isSuccessful").isSameAs(false)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("isSuccessful").isSameInstanceAs(false)
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
         coVerifyOrder {

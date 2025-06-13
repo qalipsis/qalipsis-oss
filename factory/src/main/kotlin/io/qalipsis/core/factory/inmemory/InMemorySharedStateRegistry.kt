@@ -28,9 +28,9 @@ import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import jakarta.annotation.PreDestroy
 import jakarta.inject.Singleton
 import java.time.Duration
-import javax.annotation.PreDestroy
 
 /**
  * Implementation of [SharedStateRegistry] based upon the cache library [Caffeine][https://github.com/ben-manes/caffeine].

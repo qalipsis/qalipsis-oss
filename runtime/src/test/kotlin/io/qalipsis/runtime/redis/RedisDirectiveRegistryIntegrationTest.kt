@@ -25,7 +25,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotSameAs
 import assertk.assertions.isNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import assertk.assertions.startsWith
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
@@ -92,9 +92,9 @@ internal class RedisDirectiveRegistryIntegrationTest : AbstractRedisIntegrationT
         val prepared = registry.prepareBeforeSend("the-channel", directive)
 
         // then
-        assertThat(prepared).isSameAs(directive)
-        assertThat(registry.prepareAfterReceived(prepared)).isSameAs(prepared)
+        assertThat(prepared).isSameInstanceAs(directive)
+        assertThat(registry.prepareAfterReceived(prepared)).isSameInstanceAs(prepared)
         // The directive can be read several times.
-        assertThat(registry.prepareAfterReceived(prepared)).isSameAs(prepared)
+        assertThat(registry.prepareAfterReceived(prepared)).isSameInstanceAs(prepared)
     }
 }

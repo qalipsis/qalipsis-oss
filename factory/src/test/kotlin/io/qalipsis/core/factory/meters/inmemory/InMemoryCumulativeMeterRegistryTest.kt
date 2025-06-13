@@ -26,7 +26,7 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.getProperty
@@ -94,8 +94,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
         // then
         assertThat(meter).isInstanceOf<InMemoryCumulativeTimer>().all {
-            prop(Meter<*>::id).isSameAs(id)
-            prop("meterReporter").isSameAs(meterReporter)
+            prop(Meter<*>::id).isSameInstanceAs(id)
+            prop("meterReporter").isSameInstanceAs(meterReporter)
             typedProp<Collection<Double>>("percentiles").isEmpty()
         }
     }
@@ -111,14 +111,14 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
         // then
         assertThat(meter).isInstanceOf<InMemoryCumulativeTimer>().all {
-            prop(Meter<*>::id).isSameAs(id)
-            prop("meterReporter").isSameAs(meterReporter)
+            prop(Meter<*>::id).isSameInstanceAs(id)
+            prop("meterReporter").isSameInstanceAs(meterReporter)
             typedProp<Collection<Double>>("percentiles").all {
                 hasSize(2)
                 containsAll(20.0, 55.0)
             }
         }
-        assertThat(registry.meters()).key(id).isSameAs(meter)
+        assertThat(registry.meters()).key(id).isSameInstanceAs(meter)
     }
 
     @Test
@@ -133,8 +133,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
             // then
             assertThat(meter).isInstanceOf<InMemoryCumulativeTimer>().all {
-                prop(Meter<*>::id).isSameAs(id)
-                prop("meterReporter").isSameAs(meterReporter)
+                prop(Meter<*>::id).isSameInstanceAs(id)
+                prop("meterReporter").isSameInstanceAs(meterReporter)
                 typedProp<Collection<Double>>("percentiles").isEmpty()
             }
         }
@@ -151,14 +151,14 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
             // then
             assertThat(meter).isInstanceOf<InMemoryCumulativeTimer>().all {
-                prop(Meter<*>::id).isSameAs(id)
-                prop("meterReporter").isSameAs(meterReporter)
+                prop(Meter<*>::id).isSameInstanceAs(id)
+                prop("meterReporter").isSameInstanceAs(meterReporter)
                 typedProp<Collection<Double>>("percentiles").all {
                     hasSize(2)
                     containsAll(20.0, 55.0)
                 }
             }
-            assertThat(registry.meters()).key(id).isSameAs(meter)
+            assertThat(registry.meters()).key(id).isSameInstanceAs(meter)
         }
 
     @Test
@@ -174,13 +174,13 @@ internal class InMemoryCumulativeMeterRegistryTest {
             // then
             assertThat(meter1).isInstanceOf<CompositeTimer>().all {
                 prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryCumulativeTimer>().all {
-                    prop(Meter<*>::id).isSameAs(id1)
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop(Meter<*>::id).isSameInstanceAs(id1)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").isEmpty()
                 }
                 prop("globalMeter").isNotNull().isInstanceOf<InMemoryCumulativeTimer>().all {
                     prop(Meter<*>::id).isEqualTo(Meter.Id("test", MeterType.TIMER, mapOf("a" to "b", "c" to "d")))
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").isEmpty()
                 }
             }
@@ -226,12 +226,12 @@ internal class InMemoryCumulativeMeterRegistryTest {
             // then
             assertThat(meter2).isInstanceOf<CompositeTimer>().all {
                 prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryCumulativeTimer>().all {
-                    prop(Meter<*>::id).isSameAs(id2)
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop(Meter<*>::id).isSameInstanceAs(id2)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").isEmpty()
                 }
                 prop("globalMeter").isNotNull()
-                    .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
+                    .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
             assertThat(registry.meters().size).isEqualTo(2)
             assertThat(registry.meters()[id2]).isNotNull().all {
@@ -258,8 +258,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
             // then
             assertThat(meter1).isInstanceOf<CompositeTimer>().all {
                 prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryCumulativeTimer>().all {
-                    prop(Meter<*>::id).isSameAs(id1)
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop(Meter<*>::id).isSameInstanceAs(id1)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").all {
                         hasSize(2)
                         containsAll(20.0, 55.0)
@@ -267,7 +267,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 }
                 prop("globalMeter").isNotNull().isInstanceOf<InMemoryCumulativeTimer>().all {
                     prop(Meter<*>::id).isEqualTo(Meter.Id("test", MeterType.TIMER, mapOf("a" to "b", "c" to "d")))
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").all {
                         hasSize(2)
                         containsAll(20.0, 55.0)
@@ -316,15 +316,15 @@ internal class InMemoryCumulativeMeterRegistryTest {
             // then
             assertThat(meter2).isInstanceOf<CompositeTimer>().all {
                 prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryCumulativeTimer>().all {
-                    prop(Meter<*>::id).isSameAs(id2)
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop(Meter<*>::id).isSameInstanceAs(id2)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").all {
                         hasSize(2)
                         containsAll(21.0, 86.0)
                     }
                 }
                 prop("globalMeter").isNotNull()
-                    .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
+                    .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
             assertThat(registry.meters().size).isEqualTo(2)
             assertThat(registry.meters()[id2]).isNotNull().all {
@@ -349,10 +349,10 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
         // then
         assertThat(meter).isInstanceOf<InMemoryGauge>().all {
-            prop(Meter<*>::id).isSameAs(id)
-            prop("meterReporter").isSameAs(meterReporter)
+            prop(Meter<*>::id).isSameInstanceAs(id)
+            prop("meterReporter").isSameInstanceAs(meterReporter)
         }
-        assertThat(registry.meters()).key(id).isSameAs(meter)
+        assertThat(registry.meters()).key(id).isSameInstanceAs(meter)
     }
 
     @Test
@@ -367,10 +367,10 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
             // then
             assertThat(meter).isInstanceOf<InMemoryGauge>().all {
-                prop(Meter<*>::id).isSameAs(id)
-                prop("meterReporter").isSameAs(meterReporter)
+                prop(Meter<*>::id).isSameInstanceAs(id)
+                prop("meterReporter").isSameInstanceAs(meterReporter)
             }
-            assertThat(registry.meters()).key(id).isSameAs(meter)
+            assertThat(registry.meters()).key(id).isSameInstanceAs(meter)
         }
 
     @Test
@@ -386,12 +386,12 @@ internal class InMemoryCumulativeMeterRegistryTest {
             // then
             assertThat(meter1).isInstanceOf<CompositeGauge>().all {
                 prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryGauge>().all {
-                    prop(Meter<*>::id).isSameAs(id1)
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop(Meter<*>::id).isSameInstanceAs(id1)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                 }
                 prop("globalMeter").isNotNull().isInstanceOf<InMemoryGauge>().all {
                     prop(Meter<*>::id).isEqualTo(Meter.Id("test", MeterType.GAUGE, mapOf("a" to "b", "c" to "d")))
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                 }
             }
 
@@ -434,11 +434,11 @@ internal class InMemoryCumulativeMeterRegistryTest {
             // then
             assertThat(meter2).isInstanceOf<CompositeGauge>().all {
                 prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryGauge>().all {
-                    prop(Meter<*>::id).isSameAs(id2)
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop(Meter<*>::id).isSameInstanceAs(id2)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                 }
                 prop("globalMeter").isNotNull()
-                    .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
+                    .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
             assertThat(registry.meters()[id2]).isNotNull().all {
                 isInstanceOf(CompositeGauge::class.java).all {
@@ -461,11 +461,11 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
         // then
         assertThat(meter).isInstanceOf<InMemoryCumulativeDistributionSummary>().all {
-            prop(Meter<*>::id).isSameAs(id)
-            prop("meterReporter").isSameAs(meterReporter)
+            prop(Meter<*>::id).isSameInstanceAs(id)
+            prop("meterReporter").isSameInstanceAs(meterReporter)
             typedProp<Collection<Double>>("percentiles").isEmpty()
         }
-        assertThat(registry.meters()).key(id).isSameAs(meter)
+        assertThat(registry.meters()).key(id).isSameInstanceAs(meter)
     }
 
     @Test
@@ -479,8 +479,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
         // then
         assertThat(meter).isInstanceOf<InMemoryCumulativeDistributionSummary>().all {
-            prop(Meter<*>::id).isSameAs(id)
-            prop("meterReporter").isSameAs(meterReporter)
+            prop(Meter<*>::id).isSameInstanceAs(id)
+            prop("meterReporter").isSameInstanceAs(meterReporter)
             typedProp<Collection<Double>>("percentiles").all {
                 hasSize(2)
                 containsAll(20.0, 55.0)
@@ -500,11 +500,11 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
             // then
             assertThat(meter).isInstanceOf<InMemoryCumulativeDistributionSummary>().all {
-                prop(Meter<*>::id).isSameAs(id)
-                prop("meterReporter").isSameAs(meterReporter)
+                prop(Meter<*>::id).isSameInstanceAs(id)
+                prop("meterReporter").isSameInstanceAs(meterReporter)
                 typedProp<Collection<Double>>("percentiles").isEmpty()
             }
-            assertThat(registry.meters()).key(id).isSameAs(meter)
+            assertThat(registry.meters()).key(id).isSameInstanceAs(meter)
         }
 
     @Test
@@ -519,8 +519,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
             // then
             assertThat(meter).isInstanceOf<InMemoryCumulativeDistributionSummary>().all {
-                prop(Meter<*>::id).isSameAs(id)
-                prop("meterReporter").isSameAs(meterReporter)
+                prop(Meter<*>::id).isSameInstanceAs(id)
+                prop("meterReporter").isSameInstanceAs(meterReporter)
                 typedProp<Collection<Double>>("percentiles").all {
                     hasSize(2)
                     containsAll(20.0, 55.0)
@@ -545,8 +545,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
             // then
             assertThat(meter1).isInstanceOf<CompositeDistributionSummary>().all {
                 prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryCumulativeDistributionSummary>().all {
-                    prop(Meter<*>::id).isSameAs(id1)
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop(Meter<*>::id).isSameInstanceAs(id1)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").isEmpty()
                 }
                 prop("globalMeter").isNotNull().isInstanceOf<InMemoryCumulativeDistributionSummary>().all {
@@ -557,7 +557,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
                             mapOf("a" to "b", "c" to "d")
                         )
                     )
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").isEmpty()
                 }
             }
@@ -604,12 +604,12 @@ internal class InMemoryCumulativeMeterRegistryTest {
             // then
             assertThat(meter2).isInstanceOf<CompositeDistributionSummary>().all {
                 prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryCumulativeDistributionSummary>().all {
-                    prop(Meter<*>::id).isSameAs(id2)
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop(Meter<*>::id).isSameInstanceAs(id2)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").isEmpty()
                 }
                 prop("globalMeter").isNotNull()
-                    .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
+                    .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
             assertThat(registry.meters().size).isEqualTo(2)
             assertThat(registry.meters()[id2]).isNotNull().all {
@@ -638,8 +638,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
             // then
             assertThat(meter1).isInstanceOf<CompositeDistributionSummary>().all {
                 prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryCumulativeDistributionSummary>().all {
-                    prop(Meter<*>::id).isSameAs(id1)
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop(Meter<*>::id).isSameInstanceAs(id1)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").all {
                         hasSize(2)
                         containsAll(20.0, 55.0)
@@ -653,7 +653,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
                             mapOf("a" to "b", "c" to "d")
                         )
                     )
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").all {
                         hasSize(2)
                         containsAll(20.0, 55.0)
@@ -704,15 +704,15 @@ internal class InMemoryCumulativeMeterRegistryTest {
             // then
             assertThat(meter2).isInstanceOf<CompositeDistributionSummary>().all {
                 prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryCumulativeDistributionSummary>().all {
-                    prop(Meter<*>::id).isSameAs(id2)
-                    prop("meterReporter").isSameAs(meterReporter)
+                    prop(Meter<*>::id).isSameInstanceAs(id2)
+                    prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").all {
                         hasSize(2)
                         containsAll(21.0, 35.0)
                     }
                 }
                 prop("globalMeter").isNotNull()
-                    .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
+                    .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
             assertThat(registry.meters().size).isEqualTo(2)
             assertThat(registry.meters()[id2]).isNotNull().all {
@@ -736,10 +736,10 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
         // then
         assertThat(meter).isInstanceOf<InMemoryCumulativeCounter>().all {
-            prop(Meter<*>::id).isSameAs(id)
-            prop("meterReporter").isSameAs(meterReporter)
+            prop(Meter<*>::id).isSameInstanceAs(id)
+            prop("meterReporter").isSameInstanceAs(meterReporter)
         }
-        assertThat(registry.meters()).key(id).isSameAs(meter)
+        assertThat(registry.meters()).key(id).isSameInstanceAs(meter)
     }
 
     @Test
@@ -754,10 +754,10 @@ internal class InMemoryCumulativeMeterRegistryTest {
 
             // then
             assertThat(meter).isInstanceOf<InMemoryCumulativeCounter>().all {
-                prop(Meter<*>::id).isSameAs(id)
-                prop("meterReporter").isSameAs(meterReporter)
+                prop(Meter<*>::id).isSameInstanceAs(id)
+                prop("meterReporter").isSameInstanceAs(meterReporter)
             }
-            assertThat(registry.meters()).key(id).isSameAs(meter)
+            assertThat(registry.meters()).key(id).isSameInstanceAs(meter)
         }
 
     @Test
@@ -772,12 +772,12 @@ internal class InMemoryCumulativeMeterRegistryTest {
         // then
         assertThat(meter1).isInstanceOf<CompositeCounter>().all {
             prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryCumulativeCounter>().all {
-                prop(Meter<*>::id).isSameAs(id1)
-                prop("meterReporter").isSameAs(meterReporter)
+                prop(Meter<*>::id).isSameInstanceAs(id1)
+                prop("meterReporter").isSameInstanceAs(meterReporter)
             }
             prop("globalMeter").isNotNull().isInstanceOf<InMemoryCumulativeCounter>().all {
                 prop(Meter<*>::id).isEqualTo(Meter.Id("test", MeterType.COUNTER, mapOf("a" to "b", "c" to "d")))
-                prop("meterReporter").isSameAs(meterReporter)
+                prop("meterReporter").isSameInstanceAs(meterReporter)
             }
         }
         assertThat(registry.meters().size).isEqualTo(1)
@@ -819,11 +819,11 @@ internal class InMemoryCumulativeMeterRegistryTest {
         // then
         assertThat(meter2).isInstanceOf<CompositeCounter>().all {
             prop("scenarioMeter").isNotNull().isInstanceOf<InMemoryCumulativeCounter>().all {
-                prop(Meter<*>::id).isSameAs(id2)
-                prop("meterReporter").isSameAs(meterReporter)
+                prop(Meter<*>::id).isSameInstanceAs(id2)
+                prop("meterReporter").isSameInstanceAs(meterReporter)
             }
             prop("globalMeter").isNotNull()
-                .isSameAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
+                .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
         }
         assertThat(registry.meters().size).isEqualTo(2)
         assertThat(registry.meters()[id2]).isNotNull().all {

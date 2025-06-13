@@ -30,7 +30,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
@@ -148,7 +148,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
 
         // then
         assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error 1")
         }
 
@@ -175,7 +175,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
 
             // then
             assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 prop("error").isEqualTo("")
             }
             confirmVerified(factoryService, campaignReportStateKeeper)
@@ -206,7 +206,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
             key("node-3").isNotNull()
         }
         assertThat(newState).isInstanceOf(RedisFailureState::class).all {
-            prop("campaign").isSameAs(campaign)
+            prop("campaign").isSameInstanceAs(campaign)
             prop("error").isEqualTo("this is the error")
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
@@ -226,7 +226,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
             val newState = state.process(mockk<Feedback>())
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             confirmVerified(factoryService, campaignReportStateKeeper)
         }
 
@@ -262,7 +262,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             coVerifyOrder {
                 campaign.unassignScenarioOfFactory("scenario-2", "node-1")
                 campaign.contains("node-1")
@@ -303,7 +303,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
             coVerifyOrder {
                 campaign.unassignScenarioOfFactory("scenario-2", "node-1")
                 campaign.contains("node-1")
@@ -351,7 +351,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             state = RedisWarmupState(campaign, operations)
@@ -367,7 +367,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
             })
 
             // then
-            assertThat(newState).isSameAs(state)
+            assertThat(newState).isSameInstanceAs(state)
 
             // when
             state = RedisWarmupState(campaign, operations)
@@ -384,7 +384,7 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
 
             // then
             assertThat(newState).isInstanceOf(RedisRunningState::class).all {
-                prop("campaign").isSameAs(campaign)
+                prop("campaign").isSameInstanceAs(campaign)
                 typedProp<Boolean>("initialized").isFalse()
                 typedProp<Collection<Directive>>("directivesForInit").all {
                     hasSize(2)
@@ -428,8 +428,8 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
 
         // then
         assertThat(newState).isInstanceOf(DisabledState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("isSuccessful").isSameAs(false)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("isSuccessful").isSameInstanceAs(false)
         }
         coVerifyOrder {
             factoryService.getFactoriesHealth(refEq("my-tenant"), mutableSetOf("node-1", "node-2", "node-3"))
@@ -465,10 +465,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
 
         // then
         assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
-            prop("campaign").isSameAs(campaign)
-            prop("abortConfiguration").isSameAs(abortRunningCampaign)
-            prop("error").isSameAs("The campaign was aborted")
-            prop("operations").isSameAs(operations)
+            prop("campaign").isSameInstanceAs(campaign)
+            prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+            prop("error").isSameInstanceAs("The campaign was aborted")
+            prop("operations").isSameInstanceAs(operations)
         }
         assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1"))
         coVerifyOrder {
@@ -506,10 +506,10 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
 
             // then
             assertThat(newState).isInstanceOf(RedisAbortingState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("abortConfiguration").isSameAs(abortRunningCampaign)
-                prop("error").isSameAs("The campaign was aborted")
-                prop("operations").isSameAs(operations)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("abortConfiguration").isSameInstanceAs(abortRunningCampaign)
+                prop("error").isSameInstanceAs("The campaign was aborted")
+                prop("operations").isSameInstanceAs(operations)
             }
             assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
             coVerifyOrder {
@@ -547,8 +547,8 @@ internal class RedisWarmupStateIntegrationTest : AbstractRedisStateIntegrationTe
 
             // then
             assertThat(newState).isInstanceOf(DisabledState::class).all {
-                prop("campaign").isSameAs(campaign)
-                prop("isSuccessful").isSameAs(false)
+                prop("campaign").isSameInstanceAs(campaign)
+                prop("isSuccessful").isSameInstanceAs(false)
             }
             assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
             coVerifyOrder {

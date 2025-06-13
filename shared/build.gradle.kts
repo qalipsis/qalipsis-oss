@@ -39,7 +39,7 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.majorVersion
         javaParameters = true
-        freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn,kotlinx.coroutines.ObsoleteCoroutinesApi"
+        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn,kotlinx.coroutines.ObsoleteCoroutinesApi"
     }
 }
 
@@ -81,7 +81,7 @@ dependencies {
     implementation("cool.graph:cuid-java")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.micronaut.micrometer:micronaut-micrometer-core")
-    implementation("javax.annotation:javax.annotation-api")
+    implementation("jakarta.annotation:jakarta.annotation-api")
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
@@ -98,7 +98,7 @@ dependencies {
     testImplementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
     testImplementation("io.qalipsis:qalipsis-test:$apiVersion")
     testImplementation("io.micronaut.test:micronaut-test-junit5")
-    testImplementation("javax.annotation:javax.annotation-api")
+    testImplementation("jakarta.annotation:jakarta.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
     testImplementation("io.aeris-consulting:catadioptre-kotlin")
     testImplementation(testFixtures("io.qalipsis:qalipsis-api-dsl:$apiVersion"))

@@ -23,7 +23,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isSameAs
+import assertk.assertions.isSameInstanceAs
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
@@ -84,7 +84,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         assertThat(creationContext.createdStep!!).isInstanceOf(IterativeStepDecorator::class).all {
             prop("iterations").isEqualTo(123L)
             prop("delayMillis").isEqualTo(1L)
-            prop("decorated").isSameAs(decoratedStep)
+            prop("decorated").isSameInstanceAs(decoratedStep)
         }
     }
 
@@ -103,7 +103,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         assertThat(creationContext.createdStep!!).isInstanceOf(IterativeStepDecorator::class).all {
             prop("iterations").isEqualTo(123L)
             prop("delayMillis").isEqualTo(1L)
-            prop("decorated").isSameAs(decoratedStep)
+            prop("decorated").isSameInstanceAs(decoratedStep)
         }
     }
 
@@ -119,7 +119,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
-        assertThat(creationContext.createdStep).isSameAs(decoratedStep)
+        assertThat(creationContext.createdStep).isSameInstanceAs(decoratedStep)
     }
 
 
@@ -135,7 +135,7 @@ internal class IterativeStepDecoratorSpecificationConverterTest {
         decorator.decorate(creationContext as StepCreationContext<StepSpecification<*, *, *>>)
 
         // then
-        assertThat(creationContext.createdStep).isSameAs(decoratedStep)
+        assertThat(creationContext.createdStep).isSameInstanceAs(decoratedStep)
     }
 
 }
