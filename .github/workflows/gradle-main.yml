@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+  workflow_dispatch:
 
 env:
   GITHUB_ACTIONS: true
@@ -34,11 +35,18 @@ jobs:
         run: ./gradlew checkLicense
         if: always()
 
-      - name: Integration Tests
-        run: ./gradlew integrationTest --continue -PcacheChangingModulesDuration=PT0S
-
       - name: Unit tests
-        run: ./gradlew test --continue -PcacheChangingModulesDuration=PT0S
+        run: ./gradlew test --continue --refresh-dependencies
+
+      - name: Integration Tests
+        run: ./gradlew integrationTest --continue
+
+      - name: Report
+        if: always()
+        run: ./gradlew jacocoTestReport aggregatedTestReport aggregatedCoverageReport -x test -x integrationTest
+
+      - name: Build
+        run: ./gradlew assemble
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v5
@@ -47,20 +55,6 @@ jobs:
           report_paths: '**/build/test-results/*/TEST-*.xml'
           fail_on_failure: true
           summary: true
-
-      - name: Report
-        if: always()
-        run: ./gradlew -DignoreUnitTestFailures=true -DignoreIntegrationTestFailures=true testReport --continue  -PcacheChangingModulesDuration=PT0S
-
-      - name: Upload Tests report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: JUnit Report
-          path: ./build/reports/tests/
-
-      - name: Build
-        run: ./gradlew build
 
       - name: Upload JARs
         uses: actions/upload-artifact@v4

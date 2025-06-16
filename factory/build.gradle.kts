@@ -46,8 +46,6 @@ kapt {
     useBuildCache = false
 }
 
-val apiVersion: String by project
-
 jmh {
     includeTests.set(false)
     jvmArgsAppend.set(listOf("-Duser.language=en"))
@@ -65,11 +63,11 @@ dependencies {
     compileOnly("io.aeris-consulting:catadioptre-annotations")
 
     implementation(project(":qalipsis-shared"))
-    implementation("io.qalipsis:qalipsis-api-common:$apiVersion")
-    implementation("io.qalipsis:qalipsis-api-dsl:$apiVersion")
-    implementation("io.qalipsis:qalipsis-api-processors:$apiVersion")
+    implementation(project(":qalipsis-api-common"))
+    implementation(project(":qalipsis-api-dsl"))
+    implementation(project(":qalipsis-api-processors"))
 
-    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    implementation(platform(project(":qalipsis-dev-platform")))
     implementation("com.google.guava:guava")
     implementation("com.github.ben-manes.caffeine:caffeine")
     implementation("cool.graph:cuid-java:0.1.1")
@@ -81,32 +79,32 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     implementation("com.tdunning:t-digest:3.3")
 
-    kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    kapt(platform(project(":qalipsis-dev-platform")))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
-    kapt("io.qalipsis:qalipsis-api-processors:$apiVersion")
+    kapt(project(":qalipsis-api-processors"))
     kapt("io.aeris-consulting:catadioptre-annotations")
     kapt("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 
-    testImplementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    testImplementation(platform(project(":qalipsis-dev-platform")))
     testImplementation(project(":qalipsis-shared"))
-    testImplementation("io.qalipsis:qalipsis-test:$apiVersion")
+    testImplementation(project(":qalipsis-test"))
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("jakarta.annotation:jakarta.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
     testImplementation("io.aeris-consulting:catadioptre-kotlin")
-    testImplementation(testFixtures("io.qalipsis:qalipsis-api-dsl:$apiVersion"))
-    testImplementation(testFixtures("io.qalipsis:qalipsis-api-common:$apiVersion"))
+    testImplementation(testFixtures(project(":qalipsis-api-dsl")))
+    testImplementation(testFixtures(project(":qalipsis-api-common")))
     testImplementation(testFixtures(project(":qalipsis-runtime")))
     testImplementation(testFixtures(project(":qalipsis-shared")))
     testImplementation(project(":qalipsis-head"))
 
-    kaptTest(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    kaptTest(platform(project(":qalipsis-dev-platform")))
     kaptTest("io.micronaut:micronaut-inject-java")
-    kaptTest("io.qalipsis:qalipsis-api-processors:$apiVersion")
+    kaptTest(project(":qalipsis-api-processors"))
 
-    jmh("io.qalipsis:qalipsis-test:$apiVersion")
+    jmh(project(":qalipsis-test"))
     //jmh("org.openjdk.jmh:jmh-generator-annprocess:1.36")
     //jmhAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.36")
 }

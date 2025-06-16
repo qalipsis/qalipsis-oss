@@ -26,19 +26,17 @@ javaPlatform {
 
 description = "QALIPSIS Plugin development platform"
 
-val apiVersion: String by project
-
 dependencies {
     // Platform modules.
-    api(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    api(platform(project(":qalipsis-dev-platform")))
 
     constraints {
         // API modules.
-        api("io.qalipsis:qalipsis-api-dsl:$apiVersion")
-        api("io.qalipsis:qalipsis-api-common:$apiVersion")
-        api("io.qalipsis:qalipsis-api-dev:$apiVersion")
-        api("io.qalipsis:qalipsis-api-processors:$apiVersion")
-        api("io.qalipsis:qalipsis-test:$apiVersion")
+        api(project(":qalipsis-api-dsl"))
+        api(project(":qalipsis-api-common"))
+        api(project(":qalipsis-api-dev"))
+        api(project(":qalipsis-api-processors"))
+        api(project(":qalipsis-test"))
 
         // Core modules.
         api(project(":qalipsis-runtime"))

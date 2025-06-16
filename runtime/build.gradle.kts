@@ -43,19 +43,17 @@ allOpen {
     )
 }
 
-val apiVersion: String by project
-
 dependencies {
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly(project(":qalipsis-factory"))
     compileOnly(project(":qalipsis-head"))
 
-    api("io.qalipsis:qalipsis-api-common:$apiVersion")
-    api("io.qalipsis:qalipsis-api-dsl:$apiVersion")
-    api("io.qalipsis:qalipsis-api-processors:$apiVersion")
+    api(project(":qalipsis-api-common"))
+    api(project(":qalipsis-api-dsl"))
+    api(project(":qalipsis-api-processors"))
     api(project(":qalipsis-shared"))
 
-    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    implementation(platform(project(":qalipsis-dev-platform")))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 
     api("ch.qos.logback:logback-classic")
@@ -68,20 +66,20 @@ dependencies {
     api("io.micronaut:micronaut-runtime")
     api("io.micronaut.cache:micronaut-cache-core")
 
-    kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    kapt(platform(project(":qalipsis-dev-platform")))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
 
-    testFixturesImplementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    testFixturesImplementation(platform(project(":qalipsis-dev-platform")))
     testFixturesImplementation("io.aeris-consulting:catadioptre-kotlin")
 
-    testImplementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    testImplementation(platform(project(":qalipsis-dev-platform")))
     testImplementation(project(":qalipsis-head"))
     testImplementation(project(":qalipsis-factory"))
     testImplementation(testFixtures(project(":qalipsis-shared")))
     testImplementation("io.mockk:mockk")
-    testImplementation("io.qalipsis:qalipsis-test:$apiVersion")
+    testImplementation(project(":qalipsis-test"))
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("jakarta.annotation:jakarta.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
@@ -90,9 +88,9 @@ dependencies {
         exclude(group = "org.jetbrains.kotlin")
     }
 
-    kaptTest(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    kaptTest(platform(project(":qalipsis-dev-platform")))
     kaptTest("io.micronaut:micronaut-inject-java")
-    kaptTest("io.qalipsis:qalipsis-api-processors:$apiVersion")
+    kaptTest(project(":qalipsis-api-processors"))
 
     if (Os.isFamily(Os.FAMILY_MAC)) {
         testRuntimeOnly(group = "io.netty", name = "netty-resolver-dns-native-macos", classifier = "osx-aarch_64")

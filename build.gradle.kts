@@ -1,9 +1,3 @@
-import org.jetbrains.kotlin.gradle.plugin.extraProperties
-import org.jreleaser.model.Active
-import org.jreleaser.model.Signing
-import org.jreleaser.model.api.deploy.maven.MavenCentralMavenDeployer
-import java.time.Duration
-
 /*
  * QALIPSIS
  * Copyright (C) 2022 AERIS IT Solutions GmbH
@@ -22,6 +16,16 @@ import java.time.Duration
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
+import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
+import org.jetbrains.kotlin.gradle.plugin.extraProperties
+import org.jreleaser.model.Active
+import org.jreleaser.model.Signing
+import org.jreleaser.model.api.deploy.maven.MavenCentralMavenDeployer
+
 
 plugins {
     idea
@@ -61,15 +65,6 @@ tasks.withType<Wrapper> {
 }
 
 val testNumCpuCore: String? by project
-
-// Duration of the cache for the snapshots.
-val cacheChangingModulesDuration: String? by project
-val snapshotCache = cacheChangingModulesDuration?.takeUnless(String::isNullOrBlank)?.let(Duration::parse)
-snapshotCache?.let {
-    project.logger.lifecycle("The cache for snapshots is set to $it")
-} ?: run {
-    project.logger.lifecycle("The cache for snapshots is let to the default")
-}
 
 jreleaser {
     gitRootSearch.set(true)
@@ -143,15 +138,6 @@ allprojects {
         mavenCentral()
     }
 
-    configurations.all {
-        resolutionStrategy {
-            preferProjectModules()
-            snapshotCache?.let {
-                cacheChangingModulesFor(it.toSeconds().toInt(), TimeUnit.SECONDS)
-            }
-        }
-    }
-
     // https://jreleaser.org/guide/latest/examples/maven/maven-central.html#_gradle
     publishing {
         repositories {
@@ -188,7 +174,7 @@ fun Project.configureNotPlatform() {
         withJavadocJar()
         withSourcesJar()
     }
-
+    val project = this
     tasks {
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             kotlinOptions {
@@ -223,9 +209,18 @@ fun Project.configureNotPlatform() {
             ignoreFailures = System.getProperty("ignoreIntegrationTestFailures", "false").toBoolean()
             include("**/*IntegrationTest*", "**/*IntegrationTest$*", "**/*IntegrationTest.**")
         }
+        named("check") {
+            dependsOn(integrationTest)
+        }
 
-        named<Task>("check") {
-            dependsOn(integrationTest.get())
+        // Enable the plugin after the creation of the integration test to auto-configure it.
+        apply(plugin = "jacoco")
+
+        named<JacocoReport>("jacocoTestReport") {
+            reports {
+                html.required.set(true)
+                html.outputLocation.set(layout.buildDirectory.dir("reports/coverage"))
+            }
         }
 
         if (!project.file("src/main/kotlin").isDirectory) {
@@ -243,8 +238,18 @@ fun Project.configureNotPlatform() {
             }
             useJUnitPlatform()
             testLogging {
-                events(*org.gradle.api.tasks.testing.logging.TestLogEvent.values())
+                events(FAILED, STANDARD_ERROR)
                 exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+
+                debug {
+                    events(*org.gradle.api.tasks.testing.logging.TestLogEvent.values())
+                    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+                }
+
+                info {
+                    events(FAILED, SKIPPED, PASSED, STANDARD_ERROR)
+                    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+                }
             }
         }
 
@@ -257,7 +262,6 @@ fun Project.configureNotPlatform() {
         }
     }
 
-    val project = this@configureNotPlatform
     project.afterEvaluate {
         publishing {
             publications {
@@ -300,27 +304,49 @@ fun Project.configureNotPlatform() {
         }
     }
 }
-
-val testTasks = subprojects.flatMap {
-    val testTasks = mutableListOf<Test>()
-    (it.tasks.findByName("test") as Test?)?.apply {
-        testTasks.add(this)
-    }
-    (it.tasks.findByName("integrationTest") as Test?)?.apply {
-        testTasks.add(this)
-    }
-    testTasks
-}
-
 tasks.register("displayVersion") {
-    this.group = "help"
+    group = "help"
+    description = "Displays the current version of QALIPSIS"
     doLast {
         logger.lifecycle("Project version: ${project.version}")
     }
 }
 
-tasks.register("testReport", TestReport::class) {
-    this.group = "verification"
-    destinationDirectory.set(project.layout.buildDirectory.dir("reports/tests"))
-    testResults.from(*(testTasks.toTypedArray()))
+
+val allTestTasks = subprojects.flatMap { p ->
+    val testTasks = mutableListOf<Test>()
+    (p.tasks.findByName("test") as Test?)?.apply {
+        testTasks.add(this)
+    }
+    (p.tasks.findByName("integrationTest") as Test?)?.apply {
+        testTasks.add(this)
+    }
+    testTasks
 }
+
+tasks.register("aggregatedTestReport", TestReport::class) {
+    group = "documentation"
+    description = "Create an aggregated test report"
+
+    destinationDirectory.set(project.layout.buildDirectory.dir("reports/tests"))
+    testResults.from(*(allTestTasks.toTypedArray()))
+    dependsOn.clear()
+}
+
+val allCoverageTasks = subprojects.flatMap { p ->
+    p.tasks.withType(JacocoReport::class.java)
+}
+
+tasks.register("aggregatedCoverageReport", JacocoReport::class) {
+    group = "documentation"
+    description = "Create an aggregated coverage report"
+
+    sourceDirectories.from.addAll(allCoverageTasks.map { it.sourceDirectories })
+    classDirectories.from.addAll(allCoverageTasks.map { it.classDirectories })
+    executionData.from.addAll(allCoverageTasks.map { it.executionData })
+    reports {
+        html.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/coverage"))
+    }
+}
+
