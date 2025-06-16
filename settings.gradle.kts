@@ -20,6 +20,13 @@
 rootProject.name = "qalipsis-oss"
 
 include(
+    ":qalipsis-dev-platform",
+    ":qalipsis-api-dev",
+    ":qalipsis-api-common",
+    ":qalipsis-api-dsl",
+    ":qalipsis-api-processors",
+    ":qalipsis-test",
+
     ":qalipsis-shared",
     ":qalipsis-cluster",
     ":qalipsis-head",
@@ -28,9 +35,17 @@ include(
     ":qalipsis-plugin-platform"
 )
 
-project(":qalipsis-shared").projectDir = File(rootDir, "shared")
-project(":qalipsis-cluster").projectDir = File(rootDir, "cluster")
-project(":qalipsis-head").projectDir = File(rootDir, "head")
-project(":qalipsis-factory").projectDir = File(rootDir, "factory")
-project(":qalipsis-runtime").projectDir = File(rootDir, "runtime")
-project(":qalipsis-plugin-platform").projectDir = File(rootDir, "plugin-platform")
+val apiRootDir = rootDir.resolve("api")
+project(":qalipsis-dev-platform").projectDir = apiRootDir.resolve("dev-platform")
+project(":qalipsis-api-dev").projectDir = apiRootDir.resolve("api-dev")
+project(":qalipsis-api-common").projectDir = apiRootDir.resolve("api-common")
+project(":qalipsis-api-dsl").projectDir = apiRootDir.resolve("api-dsl")
+project(":qalipsis-api-processors").projectDir = apiRootDir.resolve("api-processors")
+project(":qalipsis-test").projectDir = apiRootDir.resolve("test")
+
+project(":qalipsis-shared").projectDir = rootDir.resolve("shared")
+project(":qalipsis-cluster").projectDir = rootDir.resolve("cluster")
+project(":qalipsis-head").projectDir = rootDir.resolve("head")
+project(":qalipsis-factory").projectDir = rootDir.resolve("factory")
+project(":qalipsis-runtime").projectDir = rootDir.resolve("runtime")
+project(":qalipsis-plugin-platform").projectDir = rootDir.resolve("plugin-platform")

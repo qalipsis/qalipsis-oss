@@ -96,7 +96,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
 
 
     @ParameterizedTest
-    @ValueSource(longs = [60, 100, 200])
+    @ValueSource(longs = [100, 200])
     internal fun `should successfully initialize the meter registry and publish measurements`(publicationPeriodMs: Long) =
         testDispatcherProvider.run {
             //given

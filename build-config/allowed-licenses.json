@@ -75,6 +75,14 @@
     },
     {
       "moduleLicense": ".*",
+      "moduleName": "com.willowtreeapps.opentest4k:opentest4k"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.willowtreeapps.assertk:assertk"
+    },
+    {
+      "moduleLicense": ".*",
       "moduleName": "io.ktor:ktor-bom"
     },
     {
@@ -84,6 +92,26 @@
     {
       "moduleLicense": ".*",
       "moduleName": "io.micronaut.*"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:mockk"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:mockk-agent"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:mockk-agent-api"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:mockk-core"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:mockk-dsl"
     },
     {
       "moduleLicense": ".*",

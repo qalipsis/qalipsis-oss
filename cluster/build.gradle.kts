@@ -46,18 +46,16 @@ kapt {
     useBuildCache = false
 }
 
-val apiVersion: String by project
-
 dependencies {
-    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
-    implementation("io.qalipsis:qalipsis-api-dev:$apiVersion")
+    implementation(platform(project(":qalipsis-dev-platform")))
+    implementation(project(":qalipsis-api-dev"))
 
     compileOnly("io.swagger.core.v3:swagger-annotations")
     compileOnly("io.micronaut:micronaut-core")
     compileOnly("io.micronaut:micronaut-inject-java")
     compileOnly("io.micronaut:micronaut-validation")
 
-    kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    kapt(platform(project(":qalipsis-dev-platform")))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")

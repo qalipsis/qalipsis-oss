@@ -1,0 +1,7 @@
+events:
+  root: info
+  level:
+    the.first: info
+    the.second:
+      level: debug
+    the.third.level: 'off'

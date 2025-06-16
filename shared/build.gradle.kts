@@ -60,9 +60,6 @@ kapt {
     useBuildCache = false
 }
 
-val apiVersion: String by project
-
-
 dependencies {
     api("io.micronaut.redis:micronaut-redis-lettuce")
     api("org.apache.commons:commons-lang3:3.+")
@@ -70,11 +67,11 @@ dependencies {
     compileOnly("io.swagger.core.v3:swagger-annotations")
     compileOnly("org.graalvm.nativeimage:svm")
 
-    implementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    implementation(platform(project(":qalipsis-dev-platform")))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
-    implementation("io.qalipsis:qalipsis-api-common:$apiVersion")
-    implementation("io.qalipsis:qalipsis-api-dsl:$apiVersion")
-    implementation("io.qalipsis:qalipsis-api-processors:$apiVersion")
+    implementation(project(":qalipsis-api-common"))
+    implementation(project(":qalipsis-api-dsl"))
+    implementation(project(":qalipsis-api-processors"))
 
     implementation("com.google.guava:guava")
     implementation("com.github.ben-manes.caffeine:caffeine")
@@ -87,33 +84,33 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
 
-    kapt(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    kapt(platform(project(":qalipsis-dev-platform")))
     kapt("io.micronaut:micronaut-inject-java")
     kapt("io.micronaut:micronaut-validation")
     kapt("io.micronaut:micronaut-graal")
-    kapt("io.qalipsis:qalipsis-api-processors:$apiVersion")
+    kapt(project(":qalipsis-api-processors"))
     kapt("io.aeris-consulting:catadioptre-annotations")
     kapt("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 
-    testImplementation(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
-    testImplementation("io.qalipsis:qalipsis-test:$apiVersion")
+    testImplementation(platform(project(":qalipsis-dev-platform")))
+    testImplementation(project(":qalipsis-test"))
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("jakarta.annotation:jakarta.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
     testImplementation("io.aeris-consulting:catadioptre-kotlin")
-    testImplementation(testFixtures("io.qalipsis:qalipsis-api-dsl:$apiVersion"))
-    testImplementation(testFixtures("io.qalipsis:qalipsis-api-common:$apiVersion"))
+    testImplementation(testFixtures(project(":qalipsis-api-dsl")))
+    testImplementation(testFixtures(project(":qalipsis-api-common")))
     testImplementation(testFixtures(project(":qalipsis-runtime")))
     testImplementation("org.testcontainers:testcontainers")
 
-    kaptTest(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    kaptTest(platform(project(":qalipsis-dev-platform")))
     kaptTest("io.micronaut:micronaut-inject-java")
-    kaptTest("io.qalipsis:qalipsis-api-processors:$apiVersion")
+    kaptTest(project(":qalipsis-api-processors"))
 
-    testFixturesApi(platform("io.qalipsis:qalipsis-dev-platform:$apiVersion"))
+    testFixturesApi(platform(project(":qalipsis-dev-platform")))
     testFixturesApi("org.testcontainers:testcontainers")
     testFixturesApi("org.testcontainers:postgresql")
-    testFixturesApi("io.qalipsis:qalipsis-api-common:$apiVersion")
+    testFixturesApi(project(":qalipsis-api-common"))
     testFixturesImplementation("io.micronaut.test:micronaut-test-junit5")
     testFixturesImplementation("io.micronaut:micronaut-runtime")
     testFixturesImplementation("org.testcontainers:junit-jupiter")
