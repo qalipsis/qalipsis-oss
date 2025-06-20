@@ -103,8 +103,10 @@ jreleaser {
             nexus2 {
                 register("qalipsis-snapshots") {
                     active.set(Active.SNAPSHOT)
-                    url.set("https://central.sonatype.com/repository/maven-snapshots/")
-                    snapshotUrl.set("https://central.sonatype.com/repository/maven-snapshots/")
+                    // Here we are using our own repository, because the maven central snapshot repo
+                    // is too often not available.
+                    url.set("https://maven.qalipsis.com/repository/oss-snapshots/")
+                    snapshotUrl.set("https://maven.qalipsis.com/repository/oss-snapshots/")
                     applyMavenCentralRules.set(true)
                     verifyPom.set(false)
                     snapshotSupported.set(true)
