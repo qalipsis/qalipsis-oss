@@ -288,10 +288,10 @@ internal class InMemoryCumulativeThroughputTest {
             prop(MeterSnapshotImpl::timestamp).isEqualTo(now)
             prop(MeterSnapshotImpl::measurements).transform { it.toList() }.all {
                 hasSize(5)
-//                index(0).all {
-//                    prop(Measurement::value).isEqualTo(22.0)
-//                    prop(Measurement::statistic).isEqualTo(Statistic.VALUE)
-//                }
+                index(0).all {
+                    prop(Measurement::value).isEqualTo(22.0)
+                    prop(Measurement::statistic).isEqualTo(Statistic.VALUE)
+                }
                 index(1).all {
                     prop(Measurement::value).isEqualTo(13.5)
                     prop(Measurement::statistic).isEqualTo(Statistic.MEAN)

@@ -71,7 +71,9 @@ internal class StepCounter(
     }
 
     override fun increment(amount: Double) {
-        currentCount.add(amount)
+        if (amount > 0.0) {
+            currentCount.add(amount)
+        }
     }
 
     override suspend fun snapshot(timestamp: Instant): MeterSnapshot =
