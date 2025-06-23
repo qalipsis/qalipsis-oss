@@ -30,6 +30,9 @@ object TestScenarioFactory {
     private val scenarioCreationNameField = Class.forName("io.qalipsis.api.scenario.ClasspathScenarioInitializer")
         .getDeclaredField("CURRENT_SCENARIO_NAME").also { it.trySetAccessible() }
 
+    /**
+     * @TODO change the randomAlphabetic function to something suitable.
+     */
     fun scenario(
         name: ScenarioName = RandomStringUtils.randomAlphabetic(8),
         configuration: (ConfigurableScenarioSpecification.() -> Unit) = { }
