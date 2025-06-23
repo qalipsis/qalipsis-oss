@@ -169,7 +169,7 @@ internal class DistributedDagTransitionStepTest {
 
     @Test
     @Timeout(1)
-    internal fun `should not complete pipeline operation when the flag is diabled`() = testCoroutineDispatcher.runTest {
+    internal fun `should not complete pipeline operation when the flag is disabled`() = testCoroutineDispatcher.runTest {
         // given
         val step = DistributedDagTransitionStep<Int>(
             "",

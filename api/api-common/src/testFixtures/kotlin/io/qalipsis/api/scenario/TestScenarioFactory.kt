@@ -31,7 +31,7 @@ object TestScenarioFactory {
         .getDeclaredField("CURRENT_SCENARIO_NAME").also { it.trySetAccessible() }
 
     fun scenario(
-        name: ScenarioName = RandomStringUtils.randomAlphabetic(8),
+        name: ScenarioName = RandomStringUtils.secure().nextAlphabetic(8),
         configuration: (ConfigurableScenarioSpecification.() -> Unit) = { }
     ): StartScenarioSpecification {
         scenarioCreationNameField.set(null, name)

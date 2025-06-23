@@ -102,7 +102,6 @@ interface CampaignReportLiveStateRegistry {
         cause: Throwable? = null,
     )
 
-
     /**
      * Records the successful initialization of a step.
      */
