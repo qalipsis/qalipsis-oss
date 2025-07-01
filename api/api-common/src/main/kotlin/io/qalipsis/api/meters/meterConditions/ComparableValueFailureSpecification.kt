@@ -7,10 +7,10 @@ class ComparableValueFailureSpecification<M : Meter<M>, T : Comparable<T>>(
 ) : FailureSpecification<T> {
 
     //To be converted into value checker
-    private var checkSpec: ValueCheckSpecification<T>? = null
+    var checkSpec: ValueCheckSpecification<T>? = null
 
     override fun isMoreThan(threshold: T) {
-        checkSpec = LessThanValueSpecification(threshold)
+        checkSpec = MoreThanValueSpecification(threshold)
     }
 
     override fun isLessThan(threshold: T) {
@@ -19,6 +19,22 @@ class ComparableValueFailureSpecification<M : Meter<M>, T : Comparable<T>>(
 
     override fun isBetween(startThreshold: T, endThreshold: T) {
         checkSpec = LessThanValueSpecification(startThreshold)
+    }
+
+    override fun isNotBetween(startValue: T, endValue: T) {
+        TODO("Not yet implemented")
+    }
+
+    override fun isEqual(threshold: T) {
+        TODO("Not yet implemented")
+    }
+
+    override fun isGreaterThanOrEqual(threshold: T) {
+        TODO("Not yet implemented")
+    }
+
+    override fun isLessThanOrEqual(threshold: T) {
+        TODO("Not yet implemented")
     }
 
 }
