@@ -6,35 +6,34 @@ class ComparableValueFailureSpecification<M : Meter<M>, T : Comparable<T>>(
     val valueExtractor: M.() -> T
 ) : FailureSpecification<T> {
 
-    //To be converted into value checker
     var checkSpec: ValueCheckSpecification<T>? = null
 
-    override fun isMoreThan(threshold: T) {
-        checkSpec = MoreThanValueSpecification(threshold)
+    override fun isGreaterThan(threshold: T) {
+        checkSpec = GreaterThanValueSpecification(threshold)
     }
 
     override fun isLessThan(threshold: T) {
         checkSpec = LessThanValueSpecification(threshold)
     }
 
-    override fun isBetween(startThreshold: T, endThreshold: T) {
-        checkSpec = LessThanValueSpecification(startThreshold)
+    override fun isBetween(threshold: T, lowerBound: T, upperBound: T) {
+        checkSpec = BetweenValueSpecification(threshold, lowerBound, upperBound)
     }
 
-    override fun isNotBetween(startValue: T, endValue: T) {
-        TODO("Not yet implemented")
+    override fun isNotBetween(threshold: T, lowerBound: T, upperBound: T) {
+        checkSpec = NotBetweenValueSpecification(threshold, lowerBound, upperBound)
     }
 
     override fun isEqual(threshold: T) {
-        TODO("Not yet implemented")
+        checkSpec = EqualValueSpecification(threshold)
     }
 
     override fun isGreaterThanOrEqual(threshold: T) {
-        TODO("Not yet implemented")
+        checkSpec = GreaterThanOrEqualValueSpecification(threshold)
     }
 
     override fun isLessThanOrEqual(threshold: T) {
-        TODO("Not yet implemented")
+        checkSpec = GreaterThanOrEqualValueSpecification(threshold)
     }
 
 }

@@ -41,10 +41,10 @@ internal class TimerMeterStepSpecificationTest {
            return@timer Duration.of(1800000, ChronoUnit.MILLIS)
         }.shouldFailWhen {
             //not key value
-            max.isMoreThan(Duration.of(2, ChronoUnit.SECONDS))
+            max.isGreaterThan(Duration.of(2, ChronoUnit.SECONDS))
 //            max.isLessThan(Duration.of(2, ChronoUnit.SECONDS))
 //            average.isLessThan(Duration.of(1, ChronoUnit.SECONDS))
-            mean.isMoreThan(Duration.of(1, ChronoUnit.SECONDS))
+            mean.isGreaterThan(Duration.of(1, ChronoUnit.SECONDS))
             return@shouldFailWhen 0
         }
 
