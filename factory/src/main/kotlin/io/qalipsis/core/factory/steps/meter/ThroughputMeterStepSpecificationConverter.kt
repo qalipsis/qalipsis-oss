@@ -21,10 +21,10 @@ package io.qalipsis.core.factory.steps.meter
 
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.meters.CampaignMeterRegistry
-import io.qalipsis.api.steps.DistributionSummaryMeterStepSpecification
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
+import io.qalipsis.api.steps.ThroughputMeterStepSpecification
 
 /**
  * [StepSpecificationConverter] from [TimerMeterStepSpecification] to [TimerMeterStep].
@@ -32,18 +32,18 @@ import io.qalipsis.api.steps.StepSpecificationConverter
  * @author Francisca Eze
  */
 @StepConverter
-internal class DistributionMeterStepSpecificationConverter(
+internal class ThroughputMeterStepSpecificationConverter(
     val meterRegistry: CampaignMeterRegistry,
-) : StepSpecificationConverter<DistributionSummaryMeterStepSpecification<*>> {
+) : StepSpecificationConverter<ThroughputMeterStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
-        return stepSpecification is DistributionSummaryMeterStepSpecification
+        return stepSpecification is ThroughputMeterStepSpecification
     }
 
-    override suspend fun <I, O> convert(creationContext: StepCreationContext<DistributionSummaryMeterStepSpecification<*>>) {
+    override suspend fun <I, O> convert(creationContext: StepCreationContext<ThroughputMeterStepSpecification<*>>) {
         @Suppress("UNCHECKED_CAST")
-        val spec = creationContext.stepSpecification as DistributionSummaryMeterStepSpecification<I>
-        val step = DistributionMeterStep(
+        val spec = creationContext.stepSpecification as ThroughputMeterStepSpecification<I>
+        val step = ThroughputMeterStep(
             spec.name,
             spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy,
             spec.meterName,
