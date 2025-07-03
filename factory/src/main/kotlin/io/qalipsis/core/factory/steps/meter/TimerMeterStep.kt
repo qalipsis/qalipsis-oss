@@ -6,7 +6,7 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.Timer
-import io.qalipsis.api.meters.meterConditions.ComparableValueFailureSpecification
+import io.qalipsis.api.meters.specification.ComparableValueFailureSpecification
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.steps.AbstractStep
 import java.time.Duration

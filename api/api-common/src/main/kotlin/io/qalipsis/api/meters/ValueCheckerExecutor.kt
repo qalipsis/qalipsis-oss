@@ -1,7 +1,6 @@
-package io.qalipsis.api.meters.meterConditions
+package io.qalipsis.api.meters
 
 import io.qalipsis.api.exceptions.QalipsisAssertionException
-import io.qalipsis.api.meters.Meter
 
 // Converter converts from spec to executable instance...
 class ValueCheckerExecutor<M : Meter<M>, T : Comparable<T>>(

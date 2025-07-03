@@ -1,7 +1,7 @@
-package io.qalipsis.core.factory.steps.meter
+package io.qalipsis.core.factory.steps.meter.checkers
 
 import io.qalipsis.api.exceptions.QalipsisAssertionException
-import io.qalipsis.api.meters.meterConditions.ValueChecker
+import io.qalipsis.api.meters.ValueChecker
 
 class EqualChecker<T : Comparable<T>>(private val threshold: T) : ValueChecker<T> {
 

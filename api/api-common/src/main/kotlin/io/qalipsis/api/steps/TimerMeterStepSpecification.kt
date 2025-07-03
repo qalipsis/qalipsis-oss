@@ -3,9 +3,9 @@ package io.qalipsis.api.steps
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.Timer
-import io.qalipsis.api.meters.meterConditions.ComparableValueFailureSpecification
-import io.qalipsis.api.meters.meterConditions.TimerFailureConditionSpec
-import io.qalipsis.api.meters.meterConditions.TimerFailureConditionSpecImpl
+import io.qalipsis.api.meters.specification.ComparableValueFailureSpecification
+import io.qalipsis.api.meters.TimerFailureConditionSpec
+import io.qalipsis.api.meters.TimerFailureConditionSpecImpl
 import java.time.Duration
 
 /**

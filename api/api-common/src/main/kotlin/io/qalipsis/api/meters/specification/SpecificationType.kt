@@ -1,4 +1,4 @@
-package io.qalipsis.api.meters.meterConditions
+package io.qalipsis.api.meters.specification
 
 enum class SpecificationType {
     LESS_THAN, 

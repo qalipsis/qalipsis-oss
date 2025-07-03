@@ -1,4 +1,4 @@
-package io.qalipsis.api.meters.meterConditions
+package io.qalipsis.api.meters.specification
 
 interface FailureSpecification<T : Comparable<T>> {
     fun isGreaterThan(threshold: T)

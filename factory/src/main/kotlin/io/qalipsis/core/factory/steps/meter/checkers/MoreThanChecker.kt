@@ -1,12 +1,12 @@
-package io.qalipsis.core.factory.steps.meter
+package io.qalipsis.core.factory.steps.meter.checkers
 
 import io.qalipsis.api.exceptions.QalipsisAssertionException
-import io.qalipsis.api.meters.meterConditions.ValueChecker
+import io.qalipsis.api.meters.ValueChecker
 
-class GreaterThanOrEqualChecker<T : Comparable<T>>(private val threshold: T) : ValueChecker<T> {
+class MoreThanChecker<T : Comparable<T>>(private val threshold: T) : ValueChecker<T> {
 
     override fun check(value: T): QalipsisAssertionException?{
-        return if (threshold >= value) {
+        return if (threshold > value) {
             QalipsisAssertionException("Duration $threshold should not be less than $value")
         } else null
     }

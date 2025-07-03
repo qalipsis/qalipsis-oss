@@ -1,6 +1,7 @@
-package io.qalipsis.api.meters.meterConditions
+package io.qalipsis.api.meters.specification
 
 import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.ValueCheckSpecification
 
 class ComparableValueFailureSpecification<M : Meter<M>, T : Comparable<T>>(
     val valueExtractor: M.() -> T

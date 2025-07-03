@@ -1,9 +1,10 @@
-package io.qalipsis.core.factory.steps.meter
+package io.qalipsis.core.factory.steps.meter.checkers
 
 import io.qalipsis.api.exceptions.QalipsisAssertionException
-import io.qalipsis.api.meters.meterConditions.ValueChecker
+import io.qalipsis.api.meters.ValueChecker
 
-class NotBetweenChecker<T : Comparable<T>>(private val threshold: T,  private val lowerBound: T, private val upperBound: T) : ValueChecker<T> {
+class NotBetweenChecker<T : Comparable<T>>(private val threshold: T,  private val lowerBound: T, private val upperBound: T) :
+    ValueChecker<T> {
 
     override fun check(value: T): QalipsisAssertionException?{
         return if (isNotBetween(value, lowerBound, upperBound)) {

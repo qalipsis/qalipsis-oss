@@ -1,4 +1,4 @@
-package io.qalipsis.api.meters.meterConditions
+package io.qalipsis.api.meters
 
 import io.qalipsis.api.exceptions.QalipsisAssertionException
 
