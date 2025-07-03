@@ -7,3 +7,8 @@ interface DistributionSummaryFailureConditionSpec {
     val max: FailureSpecification<Double>
     val mean: FailureSpecification<Double>
 }
+
+
+interface CounterFailureConditionSpec {
+    val count: FailureSpecification<Double>
+}
