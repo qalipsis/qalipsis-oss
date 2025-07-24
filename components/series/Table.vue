@@ -19,8 +19,11 @@
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'displayName'">
         <div
-          class="flex items-center cursor-pointer hover:text-primary-500"
-          @click="handleEditBtnClick(record as DataSeriesTableData)"
+          class="flex items-center"
+          :class="{
+            'cursor-pointer hover:text-primary-500': !tableActionsHidden
+          }"
+          @click="!tableActionsHidden && handleEditBtnClick(record as DataSeriesTableData)"
         >
           <div
             class="w-2 h-2 rounded-full mr-2"
@@ -157,19 +160,19 @@ watch(
 const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
   /**
    * Disable the row select when
-   * 1. The data series is minion count
+   * 1. The data series is minion count and the table action is not disabled
    * 2. The max number of row selection is specified and the selected row is more than the max number.
    * 3. The row is disabled
    */
   const isMinionCount = dataSeriesTableData.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
   let disabled = false
 
-  if (isMinionCount) {
+  if (isMinionCount && !props.tableActionsHidden) {
     disabled = true
   } else if (props.maxSelectedRows) {
     // When the max number of row selection is specified, the row is disabled when it is not yet selected.
     disabled =
-      selectedRowKeys.value.length > props.maxSelectedRows &&
+      selectedRowKeys.value.length >= props.maxSelectedRows &&
       !selectedRowKeys.value.includes(dataSeriesTableData.reference)
   } else {
     disabled = dataSeriesTableData.disabled
