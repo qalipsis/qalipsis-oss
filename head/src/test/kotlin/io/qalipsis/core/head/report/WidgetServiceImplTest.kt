@@ -25,20 +25,28 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.SpyK
+import io.mockk.mockk
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
+import io.qalipsis.core.head.report.catadioptre.floor
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.stream.Stream
 import kotlin.math.roundToLong
 
 @WithMockk
@@ -55,6 +63,7 @@ internal class WidgetServiceImplTest {
     private lateinit var campaignRepository: CampaignRepository
 
     @InjectMockKs
+    @SpyK(recordPrivateCalls = true)
     private lateinit var widgetServiceImpl: WidgetServiceImpl
 
     @Test
@@ -89,24 +98,27 @@ internal class WidgetServiceImplTest {
     internal fun `should retrieve the campaign results and their states when start and end is provided`() =
         testDispatcherProvider.runTest {
             // given
-            val now = Instant.now().minus(26, ChronoUnit.HOURS)
-            val end = Instant.now().minus(21, ChronoUnit.HOURS)
-            val offset = 2
-            val timeFrame = Duration.ofMinutes(30).minusSeconds(2600)
-            val seriesInterval = now.minus(offset.toLong(), ChronoUnit.HOURS).minus(timeFrame)
+            val start = Instant.now().minus(26, ChronoUnit.HOURS)
+            val end = Instant.now().minus(13, ChronoUnit.HOURS)
+            val offset = 1.5F
+            val timeFrame = Duration.ofHours(2)
+
+            val seriesInterval = start.minus(offset.toLong(), ChronoUnit.HOURS).minus(timeFrame)
+            val (actualStart, actualEnd) = mockk<Instant>() to mockk<Instant>()
+            every { widgetServiceImpl.floor(any(), any(), any()) } returns actualStart andThen actualEnd
             val campaignResultList = listOf(
                 CampaignRepository.CampaignResultCount(
-                    seriesStart = now.minus(offset.toLong(), ChronoUnit.HOURS),
+                    seriesStart = start.minus(offset.toLong(), ChronoUnit.HOURS),
                     status = ExecutionStatus.SUCCESSFUL,
                     count = 111
                 ),
                 CampaignRepository.CampaignResultCount(
-                    seriesStart = now.minus(offset.toLong(), ChronoUnit.HOURS),
+                    seriesStart = start.minus(offset.toLong(), ChronoUnit.HOURS),
                     status = ExecutionStatus.ABORTED,
                     count = 43
                 ),
                 CampaignRepository.CampaignResultCount(
-                    seriesStart = now.minus(offset.toLong(), ChronoUnit.HOURS),
+                    seriesStart = start.minus(offset.toLong(), ChronoUnit.HOURS),
                     status = ExecutionStatus.WARNING,
                     count = 58
                 ),
@@ -158,9 +170,9 @@ internal class WidgetServiceImplTest {
             // when
             val campaignSummaryCount = widgetServiceImpl.aggregateCampaignResult(
                 tenant = "my-tenant",
-                from = now,
+                from = start,
                 until = end,
-                timeOffset = offset.toFloat(),
+                timeOffset = offset,
                 aggregationTimeframe = timeFrame
             )
 
@@ -168,7 +180,7 @@ internal class WidgetServiceImplTest {
             assertThat(campaignSummaryCount).all {
                 hasSize(4)
                 containsExactlyInAnyOrder(
-                    CampaignSummaryResult(now.minus(offset.toLong(), ChronoUnit.HOURS), 111, 101),
+                    CampaignSummaryResult(start.minus(offset.toLong(), ChronoUnit.HOURS), 111, 101),
                     CampaignSummaryResult(seriesInterval, 411, 543),
                     CampaignSummaryResult(seriesInterval.minus(timeFrame), 26, 2),
                     CampaignSummaryResult(
@@ -178,10 +190,12 @@ internal class WidgetServiceImplTest {
             }
 
             coVerifyOnce {
+                widgetServiceImpl.floor(start, timeFrame, Duration.ofMinutes(90))
+                widgetServiceImpl.floor(end + timeFrame, timeFrame, Duration.ofMinutes(90))
                 campaignRepository.retrieveCampaignsStatusHistogram(
                     "my-tenant",
-                    startIdentifier = now.minus(offset.toLong(), ChronoUnit.HOURS),
-                    endIdentifier = end.minus(offset.toLong(), ChronoUnit.HOURS),
+                    startIdentifier = actualStart,
+                    endIdentifier = actualEnd,
                     timeframe = timeFrame
                 )
             }
@@ -442,5 +456,72 @@ internal class WidgetServiceImplTest {
         return if (sign == '+') start.minus(calcOffset).plus(newInterval) else start.minus(
             calcOffset
         ).minus(newInterval)
+    }
+
+    @ParameterizedTest
+    @MethodSource("argumentsForInstantRounding")
+    fun `should round the instant to the start of a complete period`(
+        start: Instant,
+        timeframe: Duration,
+        timezoneOffset: Duration,
+        expectedResult: Instant
+    ) {
+        // when
+        val result = widgetServiceImpl.floor(start, timeframe, timezoneOffset)
+
+        // then
+        assertThat(result).isEqualTo(expectedResult)
+    }
+
+    companion object {
+
+        /**
+         * Function providing the arguments to test the rounding of an instant considering the resolution of the time windows to display.
+         * Provided arguments are:
+         *  1. the start instant to round,
+         *  2. the duration of each individual time bucket,
+         *  3. the duration of the time offset for the local time,
+         *  4. the expected result.
+         */
+        @JvmStatic
+        fun argumentsForInstantRounding() = Stream.of(
+            Arguments.of(
+                Instant.parse("2025-07-18T10:07:52.456Z"),
+                Duration.ofMinutes(1),
+                Duration.ofMinutes(-90),
+                Instant.parse("2025-07-18T10:07:00.000Z")
+            ),
+            Arguments.of(
+                Instant.parse("2025-07-18T10:07:52.456Z"),
+                Duration.ofMinutes(1),
+                Duration.ofMinutes(90),
+                Instant.parse("2025-07-18T10:07:00.000Z")
+            ),
+            Arguments.of(
+                Instant.parse("2025-07-18T10:07:52.456Z"),
+                Duration.ofHours(1),
+                Duration.ofMinutes(-90),
+                Instant.parse("2025-07-18T09:30:00.000Z")
+            ),
+            Arguments.of(
+                Instant.parse("2025-07-18T10:07:52.456Z"),
+                Duration.ofHours(1),
+                Duration.ofMinutes(90),
+                Instant.parse("2025-07-18T09:30:00.000Z")
+            ),
+            Arguments.of(
+                Instant.parse("2025-07-18T10:07:52.456Z"),
+                Duration.ofDays(1),
+                Duration.ofMinutes(-90),
+                Instant.parse("2025-07-17T22:30:00.000Z")
+            ),
+            Arguments.of(
+                Instant.parse("2025-07-18T10:07:52.456Z"),
+                Duration.ofDays(1),
+                Duration.ofMinutes(90),
+                Instant.parse("2025-07-18T01:30:00.000Z")
+            ),
+        )
+
     }
 }
