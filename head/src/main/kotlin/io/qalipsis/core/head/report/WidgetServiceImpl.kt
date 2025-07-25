@@ -18,6 +18,7 @@
  */
 package io.qalipsis.core.head.report
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
@@ -25,7 +26,7 @@ import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import jakarta.inject.Singleton
 import java.time.Duration
 import java.time.Instant
-import java.time.temporal.ChronoUnit
+import kotlin.math.absoluteValue
 
 /**
  * Implementation of [WidgetService] interface.
@@ -55,10 +56,11 @@ internal class WidgetServiceImpl(
         timeOffset: Float,
         aggregationTimeframe: Duration
     ): List<CampaignSummaryResult> {
-        // convert time offsets to minutes
-        val timezoneOffset = Duration.of((timeOffset * 60).toLong(), ChronoUnit.MINUTES)
-        val start = from.minus(timezoneOffset)
-        val end = until?.minus(timezoneOffset) ?: (Instant.now() + aggregationTimeframe)
+        // Convert time offsets to a duration.
+        val timezoneOffset = Duration.ofMinutes((timeOffset * 60).toLong())
+        val start = floor(from, aggregationTimeframe, timezoneOffset)
+        val end = floor((until ?: Instant.now()) + aggregationTimeframe, aggregationTimeframe, timezoneOffset)
+
         val result = mutableListOf<CampaignSummaryResult>()
         val campaignResultList =
             campaignRepository.retrieveCampaignsStatusHistogram(
@@ -80,5 +82,22 @@ internal class WidgetServiceImpl(
             result.add(CampaignSummaryResult(start = it.key, successful = successCounter, failed = failureCounter))
         }
         return result
+    }
+
+    /**
+     * Rounds the [instant] to the start of the complete time-window of duration [resolution] for the [timezoneOffset].
+     */
+    @KTestable
+    private fun floor(instant: Instant, resolution: Duration, timezoneOffset: Duration): Instant {
+        var actualStartEpochMilli = instant.toEpochMilli()
+        // We round to the start of a new complete period.
+        actualStartEpochMilli -= actualStartEpochMilli.rem(resolution.toMillis())
+        return if (resolution >= Duration.ofDays(1)) {
+            Instant.ofEpochMilli(actualStartEpochMilli) + timezoneOffset
+        } else if (resolution > Duration.ofMinutes(1)) {
+            Instant.ofEpochMilli(actualStartEpochMilli) - Duration.ofMinutes(timezoneOffset.toMinutesPart().absoluteValue.toLong())
+        } else {
+            Instant.ofEpochMilli(actualStartEpochMilli)
+        }
     }
 }
