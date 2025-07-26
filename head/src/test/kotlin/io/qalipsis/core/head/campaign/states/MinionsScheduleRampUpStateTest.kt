@@ -72,9 +72,9 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
                     completion = HARD, stages = listOf(
                         Stage(
                             minionsCount = 123,
-                            rampUpDurationMs = 234,
+                            rampUpDurationMs = 2340,
                             totalDurationMs = 34534,
-                            resolutionMs = 6454
+                            resolutionMs = 454
                         ),
                         Stage(
                             minionsCount = 463,
@@ -110,9 +110,9 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
                         HARD,
                         Stage(
                             minionsCount = 123,
-                            rampUpDurationMs = 234,
+                            rampUpDurationMs = 2340,
                             totalDurationMs = 34534,
-                            resolutionMs = 6454
+                            resolutionMs = 454
                         ),
                         Stage(
                             minionsCount = 463,

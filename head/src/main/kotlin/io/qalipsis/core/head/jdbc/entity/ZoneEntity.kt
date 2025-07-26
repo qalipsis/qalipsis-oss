@@ -49,20 +49,24 @@ data class ZoneEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,
+
     @field:Version
     val version: Instant,
-    val creation: Instant = Instant.now(),
-    @field:NotBlank
-    @field:Size(min = 2, max = 3)
-    val key: String,
-    @field:Size(min = 3, max = 20)
-    val title: String,
-    @field:Size(min = 3, max = 50)
-    val description: String? = null,
-    @field:Size(min = 3, max = 50)
-    val imagePath: URL? = null,
-    val enabled: Boolean = true,
 
+    val creation: Instant = Instant.now(),
+
+    @field:NotBlank
+    @field:Size(min = 2, max = 20)
+    val key: String,
+
+    @field:Size(min = 2, max = 50)
+    val title: String,
+
+    val description: String? = null,
+
+    val imagePath: URL? = null,
+
+    val enabled: Boolean = true,
 ) : Entity {
 
     constructor(

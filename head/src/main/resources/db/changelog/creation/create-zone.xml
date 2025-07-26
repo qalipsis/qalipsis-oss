@@ -42,10 +42,10 @@
       <column name="title" type="varchar(50)">
         <constraints nullable="false"/>
       </column>
-      <column name="description" type="varchar(80)">
+      <column name="description" type="text">
         <constraints nullable="true"/>
       </column>
-      <column name="image_path" type="varchar(80)">
+      <column name="image_path" type="text">
         <constraints nullable="true"/>
       </column>
       <column name="enabled" type="BOOLEAN">
