@@ -35,11 +35,11 @@ import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.Stage
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
-import io.qalipsis.core.head.zone.ZoneService
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.Zone
 import io.qalipsis.core.head.web.handler.BulkIllegalArgumentException
+import io.qalipsis.core.head.zone.ZoneService
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import org.junit.jupiter.api.BeforeEach
@@ -80,17 +80,17 @@ internal class ValidationCampaignHookTest {
         every { campaignConstraints.stage.minMinionsCount } returns 1
         every { campaignConstraints.stage.maxMinionsCount } returns 100
         every { campaignConstraints.stage.minResolution } returns Duration.ofMillis(500)
-        every { campaignConstraints.stage.maxResolution } returns Duration.ofMinutes(5)
+        every { campaignConstraints.stage.maxResolution } returns Duration.ofSeconds(1)
         every { campaignConstraints.stage.minDuration } returns Duration.ofSeconds(5)
-        every { campaignConstraints.stage.maxDuration } returns Duration.ofMinutes(10)
-        every { campaignConstraints.stage.minStartDuration } returns Duration.ofSeconds(5)
-        every { campaignConstraints.stage.maxStartDuration } returns Duration.ofMinutes(10)
+        every { campaignConstraints.stage.maxDuration } returns Duration.ofSeconds(20)
+        every { campaignConstraints.stage.minStartDuration } returns Duration.ofSeconds(3)
+        every { campaignConstraints.stage.maxStartDuration } returns Duration.ofSeconds(10)
     }
 
     private val stagePrototype = Stage(
         minionsCount = 1,
-        rampUpDurationMs = 7000,
-        totalDurationMs = 5000,
+        rampUpDurationMs = 5000,
+        totalDurationMs = 7000,
         resolutionMs = 500
     )
 
@@ -269,7 +269,7 @@ internal class ValidationCampaignHookTest {
                         1, stageExecutionPrototype.copy(
                             stages = listOf(
                                 stagePrototype.copy(
-                                    resolutionMs = 300001
+                                    resolutionMs = 1001
                                 )
                             )
                         )
@@ -284,7 +284,7 @@ internal class ValidationCampaignHookTest {
             // then
             assertThat(exception.messages.toList()).all {
                 hasSize(1)
-                index(0).isEqualTo("The start resolution for a stage should be less than or equal to 300000 milliseconds")
+                index(0).isEqualTo("The start resolution for a stage should be less than or equal to 1000 milliseconds")
             }
         }
 
@@ -385,6 +385,7 @@ internal class ValidationCampaignHookTest {
                         1, stageExecutionPrototype.copy(
                             stages = listOf(
                                 stagePrototype.copy(
+                                    rampUpDurationMs = 3500,
                                     totalDurationMs = 4000
                                 )
                             )
@@ -424,7 +425,7 @@ internal class ValidationCampaignHookTest {
                         1, stageExecutionPrototype.copy(
                             stages = listOf(
                                 stagePrototype.copy(
-                                    totalDurationMs = 600001
+                                    totalDurationMs = 20001
                                 )
                             )
                         )
@@ -439,7 +440,7 @@ internal class ValidationCampaignHookTest {
             // then
             assertThat(exception.messages.toList()).all {
                 hasSize(1)
-                index(0).isEqualTo("The maximum duration for a stage should be 600000 milliseconds")
+                index(0).isEqualTo("The maximum duration for a stage should be 20000 milliseconds")
             }
         }
 
@@ -463,7 +464,7 @@ internal class ValidationCampaignHookTest {
                         1, stageExecutionPrototype.copy(
                             stages = listOf(
                                 stagePrototype.copy(
-                                    rampUpDurationMs = 4000
+                                    rampUpDurationMs = 2000
                                 )
                             )
                         )
@@ -478,7 +479,7 @@ internal class ValidationCampaignHookTest {
             // then
             assertThat(exception.messages.toList()).all {
                 hasSize(1)
-                index(0).isEqualTo("The minimum ramp-up duration for a stage should be 5000 milliseconds")
+                index(0).isEqualTo("The minimum ramp-up duration for a stage should be 3000 milliseconds")
             }
         }
 
@@ -502,7 +503,8 @@ internal class ValidationCampaignHookTest {
                         1, stageExecutionPrototype.copy(
                             stages = listOf(
                                 stagePrototype.copy(
-                                    rampUpDurationMs = 600001
+                                    rampUpDurationMs = 10001,
+                                    totalDurationMs = 11000
                                 )
                             )
                         )
@@ -517,7 +519,7 @@ internal class ValidationCampaignHookTest {
             // then
             assertThat(exception.messages.toList()).all {
                 hasSize(1)
-                index(0).isEqualTo("The maximum ramp-up duration for a stage should be 600000 milliseconds")
+                index(0).isEqualTo("The maximum ramp-up duration for a stage should be 10000 milliseconds")
             }
         }
 
@@ -617,11 +619,11 @@ internal class ValidationCampaignHookTest {
                 "Scenario1" to ScenarioConfiguration(
                     10001, stageExecutionPrototype.copy(
                         stages = listOf(
-                            stagePrototype.copy(
+                            Stage(
                                 minionsCount = 2,
                                 resolutionMs = 400,
                                 totalDurationMs = 4000,
-                                rampUpDurationMs = 4000
+                                rampUpDurationMs = 2000
                             )
                         )
                     ), zones = mapOf("FR" to 50, "EN" to 60)
@@ -629,11 +631,11 @@ internal class ValidationCampaignHookTest {
                 "Scenario2" to ScenarioConfiguration(
                     11, stageExecutionPrototype.copy(
                         stages = listOf(
-                            stagePrototype.copy(
+                            Stage(
                                 minionsCount = 101,
-                                resolutionMs = 300001,
-                                totalDurationMs = 600001,
-                                rampUpDurationMs = 600001
+                                resolutionMs = 1001,
+                                totalDurationMs = 20001,
+                                rampUpDurationMs = 10001
                             )
                         )
                     ), zones = mapOf("FR" to 20, "EN" to 60)
@@ -654,11 +656,11 @@ internal class ValidationCampaignHookTest {
             index(4).isEqualTo("The start resolution for a stage should at least be 500 milliseconds")
             index(5).isEqualTo("The minimum minions count for a stage should be 5")
             index(6).isEqualTo("The minimum duration for a stage should be 5000 milliseconds")
-            index(7).isEqualTo("The minimum ramp-up duration for a stage should be 5000 milliseconds")
-            index(8).isEqualTo("The start resolution for a stage should be less than or equal to 300000 milliseconds")
+            index(7).isEqualTo("The minimum ramp-up duration for a stage should be 3000 milliseconds")
+            index(8).isEqualTo("The start resolution for a stage should be less than or equal to 1000 milliseconds")
             index(9).isEqualTo("The maximum minions count for a stage should be 100")
-            index(10).isEqualTo("The maximum duration for a stage should be 600000 milliseconds")
-            index(11).isEqualTo("The maximum ramp-up duration for a stage should be 600000 milliseconds")
+            index(10).isEqualTo("The maximum duration for a stage should be 20000 milliseconds")
+            index(11).isEqualTo("The maximum ramp-up duration for a stage should be 10000 milliseconds")
         }
     }
 }

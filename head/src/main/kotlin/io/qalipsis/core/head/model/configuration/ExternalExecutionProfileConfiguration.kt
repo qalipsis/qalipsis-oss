@@ -159,10 +159,6 @@ internal class PercentageStageExternalExecutionProfileConfiguration(
     val completion: CompletionMode
 ) : ExternalExecutionProfileConfiguration {
 
-    init {
-        require(stages.all { it.totalDurationMs >= it.rampUpDurationMs }) { "At least one stage has a total duration that is shorter than the ramp-up duration" }
-    }
-
     override val type: ExecutionProfileType = TYPE
 
     companion object {
@@ -187,10 +183,6 @@ internal class StageExternalExecutionProfileConfiguration(
     )
     val completion: CompletionMode
 ) : ExternalExecutionProfileConfiguration {
-
-    init {
-        require(stages.all { it.totalDurationMs >= it.rampUpDurationMs }) { "At least one stage has a total duration that is shorter than the ramp-up duration" }
-    }
 
     override val type: ExecutionProfileType = TYPE
 

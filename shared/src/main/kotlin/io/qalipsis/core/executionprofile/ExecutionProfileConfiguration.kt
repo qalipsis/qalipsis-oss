@@ -122,10 +122,6 @@ data class PercentageStageExecutionProfileConfiguration(
 
     constructor(completion: CompletionMode, vararg stages: PercentageStage) : this(completion, stages.toList())
 
-    init {
-        require(stages.all { it.totalDurationMs >= it.rampUpDurationMs }) { "At least one stage has a total duration that is shorter than the ramp-up duration" }
-    }
-
     override fun clone(): PercentageStageExecutionProfileConfiguration {
         return copy()
     }
@@ -139,10 +135,6 @@ data class StageExecutionProfileConfiguration(
 ) : ExecutionProfileConfiguration {
 
     constructor(completion: CompletionMode, vararg stages: Stage) : this(completion, stages.toList())
-
-    init {
-        require(stages.all { it.totalDurationMs >= it.rampUpDurationMs }) { "At least one stage has a total duration that is shorter than the ramp-up duration" }
-    }
 
     override fun clone(): StageExecutionProfileConfiguration {
         return copy()
@@ -213,7 +205,12 @@ data class Stage(
      */
     @field:Positive
     val resolutionMs: Long = 500
-)
+) {
+    init {
+        require(totalDurationMs >= rampUpDurationMs) { "The total duration ($totalDurationMs ms) cannot be lesser than the ramp-up duration ($rampUpDurationMs ms)" }
+        require(resolutionMs <= rampUpDurationMs) { "The start resolution ($resolutionMs ms) cannot be greater than the ramp-up duration ($rampUpDurationMs ms)" }
+    }
+}
 
 
 @Serializable
@@ -243,4 +240,9 @@ data class PercentageStage(
      */
     @field:Positive
     val resolutionMs: Long = 500
-)
+) {
+    init {
+        require(totalDurationMs >= rampUpDurationMs) { "The total duration ($totalDurationMs ms) cannot be lesser than the ramp-up duration ($rampUpDurationMs ms)" }
+        require(resolutionMs <= rampUpDurationMs) { "The start resolution ($resolutionMs ms) cannot be greater than the ramp-up duration ($rampUpDurationMs ms)" }
+    }
+}
