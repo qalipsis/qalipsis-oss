@@ -122,6 +122,10 @@ data class PercentageStageExecutionProfileConfiguration(
 
     constructor(completion: CompletionMode, vararg stages: PercentageStage) : this(completion, stages.toList())
 
+    init {
+        require(stages.all { it.totalDurationMs >= it.rampUpDurationMs }) { "At least one stage has a total duration that is shorter than the ramp-up duration" }
+    }
+
     override fun clone(): PercentageStageExecutionProfileConfiguration {
         return copy()
     }
@@ -135,6 +139,10 @@ data class StageExecutionProfileConfiguration(
 ) : ExecutionProfileConfiguration {
 
     constructor(completion: CompletionMode, vararg stages: Stage) : this(completion, stages.toList())
+
+    init {
+        require(stages.all { it.totalDurationMs >= it.rampUpDurationMs }) { "At least one stage has a total duration that is shorter than the ramp-up duration" }
+    }
 
     override fun clone(): StageExecutionProfileConfiguration {
         return copy()
