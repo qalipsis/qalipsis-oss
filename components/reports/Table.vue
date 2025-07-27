@@ -95,14 +95,6 @@ onBeforeUnmount(() => {
   reportsTableStore.$reset()
 })
 
-watch(
-  () => userStore.currentTenantReference,
-  async () => {
-    reportsTableStore.$reset()
-    await reportsTableStore.fetchReportsTableDataSource()
-  }
-)
-
 const handleSorterChange = (tableSorter: TableSorter | null) => {
   const sort = tableSorter ? `${tableSorter.key}:${tableSorter.direction}` : ''
   reportsTableStore.$patch({

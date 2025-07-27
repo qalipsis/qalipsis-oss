@@ -130,14 +130,6 @@ onBeforeUnmount(() => {
   campaignsTableStore.$reset()
 })
 
-watch(
-  () => userStore.currentTenantReference,
-  () => {
-    campaignsTableStore.$reset()
-    _fetchTableData()
-  }
-)
-
 const handlePaginationChange = (pageIndex: number) => {
   campaignsTableStore.$patch({
     currentPageIndex: pageIndex,

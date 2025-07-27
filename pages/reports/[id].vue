@@ -43,10 +43,6 @@ onMounted(async () => {
     })
 })
 
-watch(() => userStore.currentTenantReference, () => {
-    navigateTo('/reports');
-})
-
 onBeforeRouteLeave((to: RouteLocationNormalized, _: RouteLocationNormalized) => {
     redirectPath = to.path;
     if (reportDetailsStore.hasUnsavedChanges && !shouldDiscardChanges && !hasSavedChanges) {

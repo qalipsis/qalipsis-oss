@@ -149,14 +149,6 @@ onBeforeUnmount(() => {
   seriesTableStore.$reset()
 })
 
-watch(
-  () => userStore.currentTenantReference,
-  () => {
-    seriesTableStore.$reset()
-    _fetchTableData()
-  }
-)
-
 const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
   /**
    * Disable the row select when

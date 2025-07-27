@@ -62,10 +62,6 @@ onMounted(async () => {
 
 })
 
-watch(() => userStore.currentTenantReference, () => {
-    navigateTo('/campaigns');
-})
-
 onBeforeUnmount(() => {
     campaignDetailsStore.$reset();
     if (polling.value) {
