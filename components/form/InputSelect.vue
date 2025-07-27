@@ -21,7 +21,7 @@
             <div :class="TailwindClassHelper.formDropdownClass">
                 <ListboxButton>
                     <div 
-                        class="flex items-center justify-between border-l border-solid p-2 border-gray-200 w-20"
+                        class="flex items-center justify-between border-l border-solid p-2 border-gray-200 w-20 h-10"
                         :class="{
                             'border-red-500': hasError
                         }"

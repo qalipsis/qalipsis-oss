@@ -131,7 +131,7 @@ const selectedOptionLabel = computed(() =>
   )?.label
 );
 
-const inputValue = ref(selectedOptionLabel.value ?? '');
+const inputValue = ref(selectedOptionLabel.value ?? selectedFormControlValue.value ?? '');
 
 const hasError = computed(() => (errorMessage.value ? true : false));
 

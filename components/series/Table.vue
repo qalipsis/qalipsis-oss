@@ -126,7 +126,6 @@ const seriesTableStore = useSeriesTableStore()
 const toastStore = useToastStore()
 
 const { dataSource, totalElements, currentPageIndex, pageSize } = storeToRefs(seriesTableStore)
-const userStore = useUserStore()
 
 const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys)
 
@@ -152,16 +151,12 @@ onBeforeUnmount(() => {
 const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
   /**
    * Disable the row select when
-   * 1. The data series is minion count and the table action is not disabled
-   * 2. The max number of row selection is specified and the selected row is more than the max number.
-   * 3. The row is disabled
+   * 1. The max number of row selection is specified and the selected row is more than the max number.
+   * 2. The row is disabled
    */
-  const isMinionCount = dataSeriesTableData.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
   let disabled = false
 
-  if (isMinionCount && !props.tableActionsHidden) {
-    disabled = true
-  } else if (props.maxSelectedRows) {
+  if (props.maxSelectedRows) {
     // When the max number of row selection is specified, the row is disabled when it is not yet selected.
     disabled =
       selectedRowKeys.value.length >= props.maxSelectedRows &&

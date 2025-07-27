@@ -50,7 +50,7 @@
           <BaseSpinner v-else></BaseSpinner>
         </div>
         <div class="col-span-4">
-          <FormSelect
+          <FormAutoComplete
             v-if="hasFieldNameFetched"
             label="Field"
             form-control-name="fieldName"
