@@ -58,7 +58,7 @@ internal interface ReportService {
     /**
      * Delete the report.
      */
-    suspend fun delete(tenant: String, username: String, reference: String)
+    suspend fun delete(tenant: String, username: String, references: Set<String>)
 
     /**
      * Search reports in the specified tenant.

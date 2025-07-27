@@ -2271,4 +2271,79 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
             ).content.map { reportRepository.findById(it)!! }
         ).containsExactly(reportWithWriteSharingMode)
     }
+
+    @Test
+    fun `should retrieve all existing reports when not owned and shared in write`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val creator2 = userRepository.save(userPrototype.copy(username = "other-user"))
+        val saved = reportRepository.save(
+            ReportEntity(
+                reference = "report-ref",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name",
+                sharingMode = SharingMode.WRITE
+            )
+        )
+
+        val savedReportEntity2 = reportRepository.save(
+            ReportEntity(
+                reference = "report-ref2",
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                displayName = "my-report-name2",
+                sharingMode = SharingMode.READONLY
+            )
+        )
+
+        val savedReportEntity3 = reportRepository.save(
+            ReportEntity(
+                reference = "report-ref3",
+                tenantId = tenant.id,
+                creatorId = creator2.id,
+                displayName = "my-report-name3",
+                sharingMode = SharingMode.READONLY
+            )
+        )
+
+        // when
+        val fetched = reportRepository.getUpdatableReports(
+            tenant = "my-tenant",
+            references = listOf("report-ref", "report-ref2", "report-ref3"),
+            creatorId = creator2.id
+        )
+
+        // then
+        assertThat(fetched).all {
+            hasSize(2)
+            index(0).isNotNull().all {
+                prop(ReportEntity::id).isEqualTo(saved.id)
+                prop(ReportEntity::reference).isEqualTo("report-ref")
+                prop(ReportEntity::tenantId).isEqualTo(tenant.id)
+                prop(ReportEntity::creatorId).isEqualTo(creator.id)
+                prop(ReportEntity::displayName).isEqualTo("my-report-name")
+                prop(ReportEntity::sharingMode).isEqualTo(SharingMode.WRITE)
+                prop(ReportEntity::query).isNull()
+                prop(ReportEntity::campaignKeys).isEmpty()
+                prop(ReportEntity::campaignNamesPatterns).isEmpty()
+                prop(ReportEntity::scenarioNamesPatterns).isEmpty()
+                prop(ReportEntity::dataComponents).isEmpty()
+            }
+            index(1).isNotNull().all {
+                prop(ReportEntity::id).isEqualTo(savedReportEntity3.id)
+                prop(ReportEntity::reference).isEqualTo("report-ref3")
+                prop(ReportEntity::tenantId).isEqualTo(tenant.id)
+                prop(ReportEntity::creatorId).isEqualTo(creator2.id)
+                prop(ReportEntity::displayName).isEqualTo("my-report-name3")
+                prop(ReportEntity::sharingMode).isEqualTo(SharingMode.READONLY)
+                prop(ReportEntity::query).isNull()
+                prop(ReportEntity::campaignKeys).isEmpty()
+                prop(ReportEntity::campaignNamesPatterns).isEmpty()
+                prop(ReportEntity::scenarioNamesPatterns).isEmpty()
+                prop(ReportEntity::dataComponents).isEmpty()
+            }
+        }
+    }
 }

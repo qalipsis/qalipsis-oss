@@ -1470,28 +1470,28 @@ internal class ReportServiceImplTest {
             sharingMode = SharingMode.WRITE,
             campaignNamesPatterns = listOf("*"),
         )
-        coEvery { reportRepository.delete(any()) } returns 1
+        coEvery { reportRepository.deleteAll(any()) } returns 1
         coEvery {
-            reportRepository.getReportIfUpdatable(
+            reportRepository.getUpdatableReports(
                 tenant = refEq("my-tenant"),
-                reference = refEq("report-ref"),
+                references = eq(setOf("report-ref")),
                 creatorId = 123L
             )
-        } returns reportEntity
+        } returns listOf(reportEntity)
         coEvery { userRepository.findIdByUsername("other-user") } returns 123L
 
         // when
-        reportServiceImpl.delete(tenant = "my-tenant", username = "other-user", reference = "report-ref")
+        reportServiceImpl.delete(tenant = "my-tenant", username = "other-user", references = setOf("report-ref"))
 
         // then
         coVerifyOrder {
             userRepository.findIdByUsername("other-user")
-            reportRepository.getReportIfUpdatable(
+            reportRepository.getUpdatableReports(
                 tenant = refEq("my-tenant"),
-                reference = refEq("report-ref"),
+                references = eq(setOf("report-ref")),
                 creatorId = 123L
             )
-            reportRepository.delete(reportEntity)
+            reportRepository.deleteAll(listOf(reportEntity))
         }
         confirmVerified(
             reportRepository,
@@ -1518,27 +1518,27 @@ internal class ReportServiceImplTest {
             campaignNamesPatterns = listOf("*"),
         )
         coEvery {
-            reportRepository.getReportIfUpdatable(
+            reportRepository.getUpdatableReports(
                 tenant = refEq("my-tenant"),
-                reference = refEq("report-ref"),
+                references = eq(setOf("report-ref")),
                 creatorId = 456L
             )
-        } returns reportEntity
-        coEvery { reportRepository.delete(any()) } returns 1
+        } returns listOf(reportEntity)
+        coEvery { reportRepository.deleteAll(any()) } returns 1
         coEvery { userRepository.findIdByUsername("the-user") } returns 456L
 
         // when
-        reportServiceImpl.delete(tenant = "my-tenant", username = "the-user", reference = "report-ref")
+        reportServiceImpl.delete(tenant = "my-tenant", username = "the-user", references = setOf("report-ref"))
 
         // then
         coVerifyOrder {
             userRepository.findIdByUsername("the-user")
-            reportRepository.getReportIfUpdatable(
+            reportRepository.getUpdatableReports(
                 tenant = refEq("my-tenant"),
-                reference = refEq("report-ref"),
+                references = eq(setOf("report-ref")),
                 creatorId = 456L
             )
-            reportRepository.delete(reportEntity)
+            reportRepository.deleteAll(listOf(reportEntity))
         }
         confirmVerified(
             reportRepository,
@@ -1558,18 +1558,22 @@ internal class ReportServiceImplTest {
             // given
             val reportServiceImpl = buildReportService()
             coEvery {
-                reportRepository.getReportIfUpdatable(
+                reportRepository.getUpdatableReports(
                     tenant = refEq("my-tenant"),
-                    reference = refEq("report-ref"),
+                    references = eq(setOf("report-ref")),
                     creatorId = 123L
                 )
-            } returns null
+            } returns listOf(null)
             coEvery { userRepository.findIdByUsername("other-user") } returns 123L
             coEvery { reportRepository.delete(any()) } returns 1
 
             // when
             val exception = assertThrows<IllegalArgumentException> {
-                reportServiceImpl.delete(tenant = "my-tenant", username = "other-user", reference = "report-ref")
+                reportServiceImpl.delete(
+                    tenant = "my-tenant",
+                    username = "other-user",
+                    references = setOf("report-ref")
+                )
             }
 
             // then
@@ -1577,9 +1581,9 @@ internal class ReportServiceImplTest {
 
             coVerifyOrder {
                 userRepository.findIdByUsername("other-user")
-                reportRepository.getReportIfUpdatable(
+                reportRepository.getUpdatableReports(
                     tenant = refEq("my-tenant"),
-                    reference = refEq("report-ref"),
+                    references = eq(setOf("report-ref")),
                     creatorId = 123L
                 )
             }
@@ -1600,17 +1604,17 @@ internal class ReportServiceImplTest {
         // given
         val reportServiceImpl = buildReportService()
         coEvery {
-            reportRepository.getReportIfUpdatable(
+            reportRepository.getUpdatableReports(
                 tenant = refEq("my-tenant"),
-                reference = refEq("report-ref"),
+                references = eq(setOf("report-ref")),
                 creatorId = 456L
             )
-        } returns null
+        } returns listOf(null)
         coEvery { userRepository.findIdByUsername("other-user") } returns 456L
 
         // when
         val exception = assertThrows<IllegalArgumentException> {
-            reportServiceImpl.delete(tenant = "my-tenant", username = "other-user", reference = "report-ref")
+            reportServiceImpl.delete(tenant = "my-tenant", username = "other-user", references = setOf("report-ref"))
         }
 
         // then
@@ -1618,9 +1622,9 @@ internal class ReportServiceImplTest {
 
         coVerifyOrder {
             userRepository.findIdByUsername("other-user")
-            reportRepository.getReportIfUpdatable(
+            reportRepository.getUpdatableReports(
                 tenant = refEq("my-tenant"),
-                reference = refEq("report-ref"),
+                references = eq(setOf("report-ref")),
                 creatorId = 456L
             )
         }
@@ -2260,6 +2264,114 @@ internal class ReportServiceImplTest {
             }
             confirmVerified(reportTaskRepository)
         }
+
+    @Test
+    internal fun `should handle deletion of a list of report`() = testDispatcherProvider.runTest {
+        // given
+        val reportServiceImpl = buildReportService()
+        val reportEntity = ReportEntity(
+            reference = "report-ref",
+            tenantId = -1,
+            creatorId = 456L,
+            displayName = "report-name",
+            sharingMode = SharingMode.WRITE,
+            campaignNamesPatterns = listOf("*"),
+        )
+        val reportEntity2 = reportEntity.copy(reference = "report-ref2", displayName = "report-name2")
+
+        coEvery {
+            reportRepository.getUpdatableReports(
+                tenant = refEq("my-tenant"),
+                references = eq(setOf("report-ref", "report-ref2")),
+                creatorId = 456L
+            )
+        } returns listOf(reportEntity, reportEntity2)
+        coEvery { reportRepository.deleteAll(any()) } returns 1
+        coEvery { userRepository.findIdByUsername("the-user") } returns 456L
+
+        // when
+        reportServiceImpl.delete(
+            tenant = "my-tenant",
+            username = "the-user",
+            references = setOf("report-ref", "report-ref2")
+        )
+
+        // then
+        coVerifyOrder {
+            userRepository.findIdByUsername("the-user")
+            reportRepository.getUpdatableReports(
+                tenant = refEq("my-tenant"),
+                references = eq(setOf("report-ref", "report-ref2")),
+                creatorId = 456L
+            )
+            reportRepository.deleteAll(listOf(reportEntity, reportEntity2))
+        }
+        confirmVerified(
+            reportRepository,
+            tenantRepository,
+            userRepository,
+            campaignRepository,
+            reportDataComponentRepository,
+            dataSeriesRepository,
+            idGenerator,
+            reportConverter
+        )
+    }
+
+    @Test
+    internal fun `should not delete the report when one item in the list of retrieved report is not owned or shared`() =
+        testDispatcherProvider.runTest {
+            // given
+            val reportServiceImpl = buildReportService()
+            val reportEntity = ReportEntity(
+                reference = "report-ref",
+                tenantId = -1,
+                creatorId = 457L,
+                displayName = "report-name",
+                sharingMode = SharingMode.WRITE,
+                campaignNamesPatterns = listOf("*"),
+            )
+            coEvery {
+                reportRepository.getUpdatableReports(
+                    tenant = refEq("my-tenant"),
+                    references = eq(setOf("report-ref", "report-ref-3")),
+                    creatorId = 457L
+                )
+            } returns listOf(reportEntity, null)
+            coEvery { userRepository.findIdByUsername("other-user") } returns 457L
+
+            // when
+            val exception = assertThrows<IllegalArgumentException> {
+                reportServiceImpl.delete(
+                    tenant = "my-tenant",
+                    username = "other-user",
+                    references = setOf("report-ref", "report-ref-3")
+                )
+            }
+
+            // then
+            assertThat(exception.message).isEqualTo(REPORT_DELETE_DENY)
+
+            coVerifyOrder {
+                userRepository.findIdByUsername("other-user")
+                reportRepository.getUpdatableReports(
+                    tenant = refEq("my-tenant"),
+                    references = eq(setOf("report-ref", "report-ref-3")),
+                    creatorId = 457L
+                )
+            }
+            confirmVerified(
+                reportRepository,
+                tenantRepository,
+                userRepository,
+                campaignRepository,
+                reportDataComponentRepository,
+                dataSeriesRepository,
+                idGenerator,
+                reportConverter
+            )
+        }
+
 
     private fun CoroutineScope.buildReportService() = ReportServiceImpl(
         reportRepository,

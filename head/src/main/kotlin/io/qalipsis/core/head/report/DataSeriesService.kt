@@ -54,7 +54,7 @@ internal interface DataSeriesService {
     /**
      * Delete the data series.
      */
-    suspend fun delete(tenant: String, username: String, reference: String)
+    suspend fun delete(tenant: String, username: String, references: Set<String>)
 
     /**
      * Search data series in the specified tenant
