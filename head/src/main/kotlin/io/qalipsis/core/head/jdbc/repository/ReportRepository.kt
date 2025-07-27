@@ -171,6 +171,38 @@ internal interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long
     @Join(value = "dataComponents", type = Join.Type.LEFT_FETCH)
     suspend fun getReportIfUpdatable(tenant: String, reference: String, creatorId: Long): ReportEntity?
 
+    /**
+     * Find all reports in a tenant by its reference.
+     * These reports are returned only if the creator is the referred or if the report is shared in WRITE
+     */
+    @Query(
+        """SELECT 
+            report_entity_."id",
+            report_entity_."version",
+            report_entity_."reference",
+            report_entity_."tenant_id",
+            report_entity_."creator_id",
+            report_entity_."display_name",
+            report_entity_."description",
+            report_entity_."sharing_mode",
+            report_entity_."campaign_keys",
+            report_entity_."campaign_names_patterns",
+            report_entity_."scenario_names_patterns",
+            report_entity_."query",
+            report_entity_data_components_."id" AS data_components_id,
+            report_entity_data_components_."type" AS data_components_type,
+            report_entity_data_components_."report_id" AS data_components_report_id 
+        FROM "report" report_entity_ 
+        LEFT JOIN "data_component" report_entity_data_components_ 
+            ON report_entity_."id" = report_entity_data_components_."report_id"
+        WHERE EXISTS (SELECT 1 FROM tenant WHERE report_entity_."tenant_id" = tenant.id AND tenant.reference = :tenant) 
+            AND report_entity_."reference" IN (:references)
+            AND (report_entity_."creator_id" = :creatorId OR report_entity_."sharing_mode" = 'WRITE')
+        ORDER BY report_entity_data_components_."id""""
+    )
+    @Join(value = "dataComponents", type = Join.Type.LEFT_FETCH)
+    suspend fun getUpdatableReports(tenant: String, references: Collection<String>, creatorId: Long): List<ReportEntity?>
+
     @Query(
         value = """
         SELECT 

@@ -875,52 +875,58 @@ internal class DataSeriesServiceImplTest {
     @Test
     internal fun `should delete the data series when shared in write`() = testDispatcherProvider.runTest {
         // given
-        coEvery { dataSeriesRepository.delete(any()) } returns 1
+        coEvery { dataSeriesRepository.deleteAll(any()) } returns 1
         val entity = mockk<DataSeriesEntity> {
             every { creatorId } returns 3912L
             every { sharingMode } returns SharingMode.WRITE
         }
         coEvery {
-            dataSeriesRepository.findByTenantAndReference(
+            dataSeriesRepository.findAllByTenantAndReferences(
                 "my-tenant",
-                "my-data-series"
+                setOf("my-data-series")
             )
-        } returns entity
+        } returns listOf(entity)
 
         // when
-        dataSeriesService.delete(tenant = "my-tenant", username = "my-user", reference = "my-data-series")
+        dataSeriesService.delete(tenant = "my-tenant", username = "my-user", references = setOf("my-data-series"))
 
         // then
         coVerifyOrder {
-            dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
-            dataSeriesRepository.delete(refEq(entity))
+            dataSeriesRepository.findAllByTenantAndReferences(
+                tenant = "my-tenant",
+                references = setOf("my-data-series")
+            )
+            dataSeriesRepository.deleteAll(eq(listOf(entity)))
         }
     }
 
     @Test
     internal fun `should delete the data series when owned if not shared`() = testDispatcherProvider.runTest {
         // given
-        coEvery { dataSeriesRepository.delete(any()) } returns 1
+        coEvery { dataSeriesRepository.deleteAll(any()) } returns 1
         val entity = mockk<DataSeriesEntity> {
             every { creatorId } returns 3912L
             every { sharingMode } returns SharingMode.NONE
         }
         coEvery {
-            dataSeriesRepository.findByTenantAndReference(
+            dataSeriesRepository.findAllByTenantAndReferences(
                 "my-tenant",
-                "my-data-series"
+                setOf("my-data-series")
             )
-        } returns entity
+        } returns listOf(entity)
         coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
 
         // when
-        dataSeriesService.delete(tenant = "my-tenant", username = "the-creator", reference = "my-data-series")
+        dataSeriesService.delete(tenant = "my-tenant", username = "the-creator", references = setOf("my-data-series"))
 
         // then
         coVerifyOrder {
-            dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
+            dataSeriesRepository.findAllByTenantAndReferences(
+                tenant = "my-tenant",
+                references = setOf("my-data-series")
+            )
             userRepository.findUsernameById(3912L)
-            dataSeriesRepository.delete(refEq(entity))
+            dataSeriesRepository.deleteAll(eq(listOf(entity)))
         }
     }
 
@@ -928,31 +934,33 @@ internal class DataSeriesServiceImplTest {
     internal fun `should not delete the data series when shared in read`() = testDispatcherProvider.runTest {
         // given
         coEvery {
-            dataSeriesRepository.findByTenantAndReference(
+            dataSeriesRepository.findAllByTenantAndReferences(
                 "my-tenant",
-                "my-data-series"
+                setOf("my-data-series")
             )
-        } returns DataSeriesEntity(
-            reference = "my-data-series",
-            tenantId = -1,
-            creatorId = 3912L,
-            displayName = "the-name",
-            dataType = DataType.EVENTS,
-            valueName = "my-event",
-            sharingMode = SharingMode.READONLY,
-            color = "#FF761C",
-            filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
-            fieldName = "the field",
-            aggregationOperation = QueryAggregationOperator.AVERAGE,
-            timeframeUnitMs = 2_000,
-            displayFormat = "#0.000",
-            query = "the query"
+        } returns listOf(
+            DataSeriesEntity(
+                reference = "my-data-series",
+                tenantId = -1,
+                creatorId = 3912L,
+                displayName = "the-name",
+                dataType = DataType.EVENTS,
+                valueName = "my-event",
+                sharingMode = SharingMode.READONLY,
+                color = "#FF761C",
+                filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                fieldName = "the field",
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
+                timeframeUnitMs = 2_000,
+                displayFormat = "#0.000",
+                query = "the query"
+            )
         )
         coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
 
         // when
         val exception = assertThrows<HttpStatusException> {
-            dataSeriesService.delete(tenant = "my-tenant", username = "the-user", reference = "my-data-series")
+            dataSeriesService.delete(tenant = "my-tenant", username = "the-user", references = setOf("my-data-series"))
         }
 
         // then
@@ -963,31 +971,33 @@ internal class DataSeriesServiceImplTest {
     internal fun `should not delete the data series when not shared`() = testDispatcherProvider.runTest {
         // given
         coEvery {
-            dataSeriesRepository.findByTenantAndReference(
+            dataSeriesRepository.findAllByTenantAndReferences(
                 "my-tenant",
-                "my-data-series"
+                setOf("my-data-series")
             )
-        } returns DataSeriesEntity(
-            reference = "my-data-series",
-            tenantId = -1,
-            creatorId = 3912L,
-            displayName = "the-name",
-            dataType = DataType.EVENTS,
-            valueName = "my-event",
-            sharingMode = SharingMode.NONE,
-            color = "#FF761C",
-            filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
-            fieldName = "the field",
-            aggregationOperation = QueryAggregationOperator.AVERAGE,
-            timeframeUnitMs = 2_000,
-            displayFormat = "#0.000",
-            query = "the query"
+        } returns listOf(
+            DataSeriesEntity(
+                reference = "my-data-series",
+                tenantId = -1,
+                creatorId = 3912L,
+                displayName = "the-name",
+                dataType = DataType.EVENTS,
+                valueName = "my-event",
+                sharingMode = SharingMode.NONE,
+                color = "#FF761C",
+                filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                fieldName = "the field",
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
+                timeframeUnitMs = 2_000,
+                displayFormat = "#0.000",
+                query = "the query"
+            )
         )
         coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
 
         // when
         val exception = assertThrows<HttpStatusException> {
-            dataSeriesService.delete(tenant = "my-tenant", username = "the-user", reference = "my-data-series")
+            dataSeriesService.delete(tenant = "my-tenant", username = "the-user", references = setOf("my-data-series"))
         }
 
         // then
@@ -1332,5 +1342,85 @@ internal class DataSeriesServiceImplTest {
                 )
             }
         }
+
+    @Test
+    internal fun `should not delete the data series when one item in the list of retrieved series is not owned by the user or shared`() =
+        testDispatcherProvider.runTest {
+            // given
+            val dataSeriesEntity = DataSeriesEntity(
+                reference = "my-data-series",
+                tenantId = -1,
+                creatorId = 3912L,
+                displayName = "the-name",
+                dataType = DataType.EVENTS,
+                valueName = "my-event",
+                sharingMode = SharingMode.READONLY,
+                color = "#FF761C",
+                filters = setOf(DataSeriesFilterEntity("field-1", QueryClauseOperator.IS_IN, "A,B")),
+                fieldName = "the field",
+                aggregationOperation = QueryAggregationOperator.AVERAGE,
+                timeframeUnitMs = 2_000,
+                displayFormat = "#0.000",
+                query = "the query"
+            )
+            val dataSeriesEntity2 = dataSeriesEntity.copy(reference = "user-2-series", creatorId = 4112L)
+            coEvery {
+                dataSeriesRepository.findAllByTenantAndReferences(
+                    "my-tenant",
+                    setOf("my-data-series", "user-2-series")
+                )
+            } returns listOf(dataSeriesEntity, dataSeriesEntity2)
+            coEvery { userRepository.findUsernameById(3912L) } returns "the-user"
+            coEvery { userRepository.findUsernameById(4112L) } returns "the-other-user"
+
+            // when
+            val exception = assertThrows<HttpStatusException> {
+                dataSeriesService.delete(
+                    tenant = "my-tenant",
+                    username = "the-user",
+                    references = setOf("my-data-series", "user-2-series")
+                )
+            }
+
+            // then
+            assertThat(exception.status).isEqualTo(HttpStatus.FORBIDDEN)
+        }
+
+    @Test
+    internal fun `should delete a list of valid data series`() = testDispatcherProvider.runTest {
+        // given
+        coEvery { dataSeriesRepository.deleteAll(any()) } returns 1
+        val entity = mockk<DataSeriesEntity> {
+            every { creatorId } returns 3912L
+            every { sharingMode } returns SharingMode.NONE
+        }
+        val entity2 = mockk<DataSeriesEntity> {
+            every { creatorId } returns 3912L
+            every { sharingMode } returns SharingMode.READONLY
+        }
+        val entity3 = mockk<DataSeriesEntity> {
+            every { creatorId } returns 4112
+            every { sharingMode } returns SharingMode.WRITE
+        }
+        coEvery {
+            dataSeriesRepository.findAllByTenantAndReferences(
+                "my-tenant",
+                setOf("my-data-series1", "my-data-series2", "my-data-series3")
+            )
+        } returns listOf(entity, entity2, entity3)
+        coEvery { userRepository.findUsernameById(3912L) } returns "my-user"
+
+        // when
+        dataSeriesService.delete(tenant = "my-tenant", username = "my-user", references = setOf("my-data-series1", "my-data-series2", "my-data-series3"))
+
+        // then
+        coVerifyOrder {
+            dataSeriesRepository.findAllByTenantAndReferences(
+                tenant = "my-tenant",
+                references = setOf("my-data-series1", "my-data-series2", "my-data-series3")
+            )
+            dataSeriesRepository.deleteAll(eq(listOf(entity, entity2, entity3)))
+        }
+    }
 
 }

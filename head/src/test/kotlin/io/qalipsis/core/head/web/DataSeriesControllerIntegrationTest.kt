@@ -276,14 +276,14 @@ internal class DataSeriesControllerIntegrationTest {
     @Test
     fun `should successfully delete the data series`() {
         // given
-        coJustRun { dataSeriesService.delete(any(), any(), any()) }
+        coJustRun { dataSeriesService.delete(any(), any(), any<Set<String>>()) }
 
         // when
-        val response = httpClient.toBlocking().exchange(HttpRequest.DELETE("/q7232x", null), Unit::class.java)
+        val response = httpClient.toBlocking().exchange(HttpRequest.DELETE("?series=q7232x&series=g2723a", null), Unit::class.java)
 
         // then
         coVerifyOnce {
-            dataSeriesService.delete(tenant = Defaults.TENANT, username = Defaults.USER, reference = "q7232x")
+            dataSeriesService.delete(tenant = Defaults.TENANT, username = Defaults.USER, references = setOf("q7232x", "g2723a"))
         }
 
         assertThat(response).all {

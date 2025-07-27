@@ -181,10 +181,10 @@ internal class DataSeriesController(
         )
     }
 
-    @Delete("/{reference}")
+    @Delete
     @Operation(
-        summary = "Delete a data series",
-        description = "Delete a data series from the contextual tenant",
+        summary = "Deletes a list of data series",
+        description = "Deletes a list of data series from the contextual tenant",
         responses = [
             ApiResponse(responseCode = "204", description = "Successful deletion "),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
@@ -206,12 +206,12 @@ internal class DataSeriesController(
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Reference of the data series to delete",
+            description = "References of the data series to delete",
             required = true,
-            `in` = ParameterIn.PATH
-        ) @NotBlank @PathVariable reference: String,
+            `in` = ParameterIn.QUERY
+        ) @QueryValue("series") references: Set<@NotBlank String>,
     ) {
-        dataSeriesService.delete(tenant = tenant, username = authentication.name, reference = reference)
+        dataSeriesService.delete(tenant = tenant, username = authentication.name, references = references)
     }
 
     @Get("/{data-type}/names")

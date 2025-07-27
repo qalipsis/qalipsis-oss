@@ -199,16 +199,16 @@ internal class ReportControllerIntegrationTest {
     }
 
     @Test
-    fun `should successfully delete the report`() {
+    fun `should successfully delete a list of reports`() {
         // given
-        coJustRun { reportService.delete(any(), any(), any()) }
+        coJustRun { reportService.delete(any(), any(), any<Set<String>>()) }
 
         // when
-        val response = httpClient.toBlocking().exchange(HttpRequest.DELETE("/q7232x", null), Unit::class.java)
+        val response = httpClient.toBlocking().exchange(HttpRequest.DELETE("?report=q7232x&report=p7121a", null), Unit::class.java)
 
         // then
         coVerifyOnce {
-            reportService.delete(tenant = Defaults.TENANT, username = Defaults.USER, reference = "q7232x")
+            reportService.delete(tenant = Defaults.TENANT, username = Defaults.USER, references = setOf("q7232x", "p7121a"))
         }
 
         assertThat(response).all {

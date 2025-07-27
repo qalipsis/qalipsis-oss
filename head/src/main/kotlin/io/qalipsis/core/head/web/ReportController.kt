@@ -181,10 +181,10 @@ internal class ReportController(
         )
     }
 
-    @Delete("/{reference}")
+    @Delete
     @Operation(
-        summary = "Delete a report",
-        description = "Delete an existing report template",
+        summary = "Deletes a list report",
+        description = "Deletes a list of existing report template",
         responses = [
             ApiResponse(responseCode = "204", description = "Successful deletion "),
             ApiResponse(responseCode = "400", description = "Invalid request supplied"),
@@ -208,10 +208,10 @@ internal class ReportController(
         @Parameter(
             description = "Reference of the report to delete",
             required = true,
-            `in` = ParameterIn.PATH
-        ) @NotBlank @PathVariable reference: String,
+            `in` = ParameterIn.QUERY
+        ) @QueryValue("report") references: Set<@NotBlank String>,
     ) {
-        reportService.delete(tenant = tenant, username = authentication.name, reference = reference)
+        reportService.delete(tenant = tenant, username = authentication.name, references = references)
     }
 
     @Get
