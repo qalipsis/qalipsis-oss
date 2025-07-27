@@ -83,7 +83,7 @@
         </div>
       </div>
     </form>
-    <div class="pr-1" v-if="canChartBeRendered">
+    <div class="pr-3 py-2" v-if="canChartBeRendered">
       <apexchart
         :options="chartOptions"
         :height="250"

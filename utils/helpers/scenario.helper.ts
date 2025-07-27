@@ -52,8 +52,8 @@ export class ScenarioHelper {
         (stage) => ({
           resolution: stage.resolutionMs,
           minionsCount: stage.minionsCount,
-          startDuration: stage.totalDurationMs,
-          duration: stage.rampUpDurationMs,
+          startDuration: stage.rampUpDurationMs,
+          duration: stage.totalDurationMs,
         })
       );
       const zoneForms: ZoneForm[] = zones
@@ -85,8 +85,8 @@ export class ScenarioHelper {
       (executionProfileStage) => {
         return {
           minionsCount: +executionProfileStage.minionsCount,
-          rampUpDurationMs: +executionProfileStage.duration,
-          totalDurationMs: +executionProfileStage.startDuration,
+          rampUpDurationMs: +executionProfileStage.startDuration,
+          totalDurationMs: +executionProfileStage.duration,
           resolutionMs: +executionProfileStage.resolution,
         };
       }
