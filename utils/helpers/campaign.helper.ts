@@ -215,7 +215,7 @@ export class CampaignHelper {
     campaignSummary: CampaignSummaryResult[]
   ): ChartData {
     const xAxisEndDate = new Date();
-    const xAxisStartDate = sub(new Date(), { days: 7 });
+    const xAxisStartDate = sub(new Date(), { days: 6 });
     const xAxisDayIntervals = eachDayOfInterval({
       start: new Date(
         xAxisStartDate.getFullYear(),
@@ -244,7 +244,6 @@ export class CampaignHelper {
       chart: {
         type: "bar",
         stacked: true,
-        stackType: "100%",
         toolbar: {
           show: false,
         },

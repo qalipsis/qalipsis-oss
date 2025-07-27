@@ -33,7 +33,7 @@ onMounted(async () => {
 
     try {
         const queryParam: CampaignSummaryResultQueryParams = {
-            from: sub(currentDate, { days: 7 }).toISOString(),
+            from: sub(currentDate, { days: 6 }).toISOString(),
             timeframe: "P1D",
             timeOffset: timezoneOffsetInHours
         }
