@@ -9,21 +9,25 @@
                     :collapsable="true"
                     @search="handleSearch"
                 />
-                <BaseButton 
-                    class="ml-2"
-                    text="Delete all"
-                    :disabled="deleteAllBtnDisabled"
-                    btn-style="outlined"
-                    icon="qls-icon-delete"
-                    @click="handleDeleteSelectedSeriesBtnClick" 
-                />
-                <BaseButton 
-                    class="ml-2"
-                    text="Add Series" 
-                    btn-style="outlined"
-                    icon="qls-icon-plus"
-                    @click="handleCreateSeriesBtnClick" 
-                />
+                <BasePermission
+                    :permissions="[PermissionConstant.WRITE_SERIES]"
+                >
+                    <BaseButton 
+                        class="ml-2"
+                        text="Delete all"
+                        :disabled="deleteAllBtnDisabled"
+                        btn-style="outlined"
+                        icon="qls-icon-delete"
+                        @click="handleDeleteSelectedSeriesBtnClick" 
+                    />
+                    <BaseButton 
+                        class="ml-2"
+                        text="Add Series" 
+                        btn-style="outlined"
+                        icon="qls-icon-plus"
+                        @click="handleCreateSeriesBtnClick" 
+                    />
+                </BasePermission>
             </div>
         </div>
         <SeriesDeleteConfirmationModal

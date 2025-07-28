@@ -21,9 +21,9 @@
         <div
           class="flex items-center"
           :class="{
-            'cursor-pointer hover:text-primary-500': !tableActionsHidden
+            'cursor-pointer hover:text-primary-500': canClickDataSeriesName,
           }"
-          @click="!tableActionsHidden && handleEditBtnClick(record as DataSeriesTableData)"
+          @click="canClickDataSeriesName && handleEditBtnClick(record as DataSeriesTableData)"
         >
           <div
             class="w-2 h-2 rounded-full mr-2"
@@ -122,6 +122,7 @@ const props = defineProps<{
   selectedDataSeriesReferences?: string[]
 }>()
 
+const userStore = useUserStore()
 const seriesTableStore = useSeriesTableStore()
 const toastStore = useToastStore()
 
@@ -129,6 +130,9 @@ const { dataSource, totalElements, currentPageIndex, pageSize } = storeToRefs(se
 
 const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys)
 
+const canClickDataSeriesName = computed(() => {
+  return userStore.permissions.includes(PermissionConstant.WRITE_SERIES) && !props.tableActionsHidden
+})
 const selectedDataSeries = ref<DataSeriesTableData>()
 const formDrawerOpen = ref(false)
 const dataSeriesReferences = ref<string[]>([])

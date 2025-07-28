@@ -69,7 +69,9 @@ export class SeriesHelper {
       key: el.reference,
       sharedText: SeriesHelper.sharingModeToText[el.sharingMode!],
       filterNames: el.filters?.map((filter) => filter.name),
-      formattedTimeframe: TimeframeHelper.toFormattedTimeframe(el.timeframeUnit!),
+      formattedTimeframe: TimeframeHelper.toFormattedTimeframe(
+        TimeframeHelper.toMilliseconds(el.timeframeUnit!, 'SEC')
+      ),
       disabled: el.creator !== userName && el.sharingMode === SharingModeConstant.READONLY,
     }))
   }

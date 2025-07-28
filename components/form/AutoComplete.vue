@@ -1,9 +1,18 @@
 <template>
   <div>
-    <FormLabel :text="label" />
+    <FormLabel
+      :text="label"
+      :hasError="hasError"
+    />
     <Combobox v-model="selectedFormControlValue">
-      <div class="w-full" :class="TailwindClassHelper.formDropdownClass">
-        <ComboboxButton :disabled="disabled" class="outline-none w-full">
+      <div
+        class="w-full"
+        :class="TailwindClassHelper.formDropdownClass"
+      >
+        <ComboboxButton
+          :disabled="disabled"
+          class="outline-none w-full"
+        >
           <div
             :class="[
               TailwindClassHelper.formInputWrapperClass,
@@ -19,9 +28,7 @@
               :id="formControlName"
               :placeholder="placeholder"
               :disabled="disabled"
-              @input="
-                handleInputChange(($event.target as HTMLInputElement).value)
-              "
+              @input="handleInputChange(($event.target as HTMLInputElement).value)"
             />
             <BaseIcon
               icon="qls-icon-arrow-down"
@@ -31,31 +38,16 @@
           </div>
         </ComboboxButton>
         <transition
-          :enter-active-class="
-            TailwindClassHelper.formDropdownTransitionEnterActiveClass
-          "
-          :enter-from-class="
-            TailwindClassHelper.formDropdownTransitionEnterFromClass
-          "
-          :enter-to-class="
-            TailwindClassHelper.formDropdownTransitionEnterToClass
-          "
-          :leave-active-class="
-            TailwindClassHelper.formDropdownTransitionLeaveActiveClass
-          "
-          :leave-from-class="
-            TailwindClassHelper.formDropdownTransitionLeaveFromClass
-          "
-          :leave-to-class="
-            TailwindClassHelper.formDropdownTransitionLeaveToClass
-          "
+          :enter-active-class="TailwindClassHelper.formDropdownTransitionEnterActiveClass"
+          :enter-from-class="TailwindClassHelper.formDropdownTransitionEnterFromClass"
+          :enter-to-class="TailwindClassHelper.formDropdownTransitionEnterToClass"
+          :leave-active-class="TailwindClassHelper.formDropdownTransitionLeaveActiveClass"
+          :leave-from-class="TailwindClassHelper.formDropdownTransitionLeaveFromClass"
+          :leave-to-class="TailwindClassHelper.formDropdownTransitionLeaveToClass"
         >
           <ComboboxOptions
             class="w-full"
-            :class="[
-              TailwindClassHelper.formDropdownPanelClass,
-              !filteredOptions.length ? 'invisible' : 'visible',
-            ]"
+            :class="[TailwindClassHelper.formDropdownPanelClass, !filteredOptions.length ? 'invisible' : 'visible']"
           >
             <ComboboxOption
               v-for="filteredOption in filteredOptions"
@@ -66,14 +58,15 @@
               as="template"
             >
               <div @click="handleOptionSelect(filteredOption)">
-                <slot name="optionContent" :option="filteredOption">
+                <slot
+                  name="optionContent"
+                  :option="filteredOption"
+                >
                   <div
                     class="flex items-center mb-1 cursor-pointer"
                     :class="[
                       active ? 'bg-primary-50' : '',
-                      selected
-                        ? TailwindClassHelper.formDropdownOptionActiveClass
-                        : '',
+                      selected ? TailwindClassHelper.formDropdownOptionActiveClass : '',
                       TailwindClassHelper.formDropdownOptionClass,
                     ]"
                   >
@@ -91,75 +84,67 @@
 </template>
 
 <script setup lang="ts">
-import {
-  Combobox,
-  ComboboxButton,
-  ComboboxOptions,
-  ComboboxOption,
-} from "@headlessui/vue";
-import { type TypedSchema, useField } from "vee-validate";
+import { Combobox, ComboboxButton, ComboboxOptions, ComboboxOption } from '@headlessui/vue'
+import { type TypedSchema, useField } from 'vee-validate'
 
 const props = defineProps<{
-  label: string;
-  formControlName: string;
+  label: string
+  formControlName: string
   /**
    * The options for the dropdown menu.
    */
-  options: FormMenuOption[] | any[];
-  modelValue?: string;
-  labelKey?: string;
-  valueKey?: string;
-  fieldValidationSchema?: TypedSchema;
-  placeholder?: string;
-  disabled?: boolean;
-}>();
+  options: FormMenuOption[] | any[]
+  modelValue?: string
+  labelKey?: string
+  valueKey?: string
+  fieldValidationSchema?: TypedSchema
+  placeholder?: string
+  disabled?: boolean
+}>()
 const emit = defineEmits<{
-  (e: "select", v: string): void;
-  (e: "update:modelValue", v: string): void;
-}>();
+  (e: 'select', v: string): void
+  (e: 'update:modelValue', v: string): void
+}>()
 
-const { value: selectedFormControlValue, errorMessage } = useField<
-  string | string[]
->(() => props.formControlName, props.fieldValidationSchema);
+const { value: selectedFormControlValue, errorMessage } = useField<string | string[]>(
+  () => props.formControlName,
+  props.fieldValidationSchema
+)
 
-const optionLabelKey = computed(() => props.labelKey ?? "label");
-const optionValueKey = computed(() => props.valueKey ?? "value");
+const optionLabelKey = computed(() => props.labelKey ?? 'label')
+const optionValueKey = computed(() => props.valueKey ?? 'value')
 
-const selectedOptionLabel = computed(() =>
-  props.options.find(
-    (option) => option[optionValueKey.value] === selectedFormControlValue.value
-  )?.label
-);
+const selectedOptionLabel = computed(
+  () => props.options.find((option) => option[optionValueKey.value] === selectedFormControlValue.value)?.label
+)
 
-const inputValue = ref(selectedOptionLabel.value ?? selectedFormControlValue.value ?? '');
+const inputValue = ref(selectedOptionLabel.value ?? selectedFormControlValue.value ?? '')
 
-const hasError = computed(() => (errorMessage.value ? true : false));
+const hasError = computed(() => (errorMessage.value ? true : false))
 
 const filteredOptions = computed(() =>
-  inputValue.value === ""
+  inputValue.value === ''
     ? props.options
     : props.options.filter((option) =>
-        option[optionLabelKey.value]
-          .toLowerCase()
-          .includes(inputValue.value.toLowerCase())
+        option[optionLabelKey.value].toLowerCase().includes(inputValue.value.toLowerCase())
       )
-);
+)
 
 const debouncedInputChange = debounce((newValue: string) => {
-  inputValue.value = newValue;
-  selectedFormControlValue.value = newValue;
-  emit("select", newValue);
-  emit("update:modelValue", newValue);
-}, 300);
+  inputValue.value = newValue
+  selectedFormControlValue.value = newValue
+  emit('select', newValue)
+  emit('update:modelValue', newValue)
+}, 300)
 
 const handleInputChange = (newValue: string) => {
-  debouncedInputChange(newValue);
-};
+  debouncedInputChange(newValue)
+}
 
 const handleOptionSelect = (option: any) => {
-  inputValue.value = option[optionValueKey.value];
-  selectedFormControlValue.value = option[optionValueKey.value];
-  emit("select", option[optionValueKey.value]);
-  emit("update:modelValue", option[optionValueKey.value]);
-};
+  inputValue.value = option[optionValueKey.value]
+  selectedFormControlValue.value = option[optionValueKey.value]
+  emit('select', option[optionValueKey.value])
+  emit('update:modelValue', option[optionValueKey.value])
+}
 </script>
