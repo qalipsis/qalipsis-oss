@@ -163,12 +163,11 @@ internal class DataSeriesServiceImpl(
     }
 
     override suspend fun delete(tenant: String, username: String, references: Set<String>) {
-        val dataSeriesEntities = dataSeriesRepository.findAllByTenantAndReferences(tenant, references)
-        // Throws an exception if any of the item in the list of dataSeries was not created by the user and has a sharingMode other than WRITE.
-        if (dataSeriesEntities.any { (it.sharingMode != SharingMode.WRITE) && (username != userRepository.findUsernameById(it.creatorId)) }) {
+        val deletableDataSeriesReferences = dataSeriesRepository.findAllUpdatableReferencesByTenantAndReferences(tenant, references, username)
+        if ((references - deletableDataSeriesReferences.toSet()).isNotEmpty()) {
             throw HttpStatusException(HttpStatus.FORBIDDEN, "You do not have the permission to delete this data series")
         }
-        dataSeriesRepository.deleteAll(dataSeriesEntities)
+        dataSeriesRepository.deleteAllByReference(references)
     }
 
     override suspend fun searchDataSeries(

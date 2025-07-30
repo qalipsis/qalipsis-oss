@@ -2309,7 +2309,7 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         // when
-        val fetched = reportRepository.getUpdatableReports(
+        val fetched = reportRepository.getUpdatableReportReferences(
             tenant = "my-tenant",
             references = listOf("report-ref", "report-ref2", "report-ref3"),
             creatorId = creator2.id
@@ -2318,32 +2318,27 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
         // then
         assertThat(fetched).all {
             hasSize(2)
-            index(0).isNotNull().all {
-                prop(ReportEntity::id).isEqualTo(saved.id)
-                prop(ReportEntity::reference).isEqualTo("report-ref")
-                prop(ReportEntity::tenantId).isEqualTo(tenant.id)
-                prop(ReportEntity::creatorId).isEqualTo(creator.id)
-                prop(ReportEntity::displayName).isEqualTo("my-report-name")
-                prop(ReportEntity::sharingMode).isEqualTo(SharingMode.WRITE)
-                prop(ReportEntity::query).isNull()
-                prop(ReportEntity::campaignKeys).isEmpty()
-                prop(ReportEntity::campaignNamesPatterns).isEmpty()
-                prop(ReportEntity::scenarioNamesPatterns).isEmpty()
-                prop(ReportEntity::dataComponents).isEmpty()
-            }
-            index(1).isNotNull().all {
-                prop(ReportEntity::id).isEqualTo(savedReportEntity3.id)
-                prop(ReportEntity::reference).isEqualTo("report-ref3")
-                prop(ReportEntity::tenantId).isEqualTo(tenant.id)
-                prop(ReportEntity::creatorId).isEqualTo(creator2.id)
-                prop(ReportEntity::displayName).isEqualTo("my-report-name3")
-                prop(ReportEntity::sharingMode).isEqualTo(SharingMode.READONLY)
-                prop(ReportEntity::query).isNull()
-                prop(ReportEntity::campaignKeys).isEmpty()
-                prop(ReportEntity::campaignNamesPatterns).isEmpty()
-                prop(ReportEntity::scenarioNamesPatterns).isEmpty()
-                prop(ReportEntity::dataComponents).isEmpty()
-            }
+            containsExactly("report-ref", "report-ref3")
+        }
+    }
+
+    @Test
+    fun `should delete a list of report by their references`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        reportRepository.save(reportPrototype.copy(tenantId = tenant.id, creatorId = creator.id))
+        reportRepository.save(reportPrototype.copy(tenantId = tenant.id, creatorId = creator.id, reference = "report-ref2", displayName = "report-name2"))
+        val report3 = reportRepository.save(reportPrototype.copy(tenantId = tenant.id, creatorId = creator.id, reference = "report-ref3", displayName = "report-name3"))
+        assertThat(reportRepository.findAll().count()).isEqualTo(3)
+
+        // when
+        reportRepository.deleteAllByReference(setOf("report-ref", "report-ref2"))
+
+        // then
+        assertThat(reportRepository.findAll()).transform { it.toList() }.all {
+            hasSize(1)
+            index(0).prop(ReportEntity::id).isEqualTo(report3.id)
         }
     }
 }

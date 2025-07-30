@@ -93,6 +93,43 @@ internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEnti
         references: Collection<String>
     ): List<DataSeriesEntity>
 
+
+    @Query(
+        """SELECT 
+            data_series.reference,
+                CASE 
+                    WHEN t.reference <> :tenant THEN 'READONLY'
+                    ELSE sharing_mode
+                END AS sharing_mode,
+                CASE 
+                    WHEN t.reference <> :tenant THEN -1
+                    ELSE creator_id
+                END AS creator_id
+                FROM data_series data_series
+                    JOIN tenant t ON data_series.tenant_id = t.id
+                    JOIN "user" u ON data_series.creator_id = u.id
+                WHERE data_series.reference in (:references) AND t.reference IN (:tenant, '${Defaults.TENANT}')
+                    AND (
+                         CASE 
+                             WHEN t.reference <> :tenant THEN 'READONLY'
+                             ELSE data_series.sharing_mode
+                         END = 'WRITE'
+                         OR u.username = :username
+                    )
+            """
+    )
+    suspend fun findAllUpdatableReferencesByTenantAndReferences(
+        tenant: String,
+        references: Collection<String>,
+        username: String
+    ): List<String>
+
+    /**
+     * Deletes a list of reports by its unique references.
+     */
+    @Query("DELETE FROM data_series WHERE reference IN (:references)")
+    suspend fun deleteAllByReference(references: Collection<String>): Int
+
     @Query(
         value = """SELECT 
                     data_series_entity_.id, 

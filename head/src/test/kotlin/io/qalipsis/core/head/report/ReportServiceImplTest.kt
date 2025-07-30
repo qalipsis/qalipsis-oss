@@ -1462,22 +1462,14 @@ internal class ReportServiceImplTest {
     internal fun `should delete the report when shared in write mode`() = testDispatcherProvider.runTest {
         // given
         val reportServiceImpl = buildReportService()
-        val reportEntity = ReportEntity(
-            reference = "report-ref",
-            tenantId = -1,
-            creatorId = 456L,
-            displayName = "report-name",
-            sharingMode = SharingMode.WRITE,
-            campaignNamesPatterns = listOf("*"),
-        )
-        coEvery { reportRepository.deleteAll(any()) } returns 1
+        coEvery { reportRepository.deleteAllByReference(any()) } returns 1
         coEvery {
-            reportRepository.getUpdatableReports(
+            reportRepository.getUpdatableReportReferences(
                 tenant = refEq("my-tenant"),
                 references = eq(setOf("report-ref")),
                 creatorId = 123L
             )
-        } returns listOf(reportEntity)
+        } returns listOf("report-ref")
         coEvery { userRepository.findIdByUsername("other-user") } returns 123L
 
         // when
@@ -1486,12 +1478,12 @@ internal class ReportServiceImplTest {
         // then
         coVerifyOrder {
             userRepository.findIdByUsername("other-user")
-            reportRepository.getUpdatableReports(
+            reportRepository.getUpdatableReportReferences(
                 tenant = refEq("my-tenant"),
                 references = eq(setOf("report-ref")),
                 creatorId = 123L
             )
-            reportRepository.deleteAll(listOf(reportEntity))
+            reportRepository.deleteAllByReference(listOf("report-ref"))
         }
         confirmVerified(
             reportRepository,
@@ -1509,22 +1501,14 @@ internal class ReportServiceImplTest {
     internal fun `should delete the report when owned if not shared`() = testDispatcherProvider.runTest {
         // given
         val reportServiceImpl = buildReportService()
-        val reportEntity = ReportEntity(
-            reference = "report-ref",
-            tenantId = -1,
-            creatorId = 456L,
-            displayName = "report-name",
-            sharingMode = SharingMode.NONE,
-            campaignNamesPatterns = listOf("*"),
-        )
         coEvery {
-            reportRepository.getUpdatableReports(
+            reportRepository.getUpdatableReportReferences(
                 tenant = refEq("my-tenant"),
                 references = eq(setOf("report-ref")),
                 creatorId = 456L
             )
-        } returns listOf(reportEntity)
-        coEvery { reportRepository.deleteAll(any()) } returns 1
+        } returns listOf("report-ref")
+        coEvery { reportRepository.deleteAllByReference(any()) } returns 1
         coEvery { userRepository.findIdByUsername("the-user") } returns 456L
 
         // when
@@ -1533,12 +1517,12 @@ internal class ReportServiceImplTest {
         // then
         coVerifyOrder {
             userRepository.findIdByUsername("the-user")
-            reportRepository.getUpdatableReports(
+            reportRepository.getUpdatableReportReferences(
                 tenant = refEq("my-tenant"),
                 references = eq(setOf("report-ref")),
                 creatorId = 456L
             )
-            reportRepository.deleteAll(listOf(reportEntity))
+            reportRepository.deleteAllByReference(listOf("report-ref"))
         }
         confirmVerified(
             reportRepository,
@@ -1558,14 +1542,13 @@ internal class ReportServiceImplTest {
             // given
             val reportServiceImpl = buildReportService()
             coEvery {
-                reportRepository.getUpdatableReports(
+                reportRepository.getUpdatableReportReferences(
                     tenant = refEq("my-tenant"),
                     references = eq(setOf("report-ref")),
                     creatorId = 123L
                 )
-            } returns listOf(null)
+            } returns listOf("other-report-ref")
             coEvery { userRepository.findIdByUsername("other-user") } returns 123L
-            coEvery { reportRepository.delete(any()) } returns 1
 
             // when
             val exception = assertThrows<IllegalArgumentException> {
@@ -1581,7 +1564,7 @@ internal class ReportServiceImplTest {
 
             coVerifyOrder {
                 userRepository.findIdByUsername("other-user")
-                reportRepository.getUpdatableReports(
+                reportRepository.getUpdatableReportReferences(
                     tenant = refEq("my-tenant"),
                     references = eq(setOf("report-ref")),
                     creatorId = 123L
@@ -1604,12 +1587,12 @@ internal class ReportServiceImplTest {
         // given
         val reportServiceImpl = buildReportService()
         coEvery {
-            reportRepository.getUpdatableReports(
+            reportRepository.getUpdatableReportReferences(
                 tenant = refEq("my-tenant"),
                 references = eq(setOf("report-ref")),
                 creatorId = 456L
             )
-        } returns listOf(null)
+        } returns listOf("other-report-ref")
         coEvery { userRepository.findIdByUsername("other-user") } returns 456L
 
         // when
@@ -1622,7 +1605,7 @@ internal class ReportServiceImplTest {
 
         coVerifyOrder {
             userRepository.findIdByUsername("other-user")
-            reportRepository.getUpdatableReports(
+            reportRepository.getUpdatableReportReferences(
                 tenant = refEq("my-tenant"),
                 references = eq(setOf("report-ref")),
                 creatorId = 456L
@@ -2269,24 +2252,14 @@ internal class ReportServiceImplTest {
     internal fun `should handle deletion of a list of report`() = testDispatcherProvider.runTest {
         // given
         val reportServiceImpl = buildReportService()
-        val reportEntity = ReportEntity(
-            reference = "report-ref",
-            tenantId = -1,
-            creatorId = 456L,
-            displayName = "report-name",
-            sharingMode = SharingMode.WRITE,
-            campaignNamesPatterns = listOf("*"),
-        )
-        val reportEntity2 = reportEntity.copy(reference = "report-ref2", displayName = "report-name2")
-
         coEvery {
-            reportRepository.getUpdatableReports(
+            reportRepository.getUpdatableReportReferences(
                 tenant = refEq("my-tenant"),
                 references = eq(setOf("report-ref", "report-ref2")),
                 creatorId = 456L
             )
-        } returns listOf(reportEntity, reportEntity2)
-        coEvery { reportRepository.deleteAll(any()) } returns 1
+        } returns listOf("report-ref", "report-ref2")
+        coEvery { reportRepository.deleteAllByReference(any()) } returns 1
         coEvery { userRepository.findIdByUsername("the-user") } returns 456L
 
         // when
@@ -2299,12 +2272,12 @@ internal class ReportServiceImplTest {
         // then
         coVerifyOrder {
             userRepository.findIdByUsername("the-user")
-            reportRepository.getUpdatableReports(
+            reportRepository.getUpdatableReportReferences(
                 tenant = refEq("my-tenant"),
                 references = eq(setOf("report-ref", "report-ref2")),
                 creatorId = 456L
             )
-            reportRepository.deleteAll(listOf(reportEntity, reportEntity2))
+            reportRepository.deleteAllByReference(listOf("report-ref", "report-ref2"))
         }
         confirmVerified(
             reportRepository,
@@ -2323,21 +2296,13 @@ internal class ReportServiceImplTest {
         testDispatcherProvider.runTest {
             // given
             val reportServiceImpl = buildReportService()
-            val reportEntity = ReportEntity(
-                reference = "report-ref",
-                tenantId = -1,
-                creatorId = 457L,
-                displayName = "report-name",
-                sharingMode = SharingMode.WRITE,
-                campaignNamesPatterns = listOf("*"),
-            )
             coEvery {
-                reportRepository.getUpdatableReports(
+                reportRepository.getUpdatableReportReferences(
                     tenant = refEq("my-tenant"),
                     references = eq(setOf("report-ref", "report-ref-3")),
                     creatorId = 457L
                 )
-            } returns listOf(reportEntity, null)
+            } returns listOf("report-ref", "report-ref-4")
             coEvery { userRepository.findIdByUsername("other-user") } returns 457L
 
             // when
@@ -2354,7 +2319,7 @@ internal class ReportServiceImplTest {
 
             coVerifyOrder {
                 userRepository.findIdByUsername("other-user")
-                reportRepository.getUpdatableReports(
+                reportRepository.getUpdatableReportReferences(
                     tenant = refEq("my-tenant"),
                     references = eq(setOf("report-ref", "report-ref-3")),
                     creatorId = 457L
