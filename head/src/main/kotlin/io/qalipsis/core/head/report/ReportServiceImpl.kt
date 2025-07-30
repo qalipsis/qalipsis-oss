@@ -223,10 +223,15 @@ internal class ReportServiceImpl(
 
     override suspend fun delete(tenant: String, username: String, references: Set<String>) {
         val currentUserId = requireNotNull(userRepository.findIdByUsername(username = username))
-        val updatableReportEntities =
-            reportRepository.getUpdatableReports(tenant = tenant, references = references, creatorId = currentUserId)
-        require(!updatableReportEntities.any { it == null }) { REPORT_DELETE_DENY }
-        reportRepository.deleteAll(updatableReportEntities.filterNotNull())
+        val updatableReportsReferences =
+            reportRepository.getUpdatableReportReferences(
+                tenant = tenant,
+                references = references,
+                creatorId = currentUserId
+            )
+        val missingReferences = references - updatableReportsReferences.toSet()
+        require(missingReferences.isEmpty()) { REPORT_DELETE_DENY }
+        reportRepository.deleteAllByReference(updatableReportsReferences)
     }
 
     override suspend fun search(

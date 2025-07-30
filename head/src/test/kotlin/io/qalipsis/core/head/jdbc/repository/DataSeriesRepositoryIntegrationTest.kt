@@ -21,6 +21,7 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
 import assertk.assertions.doesNotContain
 import assertk.assertions.hasSize
@@ -49,6 +50,7 @@ import jakarta.inject.Inject
 import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -1499,4 +1501,170 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
         }
     }
 
+    @Test
+    fun `should fetch the references of requested dataSeries including the default`() = testDispatcherProvider.run {
+        //given
+        val tenant = tenantRepository.save(tenantPrototype)
+        val creator = userRepository.save(userPrototype)
+        val defaultCreator = userRepository.save(
+            userPrototype.copy(
+                username = "default-user",
+                displayName = "Default test user for test"
+            )
+        )
+        val randomCreator = userRepository.save(
+            userPrototype.copy(
+                username = "random-user",
+                displayName = "random test user for test"
+            )
+        )
+
+        val randomTenant =
+            tenantRepository.save(tenantPrototype.copy(reference = "random_tenant", displayName = "random_tenant"))
+        val redDataSeries = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                color = "red",
+                sharingMode = SharingMode.WRITE
+            )
+        )
+        val defaultDataSeries = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = defaultTenant.id,
+                creatorId = defaultCreator.id,
+                color = "purple",
+                displayName = "my-default-name",
+                reference = "my-series-2",
+                sharingMode = SharingMode.WRITE
+            )
+        )
+        val series3 = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                color = "green",
+                displayName = "my-green-name",
+                reference = "my-series-3",
+                sharingMode = SharingMode.NONE
+            )
+        )
+        dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = randomTenant.id,
+                creatorId = randomCreator.id,
+                color = "blue",
+                displayName = "my-blue-name",
+                reference = "my-series-4",
+                sharingMode = SharingMode.READONLY
+            )
+        )
+        val series5 = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = randomCreator.id,
+                color = "brown",
+                displayName = "my-brown-name",
+                reference = "my-series-5",
+                sharingMode = SharingMode.WRITE
+            )
+        )
+        val series6 = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                color = "yellow",
+                displayName = "my-yellow-name",
+                reference = "my-series-6",
+                sharingMode = SharingMode.WRITE
+            )
+        )
+        val series7 = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = randomCreator.id,
+                color = "yellow",
+                displayName = "my-series7-name",
+                reference = "my-series-7",
+                sharingMode = SharingMode.READONLY
+            )
+        )
+
+        //when
+        val found = dataSeriesRepository.findAllUpdatableReferencesByTenantAndReferences(
+            tenant.reference,
+            listOf(
+                "my-series",
+                "my-series-2",
+                "my-series-3",
+                "my-series-4",
+                "my-series-6",
+                "my-series-5",
+                "my-series-7"
+            ),
+            creator.username
+        )
+
+        //then
+        assertThat(found).all {
+            hasSize(4)
+            containsExactly("my-series", "my-series-3", "my-series-5", "my-series-6")
+        }
+    }
+
+    @Test
+    fun `should delete the dataSeries by their references`() = testDispatcherProvider.run {
+        //given
+        val tenant = tenantRepository.save(tenantPrototype)
+        val creator = userRepository.save(userPrototype)
+        val defaultCreator = userRepository.save(
+            userPrototype.copy(
+                username = "default-user",
+                displayName = "Default test user for test"
+            )
+        )
+        val redDataSeries = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                color = "red",
+                sharingMode = SharingMode.WRITE
+            )
+        )
+        val series3 = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                color = "green",
+                displayName = "my-green-name",
+                reference = "my-series-3",
+                sharingMode = SharingMode.NONE
+            )
+        )
+        val series6 = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                color = "yellow",
+                displayName = "my-yellow-name",
+                reference = "my-series-6",
+                sharingMode = SharingMode.WRITE
+            )
+        )
+        assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
+
+        //when
+        dataSeriesRepository.deleteAllByReference(
+            listOf(
+                "my-series",
+                "my-series-6"
+            )
+        )
+
+        //then
+         assertThat(dataSeriesRepository.findAll()).transform { it.toList() }.all {
+            hasSize(1)
+            index(0).prop(DataSeriesEntity::id).isEqualTo(series3.id)
+        }
+    }
 }
