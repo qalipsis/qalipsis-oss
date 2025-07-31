@@ -10,7 +10,7 @@ import java.time.Instant
  *
  * @author Joël Valère
  */
-internal interface CampaignScheduler {
+interface CampaignScheduler {
 
     /**
      * Start a campaign test at the specified instant.

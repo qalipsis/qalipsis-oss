@@ -45,7 +45,7 @@ import java.nio.charset.StandardCharsets
  * @author Eric Jessé
  */
 @Singleton
-internal class LogbackConfigurer(
+class LogbackConfigurer(
     private val config: LoggingConfiguration,
     @Property(name = EventsConfig.EXPORT_ENABLED, defaultValue = "false") private val enabledEventsPublisher: Boolean,
     @Property(

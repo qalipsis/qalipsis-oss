@@ -36,7 +36,7 @@ import javax.validation.constraints.PositiveOrZero
  * @author Palina Bril
  */
 @MappedEntity("campaign_report", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class CampaignReportEntity(
+data class CampaignReportEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,

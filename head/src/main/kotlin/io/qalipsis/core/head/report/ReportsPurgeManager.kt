@@ -47,7 +47,7 @@ import java.time.Instant
     Requires(env = [HEAD, STANDALONE]),
     Requires(notEnv = [AUTOSTART])
 )
-internal class ReportsPurgeManager(
+class ReportsPurgeManager(
     private val reportRecordsConfiguration: ReportRecordsTTLConfiguration,
     private val reportTaskRepository: ReportTaskRepository,
     private val reportFileRepository: ReportFileRepository,

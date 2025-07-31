@@ -61,8 +61,7 @@ import java.time.Instant
 @WithMockk
 internal class InMemoryCumulativeMeterRegistryTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK

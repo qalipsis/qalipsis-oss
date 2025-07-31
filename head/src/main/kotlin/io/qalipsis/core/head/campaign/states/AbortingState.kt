@@ -30,7 +30,7 @@ import io.qalipsis.core.feedbacks.CampaignAbortFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 
-internal open class AbortingState(
+open class AbortingState(
     protected val campaign: RunningCampaign,
     protected val abortConfiguration: AbortRunningCampaign,
     protected val error: String

@@ -35,7 +35,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal class SlotBasedSubscription<T> private constructor(
+class SlotBasedSubscription<T> private constructor(
     private val subscriberId: String,
     private var latestReadSlot: ImmutableSlot<LinkedRecord<T>>,
     idleTimeout: Duration,

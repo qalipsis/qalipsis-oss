@@ -40,8 +40,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @WithMockk
 internal class TopicMirrorStepTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK

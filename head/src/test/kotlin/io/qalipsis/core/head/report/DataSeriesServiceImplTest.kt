@@ -50,12 +50,12 @@ import io.qalipsis.api.query.QueryDescription
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
-import io.qalipsis.core.head.jdbc.repository.TenantRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesCreationRequest
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
+import io.qalipsis.core.head.security.TenantProvider
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
@@ -71,18 +71,17 @@ import java.time.Instant
 @WithMockk
 internal class DataSeriesServiceImplTest {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK
     private lateinit var dataSeriesRepository: DataSeriesRepository
 
     @MockK
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantProvider: TenantProvider
 
     @MockK
-    private lateinit var userRepository: UserRepository
+    private lateinit var userProvider: UserProvider
 
     @MockK
     private lateinit var idGenerator: IdGenerator
@@ -108,8 +107,8 @@ internal class DataSeriesServiceImplTest {
                 )
             } returns false
             coEvery { dataSeriesRepository.save(any()) } returnsArgument 0
-            coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
-            coEvery { userRepository.findIdByUsername("my-user") } returns 456L
+            coEvery { tenantProvider.findIdByReference("my-tenant") } returns 123L
+            coEvery { userProvider.findIdByUsername("my-user") } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
             coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the-query"
 
@@ -208,8 +207,8 @@ internal class DataSeriesServiceImplTest {
                 )
             } returns false
             coEvery { dataSeriesRepository.save(any()) } returnsArgument 0
-            coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
-            coEvery { userRepository.findIdByUsername("my-user") } returns 456L
+            coEvery { tenantProvider.findIdByReference("my-tenant") } returns 123L
+            coEvery { userProvider.findIdByUsername("my-user") } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
             coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the-query"
             val dataSeries = DataSeriesCreationRequest(
@@ -308,8 +307,8 @@ internal class DataSeriesServiceImplTest {
                 )
             } returns false
             coEvery { dataSeriesRepository.save(any()) } returnsArgument 0
-            coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123L
-            coEvery { userRepository.findIdByUsername("my-user") } returns 456L
+            coEvery { tenantProvider.findIdByReference("my-tenant") } returns 123L
+            coEvery { userProvider.findIdByUsername("my-user") } returns 456L
             coEvery { idGenerator.short() } returns "the-reference"
             val dataSeries = DataSeriesCreationRequest(
                 displayName = "the-name",
@@ -383,7 +382,7 @@ internal class DataSeriesServiceImplTest {
                 displayFormat = "#0.000",
                 query = "the query"
             )
-            coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+            coEvery { userProvider.findUsernameById(3912L) } returns "the-creator"
 
             // when
             val result = dataSeriesService.get(tenant = "my-tenant", username = "my-user", reference = "my-data-series")
@@ -438,7 +437,7 @@ internal class DataSeriesServiceImplTest {
             displayFormat = "#0.000",
             query = "the query"
         )
-        coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+        coEvery { userProvider.findUsernameById(3912L) } returns "the-creator"
 
         // when
         val result = dataSeriesService.get(tenant = "my-tenant", username = "the-creator", reference = "my-data-series")
@@ -485,7 +484,7 @@ internal class DataSeriesServiceImplTest {
             displayFormat = "#0.000",
             query = "the query"
         )
-        coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+        coEvery { userProvider.findUsernameById(3912L) } returns "the-creator"
 
         // when
         val exception = assertThrows<HttpStatusException> {
@@ -533,7 +532,7 @@ internal class DataSeriesServiceImplTest {
                     "my-data-series"
                 )
             } returns entity
-            coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+            coEvery { userProvider.findUsernameById(3912L) } returns "the-creator"
             val patch1 = mockk<DataSeriesPatch> { every { apply(any<DataSeriesEntity>()) } returns true }
             val patch2 = mockk<DataSeriesPatch> { every { apply(any<DataSeriesEntity>()) } returns false }
 
@@ -566,7 +565,7 @@ internal class DataSeriesServiceImplTest {
             assertThat(entity.query).isEqualTo("the new query")
             coVerifyOrder {
                 dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
-                userRepository.findUsernameById(3912L)
+                userProvider.findUsernameById(3912L)
                 patch1.apply(refEq(entity))
                 patch2.apply(refEq(entity))
                 dataProvider.createQuery("my-tenant", DataType.EVENTS, withArg {
@@ -615,7 +614,7 @@ internal class DataSeriesServiceImplTest {
                     "my-data-series"
                 )
             } returns entity
-            coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+            coEvery { userProvider.findUsernameById(3912L) } returns "the-creator"
             val patch1 = mockk<DataSeriesPatch> { every { apply(any<DataSeriesEntity>()) } returns false }
             val patch2 = mockk<DataSeriesPatch> { every { apply(any<DataSeriesEntity>()) } returns false }
 
@@ -647,7 +646,7 @@ internal class DataSeriesServiceImplTest {
             }
             coVerifyOrder {
                 dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
-                userRepository.findUsernameById(3912L)
+                userProvider.findUsernameById(3912L)
                 patch1.apply(refEq(entity))
                 patch2.apply(refEq(entity))
             }
@@ -692,7 +691,7 @@ internal class DataSeriesServiceImplTest {
                     "my-data-series"
                 )
             } returns entity
-            coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+            coEvery { userProvider.findUsernameById(3912L) } returns "the-creator"
             val patch1 = mockk<DataSeriesPatch> { every { apply(any<DataSeriesEntity>()) } returns true }
             val patch2 = mockk<DataSeriesPatch> { every { apply(any<DataSeriesEntity>()) } returns false }
 
@@ -730,7 +729,7 @@ internal class DataSeriesServiceImplTest {
             }
             coVerifyOrder {
                 dataSeriesRepository.findByTenantAndReference(tenant = "my-tenant", reference = "my-data-series")
-                userRepository.findUsernameById(3912L)
+                userProvider.findUsernameById(3912L)
                 patch1.apply(refEq(entity))
                 patch2.apply(refEq(entity))
                 dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot("my-tenant", "the-name", 6432)
@@ -764,7 +763,7 @@ internal class DataSeriesServiceImplTest {
             displayFormat = "#0.000",
             query = "the query"
         )
-        coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+        coEvery { userProvider.findUsernameById(3912L) } returns "the-creator"
 
         // when
         val exception = assertThrows<HttpStatusException> {
@@ -806,7 +805,7 @@ internal class DataSeriesServiceImplTest {
             displayFormat = "#0.000",
             query = "the query"
         )
-        coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+        coEvery { userProvider.findUsernameById(3912L) } returns "the-creator"
 
         // when
         val exception = assertThrows<HttpStatusException> {
@@ -856,7 +855,7 @@ internal class DataSeriesServiceImplTest {
                 displayFormat = "#0.000",
                 query = "the query"
             )
-            coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+            coEvery { userProvider.findUsernameById(3912L) } returns "the-creator"
 
             // when
             val exception = assertThrows<HttpStatusException> {
@@ -910,7 +909,7 @@ internal class DataSeriesServiceImplTest {
                 "the-creator"
             )
         } returns listOf("my-data-series")
-        coEvery { userRepository.findUsernameById(3912L) } returns "the-creator"
+        coEvery { userProvider.findUsernameById(3912L) } returns "the-creator"
 
         // when
         dataSeriesService.delete(tenant = "my-tenant", username = "the-creator", references = setOf("my-data-series"))
@@ -981,7 +980,7 @@ internal class DataSeriesServiceImplTest {
                 every { creatorId } returns 34
                 every { toModel("User 2") } returns dataSeries2
             }
-            coEvery { userRepository.findAllByIdIn(setOf(12L, 34L)) } returns listOf(
+            coEvery { userProvider.findIdAndDisplayNameByIdIn(setOf(12L, 34L)) } returns listOf(
                 mockk { every { id } returns 12L; every { displayName } returns "User 1" },
                 mockk { every { id } returns 34L; every { displayName } returns "User 2" }
             )
@@ -1035,7 +1034,7 @@ internal class DataSeriesServiceImplTest {
                 every { creatorId } returns 34
                 every { toModel("User 2") } returns dataSeries2
             }
-            coEvery { userRepository.findAllByIdIn(setOf(12L, 34L)) } returns listOf(
+            coEvery { userProvider.findIdAndDisplayNameByIdIn(setOf(12L, 34L)) } returns listOf(
                 mockk { every { id } returns 12L; every { displayName } returns "User 1" },
                 mockk { every { id } returns 34L; every { displayName } returns "User 2" }
             )
@@ -1091,7 +1090,7 @@ internal class DataSeriesServiceImplTest {
                 every { creatorId } returns 34
                 every { toModel("User 2") } returns dataSeries2
             }
-            coEvery { userRepository.findAllByIdIn(setOf(12L, 34L)) } returns listOf(
+            coEvery { userProvider.findIdAndDisplayNameByIdIn(setOf(12L, 34L)) } returns listOf(
                 mockk { every { id } returns 12L; every { displayName } returns "User 1" },
                 mockk { every { id } returns 34L; every { displayName } returns "User 2" }
             )
@@ -1154,7 +1153,7 @@ internal class DataSeriesServiceImplTest {
                 every { creatorId } returns 34
                 every { toModel("User 2") } returns dataSeries2
             }
-            coEvery { userRepository.findAllByIdIn(setOf(12L, 34L)) } returns listOf(
+            coEvery { userProvider.findIdAndDisplayNameByIdIn(setOf(12L, 34L)) } returns listOf(
                 mockk { every { id } returns 12L; every { displayName } returns "User 1" },
                 mockk { every { id } returns 34L; every { displayName } returns "User 2" }
             )
@@ -1207,8 +1206,8 @@ internal class DataSeriesServiceImplTest {
             // given
             val dataSeriesServiceImpl = DataSeriesServiceImpl(
                 dataSeriesRepository,
-                tenantRepository,
-                userRepository,
+                tenantProvider,
+                userProvider,
                 idGenerator,
                 dataProvider,
                 this
@@ -1260,7 +1259,7 @@ internal class DataSeriesServiceImplTest {
             coEvery { dataSeriesRepository.saveAll(any<Iterable<DataSeriesEntity>>()) } answers {
                 flowOf(*firstArg<Iterable<DataSeriesEntity>>().toList().toTypedArray())
             }
-            coEvery { tenantRepository.findReferenceById(any()) } returns "my-tenant"
+            coEvery { tenantProvider.findReferenceById(any()) } returns "my-tenant"
             coEvery { dataProvider.createQuery("my-tenant", DataType.METERS, any()) } returns "the-updated-query-1"
             coEvery { dataProvider.createQuery("my-tenant", DataType.EVENTS, any()) } returns "the-updated-query-2"
             excludeRecords { dataProvider.toString() }
@@ -1270,7 +1269,7 @@ internal class DataSeriesServiceImplTest {
 
             // then
             coVerify {
-                tenantRepository.findReferenceById(-1)
+                tenantProvider.findReferenceById(-1)
                 dataProvider.createQuery("my-tenant", DataType.METERS, withArg {
                     assertThat(it).isDataClassEqualTo(
                         QueryDescription(
@@ -1360,7 +1359,7 @@ internal class DataSeriesServiceImplTest {
                 "my-user"
             )
         } returns listOf("my-data-series1", "my-data-series2", "my-data-series3")
-        coEvery { userRepository.findUsernameById(3912L) } returns "my-user"
+        coEvery { userProvider.findUsernameById(3912L) } returns "my-user"
 
         // when
         dataSeriesService.delete(tenant = "my-tenant", username = "my-user", references = setOf("my-data-series1", "my-data-series2", "my-data-series3"))

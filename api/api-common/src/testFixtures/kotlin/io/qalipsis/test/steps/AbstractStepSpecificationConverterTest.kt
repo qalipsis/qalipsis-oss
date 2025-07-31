@@ -64,8 +64,7 @@ abstract class AbstractStepSpecificationConverterTest<T : StepSpecificationConve
     @RelaxedMockK
     lateinit var campaignCoroutineScope: CoroutineScope
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @InjectMockKs

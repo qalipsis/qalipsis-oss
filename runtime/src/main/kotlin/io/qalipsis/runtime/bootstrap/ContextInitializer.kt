@@ -22,6 +22,7 @@ package io.qalipsis.runtime.bootstrap
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.ApplicationContextBuilder
 import io.micronaut.context.env.Environment
+import io.qalipsis.api.lang.supplyIf
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.services.ServicesFiles
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -39,7 +40,7 @@ import java.util.Properties
  *
  * @author Eric Jessé
  */
-internal class ContextInitializer(
+class ContextInitializer(
     var role: DeploymentRole,
     private val commandLineEnvironments: Array<String>,
     private val commandLineConfiguration: Array<String>,
@@ -60,22 +61,18 @@ internal class ContextInitializer(
         // Adds the build properties to the application context.
         properties.putAll(BUILD_PROPERTIES.mapKeys { "qalipsis.${it.key}" })
 
-        addFileSystemConfigurationFiles()
-
         val environments = linkedSetOf<String>()
         when (role) {
             HEAD -> configureHead(environments)
             FACTORY -> configureFactory(environments, properties)
             else -> configureStandalone(environments, properties)
-
         }
         environments.add("$role".lowercase())
 
-        // The user can create an application-config.yml file to overload the default.
-        environments.add("config")
-
+        val allEnvironments = environments.toList() + this.commandLineEnvironments
+        addFileSystemConfigurationFiles(allEnvironments)
         return ApplicationContext.builder()
-            .environments(*environments.toTypedArray() + this.commandLineEnvironments)
+            .environments(*allEnvironments.toTypedArray())
             .packages("io.qalipsis")
             .mainClass(MicronautBootstrap::class.java)
             .properties(properties)
@@ -112,14 +109,32 @@ internal class ContextInitializer(
     }
 
     /**
-     * Verifies the existence of the configuration files in the file system, and make them accessible to the
-     * application context.
+     * Verifies the existence of the configuration files in the classpath and the file system, and make them
+     * accessible to the application context.
      *
      * See (Micronaut documentation)(https://docs.micronaut.io/latest/guide/#propertySource).
      */
-    private fun addFileSystemConfigurationFiles() {
+    private fun addFileSystemConfigurationFiles(environments: List<String>) {
         val configurationFiles = mutableListOf<String>()
-        CONFIGURATION_ROOTS.forEach { root ->
+
+        // Search the additional files from the classpath.
+        val sourceFileNames = loadExtraPropertySourcesNames()
+        if (sourceFileNames.isNotEmpty()) {
+            val allPostfixes = environments.map { "-$it" } + ""
+            sourceFileNames.forEach { sourceName ->
+                allPostfixes.forEach { postfix ->
+                    CONFIGURATION_EXTENSIONS.forEach { ext ->
+                        val fileName = "$sourceName$postfix.$ext"
+                        supplyIf(this.javaClass.classLoader.getResource(fileName) != null) {
+                            configurationFiles += "classpath:$fileName"
+                        }
+                    }
+                }
+            }
+        }
+
+        // Search in the file system.
+        FILE_SYSTEM_CONFIGURATION_ROOTS.forEach { root ->
             val rootFile = File(System.getProperty("user.dir"), root)
             CONFIGURATION_EXTENSIONS.forEach { ext ->
                 val configFile = File(rootFile, "${CONFIGURATION_FILE_NAME}.$ext")
@@ -131,10 +146,24 @@ internal class ContextInitializer(
 
         if (configurationFiles.isNotEmpty()) {
             log.info { "Loading the additional configuration from ${configurationFiles.joinToString()}" }
-            System.setProperty(Environment.PROPERTY_SOURCES_KEY, configurationFiles.joinToString())
+            System.setProperty(Environment.PROPERTY_SOURCES_KEY, configurationFiles.joinToString(","))
         } else {
-            log.info { "No additional external configuration to load" }
+            log.info { "No additional configuration to load" }
         }
+    }
+
+    /**
+     * Loads the paths of the additional configuration files.
+     */
+    private fun loadExtraPropertySourcesNames(): Collection<String> {
+        return this.javaClass.classLoader.getResources("META-INF/services/qalipsis/sources")
+            .asSequence()
+            .flatMap { folder -> ServicesFiles.readFile(folder.openStream()) }
+            .flatMap { file -> ServicesFiles.readFile(this.javaClass.classLoader.getResourceAsStream("META-INF/services/qalipsis/sources/$file")) }
+            .flatMap { line -> line.split(",") }
+            .map { line -> line.trim() }
+            .filter { line -> line.isNotBlank() }
+            .toSet()
     }
 
     /**
@@ -219,7 +248,8 @@ internal class ContextInitializer(
     private fun loadPlugins(): Collection<String> {
         return this.javaClass.classLoader.getResources("META-INF/services/qalipsis/plugin")
             .asSequence()
-            .flatMap { ServicesFiles.readFile(it.openStream()) }
+            .flatMap { folder -> ServicesFiles.readFile(folder.openStream()) }
+            .flatMap { file -> ServicesFiles.readFile(this.javaClass.classLoader.getResourceAsStream("META-INF/services/qalipsis/plugin/$file")) }
             .flatMap { it.split(",") }
             .map { it.trim() }
             .filter { it.isNotBlank() }
@@ -319,7 +349,7 @@ internal class ContextInitializer(
         /**
          * List of root folders where to look for configuration files.
          */
-        val CONFIGURATION_ROOTS = listOf("./config", ".")
+        val FILE_SYSTEM_CONFIGURATION_ROOTS = listOf("./config", ".")
 
         /**
          * List of extensions for configuration files.

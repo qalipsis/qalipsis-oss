@@ -42,7 +42,7 @@ import javax.validation.Path
 @Singleton
 @Requires(classes = [ConstraintViolationException::class, ExceptionHandler::class])
 @Replaces(ConstraintExceptionHandler::class)
-internal class ConstraintViolationExceptionHandler :
+class ConstraintViolationExceptionHandler :
     ExceptionHandler<ConstraintViolationException, HttpResponse<*>> {
 
     override fun handle(request: HttpRequest<*>, exception: ConstraintViolationException): HttpResponse<*> {

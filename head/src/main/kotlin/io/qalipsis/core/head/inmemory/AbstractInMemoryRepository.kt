@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractInMemoryRepository<ENTITY : InMemoryEntity<ID>, ID : Any> :
+abstract class AbstractInMemoryRepository<ENTITY : InMemoryEntity<ID>, ID : Any> :
     InMemoryRepository<ENTITY, ID> {
 
     private val entities = ConcurrentHashMap<ID, ENTITY>()

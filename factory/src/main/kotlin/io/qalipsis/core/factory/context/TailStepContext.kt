@@ -34,7 +34,7 @@ import kotlinx.coroutines.channels.SendChannel
 /**
  * Dummy step to transport the tail of a minion when there is no data to transport.
  */
-internal data class TailStepContext(
+data class TailStepContext(
     override val campaignKey: CampaignKey = "",
     override val minionId: MinionId,
     override val scenarioName: ScenarioName,

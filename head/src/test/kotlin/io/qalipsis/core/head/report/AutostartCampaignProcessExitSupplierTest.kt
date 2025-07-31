@@ -37,8 +37,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @WithMockk
 internal class AutostartCampaignProcessExitSupplierTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

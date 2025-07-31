@@ -34,7 +34,7 @@ import java.time.Instant
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface ReportTaskRepository : CoroutineCrudRepository<ReportTaskEntity, Long> {
+interface ReportTaskRepository : CoroutineCrudRepository<ReportTaskEntity, Long> {
 
     /**
      * Returns the [ReportTaskEntity] that matches the id and creator.

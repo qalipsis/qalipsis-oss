@@ -33,7 +33,7 @@ import io.qalipsis.api.steps.ErrorProcessingStep
  *
  * @author Eric Jessé
  */
-internal class CatchErrorsStep<I>(
+class CatchErrorsStep<I>(
     id: StepName,
     private val block: ((errors: Collection<StepError>) -> Unit)
 ) : AbstractStep<I, I>(id, null), ErrorProcessingStep<I, I> {

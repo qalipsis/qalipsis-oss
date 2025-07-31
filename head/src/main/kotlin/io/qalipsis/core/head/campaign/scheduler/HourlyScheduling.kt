@@ -14,7 +14,7 @@ import javax.validation.constraints.NotBlank
  */
 
 @Singleton
-internal class HourlyScheduling(
+class HourlyScheduling(
     @field:Schema(
         description = "The time zone ID to use for the scheduling",
         required = true,

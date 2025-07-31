@@ -58,7 +58,7 @@ import java.time.temporal.ChronoUnit
  * Implementation of meter registry.
  */
 @Singleton
-internal class CampaignMeterRegistryFacadeImpl(
+class CampaignMeterRegistryFacadeImpl(
     private val publisherFactories: Collection<MeasurementPublisherFactory>,
     private val meterRegistry: MeterRegistry,
     factoryConfiguration: FactoryConfiguration,

@@ -35,7 +35,7 @@ import java.util.Optional
  * @author Eric Jessé
  */
 @Singleton
-internal class StringToMapConverter : TypeConverter<CharSequence, Map<String, String>>, TypeConverterRegistrar {
+class StringToMapConverter : TypeConverter<CharSequence, Map<String, String>>, TypeConverterRegistrar {
 
     override fun convert(
         `object`: CharSequence?,

@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.steps.CatchExhaustedContextStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class CatchExhaustedContextStepSpecificationConverter :
+class CatchExhaustedContextStepSpecificationConverter :
     StepSpecificationConverter<CatchExhaustedContextStepSpecification< *>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {

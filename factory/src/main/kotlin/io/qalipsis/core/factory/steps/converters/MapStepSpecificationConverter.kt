@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.steps.MapStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class MapStepSpecificationConverter :
+class MapStepSpecificationConverter :
     StepSpecificationConverter<MapStepSpecification<*, *>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {

@@ -42,7 +42,7 @@ import javax.validation.constraints.Positive
     Requires(notEnv = [ExecutionEnvironments.SINGLE_HEAD])
 )
 @ConfigurationProperties("hazelcast")
-internal interface HazelcastConfiguration {
+interface HazelcastConfiguration {
 
     @get:Min(2000)
     val port: Int?

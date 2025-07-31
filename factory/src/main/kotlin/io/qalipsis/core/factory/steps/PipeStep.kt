@@ -29,7 +29,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-internal open class PipeStep<I>(id: StepName) : AbstractStep<I, I>(id, null) {
+open class PipeStep<I>(id: StepName) : AbstractStep<I, I>(id, null) {
 
     override suspend fun execute(context: StepContext<I, I>) {
         log.trace { "Waiting for input..." }

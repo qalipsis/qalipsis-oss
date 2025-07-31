@@ -64,8 +64,7 @@ import java.time.Duration
 @WithMockk
 internal class CampaignConfigurationConverterImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

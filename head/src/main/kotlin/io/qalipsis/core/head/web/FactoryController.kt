@@ -6,7 +6,9 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
+import io.micronaut.security.annotation.Secured
 import io.micronaut.validation.Validated
+import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.report.FactoryState
@@ -29,7 +31,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
     Requires(beans = [WidgetService::class])
 )
 @Validated
-internal class FactoryController(
+class FactoryController(
     private val widgetService: WidgetService
 ) {
 
@@ -50,6 +52,7 @@ internal class FactoryController(
         ]
     )
     @Timed("factory-retrieve")
+    @Secured(value = [Permissions.READ_CAMPAIGN])
     suspend fun getFactoryStates(
         @Parameter(
             name = "X-Tenant",

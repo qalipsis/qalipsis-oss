@@ -35,7 +35,7 @@ import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
 import io.qalipsis.core.head.model.Factory
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisFactoryAssignmentState(
+class RedisFactoryAssignmentState(
     campaign: RunningCampaign,
     factories: Collection<Factory> = emptyList(),
     scenarios: List<ScenarioSummary> = emptyList(),

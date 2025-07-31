@@ -26,7 +26,7 @@ import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.head.campaign.states.DisabledState
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisDisabledState(
+class RedisDisabledState(
     campaign: RunningCampaign,
     isSuccessful: Boolean = true,
     private val operations: CampaignRedisOperations

@@ -34,14 +34,14 @@ import java.time.Duration
     name = "DefaultCampaignConfiguration",
     title = "Default values that can be used to create and validate a new campaign"
 )
-internal data class DefaultValuesCampaignConfiguration(
+data class DefaultValuesCampaignConfiguration(
     /**
      * validation field of campaign.
      */
     override val validation: Validation
 ) : DefaultCampaignConfiguration
 
-internal data class Validation(
+data class Validation(
     /**
      * maximum number of minions of a campaign, default to 10_000.
      */
@@ -63,7 +63,7 @@ internal data class Validation(
     override val stage: Stage
 ) : DefaultCampaignConfiguration.Validation
 
-internal data class Stage(
+data class Stage(
     /**
      * minimum number of minions of a stage, default to 1.
      */

@@ -54,7 +54,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class MinionsKeeperImpl(
+class MinionsKeeperImpl(
     private val scenarioRegistry: ScenarioRegistry,
     private val runner: Runner,
     private val eventsLogger: EventsLogger,
@@ -85,7 +85,8 @@ internal class MinionsKeeperImpl(
 
     override fun contains(minionId: MinionId) = minions.containsKey(minionId)
 
-    override fun get(minionId: MinionId) = requireNotNull(minions[minionId]) { "The minion $minionId does not exist" }
+    override fun get(minionId: MinionId): Minion =
+        requireNotNull(minions[minionId]) { "The minion $minionId does not exist" }
 
     override fun getSingletonMinion(scenarioName: ScenarioName, dagId: DirectedAcyclicGraphName): Minion {
         return requireNotNull(singletonMinionsByDagId[scenarioName, dagId]) { "the DAG $dagId is not a singleton DAG in the scenario $scenarioName" }

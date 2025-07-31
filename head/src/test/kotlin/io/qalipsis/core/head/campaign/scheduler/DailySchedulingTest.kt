@@ -24,12 +24,12 @@ import assertk.assertions.isEqualTo
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.test.coroutines.TestDispatcherProvider
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 /**
  * @author Joël Valère
@@ -38,8 +38,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @MicronautTest(startApplication = false, environments = [ExecutionEnvironments.HEAD])
 internal class DailySchedulingTest {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Test

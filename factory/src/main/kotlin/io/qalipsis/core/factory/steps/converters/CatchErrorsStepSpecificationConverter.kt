@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.steps.CatchErrorsStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class CatchErrorsStepSpecificationConverter : StepSpecificationConverter<CatchErrorsStepSpecification<*>> {
+class CatchErrorsStepSpecificationConverter : StepSpecificationConverter<CatchErrorsStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
         return stepSpecification is CatchErrorsStepSpecification

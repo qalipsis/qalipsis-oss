@@ -72,8 +72,7 @@ import java.time.temporal.ChronoUnit
 @WithMockk
 internal class CampaignMeterRegistryFacadeImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK

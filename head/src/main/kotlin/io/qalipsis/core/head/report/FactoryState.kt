@@ -8,6 +8,6 @@ import io.micronaut.core.annotation.Introspected
  * @author Francisca Eze
  */
 @Introspected
-internal data class FactoryState(
+data class FactoryState(
     val idle: Int, val registered: Int, val unhealthy: Int, val offline: Int,
 )

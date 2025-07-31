@@ -47,7 +47,7 @@ import javax.validation.constraints.Positive
     JsonSubTypes.Type(value = StageExternalExecutionProfileConfiguration::class, name = "STAGE"),
     JsonSubTypes.Type(value = TimeFrameExternalExecutionProfileConfiguration::class, name = "TIME_FRAME")
 )
-internal interface ExternalExecutionProfileConfiguration {
+interface ExternalExecutionProfileConfiguration {
     val type: ExecutionProfileType
 }
 
@@ -218,6 +218,6 @@ internal class TimeFrameExternalExecutionProfileConfiguration(
  * @author Svetlana Paliashchuk
  */
 @Introspected
-internal enum class ExecutionProfileType {
+enum class ExecutionProfileType {
     REGULAR, ACCELERATING, PROGRESSING_VOLUME, STAGE, TIME_FRAME, PERCENTAGE_STAGE, IMMEDIATELY
 }

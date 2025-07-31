@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_FACTORY])
-internal class InMemoryMinionAssignmentKeeper(
+class InMemoryMinionAssignmentKeeper(
     private val localAssignmentStore: LocalAssignmentStoreImpl
 ) : MinionAssignmentKeeper {
 

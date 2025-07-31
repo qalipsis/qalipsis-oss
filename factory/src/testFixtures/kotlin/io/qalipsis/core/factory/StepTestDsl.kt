@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2022 AERIS IT Solutions GmbH
+ * Copyright (C) 2025 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicReference
  * @author Eric Jessé
  */
 @SuppressWarnings("kotlin:S107")
-internal fun <IN : Any?, OUT : Any?> coreStepContext(
+fun <IN : Any?, OUT : Any?> coreStepContext(
     input: IN? = null, outputChannel: SendChannel<StepContext.StepOutputRecord<OUT>?> = Channel(100),
     errors: MutableList<StepError> = mutableListOf(),
     minionId: MinionId = "my-minion",
@@ -84,7 +84,7 @@ internal fun <IN : Any?, OUT : Any?> coreStepContext(
     )
 }
 
-internal fun testScenario(
+fun testScenario(
     id: ScenarioName = "my-scenario",
     executionProfile: ExecutionProfile = relaxedMockk(),
     minionsCount: Int = 1,
@@ -105,7 +105,7 @@ internal fun testScenario(
     return scenario
 }
 
-internal fun testDag(
+fun testDag(
     id: DirectedAcyclicGraphName = "my-dag",
     scenario: Scenario = testScenario(),
     root: Boolean = false,
@@ -127,7 +127,7 @@ internal fun testDag(
     return dag
 }
 
-internal fun <O> DirectedAcyclicGraph.generate(
+fun <O> DirectedAcyclicGraph.generate(
     id: String, output: O,
     retryPolicy: RetryPolicy? = null,
     generateException: Boolean = false
@@ -140,7 +140,7 @@ internal fun <O> DirectedAcyclicGraph.generate(
     return step
 }
 
-internal fun <O> DirectedAcyclicGraph.noOutput(
+fun <O> DirectedAcyclicGraph.noOutput(
     id: String,
     retryPolicy: RetryPolicy? = null,
     generateException: Boolean = false
@@ -154,7 +154,7 @@ internal fun <O> DirectedAcyclicGraph.noOutput(
 }
 
 
-internal fun DirectedAcyclicGraph.steps(): Map<StepName, TestStep<*, *>> {
+fun DirectedAcyclicGraph.steps(): Map<StepName, TestStep<*, *>> {
     val steps = mutableMapOf<StepName, TestStep<*, *>>()
     val rootStep = this.rootStep.forceGet() as TestStep<*, *>
     steps[rootStep.name] = rootStep
@@ -163,7 +163,7 @@ internal fun DirectedAcyclicGraph.steps(): Map<StepName, TestStep<*, *>> {
 }
 
 
-internal open class TestStep<I, O>(
+open class TestStep<I, O>(
     id: String, retryPolicy: RetryPolicy? = null, private val output: O? = null,
     private val delay: Long? = null,
     private val generateException: Boolean = false
@@ -342,7 +342,7 @@ internal open class TestStep<I, O>(
     }
 }
 
-internal open class ForwarderTestStep<I>(id: String, private val repetitions: Int = 1) : TestStep<I, I>(id) {
+open class ForwarderTestStep<I>(id: String, private val repetitions: Int = 1) : TestStep<I, I>(id) {
 
     /**
      * Forward the input to the output additionally to what [TestStep] does.
@@ -363,7 +363,7 @@ internal open class ForwarderTestStep<I>(id: String, private val repetitions: In
     }
 }
 
-internal class BlackholeTestStep<I>(id: String) : TestStep<I, Unit>(id) {
+class BlackholeTestStep<I>(id: String) : TestStep<I, Unit>(id) {
 
     /**
      * Does not provide any output.
@@ -377,7 +377,7 @@ internal class BlackholeTestStep<I>(id: String) : TestStep<I, Unit>(id) {
     }
 }
 
-internal open class ErrorProcessingTestStep<I>(id: String) : ForwarderTestStep<I>(id),
+open class ErrorProcessingTestStep<I>(id: String) : ForwarderTestStep<I>(id),
     ErrorProcessingStep<I, I> {
 
     override suspend fun execute(minion: Minion, context: StepContext<I, I>) {
@@ -385,7 +385,7 @@ internal open class ErrorProcessingTestStep<I>(id: String) : ForwarderTestStep<I
     }
 }
 
-internal class RecoveryTestStep<I, O>(id: String, output: O) : TestStep<I, O>(id, output = output),
+class RecoveryTestStep<I, O>(id: String, output: O) : TestStep<I, O>(id, output = output),
     ErrorProcessingStep<I, O> {
 
     /**

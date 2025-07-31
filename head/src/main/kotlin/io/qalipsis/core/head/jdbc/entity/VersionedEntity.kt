@@ -26,6 +26,6 @@ import java.time.Instant
  *
  * @author rklymenko
  */
-internal interface VersionedEntity : Entity {
+interface VersionedEntity : Entity {
     val version: Instant
 }

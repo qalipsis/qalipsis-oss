@@ -37,7 +37,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     JsonSubTypes.Type(value = Diagram::class, name = "DIAGRAM"),
     JsonSubTypes.Type(value = DataTable::class, name = "DATA_TABLE")
 )
-internal interface DataComponent {
+interface DataComponent {
     val type: DataComponentType
 }
 
@@ -49,7 +49,7 @@ internal interface DataComponent {
     name = "A diagram",
     title = "A concrete data component to draw a diagram"
 )
-internal data class Diagram(
+data class Diagram(
     var datas: List<DataSeries> = emptyList()
 ) : DataComponent {
 
@@ -68,7 +68,7 @@ internal data class Diagram(
     name = "A table of time-series records",
     title = "A concrete data component to display tabular time-series data"
 )
-internal data class DataTable(
+data class DataTable(
     var datas: List<DataSeries> = emptyList()
 ) : DataComponent {
 
@@ -85,6 +85,6 @@ internal data class DataTable(
  * @author Joël Valère
  */
 @Introspected
-internal enum class DataComponentType {
+enum class DataComponentType {
     DIAGRAM, DATA_TABLE
 }

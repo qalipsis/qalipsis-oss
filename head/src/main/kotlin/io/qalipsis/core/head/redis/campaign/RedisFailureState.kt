@@ -33,7 +33,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FailureState
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisFailureState(
+class RedisFailureState(
     campaign: RunningCampaign,
     private val error: String,
     private val operations: CampaignRedisOperations

@@ -51,7 +51,7 @@ import java.time.Instant
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.FACTORY])
-internal class HeartbeatEmitter(
+class HeartbeatEmitter(
     private val factoryChannel: FactoryChannel,
     private val campaignManager: FactoryCampaignManager,
     private val factoryConfiguration: FactoryConfiguration,

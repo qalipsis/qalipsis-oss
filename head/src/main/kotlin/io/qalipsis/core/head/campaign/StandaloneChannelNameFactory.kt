@@ -20,13 +20,19 @@
 package io.qalipsis.core.head.campaign
 
 import io.micronaut.context.annotation.Requires
+import io.micronaut.context.annotation.Secondary
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
 
+/**
+ * Standalone implementation of [ChannelNameFactory].
+ * @see [ExecutionEnvironments.STANDALONE]
+ */
 @Singleton
 @Requires(env = [ExecutionEnvironments.STANDALONE])
-internal class StandaloneChannelNameFactory : ChannelNameFactory {
+@Secondary
+class StandaloneChannelNameFactory : ChannelNameFactory {
 
     override suspend fun getBroadcastChannelName(campaign: RunningCampaign): String {
         return BROADCAST_CONTEXTS_CHANNEL

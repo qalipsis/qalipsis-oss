@@ -31,11 +31,11 @@ import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesMeter
-import io.qalipsis.core.head.jdbc.entity.ZoneEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
+import io.qalipsis.core.head.jdbc.entity.ZoneEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignsInstantsAndDuration
 import io.qalipsis.core.head.jdbc.repository.ZoneRepository
@@ -52,8 +52,7 @@ import java.time.Instant
 
 @WithMockk
 internal class ReportFileBuilderTest {
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK

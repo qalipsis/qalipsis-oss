@@ -25,7 +25,7 @@ import io.qalipsis.core.head.model.Zone
  *
  * @author Francisca Eze
  */
-internal interface ZoneService {
+interface ZoneService {
 
     /**
      * Fetches the list of available zones.

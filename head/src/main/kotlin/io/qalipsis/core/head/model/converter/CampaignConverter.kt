@@ -27,7 +27,7 @@ import io.qalipsis.core.head.model.Campaign
  *
  * @author Palina Bril
  */
-internal interface CampaignConverter {
+interface CampaignConverter {
 
     /**
      * Converts from [CampaignEntity] to [Campaign].

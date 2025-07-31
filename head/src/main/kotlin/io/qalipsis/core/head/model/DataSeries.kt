@@ -47,7 +47,7 @@ import javax.validation.constraints.Size
     name = "Data series details",
     title = "Details of a data series"
 )
-internal data class DataSeries(
+data class DataSeries(
     @field:Schema(description = "Identifier of the data series", required = true)
     val reference: String,
 
@@ -179,7 +179,7 @@ internal data class DataSeries(
     name = "Filter details",
     title = "Details of a filter to restrict the eligible data for a data series"
 )
-internal data class DataSeriesFilter(
+data class DataSeriesFilter(
     @field:Schema(description = "Name of the field to apply the filter", required = true)
     @field:NotBlank
     @field:Size(min = 1, max = 60)

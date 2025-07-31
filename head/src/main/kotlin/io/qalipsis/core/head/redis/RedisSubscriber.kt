@@ -26,6 +26,7 @@ import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.core.configuration.ExecutionConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
 import io.qalipsis.core.head.communication.ChannelSubscriber
@@ -43,12 +44,12 @@ import java.io.Closeable
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD]),
     Requires(
-        property = ExecutionEnvironments.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY,
-        value = ExecutionEnvironments.REDIS
+        property = ExecutionConfiguration.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY,
+        value = "redis"
     )
 )
 @ExperimentalLettuceCoroutinesApi
-internal class RedisSubscriber(
+class RedisSubscriber(
     val factoryChannel: RedisHeadChannel,
     heartbeatListeners: Collection<HeartbeatListener>,
     feedbackListeners: Collection<FeedbackListener<*>>,

@@ -33,7 +33,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-internal interface CampaignService {
+interface CampaignService {
 
     /**
      * Saves a new campaign for the first time.

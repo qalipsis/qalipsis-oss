@@ -37,7 +37,7 @@ import java.time.Instant
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface FactoryStateRepository : CoroutineCrudRepository<FactoryStateEntity, Long> {
+interface FactoryStateRepository : CoroutineCrudRepository<FactoryStateEntity, Long> {
 
     suspend fun findTop1ByFactoryIdOrderByVersionDesc(factoryId: Long): List<FactoryStateEntity>
 

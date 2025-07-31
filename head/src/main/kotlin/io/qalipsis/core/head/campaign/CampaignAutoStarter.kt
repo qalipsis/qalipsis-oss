@@ -66,7 +66,7 @@ import java.util.concurrent.atomic.AtomicBoolean
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(env = [ExecutionEnvironments.AUTOSTART])
 )
-internal class CampaignAutoStarter(
+class CampaignAutoStarter(
     private val factoryService: FactoryService,
     private val campaignExecutor: Provider<CampaignExecutor>,
     private val campaignReportStateKeeper: CampaignReportStateKeeper,
@@ -137,7 +137,7 @@ internal class CampaignAutoStarter(
                             }
                         campaign = campaignExecutor.get().start(
                             tenant = Defaults.TENANT,
-                            configurer = Defaults.USER,
+                            configurer = Defaults.USERNAME,
                             configuration = CampaignConfiguration(
                                 name = autostartCampaignConfiguration.name,
                                 speedFactor = autostartCampaignConfiguration.speedFactor,

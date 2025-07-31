@@ -35,8 +35,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @WithMockk
 internal class InMemoryLockProviderImplTest {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @AfterEach

@@ -24,14 +24,12 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.core.bind.annotation.Bindable
 import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.model.Zone
 import java.time.Duration
 import javax.validation.constraints.NotBlank
-import javax.validation.constraints.NotNull
 
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @ConfigurationProperties("head")
-internal interface HeadConfiguration {
+interface HeadConfiguration {
 
     /**
      * Channel to use to register the factory to the head, defaults to "registration".

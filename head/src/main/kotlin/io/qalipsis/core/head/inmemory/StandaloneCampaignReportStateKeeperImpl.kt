@@ -55,7 +55,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Singleton
 @Requires(env = [STANDALONE])
-internal class StandaloneCampaignReportStateKeeperImpl(
+class StandaloneCampaignReportStateKeeperImpl(
     private val idGenerator: IdGenerator,
     @Nullable private val consoleCampaignProgressionReporter: ConsoleCampaignProgressionReporter?,
     @Value("\${campaign.report.cache.time-to-live:PT10M}") private val cacheExpire: Duration,

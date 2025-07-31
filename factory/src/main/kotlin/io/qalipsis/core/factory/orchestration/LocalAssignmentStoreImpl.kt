@@ -34,7 +34,7 @@ import jakarta.inject.Singleton
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class LocalAssignmentStoreImpl(
+class LocalAssignmentStoreImpl(
     private val scenarioRegistry: ScenarioRegistry
 ) : LocalAssignmentStore {
 

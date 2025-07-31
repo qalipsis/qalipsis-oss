@@ -37,8 +37,8 @@ import jakarta.inject.Singleton
 @Requirements(
     Requires(env = [ExecutionEnvironments.REDIS]),
     Requires(
-        property = ExecutionEnvironments.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY,
-        value = ExecutionEnvironments.REDIS
+        property = ExecutionConfiguration.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY,
+        value = "redis"
     )
 )
 class RedisPubSubConfiguration {

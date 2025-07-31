@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
  *
  * @author Eric Jessé
  */
-internal class TopicDataPushStep<I>(
+class TopicDataPushStep<I>(
     id: StepName,
     private val parentStepName: StepName,
     private val topic: Topic<I>,

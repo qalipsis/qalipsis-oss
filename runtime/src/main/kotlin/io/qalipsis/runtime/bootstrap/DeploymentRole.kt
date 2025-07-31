@@ -19,6 +19,12 @@
 
 package io.qalipsis.runtime.bootstrap
 
+import io.qalipsis.runtime.bootstrap.DeploymentRole.AUTO
+import io.qalipsis.runtime.bootstrap.DeploymentRole.FACTORY
+import io.qalipsis.runtime.bootstrap.DeploymentRole.HEAD
+import io.qalipsis.runtime.bootstrap.DeploymentRole.STANDALONE
+
+
 /**
  * Roles for deployment of a process of QALIPSIS.
  *

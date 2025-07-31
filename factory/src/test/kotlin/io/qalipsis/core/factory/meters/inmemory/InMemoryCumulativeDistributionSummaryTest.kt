@@ -44,8 +44,7 @@ import java.time.Instant
 @WithMockk
 internal class InMemoryCumulativeDistributionSummaryTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

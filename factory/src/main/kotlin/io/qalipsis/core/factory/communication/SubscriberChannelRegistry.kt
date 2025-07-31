@@ -29,7 +29,7 @@ import jakarta.inject.Singleton
  * @author Joël Valère
  */
 @Singleton
-internal class SubscriberChannelRegistry(
+class SubscriberChannelRegistry(
     val factoryConfiguration: FactoryConfiguration,
     val directiveRegistry: DirectiveRegistry,
     val serializer: DistributionSerializer

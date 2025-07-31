@@ -45,11 +45,11 @@ import io.qalipsis.core.factory.context.StepContextImpl
 import io.qalipsis.core.factory.context.TailStepContext
 import jakarta.inject.Named
 import jakarta.inject.Singleton
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.MDC
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The Runner is the masterpiece of the factory and drives the minions to execute directed acyclic graphs (aka DAGs)
@@ -64,7 +64,7 @@ import org.slf4j.MDC
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class RunnerImpl(
+class RunnerImpl(
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : StepExecutor, Runner, CampaignLifeCycleAware {
 

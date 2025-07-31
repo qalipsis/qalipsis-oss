@@ -45,8 +45,7 @@ import java.time.Duration
 @WithMockk
 internal class HandshakeBlockerTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

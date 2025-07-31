@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap
         defaultValue = StringUtils.TRUE
     )
 )
-internal class ConsoleMeterReporter : MeterReporter {
+class ConsoleMeterReporter : MeterReporter {
 
     private val meters =
         ConcurrentHashMap<ScenarioName, MutableMap<StepName, MutableMap<Short, MutableMap<Short, MutableList<ReportedValue<*>>>>>>()

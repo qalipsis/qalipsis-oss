@@ -32,7 +32,7 @@ import javax.lang.model.element.TypeElement
  *
  * @author Eric Jessé
  */
-internal data class ExecutableScenarioMethod(
+data class ExecutableScenarioMethod(
     val scenarioMethod: ExecutableElement,
 ) {
     val scenarioClass = this.scenarioMethod.enclosingElement as TypeElement

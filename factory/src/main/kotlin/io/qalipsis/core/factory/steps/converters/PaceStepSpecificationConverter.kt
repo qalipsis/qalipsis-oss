@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.steps.PaceStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class PaceStepSpecificationConverter :
+class PaceStepSpecificationConverter :
     StepSpecificationConverter<PaceStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {

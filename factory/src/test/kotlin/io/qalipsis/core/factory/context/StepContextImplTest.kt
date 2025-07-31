@@ -30,8 +30,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 
 internal class StepContextImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Test

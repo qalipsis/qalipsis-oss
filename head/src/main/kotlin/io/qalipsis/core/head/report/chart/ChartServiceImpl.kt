@@ -56,7 +56,7 @@ import java.util.Random
  * @author Francisca Eze
  */
 @Singleton
-internal class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : ChartService {
+class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : ChartService {
 
     override fun buildChart(
         data: Map<String, List<TimeSeriesAggregationResult>>,

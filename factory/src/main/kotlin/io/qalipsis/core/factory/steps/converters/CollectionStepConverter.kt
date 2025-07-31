@@ -35,7 +35,7 @@ import kotlinx.coroutines.CoroutineScope
  * @author Eric Jessé
  */
 @StepConverter
-internal class CollectionStepSpecificationConverter(
+class CollectionStepSpecificationConverter(
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : StepSpecificationConverter<CollectionStepSpecification<*>> {
 

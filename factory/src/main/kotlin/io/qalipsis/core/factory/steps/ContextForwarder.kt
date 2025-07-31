@@ -29,7 +29,7 @@ import io.qalipsis.core.factory.orchestration.TransportableContext
  *
  * @author Eric Jessé
  */
-internal interface ContextForwarder {
+interface ContextForwarder {
 
     suspend fun forward(context: StepContext<*, *>, dags: Collection<DirectedAcyclicGraphName>)
 

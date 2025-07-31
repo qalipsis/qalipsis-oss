@@ -36,7 +36,7 @@ import kotlinx.serialization.protobuf.ProtoBuf
 @OptIn(ExperimentalSerializationApi::class)
 @ExperimentalLettuceCoroutinesApi
 @Singleton
-internal class CampaignRedisOperations(
+class CampaignRedisOperations(
     private val redisKeyCommands: RedisKeyCoroutinesCommands<String, String>,
     private val redisSetCommands: RedisSetCoroutinesCommands<String, String>,
     private val redisHashCommands: RedisHashCoroutinesCommands<String, String>,
@@ -146,23 +146,25 @@ internal class CampaignRedisOperations(
         val campaignDetails = mutableMapOf<String, String>()
         redisHashCommands.hgetall("campaign-management:{$tenant:$campaignKey}")
             .collect { campaignDetails[it.key] = it.value }
-        val state = campaignDetails["state"]?.let { CampaignRedisState.valueOf(it) }
+        val state = campaignDetails["state"]!!.let { CampaignRedisState.valueOf(it) }
         val campaign = campaignDetails["configuration"]?.let {
             protoBuf.decodeFromHexString<RunningCampaign>(it)
         }
 
-        return campaign?.let { it to state!! }
+        return campaign?.let { it to state }
     }
 
     /**
      * Cleans all the data used for the campaign.
      */
     suspend fun clean(campaign: RunningCampaign) {
-        redisKeyCommands.unlink("campaign-management:{${campaign.tenant}:${campaign.key}}")
-        redisKeyCommands.unlink(buildExpectedFeedbackKey(campaign.tenant, campaign.key))
-        campaign.factories.keys.forEach { factory ->
-            redisKeyCommands.unlink(buildFactoryAssignmentFeedbackKey(campaign.tenant, campaign.key, factory))
-        }
+        val allCampaignKeys = campaign.factories.keys.map { nodeId ->
+            buildFactoryAssignmentFeedbackKey(campaign.tenant, campaign.key, nodeId)
+        } + setOf(
+            "campaign-management:{${campaign.tenant}:${campaign.key}}",
+            buildExpectedFeedbackKey(campaign.tenant, campaign.key)
+        )
+        redisKeyCommands.unlink(*allCampaignKeys.toTypedArray())
     }
 
     private fun buildExpectedFeedbackKey(tenant: String, campaignKey: CampaignKey) =

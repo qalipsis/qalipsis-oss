@@ -32,6 +32,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
 import io.qalipsis.core.head.factory.FactoryHealth
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
@@ -40,19 +41,24 @@ import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.heartbeat.Heartbeat
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class FactoryRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
     private lateinit var factoryRepository: FactoryRepository
@@ -73,7 +79,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
     private lateinit var campaignFactoryRepository: CampaignFactoryRepository
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     private val factoryPrototype = FactoryEntity(
         nodeId = "the-node-id",
@@ -82,7 +88,7 @@ internal class FactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
         unicastChannel = "unicast-channel"
     )
 
-    private val tenantPrototype = TenantEntity(Instant.now(), "my-tenant", "test-tenant")
+    private val tenantPrototype = TenantEntityForTest(reference = "my-tenant")
 
     @AfterEach
     internal fun tearDown() = testDispatcherProvider.run {

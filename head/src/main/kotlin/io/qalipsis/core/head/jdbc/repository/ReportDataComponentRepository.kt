@@ -35,7 +35,7 @@ import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface ReportDataComponentRepository : CoroutineCrudRepository<ReportDataComponentEntity, Long>{
+interface ReportDataComponentRepository : CoroutineCrudRepository<ReportDataComponentEntity, Long> {
 
     /**
      * Find a full data component by its internal ID.

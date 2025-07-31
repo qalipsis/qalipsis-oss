@@ -34,7 +34,7 @@ import javax.validation.constraints.Size
     name = "Request to create or update a report",
     title = "Details for the creation or the update of a new report into QALIPSIS"
 )
-internal data class ReportCreationAndUpdateRequest(
+data class ReportCreationAndUpdateRequest(
 
     @field:Schema(description = "Display name of the report, should be unique into a tenant", required = true)
     @field:NotBlank

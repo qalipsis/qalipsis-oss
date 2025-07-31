@@ -37,7 +37,7 @@ import jakarta.inject.Singleton
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY])
 @ExperimentalLettuceCoroutinesApi
-internal class RedisCampaignReportLiveStateRegistry(
+class RedisCampaignReportLiveStateRegistry(
     private val redisHashCommands: RedisHashAsyncCommands<String, String>,
     private val redisListCommands: RedisListAsyncCommands<String, String>,
     private val idGenerator: IdGenerator

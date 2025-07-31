@@ -52,8 +52,7 @@ import kotlin.math.roundToLong
 @WithMockk
 internal class WidgetServiceImplTest {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK

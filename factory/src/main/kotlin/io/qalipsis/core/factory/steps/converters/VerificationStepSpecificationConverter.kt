@@ -35,7 +35,7 @@ import io.qalipsis.core.factory.steps.VerificationStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class VerificationStepSpecificationConverter(
+class VerificationStepSpecificationConverter(
     private val eventsLogger: EventsLogger,
     private val meterRegistry: CampaignMeterRegistry,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry

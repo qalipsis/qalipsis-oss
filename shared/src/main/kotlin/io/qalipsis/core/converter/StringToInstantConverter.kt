@@ -36,7 +36,7 @@ import java.util.Optional
  * @author Eric Jessé
  */
 @Singleton
-internal class StringToInstantConverter : TypeConverter<CharSequence, Instant>, TypeConverterRegistrar {
+class StringToInstantConverter : TypeConverter<CharSequence, Instant>, TypeConverterRegistrar {
 
     override fun convert(
         `object`: CharSequence?,

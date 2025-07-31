@@ -43,7 +43,7 @@ import org.slf4j.event.Level
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class MinionsShutdownDirectiveListener(
+class MinionsShutdownDirectiveListener(
     private val factoryCampaignManager: FactoryCampaignManager,
     private val minionsKeeper: MinionsKeeper,
     private val factoryChannel: FactoryChannel

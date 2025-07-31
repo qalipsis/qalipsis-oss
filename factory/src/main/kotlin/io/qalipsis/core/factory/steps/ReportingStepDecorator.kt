@@ -47,7 +47,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal class ReportingStepDecorator<I, O>(
+class ReportingStepDecorator<I, O>(
     override val decorated: Step<I, O>,
     private val reportErrors: Boolean,
     private val eventsLogger: EventsLogger,

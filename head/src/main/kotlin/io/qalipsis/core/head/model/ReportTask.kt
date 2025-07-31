@@ -34,7 +34,7 @@ import java.time.Instant
     name = "Report task details",
     title = "Details of a report task"
 )
-internal data class ReportTask(
+data class ReportTask(
 
     @field:Schema(description = "Identifier of a report task", required = true)
     val reference: String,

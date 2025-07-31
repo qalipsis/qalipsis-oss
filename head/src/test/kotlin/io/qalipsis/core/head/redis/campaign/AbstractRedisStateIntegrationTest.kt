@@ -52,10 +52,9 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @WithMockk
 @Testcontainers
 @MicronautTest(environments = [ExecutionEnvironments.REDIS], startApplication = false)
-internal abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegrationTest() {
+abstract class AbstractRedisStateIntegrationTest : AbstractRedisIntegrationTest() {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

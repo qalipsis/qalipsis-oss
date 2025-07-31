@@ -5,6 +5,12 @@ datasource:
   schema: qalipsis
   username: qalipsis
   password: qalipsis
+  pool:
+    min: 4
+    max: 20
+    maxLifeTime: PT10M
+    maxIdleTime: PT4M
+    maxAcquireTime: PT5S
 
 r2dbc:
   datasources:
@@ -16,11 +22,11 @@ r2dbc:
       options:
         driver: pool
         protocol: postgres
-        maxSize: 20
-        initialSize: 4
-        maxLifeTime: PT5M
-        maxIdleTime: PT4M
-        maxAcquireTime: PT5S
+        maxSize: ${datasource.pool.max}
+        initialSize: ${datasource.pool.min}
+        maxLifeTime: ${datasource.pool.maxLifeTime}
+        maxIdleTime: ${datasource.pool.maxIdleTime}
+        maxAcquireTime: ${datasource.pool.maxAcquireTime}
         poolName: r2dbc
         registerJmx: false
         validationQuery: select 1

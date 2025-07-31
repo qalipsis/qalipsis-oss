@@ -24,7 +24,7 @@ package io.qalipsis.runtime.bootstrap
  *
  * @author Eric Jessé
  */
-internal class DeploymentRoleAutoCompletion : Iterable<String> {
+class DeploymentRoleAutoCompletion : Iterable<String> {
 
     private val values = DeploymentRole.values().map { "$it".lowercase() }
 

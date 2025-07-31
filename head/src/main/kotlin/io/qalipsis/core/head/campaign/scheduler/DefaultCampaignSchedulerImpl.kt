@@ -14,9 +14,9 @@ import io.qalipsis.core.head.campaign.CampaignExecutor
 import io.qalipsis.core.head.campaign.CampaignPreparator
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
-import io.qalipsis.core.head.jdbc.repository.TenantRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.CampaignConfiguration
+import io.qalipsis.core.head.security.TenantProvider
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.core.lifetime.HeadStartupComponent
 import jakarta.inject.Named
 import jakarta.inject.Singleton
@@ -36,10 +36,10 @@ import java.time.Instant
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 )
-internal class DefaultCampaignSchedulerImpl(
-    private val userRepository: UserRepository,
+class DefaultCampaignSchedulerImpl(
+    private val userProvider: UserProvider,
     private val campaignExecutor: CampaignExecutor,
-    private val tenantRepository: TenantRepository,
+    private val tenantProvider: TenantProvider,
     private val campaignRepository: CampaignRepository,
     private val factoryService: FactoryService,
     private val campaignPreparator: CampaignPreparator,
@@ -112,10 +112,10 @@ internal class DefaultCampaignSchedulerImpl(
             "No configuration was found for the campaign"
         }
 
-        val configurer = requireNotNull(userRepository.findUsernameById(campaignEntity.configurer)) {
+        val configurer = requireNotNull(userProvider.findUsernameById(campaignEntity.configurer)) {
             "The provided configurer does not exist"
         }
-        val tenant = tenantRepository.findReferenceById(campaignEntity.tenantId)
+        val tenant = tenantProvider.findReferenceById(campaignEntity.tenantId)
         try {
             campaignExecutor.start(
                 tenant = tenant,

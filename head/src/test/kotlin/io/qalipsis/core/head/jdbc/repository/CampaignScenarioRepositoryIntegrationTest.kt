@@ -31,30 +31,36 @@ import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.Defaults
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.time.Instant
 
 /**
  * @author Joël Valère
  */
-internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class CampaignScenarioRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     @Inject
-    private lateinit var userRepository: UserRepository
+    private lateinit var userRepository: UserRepositoryForTest
 
     @Inject
     private lateinit var campaignRepository: CampaignRepository
@@ -79,7 +85,7 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
         campaignRepository.deleteAll()
         tenantRepository.deleteAll()
         kotlin.runCatching {
-            val allButDefaultUsers = userRepository.findAll().filterNot { it.username == Defaults.USER }.toList()
+            val allButDefaultUsers = userRepository.findAll().filterNot { it.username == Defaults.USERNAME }.toList()
             if (allButDefaultUsers.isNotEmpty()) {
                 userRepository.deleteAll(allButDefaultUsers)
             }
@@ -89,7 +95,7 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
     @Test
     internal fun `should start the created scenario`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "my-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val campaign1 = campaignRepository.save(campaignPrototype.copy(key = "1", tenantId = tenant.id))
         val campaign2 = campaignRepository.save(campaignPrototype.copy(key = "2", tenantId = tenant.id))
         val openScenarioOnCampaign1 =
@@ -125,7 +131,7 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
     @Test
     internal fun `should not start the started scenario`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "my-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val campaign1 = campaignRepository.save(campaignPrototype.copy(key = "1", tenantId = tenant.id))
         val closedScenarioOnCampaign1 = campaignScenarioRepository.save(
             CampaignScenarioEntity(
@@ -151,7 +157,7 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
     @Test
     internal fun `should complete the open scenario`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "my-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val campaign1 = campaignRepository.save(campaignPrototype.copy(key = "1", tenantId = tenant.id))
         val campaign2 = campaignRepository.save(campaignPrototype.copy(key = "2", tenantId = tenant.id))
         val openScenarioOnCampaign1 =
@@ -186,7 +192,7 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
     @Test
     internal fun `should not complete the already closed scenario`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "my-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val campaign1 = campaignRepository.save(campaignPrototype.copy(key = "1", tenantId = tenant.id))
         val closedScenarioOnCampaign1 = campaignScenarioRepository.save(
             CampaignScenarioEntity(
@@ -214,8 +220,8 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
     internal fun `should return campaign scenario name by scenario patterns names and campaign keys`() =
         testDispatcherProvider.run {
             //given
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
-            val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref"))
+            val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref2"))
             val saved = campaignRepository.save(
                 campaignPrototype.copy(
                     key = "key-1",
@@ -322,8 +328,8 @@ internal class CampaignScenarioRepositoryIntegrationTest : PostgresqlTemplateTes
     @Test
     internal fun `should return campaign scenario name by campaign keys`() = testDispatcherProvider.run {
         //given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
-        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref"))
+        val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref2"))
         val saved = campaignRepository.save(
             campaignPrototype.copy(
                 key = "key-1",

@@ -36,7 +36,7 @@ import kotlinx.coroutines.flow.flowOf
  *
  * @author Eric Jessé
  */
-internal class FlatMapStep<I, O>(
+class FlatMapStep<I, O>(
     id: StepName,
     retryPolicy: RetryPolicy?,
     @Suppress("UNCHECKED_CAST") private val block: ((input: I) -> Flow<O>) = { input ->

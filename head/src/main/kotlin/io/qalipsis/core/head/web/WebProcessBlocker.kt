@@ -36,7 +36,7 @@ import jakarta.inject.Singleton
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(notEnv = [ExecutionEnvironments.AUTOSTART])
 )
-internal class WebProcessBlocker : ProcessBlocker {
+class WebProcessBlocker : ProcessBlocker {
 
     private val latch = Latch(true)
 

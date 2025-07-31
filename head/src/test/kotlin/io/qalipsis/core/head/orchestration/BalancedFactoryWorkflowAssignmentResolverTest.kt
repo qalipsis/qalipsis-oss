@@ -48,8 +48,7 @@ import java.time.Instant
 @WithMockk
 internal class BalancedFactoryWorkflowAssignmentResolverTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK

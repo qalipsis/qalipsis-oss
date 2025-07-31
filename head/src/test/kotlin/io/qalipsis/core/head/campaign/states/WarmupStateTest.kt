@@ -34,6 +34,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsStartDirective
@@ -48,6 +49,7 @@ import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
@@ -55,6 +57,11 @@ import java.time.ZoneId
 
 @WithMockk
 internal class WarmupStateTest : AbstractStateTest() {
+
+    @AfterAll
+    fun tearDownAll() {
+        unmockkStatic(Clock::class)
+    }
 
     @Test
     fun `should not be a completion state`() {

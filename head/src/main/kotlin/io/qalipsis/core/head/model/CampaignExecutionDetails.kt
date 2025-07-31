@@ -35,7 +35,7 @@ import javax.validation.constraints.PositiveOrZero
     name = "Report of campaign execution",
     title = "Details of the execution of a completed or running campaign and its scenario"
 )
-internal class CampaignExecutionDetails(
+class CampaignExecutionDetails(
     version: Instant,
     key: String,
     creation: Instant,

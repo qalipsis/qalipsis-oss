@@ -69,7 +69,7 @@ import javax.validation.constraints.Size
  * @author Palina Bril
  */
 @MappedEntity("data_series", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class DataSeriesEntity(
+data class DataSeriesEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,
@@ -176,7 +176,7 @@ internal data class DataSeriesEntity(
  * @author Palina Bril
  */
 @Introspected
-internal data class DataSeriesFilterEntity(
+data class DataSeriesFilterEntity(
     @field:NotBlank
     @field:Size(min = 1, max = 60)
     val name: String,

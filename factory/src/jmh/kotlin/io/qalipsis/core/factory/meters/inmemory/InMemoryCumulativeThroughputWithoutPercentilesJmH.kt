@@ -22,7 +22,6 @@ package io.qalipsis.core.factory.meters.inmemory
 import io.mockk.mockk
 import io.qalipsis.api.meters.Meter
 import io.qalipsis.core.reporter.MeterReporter
-import java.time.temporal.ChronoUnit
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Fork
 import org.openjdk.jmh.annotations.Level
@@ -30,6 +29,7 @@ import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.Warmup
+import java.time.temporal.ChronoUnit
 
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 2)

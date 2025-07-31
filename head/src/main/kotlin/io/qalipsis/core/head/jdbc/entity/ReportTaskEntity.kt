@@ -42,7 +42,7 @@ import javax.validation.constraints.NotNull
  * @author Francisca Eze
  */
 @MappedEntity("report_task", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class ReportTaskEntity(
+data class ReportTaskEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,

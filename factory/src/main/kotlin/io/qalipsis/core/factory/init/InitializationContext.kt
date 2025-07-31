@@ -41,7 +41,7 @@ import java.io.File
  *
  * @author Eric Jessé
  */
-internal open class InitializationContext(
+open class InitializationContext(
     private val factoryConfiguration: FactoryConfiguration,
     private val communicationChannelConfiguration: CommunicationChannelConfiguration,
     private val factoryChannel: FactoryChannel

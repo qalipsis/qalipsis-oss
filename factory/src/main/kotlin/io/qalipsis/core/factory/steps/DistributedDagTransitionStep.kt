@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
  *
  * @author Eric Jessé
  */
-internal class DistributedDagTransitionStep<I>(
+class DistributedDagTransitionStep<I>(
     id: StepName,
     dagId: DirectedAcyclicGraphName,
     private val nextDagId: DirectedAcyclicGraphName,

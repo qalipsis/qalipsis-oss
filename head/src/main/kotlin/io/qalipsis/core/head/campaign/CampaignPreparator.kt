@@ -10,10 +10,10 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
-import io.qalipsis.core.head.jdbc.repository.TenantRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
+import io.qalipsis.core.head.security.TenantProvider
+import io.qalipsis.core.head.security.UserProvider
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.count
 
@@ -27,9 +27,9 @@ import kotlinx.coroutines.flow.count
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 )
-internal class CampaignPreparator(
-    private val userRepository: UserRepository,
-    private val tenantRepository: TenantRepository,
+class CampaignPreparator(
+    private val userProvider: UserProvider,
+    private val tenantProvider: TenantProvider,
     private val campaignRepository: CampaignRepository,
     private val campaignScenarioRepository: CampaignScenarioRepository,
     private val campaignConfigurationConverter: CampaignConfigurationConverter,
@@ -59,12 +59,12 @@ internal class CampaignPreparator(
         val campaign = campaignRepository.save(
             // The timeouts are not set yet, they will be updated when the campaign will start.
             CampaignEntity(
-                tenantId = tenantRepository.findIdByReference(tenant),
+                tenantId = tenantProvider.findIdByReference(tenant),
                 key = runningCampaign.key,
                 name = configuration.name,
                 scheduledMinions = runningCampaign.scenarios.values.sumOf { it.minionsCount },
                 speedFactor = configuration.speedFactor,
-                configurer = requireNotNull(userRepository.findIdByUsername(configurer)),
+                configurer = requireNotNull(userProvider.findIdByUsername(configurer)),
                 configuration = configuration,
                 result = if (isScheduled) ExecutionStatus.SCHEDULED else ExecutionStatus.QUEUED,
                 start = if (isScheduled) configuration.scheduledAt else null

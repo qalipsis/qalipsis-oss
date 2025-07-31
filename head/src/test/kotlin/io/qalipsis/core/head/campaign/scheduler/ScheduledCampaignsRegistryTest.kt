@@ -38,8 +38,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
  */
 internal class ScheduledCampaignsRegistryTest {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Test

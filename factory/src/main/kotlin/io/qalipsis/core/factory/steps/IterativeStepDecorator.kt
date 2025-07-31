@@ -39,7 +39,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal class IterativeStepDecorator<I, O>(
+class IterativeStepDecorator<I, O>(
     private val iterations: Long = 1,
     delay: Duration = Duration.ZERO,
     private val stopOnError: Boolean = false,

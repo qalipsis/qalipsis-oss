@@ -27,7 +27,7 @@ import io.qalipsis.core.head.model.CampaignExecutionDetails
  *
  * @author Francisca Eze
  */
-internal interface CampaignReportProvider {
+interface CampaignReportProvider {
     /**
      * Retrieves the CampaignReport matching the specified list of [campaignKeys].
      *

@@ -32,12 +32,14 @@ import assertk.assertions.isFalse
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
@@ -47,13 +49,17 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.time.Instant
 
 /**
  * @author rklymenko
  */
-internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class ScenarioRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     private lateinit var scenario: ScenarioEntity
 
@@ -64,14 +70,9 @@ internal class ScenarioRepositoryIntegrationTest : PostgresqlTemplateTest() {
     private lateinit var dagRepository: DirectedAcyclicGraphRepository
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
-    private val tenantPrototype =
-        TenantEntity(
-            Instant.now(),
-            "my-tenant",
-            "test-tenant",
-        )
+    private val tenantPrototype = TenantEntityForTest("my-tenant")
 
     @BeforeEach
     internal fun setup(factoryRepository: FactoryRepository) = testDispatcherProvider.run {

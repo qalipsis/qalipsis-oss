@@ -24,9 +24,9 @@ import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.head.hook.CampaignHook
 import jakarta.inject.Singleton
-import java.time.Duration
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Duration
 
 /**
  * Custom inmemory implementation of the lockProvider.
@@ -34,7 +34,7 @@ import kotlinx.coroutines.sync.withLock
  * @author Francisca Eze
  */
 @Singleton
-internal class InMemoryLockProviderImpl : LockProvider, CampaignHook {
+class InMemoryLockProviderImpl : LockProvider, CampaignHook {
 
     @KTestable
     private val lockRegistry: Cache<String, Mutex> = Caffeine.newBuilder()

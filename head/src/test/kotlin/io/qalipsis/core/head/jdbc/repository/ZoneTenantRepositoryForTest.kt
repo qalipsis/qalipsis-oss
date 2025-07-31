@@ -1,6 +1,6 @@
 /*
  * QALIPSIS
- * Copyright (C) 2022 AERIS IT Solutions GmbH
+ * Copyright (C) 2025 AERIS IT Solutions GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -24,23 +24,14 @@ import io.micronaut.data.model.query.builder.sql.Dialect
 import io.micronaut.data.r2dbc.annotation.R2dbcRepository
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.jdbc.entity.UserEntity
+import io.qalipsis.core.head.zone.ZoneTenantEntity
+import io.qalipsis.core.head.zone.ZoneTenantId
 
 /**
- * Micronaut data repository to operate with [UserEntity].
+ * Micronaut data repository to operate with [ZoneTenantEntity] for testing purposes.
  *
- * @author Palina Bril
+ * @author Francisca Eze
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
-
-    suspend fun findByUsername(username: String): UserEntity?
-
-    suspend fun findIdByUsername(username: String): Long?
-
-    suspend fun findAllByIdIn(ids: Collection<Long>): Collection<UserEntity>
-
-    suspend fun findUsernameById(id: Long): String?
-
-}
+interface ZoneTenantRepositoryForTest : CoroutineCrudRepository<ZoneTenantEntity, ZoneTenantId>

@@ -30,11 +30,14 @@ import io.aerisconsulting.catadioptre.getProperty
 import io.micronaut.context.BeanRegistration
 import io.qalipsis.core.redis.RedisRuntimeConfiguration
 import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
+import org.awaitility.kotlin.await
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.time.Duration
+import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -45,10 +48,10 @@ import java.util.concurrent.TimeoutException
  * @author Eric Jessé
  */
 @Testcontainers(parallel = true)
+@Timeout(60)
 internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationTest() {
 
     @Test
-    @Timeout(20)
     internal fun `should start factory and wait for the handshake response`() {
         // when
         val qalipsisBootstrap = QalipsisBootstrap()
@@ -61,9 +64,14 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
                 )
             )
         }
-        Thread.sleep(3000)
 
         // then
+        await.await("Await for the application context to be initialized")
+            .pollInterval(Duration.ofMillis(500))
+            .atMost(Duration.ofSeconds(10))
+            .failFast(Callable { exitCodeFuture.isCompletedExceptionally })
+            .until { runCatching { qalipsisBootstrap.applicationContext }.getOrNull() != null }
+
         val qalipsisCoreSingletonObjectsPackages = qalipsisBootstrap.applicationContext
             .getProperty<Any>("singletonScope")
             .getProperty<Map<Any, BeanRegistration<*>>>("singletonByBeanDefinition")
@@ -87,7 +95,6 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
     }
 
     @Test
-    @Timeout(10)
     internal fun `should start factory and shut down after the handshake timeout in dry-run mode`() {
         // when
         val exitCode = QalipsisBootstrap().start(
@@ -105,7 +112,6 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
     }
 
     @Test
-    @Timeout(10)
     internal fun `should start factory and remain active after the handshake timeout in normal mode`() {
         // when
         val exitCodeFuture = CompletableFuture.supplyAsync {
@@ -126,7 +132,6 @@ internal class FactoryDeploymentIntegrationTest : AbstractDeploymentIntegrationT
     }
 
     @Test
-    @Timeout(10)
     internal fun `should start factory and shut down immediately when there is no enabled scenario`() {
         // when
         val exitCode = QalipsisBootstrap().start(

@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
  *
  * @author Joël Valère
  */
-internal abstract class ChannelSubscriber(
+abstract class ChannelSubscriber(
     private val serializer: DistributionSerializer,
     private val headConfiguration: HeadConfiguration,
     private val heartbeatListeners: Collection<HeartbeatListener>,

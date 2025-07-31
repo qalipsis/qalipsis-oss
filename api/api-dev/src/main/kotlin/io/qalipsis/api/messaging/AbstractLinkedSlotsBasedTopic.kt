@@ -35,7 +35,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractLinkedSlotsBasedTopic<T>(
+abstract class AbstractLinkedSlotsBasedTopic<T>(
     protected val idleTimeout: Duration
 ) : Topic<T> {
 

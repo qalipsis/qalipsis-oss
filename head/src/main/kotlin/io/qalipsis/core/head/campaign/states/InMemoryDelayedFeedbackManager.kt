@@ -37,7 +37,7 @@ import kotlinx.coroutines.runBlocking
  */
 @Singleton
 @Secondary
-internal class InMemoryDelayedFeedbackManager(
+class InMemoryDelayedFeedbackManager(
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
     private val headChannel: HeadChannel,
     private val configuration: HeadConfiguration,

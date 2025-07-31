@@ -28,7 +28,7 @@ import jakarta.inject.Singleton
  * @author Joël Valère
  */
 @Singleton
-internal class SubscriberChannelRegistry(
+class SubscriberChannelRegistry(
     val serializer: DistributionSerializer,
     val headConfiguration: HeadConfiguration
 )

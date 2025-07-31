@@ -29,7 +29,7 @@ import io.qalipsis.core.head.model.ReportTask
  *
  * @author Joël Valère
  */
-internal interface ReportService {
+interface ReportService {
 
     /**
      * Create a new report.

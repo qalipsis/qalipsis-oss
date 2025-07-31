@@ -40,7 +40,7 @@ import jakarta.inject.Singleton
 @Produces
 @Singleton
 @Requires(classes = [EmptyResultException::class, ExceptionHandler::class])
-internal class EmptyResultExceptionHandler : ExceptionHandler<EmptyResultException, MutableHttpResponse<*>> {
+class EmptyResultExceptionHandler : ExceptionHandler<EmptyResultException, MutableHttpResponse<*>> {
 
     override fun handle(request: HttpRequest<*>, exception: EmptyResultException): MutableHttpResponse<*> {
         return HttpResponse.status<Any>(HttpStatus.NOT_FOUND)

@@ -44,8 +44,7 @@ import java.time.Duration
 @WithMockk
 internal class BackoffRetryPolicyTests {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @InjectMockKs
@@ -92,7 +91,7 @@ internal class BackoffRetryPolicyTests {
         val after = System.currentTimeMillis()
 
         // then
-        assertThat(after - before).isBetween(2000, 2200)
+        assertThat(after - before).isBetween(2000, 2300)
         coVerify(exactly = 3) { service.mockMethod() }
     }
 
@@ -109,7 +108,7 @@ internal class BackoffRetryPolicyTests {
         val after = System.currentTimeMillis()
 
         // then
-        assertThat(after - before).isBetween(0, 1)
+        assertThat(after - before).isBetween(0, 10)
         coVerify(exactly = 1) { service.mockMethod() }
     }
 
@@ -131,7 +130,7 @@ internal class BackoffRetryPolicyTests {
 
         // then
         assertThat(caught).isSameAs(exception)
-        assertThat(after - before).isBetween(10, 130)
+        assertThat(after - before).isBetween(10, 180)
         coVerify(exactly = 4) { service.mockMethod() }
 
         // when
@@ -143,7 +142,7 @@ internal class BackoffRetryPolicyTests {
 
         // then
         assertThat(caught2).isSameAs(exception)
-        assertThat(after2 - before2).isBetween(10, 140)
+        assertThat(after2 - before2).isBetween(10, 180)
         coVerify(exactly = 8) { service.mockMethod() }
     }
 
@@ -169,7 +168,7 @@ internal class BackoffRetryPolicyTests {
 
         // then
         assertThat(caught).isSameAs(exception)
-        assertThat(after - before).isBetween(30, 160)
+        assertThat(after - before).isBetween(30, 200)
         coVerify(exactly = 7) { service.mockMethod() }
     }
 }

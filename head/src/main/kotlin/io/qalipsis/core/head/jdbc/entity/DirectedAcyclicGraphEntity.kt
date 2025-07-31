@@ -36,7 +36,7 @@ import javax.validation.constraints.Size
  * @author rklymenko
  */
 @MappedEntity("directed_acyclic_graph", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class DirectedAcyclicGraphEntity(
+data class DirectedAcyclicGraphEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,

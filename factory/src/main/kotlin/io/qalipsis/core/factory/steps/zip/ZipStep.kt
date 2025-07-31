@@ -45,7 +45,7 @@ import kotlinx.coroutines.launch
  *
  * @author Polina Bril
  */
-internal class ZipStep<I, O>(
+class ZipStep<I, O>(
     id: StepName,
     private val coroutineScope: CoroutineScope,
     /**

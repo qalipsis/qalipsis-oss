@@ -26,7 +26,7 @@ import io.micronaut.core.order.Ordered
  *
  * @author Eric Jessé
  */
-internal interface CampaignLifeCycleAware : Ordered {
+interface CampaignLifeCycleAware : Ordered {
 
     suspend fun init(campaign: Campaign) = Unit
 

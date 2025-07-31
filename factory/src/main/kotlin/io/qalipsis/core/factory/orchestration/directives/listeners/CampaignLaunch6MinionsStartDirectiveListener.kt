@@ -44,7 +44,7 @@ import org.slf4j.event.Level
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class CampaignLaunch6MinionsStartDirectiveListener(
+class CampaignLaunch6MinionsStartDirectiveListener(
     private val localAssignmentStore: LocalAssignmentStore,
     private val minionsKeeper: MinionsKeeper,
     private val minionsAssignmentKeeper: MinionAssignmentKeeper,

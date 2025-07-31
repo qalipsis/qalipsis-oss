@@ -28,7 +28,7 @@ import io.qalipsis.api.messaging.Topic
  *
  * @author Polina Bril
  */
-internal class RightSource<T : Any>(
+class RightSource<T : Any>(
     /**
      * ID of the [io.qalipsis.api.steps.Step] providing the remote data.
      */

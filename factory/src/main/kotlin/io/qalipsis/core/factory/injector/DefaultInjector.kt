@@ -21,6 +21,7 @@ package io.qalipsis.core.factory.injector
 
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.Qualifier
+import io.micronaut.context.annotation.Requires
 import io.micronaut.core.convert.ConversionService
 import io.qalipsis.api.scenario.Injector
 import jakarta.inject.Singleton
@@ -33,7 +34,8 @@ import java.util.Optional
  * @author Svetlana Paliashchuk
  */
 @Singleton
-internal class DefaultInjector(
+@Requires(missingBeans = [Injector::class])
+class DefaultInjector(
     private val applicationContext: ApplicationContext,
     override val conversionService: ConversionService<*>
 ) : Injector {

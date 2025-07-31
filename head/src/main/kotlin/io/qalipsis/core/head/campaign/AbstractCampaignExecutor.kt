@@ -55,7 +55,7 @@ import javax.validation.constraints.NotBlank
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
+abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     private val headChannel: HeadChannel,
     private val factoryService: FactoryService,
     private val campaignService: CampaignService,

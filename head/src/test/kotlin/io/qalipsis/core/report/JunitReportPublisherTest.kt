@@ -22,6 +22,7 @@ package io.qalipsis.core.report
 import com.google.common.io.Files
 import io.mockk.every
 import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
@@ -30,6 +31,7 @@ import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.head.report.JunitReportPublisher
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -49,9 +51,13 @@ internal class JunitReportPublisherTest {
 
     private val expectedReportFolder = "src/test/resources/junit-reports"
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
+
+    @AfterAll
+    fun tearDownAll() {
+        unmockkStatic(Clock::class)
+    }
 
     @Test
     fun `should write simple report without errors`() = testCoroutineDispatcher.run {

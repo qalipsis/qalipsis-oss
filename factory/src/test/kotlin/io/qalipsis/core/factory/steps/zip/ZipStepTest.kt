@@ -40,8 +40,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 
 internal class ZipStepTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test

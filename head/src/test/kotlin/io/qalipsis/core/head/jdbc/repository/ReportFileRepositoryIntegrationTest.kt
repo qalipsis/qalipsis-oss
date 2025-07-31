@@ -26,12 +26,14 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
+import com.qalipsis.core.head.jdbc.entity.UserEntityForTest
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.entity.ReportFileEntity
 import io.qalipsis.core.head.jdbc.entity.ReportTaskEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
-import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.model.ReportTaskStatus
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
@@ -39,10 +41,14 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-internal class ReportFileRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class ReportFileRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
     private lateinit var reportFileRepository: ReportFileRepository
@@ -54,16 +60,16 @@ internal class ReportFileRepositoryIntegrationTest : PostgresqlTemplateTest() {
     private lateinit var reportTaskRepository: ReportTaskRepository
 
     @Inject
-    private lateinit var userRepository: UserRepository
+    private lateinit var userRepository: UserRepositoryForTest
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     private lateinit var reportFilePrototype: ReportFileEntity
 
-    private lateinit var tenant: TenantEntity
+    private lateinit var tenant: TenantEntityForTest
 
-    private lateinit var user: UserEntity
+    private lateinit var user: UserEntityForTest
 
     private lateinit var reportTask: ReportTaskEntity
 
@@ -71,8 +77,8 @@ internal class ReportFileRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
     @BeforeEach
     fun setup() = testDispatcherProvider.run {
-        user = userRepository.save(UserEntity(displayName = "dis-user", username = "my-user"))
-        tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        user = userRepository.save(UserEntityForTest(username = "my-user"))
+        tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val reportPrototype = ReportEntity(
             reference = "report-ref",
             tenantId = tenant.id,
@@ -152,7 +158,7 @@ internal class ReportFileRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should return null when user is not the creator of the task `() = testDispatcherProvider.run {
         //given
         val saved = reportFileRepository.save(reportFilePrototype)
-        val user2 = userRepository.save(UserEntity(displayName = "dis-user2", username = "my-user2"))
+        val user2 = userRepository.save(UserEntityForTest(username = "my-user2"))
 
         //when
         val fileContent = reportFileRepository.retrieveReportFileByTenantAndReference(
@@ -168,7 +174,7 @@ internal class ReportFileRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should return null when task reference does not exist`() = testDispatcherProvider.run {
         //given
-        val user2 = userRepository.save(UserEntity(displayName = "dis-user2", username = "my-user2"))
+        val user2 = userRepository.save(UserEntityForTest(username = "my-user2"))
 
         //when
         val fileContent =
@@ -183,7 +189,7 @@ internal class ReportFileRepositoryIntegrationTest : PostgresqlTemplateTest() {
         //given
         val saved = reportFileRepository.save(reportFilePrototype)
 
-        val user2 = userRepository.save(UserEntity(displayName = "dis-user2", username = "my-user2"))
+        val user2 = userRepository.save(UserEntityForTest(username = "my-user2"))
 
         //when
         val fileContent = reportFileRepository.retrieveReportFileByTenantAndReference(

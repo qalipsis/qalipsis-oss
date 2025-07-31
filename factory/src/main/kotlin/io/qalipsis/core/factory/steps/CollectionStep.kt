@@ -42,7 +42,7 @@ import java.util.LinkedList
 import kotlin.math.min
 
 
-internal class CollectionStep<I>(
+class CollectionStep<I>(
     id: StepName,
     private val timeout: Duration?,
     private val batchSize: Int,

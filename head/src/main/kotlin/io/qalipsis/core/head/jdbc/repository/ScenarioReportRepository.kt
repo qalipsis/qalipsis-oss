@@ -33,4 +33,4 @@ import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface ScenarioReportRepository : CoroutineCrudRepository<ScenarioReportEntity, Long>
+interface ScenarioReportRepository : CoroutineCrudRepository<ScenarioReportEntity, Long>

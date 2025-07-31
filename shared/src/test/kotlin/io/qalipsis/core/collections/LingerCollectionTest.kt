@@ -38,8 +38,7 @@ import java.time.Duration
 
 internal class LingerCollectionTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Test

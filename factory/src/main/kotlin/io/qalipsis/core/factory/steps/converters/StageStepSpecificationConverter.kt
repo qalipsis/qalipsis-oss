@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Eric Jessé
  */
 @StepConverter
-internal class StageStepSpecificationConverter(
+class StageStepSpecificationConverter(
     private val minionsKeeper: MinionsKeeper
 ) : StepSpecificationConverter<StageStepSpecification<*, *>> {
 

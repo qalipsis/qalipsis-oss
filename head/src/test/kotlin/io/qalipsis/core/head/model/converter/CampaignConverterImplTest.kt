@@ -28,9 +28,9 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.Scenario
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import org.junit.jupiter.api.Test
@@ -39,12 +39,11 @@ import java.time.Instant
 
 @WithMockk
 internal class CampaignConverterImplTest {
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
-    private lateinit var userRepository: UserRepository
+    private lateinit var userProvider: UserProvider
 
     @RelaxedMockK
     private lateinit var scenarioRepository: CampaignScenarioRepository
@@ -55,8 +54,8 @@ internal class CampaignConverterImplTest {
     @Test
     internal fun `should convert to the model`() = testDispatcherProvider.runTest {
         // given
-        coEvery { userRepository.findUsernameById(545) } returns "my-user"
-        coEvery { userRepository.findUsernameById(13234) } returns "my-aborter"
+        coEvery { userProvider.findUsernameById(545) } returns "my-user"
+        coEvery { userProvider.findUsernameById(13234) } returns "my-aborter"
         val scenarioVersion1 = Instant.now().minusMillis(3)
         val scenarioVersion2 = Instant.now().minusMillis(542)
         coEvery { scenarioRepository.findByCampaignId(1231243) } returns listOf(
@@ -121,7 +120,7 @@ internal class CampaignConverterImplTest {
     @Test
     internal fun `should convert to the model without aborter`() = testDispatcherProvider.runTest {
         // given
-        coEvery { userRepository.findUsernameById(545) } returns "my-user"
+        coEvery { userProvider.findUsernameById(545) } returns "my-user"
         val scenarioVersion1 = Instant.now().minusMillis(3)
         val scenarioVersion2 = Instant.now().minusMillis(542)
         coEvery { scenarioRepository.findByCampaignId(1231243) } returns listOf(

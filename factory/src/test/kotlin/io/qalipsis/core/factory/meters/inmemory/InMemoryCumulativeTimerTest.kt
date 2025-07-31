@@ -49,8 +49,7 @@ import java.util.concurrent.TimeUnit
 internal class InMemoryCumulativeTimerTest {
 
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

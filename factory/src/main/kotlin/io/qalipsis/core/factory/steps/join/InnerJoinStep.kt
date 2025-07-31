@@ -56,7 +56,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
-internal class InnerJoinStep<I, O>(
+class InnerJoinStep<I, O>(
     id: StepName,
     private val coroutineScope: CoroutineScope,
     /**

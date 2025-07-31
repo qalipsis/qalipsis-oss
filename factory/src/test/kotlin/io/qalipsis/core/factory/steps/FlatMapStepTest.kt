@@ -36,8 +36,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
  */
 internal class FlatMapStepTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test

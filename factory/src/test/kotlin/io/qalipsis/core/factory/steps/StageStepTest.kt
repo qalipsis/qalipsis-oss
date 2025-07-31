@@ -59,8 +59,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @CleanMockkRecordedCalls
 internal class StageStepTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test
@@ -138,8 +137,9 @@ internal class StageStepTest {
             results.add((ctx.output as Channel).receive().value)
         }
 
-        assertTrue((ctx.output as Channel).isEmpty)
-        assertFalse(ctx.output.isClosedForReceive)
+        val output = ctx.output as Channel
+        assertTrue(output.isEmpty)
+        assertFalse(output.isClosedForReceive)
 
         assertThat(results).all {
             hasSize(6)
@@ -178,8 +178,9 @@ internal class StageStepTest {
             step.execute(minion, ctx)
         }
 
-        assertTrue((ctx.output as Channel).isEmpty)
-        assertFalse(ctx.output.isClosedForReceive)
+        val output = ctx.output as Channel
+        assertTrue(output.isEmpty)
+        assertFalse(output.isClosedForReceive)
         assertThat(exception).isInstanceOf(StepExecutionException::class).all {
             prop(StepExecutionException::cause).isNotNull().isInstanceOf(RuntimeException::class)
                 .prop(RuntimeException::message).isEqualTo("This is an error")
@@ -225,8 +226,9 @@ internal class StageStepTest {
                 step.execute(minion, ctx)
             }
 
-            assertTrue((ctx.output as Channel).isEmpty)
-            assertFalse(ctx.output.isClosedForReceive)
+            val output = ctx.output as Channel
+            assertTrue(output.isEmpty)
+            assertFalse(output.isClosedForReceive)
             assertThat(exception).isInstanceOf(StepExecutionException::class).all {
                 prop(StepExecutionException::cause).isNotNull().isInstanceOf(RuntimeException::class)
                     .prop(RuntimeException::message).isEqualTo("This is an error")

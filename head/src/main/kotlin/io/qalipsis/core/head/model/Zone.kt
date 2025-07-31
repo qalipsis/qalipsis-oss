@@ -36,7 +36,7 @@ import javax.validation.constraints.Size
     title = "Zone of QALIPSIS",
     description = "Details of a zone in scenarios"
 )
-internal data class Zone(
+data class Zone(
 
     @field:Schema(description = "A unique identifier for the zone")
     @field:NotBlank

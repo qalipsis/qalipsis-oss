@@ -29,7 +29,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal class TopicConfiguration(
+class TopicConfiguration(
     var type: TopicType = TopicType.UNICAST,
     var bufferSize: Int = 0,
     var idleTimeout: Duration = Duration.ZERO
@@ -40,7 +40,7 @@ internal class TopicConfiguration(
  *
  * @author Eric Jessé
  */
-internal enum class TopicType {
+enum class TopicType {
     /**
      * Each record is provided only once to a unique minion. The topic acts as a FIFO-Provider.
      */

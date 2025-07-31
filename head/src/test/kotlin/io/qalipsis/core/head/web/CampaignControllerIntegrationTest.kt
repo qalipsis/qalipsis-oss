@@ -72,11 +72,11 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import jakarta.inject.Inject
-import java.time.Instant
 import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.Instant
 
 @WithMockk
 @MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.TRANSIENT, ExecutionEnvironments.SINGLE_HEAD])
@@ -147,7 +147,7 @@ internal class CampaignControllerIntegrationTest {
         coEvery {
             campaignExecutor.start(
                 Defaults.TENANT,
-                Defaults.USER,
+                Defaults.USERNAME,
                 eq(campaignConfiguration)
             )
         } returns runningCampaign
@@ -160,8 +160,8 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             scheduledMinions = 123,
             end = null,
-            configurerName = Defaults.USER,
-            aborterName = Defaults.USER,
+            configurerName = Defaults.USERNAME,
+            aborterName = Defaults.USERNAME,
             status = IN_PROGRESS,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -180,7 +180,7 @@ internal class CampaignControllerIntegrationTest {
         // then
         coVerifyOrder {
             // Called with the default user.
-            campaignExecutor.start(Defaults.TENANT, Defaults.USER, eq(campaignConfiguration))
+            campaignExecutor.start(Defaults.TENANT, Defaults.USERNAME, eq(campaignConfiguration))
             campaignService.retrieve(Defaults.TENANT, "my-campaign")
         }
 
@@ -315,7 +315,7 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             status = ExecutionStatus.SUCCESSFUL,
-            configurerName = Defaults.USER,
+            configurerName = Defaults.USERNAME,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -368,7 +368,7 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             status = SUCCESSFUL,
-            configurerName = Defaults.USER,
+            configurerName = Defaults.USERNAME,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -421,8 +421,8 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             status = SUCCESSFUL,
-            configurerName = Defaults.USER,
-            aborterName = Defaults.USER,
+            configurerName = Defaults.USERNAME,
+            aborterName = Defaults.USERNAME,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -474,7 +474,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignExecutor.abort(Defaults.TENANT, Defaults.USER, "first_campaign", false)
+            campaignExecutor.abort(Defaults.TENANT, Defaults.USERNAME, "first_campaign", false)
         }
 
         assertThat(response).all {
@@ -500,7 +500,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignExecutor.abort(Defaults.TENANT, Defaults.USER, "first_campaign", true)
+            campaignExecutor.abort(Defaults.TENANT, Defaults.USERNAME, "first_campaign", true)
         }
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.ACCEPTED)
@@ -528,7 +528,7 @@ internal class CampaignControllerIntegrationTest {
                 start = Instant.now(),
                 scheduledMinions = 123,
                 end = null,
-                configurerName = Defaults.USER,
+                configurerName = Defaults.USERNAME,
                 status = ExecutionStatus.SUCCESSFUL,
                 scenarios = listOf(
                     Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -620,7 +620,7 @@ internal class CampaignControllerIntegrationTest {
                 start = Instant.now(),
                 scheduledMinions = 123,
                 end = null,
-                configurerName = Defaults.USER,
+                configurerName = Defaults.USERNAME,
                 status = ExecutionStatus.SUCCESSFUL,
                 scenarios = listOf(
                     Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -681,7 +681,7 @@ internal class CampaignControllerIntegrationTest {
                 start = Instant.now(),
                 scheduledMinions = 123,
                 end = null,
-                configurerName = Defaults.USER,
+                configurerName = Defaults.USERNAME,
                 status = ExecutionStatus.SUCCESSFUL,
                 scenarios = listOf(
                     Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -703,7 +703,7 @@ internal class CampaignControllerIntegrationTest {
                 start = Instant.now(),
                 scheduledMinions = 123,
                 end = null,
-                configurerName = Defaults.USER,
+                configurerName = Defaults.USERNAME,
                 status = ExecutionStatus.SUCCESSFUL,
                 scenarios = listOf(
                     Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -745,7 +745,7 @@ internal class CampaignControllerIntegrationTest {
                 start = Instant.now(),
                 scheduledMinions = 123,
                 end = null,
-                configurerName = Defaults.USER,
+                configurerName = Defaults.USERNAME,
                 status = ExecutionStatus.SUCCESSFUL,
                 scenarios = listOf(
                     Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -859,7 +859,7 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             scheduledMinions = 123,
             end = null,
-            configurerName = Defaults.USER,
+            configurerName = Defaults.USERNAME,
             status = QUEUED,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -869,7 +869,7 @@ internal class CampaignControllerIntegrationTest {
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign-new")
         val replayRequest = HttpRequest.POST("/my-campaign/replay", null)
         coEvery {
-            campaignExecutor.replay(Defaults.TENANT, Defaults.USER, "my-campaign")
+            campaignExecutor.replay(Defaults.TENANT, Defaults.USERNAME, "my-campaign")
         } returns runningCampaign
         coEvery {
             campaignService.retrieve(Defaults.TENANT, "my-campaign-new")
@@ -880,7 +880,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            campaignExecutor.replay(Defaults.TENANT, Defaults.USER, "my-campaign")
+            campaignExecutor.replay(Defaults.TENANT, Defaults.USERNAME, "my-campaign")
             campaignService.retrieve(Defaults.TENANT, "my-campaign-new")
         }
         assertThat(response).all {
@@ -975,7 +975,7 @@ internal class CampaignControllerIntegrationTest {
         coEvery {
             campaignScheduler.schedule(
                 Defaults.TENANT,
-                Defaults.USER,
+                Defaults.USERNAME,
                 eq(campaignConfiguration)
             )
         } returns runningCampaign
@@ -988,8 +988,8 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             scheduledMinions = 123,
             end = null,
-            configurerName = Defaults.USER,
-            aborterName = Defaults.USER,
+            configurerName = Defaults.USERNAME,
+            aborterName = Defaults.USERNAME,
             status = IN_PROGRESS,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -1008,7 +1008,7 @@ internal class CampaignControllerIntegrationTest {
         // then
         coVerifyOrder {
             // Called with the default user.
-            campaignScheduler.schedule(Defaults.TENANT, Defaults.USER, eq(campaignConfiguration))
+            campaignScheduler.schedule(Defaults.TENANT, Defaults.USERNAME, eq(campaignConfiguration))
             campaignService.retrieve(Defaults.TENANT, "my-campaign")
         }
 
@@ -1074,7 +1074,7 @@ internal class CampaignControllerIntegrationTest {
         coEvery {
             campaignScheduler.update(
                 Defaults.TENANT,
-                Defaults.USER,
+                Defaults.USERNAME,
                 campaignKey,
                 eq(campaignConfiguration)
             )
@@ -1088,8 +1088,8 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             scheduledMinions = 123,
             end = null,
-            configurerName = Defaults.USER,
-            aborterName = Defaults.USER,
+            configurerName = Defaults.USERNAME,
+            aborterName = Defaults.USERNAME,
             status = IN_PROGRESS,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
@@ -1108,7 +1108,7 @@ internal class CampaignControllerIntegrationTest {
         // then
         coVerifyOrder {
             // Called with the default user.
-            campaignScheduler.update(Defaults.TENANT, Defaults.USER, campaignKey, eq(campaignConfiguration))
+            campaignScheduler.update(Defaults.TENANT, Defaults.USERNAME, campaignKey, eq(campaignConfiguration))
             campaignService.retrieve(Defaults.TENANT, "my-campaign")
         }
 
@@ -1137,7 +1137,7 @@ internal class CampaignControllerIntegrationTest {
         coEvery {
             campaignScheduler.update(
                 Defaults.TENANT,
-                Defaults.USER,
+                Defaults.USERNAME,
                 campaignKey,
                 eq(campaignConfiguration)
             )
@@ -1154,7 +1154,7 @@ internal class CampaignControllerIntegrationTest {
 
         // then
         coVerifyOrder {
-            campaignScheduler.update(Defaults.TENANT, Defaults.USER, campaignKey, eq(campaignConfiguration))
+            campaignScheduler.update(Defaults.TENANT, Defaults.USERNAME, campaignKey, eq(campaignConfiguration))
         }
 
         assertThat(response).all {
@@ -1178,7 +1178,7 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             status = SUCCESSFUL,
-            configurerName = Defaults.USER,
+            configurerName = Defaults.USERNAME,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
@@ -1194,7 +1194,7 @@ internal class CampaignControllerIntegrationTest {
             start = Instant.now(),
             end = Instant.now().plusSeconds(1000),
             status = WARNING,
-            configurerName = Defaults.USER,
+            configurerName = Defaults.USERNAME,
             scenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-3", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-4", minionsCount = 45645)

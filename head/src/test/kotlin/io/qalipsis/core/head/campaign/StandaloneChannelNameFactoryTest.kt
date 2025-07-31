@@ -40,8 +40,7 @@ internal class StandaloneChannelNameFactoryTest {
 
     private lateinit var standaloneChannelNameFactory: StandaloneChannelNameFactory
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @BeforeAll

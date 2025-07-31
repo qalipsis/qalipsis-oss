@@ -36,7 +36,7 @@ import jakarta.inject.Singleton
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY])
-internal class ContextDirectiveListener(
+class ContextDirectiveListener(
     private val distributionSerializer: DistributionSerializer,
     private val scenarioRegistry: ScenarioRegistry,
     private val minionsKeeper: MinionsKeeper,

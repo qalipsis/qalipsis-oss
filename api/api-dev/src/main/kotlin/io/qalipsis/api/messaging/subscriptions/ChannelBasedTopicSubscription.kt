@@ -34,7 +34,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal open class ChannelBasedTopicSubscription<T> private constructor(
+open class ChannelBasedTopicSubscription<T> private constructor(
     private val subscriberId: String,
     internal val channel: ReceiveChannel<Record<T>>,
     idleTimeout: Duration,

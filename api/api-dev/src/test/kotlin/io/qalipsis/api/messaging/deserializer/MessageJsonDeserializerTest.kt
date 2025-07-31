@@ -33,7 +33,7 @@ import java.time.Instant
 
 internal class MessageJsonDeserializerTest {
 
-    internal data class UserExample(val id: Int, val name: String, val createdAt: Instant)
+    data class UserExample(val id: Int, val name: String, val createdAt: Instant)
 
     companion object {
         private val mapper =

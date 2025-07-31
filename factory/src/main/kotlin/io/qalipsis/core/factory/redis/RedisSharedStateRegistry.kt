@@ -47,7 +47,7 @@ import java.util.concurrent.ConcurrentHashMap
     Requires(notEnv = [ExecutionEnvironments.SINGLE_FACTORY])
 )
 @ExperimentalLettuceCoroutinesApi
-internal class RedisSharedStateRegistry(
+class RedisSharedStateRegistry(
     private val redisScriptingCommands: RedisScriptingCoroutinesCommands<String, String>,
     private val redisStringCommands: RedisStringCoroutinesCommands<String, String>,
     private val redisKeyCommands: RedisKeyCoroutinesCommands<String, String>,

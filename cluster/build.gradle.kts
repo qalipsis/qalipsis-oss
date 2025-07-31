@@ -52,6 +52,7 @@ dependencies {
 
     compileOnly("io.swagger.core.v3:swagger-annotations")
     compileOnly("io.micronaut:micronaut-core")
+    compileOnly("io.micronaut:micronaut-http-server-netty")
     compileOnly("io.micronaut:micronaut-inject-java")
     compileOnly("io.micronaut:micronaut-validation")
 

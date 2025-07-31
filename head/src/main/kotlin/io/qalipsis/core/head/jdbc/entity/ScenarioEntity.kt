@@ -38,7 +38,7 @@ import javax.validation.constraints.Size
  * @author rklymenko
  */
 @MappedEntity("scenario", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class ScenarioEntity(
+data class ScenarioEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,

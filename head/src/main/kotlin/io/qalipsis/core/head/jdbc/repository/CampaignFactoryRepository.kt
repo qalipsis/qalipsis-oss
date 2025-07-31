@@ -34,7 +34,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface CampaignFactoryRepository : CoroutineCrudRepository<CampaignFactoryEntity, Long> {
+interface CampaignFactoryRepository : CoroutineCrudRepository<CampaignFactoryEntity, Long> {
 
     /**
      * Marks the factory as discarded in the campaign, in order to make it available for other campaigns.

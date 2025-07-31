@@ -17,21 +17,33 @@
  *
  */
 
-package io.qalipsis.core.head.jdbc.repository
+package io.qalipsis.core.postgres
 
-import io.micronaut.context.annotation.Requires
-import io.micronaut.data.model.query.builder.sql.Dialect
-import io.micronaut.data.r2dbc.annotation.R2dbcRepository
-import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.micronaut.test.support.TestPropertyProvider
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.zone.ZoneTenantEntity
-import io.qalipsis.core.head.zone.ZoneTenantId
+import io.qalipsis.core.postgres.PostgresRuntimeConfiguration.testProperties
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
 
 /**
- * Micronaut data repository to operate with [ZoneTenantEntity] for testing purposes.
- *
- * @author Francisca Eze
+ * @author rklymenko
  */
-@R2dbcRepository(dialect = Dialect.POSTGRES)
-@Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-interface ZoneTenantRepository : CoroutineCrudRepository<ZoneTenantEntity, ZoneTenantId>
+@Testcontainers
+@MicronautTest(
+    environments = [ExecutionEnvironments.POSTGRESQL],
+    startApplication = false,
+    transactional = false
+)
+abstract class AbstractPostgreSQLTest : TestPropertyProvider {
+
+    override fun getProperties() = pgsqlContainer.testProperties()
+
+    companion object {
+
+        @Container
+        @JvmField
+        val pgsqlContainer = PostgresRuntimeConfiguration.createContainer()
+
+    }
+}

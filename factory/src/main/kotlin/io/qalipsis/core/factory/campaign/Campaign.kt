@@ -31,7 +31,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-internal data class Campaign(
+data class Campaign(
     val campaignKey: CampaignKey,
     val speedFactor: Double = 1.0,
     val startOffsetMs: Long = 1000,

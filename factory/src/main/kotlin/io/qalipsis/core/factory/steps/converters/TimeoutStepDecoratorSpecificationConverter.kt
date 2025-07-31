@@ -33,7 +33,7 @@ import io.qalipsis.core.factory.steps.TimeoutStepDecorator
  * @author Eric Jessé
  */
 @StepConverter
-internal class TimeoutStepDecoratorSpecificationConverter(
+class TimeoutStepDecoratorSpecificationConverter(
     private val meterRegistry: CampaignMeterRegistry
 ) : StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>() {
 

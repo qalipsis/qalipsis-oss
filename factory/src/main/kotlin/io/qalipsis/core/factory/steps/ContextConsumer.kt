@@ -26,7 +26,7 @@ import io.qalipsis.core.factory.orchestration.TransportableContext
  *
  * @author Eric Jessé
  */
-internal interface ContextConsumer {
+interface ContextConsumer {
 
     suspend fun start()
 

@@ -40,8 +40,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @WithMockk
 internal class DefaultDataProviderTest {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK

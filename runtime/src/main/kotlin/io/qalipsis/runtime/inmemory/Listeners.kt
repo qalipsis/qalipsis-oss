@@ -30,7 +30,7 @@ import jakarta.inject.Singleton
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.STANDALONE])
-internal class Listeners(
+class Listeners(
     val directiveListeners: Collection<DirectiveListener<*>>,
     val handshakeResponseListeners: Collection<HandshakeResponseListener>,
     val feedbackListeners: Collection<FeedbackListener<*>>,

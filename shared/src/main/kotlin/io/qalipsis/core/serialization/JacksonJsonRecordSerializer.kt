@@ -34,7 +34,7 @@ import jakarta.inject.Singleton
  */
 @Suppress("UNCHECKED_CAST")
 @Singleton
-internal class JacksonJsonRecordSerializer : RecordSerializer {
+class JacksonJsonRecordSerializer : RecordSerializer {
 
     override val order: Int = 0
 

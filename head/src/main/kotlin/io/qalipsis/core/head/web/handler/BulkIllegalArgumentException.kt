@@ -24,7 +24,7 @@ package io.qalipsis.core.head.web.handler
  *
  * @author Joël Valère
  */
-internal class BulkIllegalArgumentException(val messages: Collection<String>) : RuntimeException() {
+class BulkIllegalArgumentException(val messages: Collection<String>) : RuntimeException() {
 
     override val message: String
         get() = messages.joinToString(separator = "\n\t")

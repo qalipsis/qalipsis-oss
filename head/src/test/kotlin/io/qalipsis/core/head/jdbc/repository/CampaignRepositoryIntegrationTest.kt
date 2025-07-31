@@ -33,6 +33,8 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
+import com.qalipsis.core.head.jdbc.entity.UserEntityForTest
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
@@ -50,16 +52,13 @@ import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
-import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository.CampaignKeyAndName
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.report.CampaignData
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
-import java.time.Duration
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.filterNot
@@ -67,9 +66,16 @@ import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 
-internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
     private lateinit var factoryRepository: FactoryRepository
@@ -87,10 +93,10 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     private lateinit var campaignReportRepository: CampaignReportRepository
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     @Inject
-    private lateinit var userRepository: UserRepository
+    private lateinit var userRepository: UserRepositoryForTest
 
     private val campaignPrototype =
         CampaignEntity(
@@ -105,7 +111,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
         )
 
-    private val tenantPrototype = TenantEntity(Instant.now(), "my-tenant", "test-tenant")
+    private val tenantPrototype = TenantEntityForTest(reference = "my-tenant")
 
     @AfterEach
     fun tearDown() = testDispatcherProvider.run {
@@ -113,7 +119,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         factoryRepository.deleteAll()
         tenantRepository.deleteAll()
         kotlin.runCatching {
-            val allButDefaultUsers = userRepository.findAll().filterNot { it.username == Defaults.USER }.toList()
+            val allButDefaultUsers = userRepository.findAll().filterNot { it.username == Defaults.USERNAME }.toList()
             if (allButDefaultUsers.isNotEmpty()) {
                 userRepository.deleteAll(allButDefaultUsers)
             }
@@ -123,7 +129,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should save then get`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val saved = campaignRepository.save(
             campaignPrototype.copy(
                 tenantId = tenant.id,
@@ -143,8 +149,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should update the aborter and the result`() = testDispatcherProvider.run {
         // given
         val instant = Instant.now()
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
-        val aborter = userRepository.save(UserEntity(username = "John Doe"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
+        val aborter = userRepository.save(UserEntityForTest(username = "John Doe"))
         val saved = campaignRepository.save(
             campaignPrototype.copy(
                 tenantId = tenant.id,
@@ -702,7 +708,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         testDispatcherProvider.run {
             // given
             val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
-            val user = userRepository.save(UserEntity(username = "John Doe"))
+            val user = userRepository.save(UserEntityForTest(username = "John Doe"))
             campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
             val saved2 = campaignRepository.save(
                 campaignPrototype.copy(
@@ -723,7 +729,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             // when + then
             assertThat(
                 campaignRepository.findAll(
-                    tenant ="my-tenant-2",
+                    tenant = "my-tenant-2",
                     filters = listOf("%HN%", "%NoNe%"),
                     pageable = Pageable.from(0, 1),
                     excludedStatuses = emptyList()
@@ -735,7 +741,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             }
             assertThat(
                 campaignRepository.findAll(
-                    tenant= "other-tenant",
+                    tenant = "other-tenant",
                     filters = listOf("%HN%", "%NoNe%"),
                     pageable = Pageable.from(0, 1),
                     excludedStatuses = emptyList()
@@ -748,7 +754,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         testDispatcherProvider.run {
             // given
             val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
-            val user = userRepository.save(UserEntity(username = "foo", displayName = "John Doe"))
+            val user = userRepository.save(UserEntityForTest(username = "foo", displayName = "John Doe"))
             campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id))
             val saved2 = campaignRepository.save(
                 campaignPrototype.copy(
@@ -792,7 +798,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should find campaign by key`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-11", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "tenant-11"))
         val saved = campaignRepository.save(campaignPrototype.copy(key = "name-11", tenantId = tenant.id))
 
         // when
@@ -805,8 +811,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should return only campaign keys of the tenant`() = testDispatcherProvider.run {
         //given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
-        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref"))
+        val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref2"))
         campaignRepository.save(
             campaignPrototype.copy(
                 key = "key-1",
@@ -854,8 +860,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should return only campaign keys of the tenant and campaign names patterns`() =
         testDispatcherProvider.run {
             //given
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
-            val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref"))
+            val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref2"))
             campaignRepository.save(
                 campaignPrototype.copy(
                     key = "key-1",
@@ -938,8 +944,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should return campaign keys and names by tenant id and campaign names patterns and campaign keys`() =
         testDispatcherProvider.run {
             //given
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
-            val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref"))
+            val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref2"))
             val instant = Instant.now()
             campaignRepository.save(
                 campaignPrototype.copy(
@@ -1254,7 +1260,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             val start2 = Instant.now().truncatedTo(ChronoUnit.SECONDS) - Duration.ofMinutes(22)
             val end2 = start2 + Duration.ofSeconds(1_236)
 
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
             campaignRepository.saveAll(
                 listOf(
                     campaignPrototype.copy(tenantId = tenant.id, key = "camp-1", start = start1, end = end1),
@@ -1289,7 +1295,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
 
             val start2 = Instant.now().truncatedTo(ChronoUnit.SECONDS) - Duration.ofMinutes(22)
 
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
             campaignRepository.saveAll(
                 listOf(
                     campaignPrototype.copy(tenantId = tenant.id, key = "camp-1", start = start1, end = end1),
@@ -1335,9 +1341,9 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should retrieve the campaign results and their states`() = testDispatcherProvider.run {
         // given
-        val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
-        val tenant3 = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-3", "test-tenant-3"))
+        val savedUser = userRepository.save(UserEntityForTest(username = "my-user-2"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
+        val tenant3 = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-3"))
         val start = Instant.parse("2022-02-22T00:00:00.00Z")
         val end = Instant.parse("2022-02-26T00:00:00.00Z")
         val interval = Duration.ofHours(24)
@@ -1475,8 +1481,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should return campaigns by their execution status`() = testDispatcherProvider.run {
         //given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref", "my-tenant"))
-        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-ref2", "my-tenant2"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref"))
+        val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "tenant-ref2"))
         val campaign1 = campaignRepository.save(
             campaignPrototype.copy(
                 key = "key-1",
@@ -1528,8 +1534,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should retrieve valid campaign details by their tenant and matching campaign keys in`() =
         testDispatcherProvider.run {
             // given
-            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val savedUser = userRepository.save(UserEntityForTest(username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
             val campaign = CampaignEntity(
                 key = "campaign-1",
                 name = "campaign 1",
@@ -1688,8 +1694,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should retrieve valid campaign data details by their tenant and matching campaign name patterns in`() =
         testDispatcherProvider.run {
             // given
-            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val savedUser = userRepository.save(UserEntityForTest(username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
             val campaign = CampaignEntity(
                 key = "campaign-1",
                 name = "campaign 1",
@@ -1813,8 +1819,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should retrieve valid campaign data details by their tenant and scenario names in`() =
         testDispatcherProvider.run {
             // given
-            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val savedUser = userRepository.save(UserEntityForTest(username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
             val campaign = CampaignEntity(
                 key = "campaign-1",
                 name = "campaign 1",
@@ -1955,8 +1961,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should not retrieve any campaign data when no campaign key, patterns or scenario names is passed in`() =
         testDispatcherProvider.run {
             // given
-            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val savedUser = userRepository.save(UserEntityForTest(username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
             val campaign = CampaignEntity(
                 key = "campaign-1",
                 name = "campaign 1",
@@ -2020,9 +2026,9 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should not retrieve any campaign data when a different tenant is passed in`() =
         testDispatcherProvider.run {
             // given
-            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
-            val unknownTenant = tenantRepository.save(TenantEntity(Instant.now(), "unknown-tenant", "unknown Tenant"))
+            val savedUser = userRepository.save(UserEntityForTest(username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
+            val unknownTenant = tenantRepository.save(TenantEntityForTest(reference = "unknown-tenant"))
             val campaign = CampaignEntity(
                 key = "campaign-1",
                 name = "campaign 1",
@@ -2085,8 +2091,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should retrieve the campaign details data that match the given scenario name pattern`() =
         testDispatcherProvider.run {
             // given
-            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val savedUser = userRepository.save(UserEntityForTest(username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
             val campaign = CampaignEntity(
                 key = "campaign-1",
                 name = "campaign 1",
@@ -2227,8 +2233,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should retrieve all campaign details data that match the given campaign keys, patterns or scenario names in`() =
         testDispatcherProvider.run {
             // given
-            val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val savedUser = userRepository.save(UserEntityForTest(username = "my-user-2"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
             val campaign = CampaignEntity(
                 key = "campaign-1",
                 name = "campaign 1",
@@ -2392,8 +2398,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should retrieve a campaign from a its key`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
-        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
+        val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
         val saved1 = campaignRepository.save(
             campaignPrototype.copy(
                 key = "key-1",
@@ -2430,8 +2436,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should retrieve a collection of campaign from a set of keys`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
-        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
+        val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
         val saved1 = campaignRepository.save(
             campaignPrototype.copy(
                 key = "key-1",
@@ -2509,8 +2515,8 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should retrieve a campaign ID from a its key`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
-        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
+        val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
         val saved1 = campaignRepository.save(
             campaignPrototype.copy(
                 key = "key-1",
@@ -2541,7 +2547,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should retrieve a scheduled campaign by its tenant and key`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val saved1 = campaignRepository.save(
             campaignPrototype.copy(
                 key = "key-1",
@@ -2569,7 +2575,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should retrieve no campaign if the status is not scheduled`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         campaignRepository.save(
             campaignPrototype.copy(
                 key = "key-1",
@@ -2587,7 +2593,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     fun `should retrieve a fully populated campaign entity completely by its key`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         campaignRepository.save(
             campaignPrototype.copy(
                 key = "key-1",
@@ -2635,8 +2641,14 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         testDispatcherProvider.run {
             // given
             val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
-            val user = userRepository.save(UserEntity(username = "John Doe"))
-            val saved = campaignRepository.save(campaignPrototype.copy(end = null, tenantId = tenant.id, name = "The other name 1"))
+            val user = userRepository.save(UserEntityForTest(username = "John Doe"))
+            val saved = campaignRepository.save(
+                campaignPrototype.copy(
+                    end = null,
+                    tenantId = tenant.id,
+                    name = "The other name 1"
+                )
+            )
             val saved2 = campaignRepository.save(
                 campaignPrototype.copy(
                     key = "the-key",
@@ -2702,7 +2714,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             }
             assertThat(
                 campaignRepository.findAll(
-                    tenant ="my-tenant-2",
+                    tenant = "my-tenant-2",
                     pageable = Pageable.from(0, 4),
                     excludedStatuses = null
                 )
@@ -2730,7 +2742,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
         testDispatcherProvider.run {
             // given
             val tenant = tenantRepository.save(tenantPrototype.copy(reference = "my-tenant-2"))
-            val user = userRepository.save(UserEntity(username = "John Doe"))
+            val user = userRepository.save(UserEntityForTest(username = "John Doe"))
             val saved2 = campaignRepository.save(
                 campaignPrototype.copy(
                     key = "the-key",
@@ -2762,7 +2774,7 @@ internal class CampaignRepositoryIntegrationTest : PostgresqlTemplateTest() {
             assertThat(
                 campaignRepository.findAll(
                     tenant = "my-tenant-2",
-                    filters  = listOf("%OtH%", "%NoNe%"),
+                    filters = listOf("%OtH%", "%NoNe%"),
                     pageable = Pageable.from(0, 2),
                     excludedStatuses = listOf(SCHEDULED, WARNING)
                 )

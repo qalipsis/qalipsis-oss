@@ -26,7 +26,7 @@ import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.Positive
 
 @ConfigurationProperties("factory")
-internal class FactoryConfiguration {
+class FactoryConfiguration {
 
     /**
      * ID of this factory, defaults to a random generated value which will be replaced after the registration

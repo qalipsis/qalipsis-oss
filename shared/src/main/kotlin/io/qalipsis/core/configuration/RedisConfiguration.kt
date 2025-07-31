@@ -54,7 +54,7 @@ import io.micronaut.context.annotation.Requires
 @Factory
 @Requirements(Requires(env = [ExecutionEnvironments.REDIS]))
 @ExperimentalLettuceCoroutinesApi
-internal class RedisConfiguration {
+class RedisConfiguration {
 
     /**
      * Coroutine commands for a Redis standalone.

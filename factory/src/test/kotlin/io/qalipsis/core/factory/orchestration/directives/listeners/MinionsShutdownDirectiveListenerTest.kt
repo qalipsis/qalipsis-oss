@@ -43,8 +43,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @WithMockk
 internal class MinionsShutdownDirectiveListenerTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK

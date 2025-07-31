@@ -20,14 +20,19 @@
 package io.qalipsis.core.head.campaign
 
 import io.micronaut.context.annotation.Requires
+import io.micronaut.context.annotation.Secondary
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
 
+/**
+ * Default implementation of [ChannelNameFactory].
+ */
 @Singleton
 @Requires(env = [ExecutionEnvironments.HEAD])
-internal class DefaultChannelNameFactory(
+@Secondary
+class DefaultChannelNameFactory(
     private val idGenerator: IdGenerator
 ) : ChannelNameFactory {
 

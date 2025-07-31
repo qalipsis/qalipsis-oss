@@ -26,7 +26,7 @@ import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
  *
  * @author Francisca Eze
  */
-internal interface CampaignConstraintsProvider {
+interface CampaignConstraintsProvider {
 
     /**
      * Supplies an instance of [DefaultCampaignConfiguration].

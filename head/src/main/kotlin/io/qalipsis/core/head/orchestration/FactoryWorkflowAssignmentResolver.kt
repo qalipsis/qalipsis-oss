@@ -28,7 +28,7 @@ import io.qalipsis.core.head.model.Factory
  *
  * @author Eric Jessé
  */
-internal interface FactoryWorkflowAssignmentResolver {
+interface FactoryWorkflowAssignmentResolver {
 
     /**
      * Calculates the DAGs to assign to each factory for the campaign.

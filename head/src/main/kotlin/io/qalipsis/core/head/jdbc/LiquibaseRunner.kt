@@ -45,7 +45,7 @@ import java.util.Properties
  */
 @Singleton
 @Requires(beans = [DatasourceConfiguration::class, LiquibaseConfigurationProperties::class])
-internal class LiquibaseRunner(
+class LiquibaseRunner(
     private val configuration: LiquibaseConfigurationProperties,
     private val datasourceConfiguration: DatasourceConfiguration,
 ) : BeanCreatedEventListener<ConnectionFactory> {

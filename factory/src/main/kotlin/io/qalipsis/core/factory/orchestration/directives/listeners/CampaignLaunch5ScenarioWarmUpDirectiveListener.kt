@@ -43,7 +43,7 @@ import org.slf4j.event.Level
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class CampaignLaunch5ScenarioWarmUpDirectiveListener(
+class CampaignLaunch5ScenarioWarmUpDirectiveListener(
     private val localAssignmentStore: LocalAssignmentStore,
     private val factoryCampaignManager: FactoryCampaignManager,
     private val factoryChannel: FactoryChannel

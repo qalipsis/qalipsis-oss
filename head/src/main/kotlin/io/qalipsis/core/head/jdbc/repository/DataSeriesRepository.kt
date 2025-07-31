@@ -38,7 +38,7 @@ import io.qalipsis.core.head.jdbc.entity.Defaults
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long> {
+interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long> {
 
     @Query(
         """SELECT count(*) > 0

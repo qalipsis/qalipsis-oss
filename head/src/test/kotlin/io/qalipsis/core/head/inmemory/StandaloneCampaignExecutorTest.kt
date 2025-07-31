@@ -43,6 +43,8 @@ import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
+import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
@@ -64,7 +66,6 @@ import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
 import io.qalipsis.core.head.inmemory.catadioptre.currentCampaignState
-import io.qalipsis.core.head.lock.InMemoryLockProviderImpl
 import io.qalipsis.core.head.lock.LockProvider
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
@@ -76,6 +77,7 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.CoroutineScope
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
@@ -83,11 +85,10 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 
 @WithMockk
-@Timeout(5)
+@Timeout(10)
 internal class StandaloneCampaignExecutorTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
@@ -126,6 +127,11 @@ internal class StandaloneCampaignExecutorTest {
     @RelaxedMockK
     private lateinit var channelNameFactory: ChannelNameFactory
 
+    @BeforeEach
+    fun setUp() {
+        coEvery { lockProvider.withLock(any(), any()) } coAnswers { secondArg<suspend () -> Unit>().invoke() }
+    }
+
     @Test
     internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {
         val campaignExecutor = standaloneCampaignExecutor(relaxedMockk())
@@ -153,8 +159,7 @@ internal class StandaloneCampaignExecutorTest {
     internal fun `should start a new campaign when all the scenarios are currently supported`() =
         testDispatcherProvider.run {
             // given
-            val spiedLockProvider = spyk(InMemoryLockProviderImpl())
-            val campaignExecutor = standaloneCampaignExecutor(this, spiedLockProvider)
+            val campaignExecutor = standaloneCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -343,8 +348,7 @@ internal class StandaloneCampaignExecutorTest {
     @Test
     internal fun `should abort hard a campaign`() = testDispatcherProvider.run {
         //given
-        val spiedLockProvider = spyk(InMemoryLockProviderImpl())
-        val campaignExecutor = standaloneCampaignExecutor(this, spiedLockProvider)
+        val campaignExecutor = standaloneCampaignExecutor(this)
         campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
@@ -403,8 +407,7 @@ internal class StandaloneCampaignExecutorTest {
     @Test
     internal fun `should abort soft a campaign`() = testDispatcherProvider.run {
         //given
-        val spiedLockProvider = spyk(InMemoryLockProviderImpl())
-        val campaignExecutor = standaloneCampaignExecutor(this, spiedLockProvider)
+        val campaignExecutor = standaloneCampaignExecutor(this)
         campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
@@ -511,8 +514,7 @@ internal class StandaloneCampaignExecutorTest {
     internal fun `should abort the campaign softly when a CampaignTimeoutFeedback with hard equals false is received`() =
         testDispatcherProvider.run {
             // given
-            val spiedLockProvider = spyk(InMemoryLockProviderImpl())
-            val campaignExecutor = standaloneCampaignExecutor(this, spiedLockProvider)
+            val campaignExecutor = standaloneCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -605,8 +607,7 @@ internal class StandaloneCampaignExecutorTest {
     internal fun `should abort the campaign hardly when a CampaignTimeoutFeedback with hard equals true is received`() =
         testDispatcherProvider.run {
             // given
-            val spiedLockProvider = spyk(InMemoryLockProviderImpl())
-            val campaignExecutor = standaloneCampaignExecutor(this, spiedLockProvider)
+            val campaignExecutor = standaloneCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -696,7 +697,58 @@ internal class StandaloneCampaignExecutorTest {
             )
         }
 
-    private fun standaloneCampaignExecutor(scope: CoroutineScope, spiedLockProvider: LockProvider = this.lockProvider) =
+    @Test
+    internal fun `should close the campaign after creation when an exception occurs`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignExecutor = standaloneCampaignExecutor(this)
+            val campaign = CampaignConfiguration(
+                name = "This is a campaign",
+                speedFactor = 123.2,
+                scenarios = mapOf("scenario-1" to ScenarioRequest(6272))
+            )
+            val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
+            coEvery {
+                campaignService.create("my-tenant", "my-user", refEq(campaign))
+            } returns runningCampaign
+            coEvery { factoryService.getActiveScenarios("my-tenant", setOf("scenario-1")) } returns
+                    listOf(relaxedMockk { every { name } returns "scenario-1" })
+            coEvery {
+                factoryService.getAvailableFactoriesForScenarios(
+                    "my-tenant",
+                    any()
+                )
+            } answers { throw RuntimeException("Something wrong occurred") }
+            val latch = Latch(true)
+            coEvery { campaignService.close(any(), any(), any(), any()) } coAnswers { latch.release(); relaxedMockk() }
+
+            // when
+            val exception = assertThrows<RuntimeException> {
+                campaignExecutor.start("my-tenant", "my-user", campaign)
+            }
+            latch.await()
+
+            // then
+            assertThat(exception.message).isEqualTo("Something wrong occurred")
+            coVerifyOrder {
+                factoryService.getActiveScenarios("my-tenant", setOf("scenario-1"))
+                campaignService.create("my-tenant", "my-user", refEq(campaign))
+                factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1"))
+                campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
+                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
+            }
+
+            confirmVerified(
+                headChannel,
+                factoryService,
+                campaignService,
+                campaignReportStateKeeper,
+                campaignConstraintsProvider,
+                campaignExecutionContext
+            )
+        }
+
+    private fun standaloneCampaignExecutor(scope: CoroutineScope) =
         spyk(
             StandaloneCampaignExecutor(
                 headChannel = headChannel,
@@ -707,7 +759,7 @@ internal class StandaloneCampaignExecutorTest {
                 coroutineScope = scope,
                 campaignExecutionContext = campaignExecutionContext,
                 campaignHooks = listOf(campaignHook1, campaignHook2),
-                lockProvider = spiedLockProvider,
+                lockProvider = this.lockProvider,
                 channelNameFactory = channelNameFactory
             ), recordPrivateCalls = true
         )

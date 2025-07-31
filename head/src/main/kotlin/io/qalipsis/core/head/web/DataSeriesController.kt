@@ -68,7 +68,7 @@ import javax.validation.constraints.PositiveOrZero
     Requires(beans = [DataSeriesService::class])
 )
 @Version("1.0")
-internal class DataSeriesController(
+class DataSeriesController(
     private val dataSeriesService: DataSeriesService,
     private val dataProvider: DataProvider,
 ) {

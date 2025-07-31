@@ -36,10 +36,13 @@ allOpen {
     annotations(
         "io.micronaut.aop.Around",
         "jakarta.inject.Singleton",
+        "io.micronaut.context.annotation.Factory",
         "io.qalipsis.api.annotations.StepConverter",
         "io.qalipsis.api.annotations.StepDecorator",
         "io.qalipsis.api.annotations.PluginComponent",
-        "io.micronaut.validation.Validated"
+        "io.micronaut.context.annotation.Bean",
+        "io.micronaut.validation.Validated",
+        "org.openjdk.jmh.annotations.State"
     )
 }
 

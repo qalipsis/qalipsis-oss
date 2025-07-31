@@ -28,15 +28,17 @@ import io.micronaut.security.annotation.Secured
 import io.micronaut.security.rules.SecurityRule
 import io.micronaut.validation.Validated
 import io.qalipsis.cluster.security.Permissions
+import io.qalipsis.cluster.security.SecurityConfiguration
+import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.campaign.CampaignConfigurationProvider
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
-import io.qalipsis.core.head.model.DefaultValuesCampaignConfiguration
-import io.qalipsis.core.head.model.SecurityConfiguration
-import io.qalipsis.core.head.model.Stage
-import io.qalipsis.core.head.model.Validation
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import javax.validation.constraints.NotBlank
 
 
 /**
@@ -48,9 +50,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 @Controller("/configuration")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
-internal class ConfigurationController(
+class ConfigurationController(
     private val securityConfiguration: SecurityConfiguration,
-    private val defaultCampaignConfiguration: DefaultCampaignConfiguration
+    private val campaignConfigurationProvider: CampaignConfigurationProvider,
 ) {
 
     /**
@@ -71,7 +73,7 @@ internal class ConfigurationController(
     }
 
     /**
-     * REST endpoint to returns the default and validation values to create a new campaign.
+     * REST endpoint to return the default and validation values to create a new campaign.
      */
     @Get("/campaign")
     @Operation(
@@ -91,25 +93,14 @@ internal class ConfigurationController(
     )
     @Secured(Permissions.WRITE_CAMPAIGN)
     @Timed("configuration-campaign")
-    suspend fun campaign(): DefaultCampaignConfiguration {
-        return DefaultValuesCampaignConfiguration(
-            validation = Validation(
-                maxMinionsCount = defaultCampaignConfiguration.validation.maxMinionsCount,
-                maxExecutionDuration = defaultCampaignConfiguration.validation.maxExecutionDuration,
-                maxScenariosCount = defaultCampaignConfiguration.validation.maxScenariosCount,
-                stage = Stage(
-                    minMinionsCount = defaultCampaignConfiguration.validation.stage.minMinionsCount,
-                    maxMinionsCount = defaultCampaignConfiguration.validation.stage.maxMinionsCount
-                        ?: defaultCampaignConfiguration.validation.maxMinionsCount,
-                    minResolution = defaultCampaignConfiguration.validation.stage.minResolution,
-                    maxResolution = defaultCampaignConfiguration.validation.stage.maxResolution,
-                    minDuration = defaultCampaignConfiguration.validation.stage.minDuration,
-                    maxDuration = defaultCampaignConfiguration.validation.stage.maxDuration
-                        ?: defaultCampaignConfiguration.validation.maxExecutionDuration,
-                    minStartDuration = defaultCampaignConfiguration.validation.stage.minStartDuration,
-                    maxStartDuration = defaultCampaignConfiguration.validation.stage.maxStartDuration
-                )
-            )
-        )
+    suspend fun campaign(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String
+    ): DefaultCampaignConfiguration {
+        return campaignConfigurationProvider.retrieveCampaignConfigurationDetails(tenant)
     }
 }

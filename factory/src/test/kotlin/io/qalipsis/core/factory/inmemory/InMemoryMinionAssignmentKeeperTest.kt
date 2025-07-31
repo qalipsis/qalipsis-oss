@@ -55,8 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 internal class InMemoryMinionAssignmentKeeperTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @SpyK

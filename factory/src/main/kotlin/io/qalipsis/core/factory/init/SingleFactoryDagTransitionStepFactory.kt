@@ -37,7 +37,7 @@ import jakarta.inject.Singleton
  */
 @Singleton
 @Requires(missingBeans = [DagTransitionStepFactory::class])
-internal class SingleFactoryDagTransitionStepFactory(
+class SingleFactoryDagTransitionStepFactory(
     private val factoryCampaignManager: FactoryCampaignManager,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
 ) : DagTransitionStepFactory {

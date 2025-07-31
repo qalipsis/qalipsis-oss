@@ -51,7 +51,7 @@ import java.time.Instant
     Requires(env = [ExecutionEnvironments.HEAD]),
     Requires(notEnv = [ExecutionEnvironments.SINGLE_HEAD])
 )
-internal class HazelcastFactory(
+class HazelcastFactory(
     private val environment: Environment,
     @Nullable private val redisSetAsyncCommands: RedisSortedSetAsyncCommands<String, String>?,
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,

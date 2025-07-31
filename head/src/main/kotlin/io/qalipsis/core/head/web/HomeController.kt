@@ -39,7 +39,7 @@ import io.swagger.v3.oas.annotations.info.Info
 )
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Controller("/")
-internal class HomeController {
+class HomeController {
 
     @Hidden
     @Get(produces = [MediaType.TEXT_PLAIN])

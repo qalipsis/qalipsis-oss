@@ -27,7 +27,7 @@ import io.micronaut.core.annotation.Introspected
  * @author Palina Bril
  */
 @Introspected
-internal enum class SharingMode {
+enum class SharingMode {
     READONLY, WRITE, NONE
 }
 
@@ -37,6 +37,6 @@ internal enum class SharingMode {
  * @author Palina Bril
  */
 @Introspected
-internal enum class DataType {
+enum class DataType {
     METERS, EVENTS
 }

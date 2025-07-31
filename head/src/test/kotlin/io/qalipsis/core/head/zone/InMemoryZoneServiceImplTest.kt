@@ -31,8 +31,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @WithMockk
 internal class InMemoryZoneServiceImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @InjectMockKs

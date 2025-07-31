@@ -41,11 +41,11 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignScenarioEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
-import io.qalipsis.core.head.jdbc.repository.TenantRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
+import io.qalipsis.core.head.security.TenantProvider
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.core.head.web.handler.BulkIllegalArgumentException
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -60,8 +60,7 @@ import java.time.Instant
 @WithMockk
 internal class CampaignPreparatorTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
@@ -71,10 +70,10 @@ internal class CampaignPreparatorTest {
     private lateinit var campaignScenarioRepository: CampaignScenarioRepository
 
     @RelaxedMockK
-    private lateinit var userRepository: UserRepository
+    private lateinit var userProvider: UserProvider
 
     @RelaxedMockK
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantProvider: TenantProvider
 
     @RelaxedMockK
     private lateinit var campaignConfigurationConverter: CampaignConfigurationConverter
@@ -91,8 +90,8 @@ internal class CampaignPreparatorTest {
     internal fun setUp() {
         campaignPreparator = spyk(
             CampaignPreparator(
-                userRepository = userRepository,
-                tenantRepository = tenantRepository,
+                userProvider = userProvider,
+                tenantProvider = tenantProvider,
                 campaignRepository = campaignRepository,
                 campaignScenarioRepository = campaignScenarioRepository,
                 campaignConfigurationConverter = campaignConfigurationConverter,
@@ -123,7 +122,7 @@ internal class CampaignPreparatorTest {
         val savedEntity = relaxedMockk<CampaignEntity> {
             every { id } returns 8126
         }
-        coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
+        coEvery { tenantProvider.findIdByReference("my-tenant") } returns 8165L
         coEvery {
             campaignConfigurationConverter.convertConfiguration(
                 "my-tenant",
@@ -131,7 +130,7 @@ internal class CampaignPreparatorTest {
             )
         } returns runningCampaign
         coEvery { campaignRepository.save(any()) } returns savedEntity
-        coEvery { userRepository.findIdByUsername("my-user") } returns 199
+        coEvery { userProvider.findIdByUsername("my-user") } returns 199
 
         // when
         val result = campaignPreparator.convertAndSaveCampaign(
@@ -147,8 +146,8 @@ internal class CampaignPreparatorTest {
             campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(campaign))
             hook1.preCreate(refEq(campaign), refEq(runningCampaign))
             hook2.preCreate(refEq(campaign), refEq(runningCampaign))
-            tenantRepository.findIdByReference("my-tenant")
-            userRepository.findIdByUsername("my-user")
+            tenantProvider.findIdByReference("my-tenant")
+            userProvider.findIdByUsername("my-user")
             campaignRepository.save(withArg {
                 assertThat(it).all {
                     prop(CampaignEntity::key).isEqualTo("my-campaign")
@@ -172,8 +171,8 @@ internal class CampaignPreparatorTest {
         }
 
         confirmVerified(
-            userRepository,
-            tenantRepository,
+            userProvider,
+            tenantProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignConfigurationConverter,
@@ -233,8 +232,8 @@ internal class CampaignPreparatorTest {
             }
 
             confirmVerified(
-                userRepository,
-                tenantRepository,
+                userProvider,
+                tenantProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConfigurationConverter,
@@ -297,8 +296,8 @@ internal class CampaignPreparatorTest {
             }
 
             confirmVerified(
-                userRepository,
-                tenantRepository,
+                userProvider,
+                tenantProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConfigurationConverter,
@@ -359,8 +358,8 @@ internal class CampaignPreparatorTest {
             }
 
             confirmVerified(
-                userRepository,
-                tenantRepository,
+                userProvider,
+                tenantProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConfigurationConverter,
@@ -395,7 +394,7 @@ internal class CampaignPreparatorTest {
             every { id } returns 8126
         }
 
-        coEvery { tenantRepository.findIdByReference("my-tenant") } returns 8165L
+        coEvery { tenantProvider.findIdByReference("my-tenant") } returns 8165L
         coEvery {
             campaignConfigurationConverter.convertConfiguration(
                 "my-tenant",
@@ -403,7 +402,7 @@ internal class CampaignPreparatorTest {
             )
         } returns runningCampaign
         coEvery { campaignRepository.save(any()) } returns savedEntity
-        coEvery { userRepository.findIdByUsername("my-user") } returns 199
+        coEvery { userProvider.findIdByUsername("my-user") } returns 199
         // when
         val result = campaignPreparator.convertAndSaveCampaign(
             "my-tenant",
@@ -418,8 +417,8 @@ internal class CampaignPreparatorTest {
             campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(configuration))
             hook1.preSchedule(refEq(configuration), refEq(runningCampaign))
             hook2.preSchedule(refEq(configuration), refEq(runningCampaign))
-            tenantRepository.findIdByReference("my-tenant")
-            userRepository.findIdByUsername("my-user")
+            tenantProvider.findIdByReference("my-tenant")
+            userProvider.findIdByUsername("my-user")
             campaignRepository.save(withArg {
                 assertThat(it).all {
                     prop(CampaignEntity::key).isEqualTo("my-campaign")
@@ -443,8 +442,8 @@ internal class CampaignPreparatorTest {
         }
 
         confirmVerified(
-            userRepository,
-            tenantRepository,
+            userProvider,
+            tenantProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignConfigurationConverter,
@@ -504,8 +503,8 @@ internal class CampaignPreparatorTest {
             }
 
             confirmVerified(
-                userRepository,
-                tenantRepository,
+                userProvider,
+                tenantProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConfigurationConverter,
@@ -568,8 +567,8 @@ internal class CampaignPreparatorTest {
             }
 
             confirmVerified(
-                userRepository,
-                tenantRepository,
+                userProvider,
+                tenantProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConfigurationConverter,
@@ -630,8 +629,8 @@ internal class CampaignPreparatorTest {
             }
 
             confirmVerified(
-                userRepository,
-                tenantRepository,
+                userProvider,
+                tenantProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConfigurationConverter,

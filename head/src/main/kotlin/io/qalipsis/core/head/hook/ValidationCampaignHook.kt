@@ -22,9 +22,9 @@ package io.qalipsis.core.head.hook
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
-import io.qalipsis.core.head.zone.ZoneService
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.web.handler.BulkIllegalArgumentException
+import io.qalipsis.core.head.zone.ZoneService
 import jakarta.inject.Singleton
 
 /**
@@ -33,7 +33,7 @@ import jakarta.inject.Singleton
  * @author Joël Valère
  */
 @Singleton
-internal class ValidationCampaignHook(
+class ValidationCampaignHook(
     private val campaignConstraints: DefaultCampaignConfiguration.Validation,
     private val zoneService: ZoneService,
 ) : CampaignHook {

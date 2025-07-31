@@ -46,7 +46,7 @@ import kotlin.math.ceil
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(missingBeans = [FactoryWorkflowAssignmentResolver::class])
 )
-internal class BalancedScenarioFactoryWorkflowAssignmentResolver(
+class BalancedScenarioFactoryWorkflowAssignmentResolver(
     factoryService: FactoryService
 ) : AbstractFactoryWorkflowAssignmentResolver(factoryService) {
 

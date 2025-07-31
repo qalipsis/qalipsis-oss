@@ -45,8 +45,7 @@ import java.time.temporal.ChronoUnit
 @WithMockk
 internal class ReportsPurgeManagerTest {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK

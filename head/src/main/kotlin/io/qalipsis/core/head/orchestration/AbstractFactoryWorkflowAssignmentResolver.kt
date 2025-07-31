@@ -35,7 +35,7 @@ import io.qalipsis.core.head.model.Factory
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractFactoryWorkflowAssignmentResolver(
+abstract class AbstractFactoryWorkflowAssignmentResolver(
     private val factoryService: FactoryService
 ) : FactoryWorkflowAssignmentResolver {
 

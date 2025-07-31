@@ -40,7 +40,7 @@ import java.util.concurrent.Callable
     mixinStandardHelpOptions = true,
     versionProvider = VersionProviderWithVariables::class
 )
-internal class QalipsisBootstrap : Callable<Unit> {
+class QalipsisBootstrap : Callable<Unit> {
 
     @Option(
         names = ["-p", "--prompt"], description = ["Prompts for campaign configuration."],

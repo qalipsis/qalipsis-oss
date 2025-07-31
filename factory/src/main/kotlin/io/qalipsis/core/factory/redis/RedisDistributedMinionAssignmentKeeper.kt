@@ -63,7 +63,7 @@ import kotlinx.coroutines.withTimeout
     Requires(notEnv = [ExecutionEnvironments.SINGLE_FACTORY]),
     Requires(property = "factory.assignment.strategy", value = "distributed-minion")
 )
-internal class RedisDistributedMinionAssignmentKeeper(
+class RedisDistributedMinionAssignmentKeeper(
     private val factoryConfiguration: FactoryConfiguration,
     private val scenarioRegistry: ScenarioRegistry,
     communicationChannelConfiguration: CommunicationChannelConfiguration,

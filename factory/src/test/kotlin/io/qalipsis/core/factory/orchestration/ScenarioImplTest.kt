@@ -51,8 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @WithMockk
 internal class ScenarioImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK

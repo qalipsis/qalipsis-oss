@@ -49,7 +49,7 @@ import kotlin.coroutines.CoroutineContext
  * consecutively on different factories.
  * </p>
  */
-internal open class MinionImpl(
+open class MinionImpl(
     override val id: MinionId,
     override val campaignKey: CampaignKey,
     override val scenarioName: ScenarioName,

@@ -32,7 +32,7 @@ import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.head.model.Factory
 
-internal open class FactoryAssignmentState(
+open class FactoryAssignmentState(
     protected val campaign: RunningCampaign,
     private val factories: Collection<Factory>,
     private val scenarios: Collection<ScenarioSummary>

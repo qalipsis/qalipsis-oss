@@ -46,7 +46,7 @@ import javax.validation.constraints.PositiveOrZero
  */
 @Requires(env = [ExecutionEnvironments.AUTOSTART])
 @ConfigurationProperties("campaign")
-internal class AutostartCampaignConfiguration {
+class AutostartCampaignConfiguration {
 
     @get:NotBlank
     lateinit var name: String

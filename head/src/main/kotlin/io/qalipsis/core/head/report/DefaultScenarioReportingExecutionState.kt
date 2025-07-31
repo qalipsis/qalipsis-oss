@@ -29,7 +29,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-internal data class DefaultScenarioReportingExecutionState(
+data class DefaultScenarioReportingExecutionState(
     override val scenarioName: ScenarioName,
     override val start: Instant,
     override val startedMinions: Int,

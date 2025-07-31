@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.steps.SimpleStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class SimpleStepSpecificationConverter : StepSpecificationConverter<SimpleStepSpecification<*, *>> {
+class SimpleStepSpecificationConverter : StepSpecificationConverter<SimpleStepSpecification<*, *>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
         return stepSpecification is SimpleStepSpecification

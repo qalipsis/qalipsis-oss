@@ -69,8 +69,7 @@ import java.time.Instant
 @MicronautTest
 internal class ThymeleafReportServiceImplTest {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK

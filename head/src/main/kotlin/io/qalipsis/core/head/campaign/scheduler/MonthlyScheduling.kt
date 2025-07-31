@@ -14,7 +14,7 @@ import javax.validation.constraints.NotBlank
  */
 
 @Singleton
-internal class MonthlyScheduling(
+class MonthlyScheduling(
     @field:Schema(
         description = "The time zone ID to use to schedule the test",
         required = true,

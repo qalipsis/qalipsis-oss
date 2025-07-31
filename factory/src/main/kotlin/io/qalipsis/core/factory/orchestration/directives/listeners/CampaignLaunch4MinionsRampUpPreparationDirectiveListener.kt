@@ -46,7 +46,7 @@ import java.time.Duration
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class CampaignLaunch4MinionsRampUpPreparationDirectiveListener(
+class CampaignLaunch4MinionsRampUpPreparationDirectiveListener(
     private val factoryChannel: FactoryChannel,
     private val factoryCampaignManager: FactoryCampaignManager,
     private val minionAssignmentKeeper: MinionAssignmentKeeper

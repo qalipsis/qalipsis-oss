@@ -29,7 +29,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-internal class MapWithContextStep<I, O>(
+class MapWithContextStep<I, O>(
     id: StepName,
     retryPolicy: RetryPolicy?,
     @Suppress("UNCHECKED_CAST") private val block: ((context: StepContext<I, O>, input: I) -> O) = { _, value -> value as O }

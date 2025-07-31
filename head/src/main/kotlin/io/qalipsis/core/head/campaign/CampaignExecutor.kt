@@ -28,7 +28,7 @@ import io.qalipsis.core.head.model.CampaignConfiguration
  *
  * @author Eric Jessé
  */
-internal interface CampaignExecutor {
+interface CampaignExecutor {
 
     /**
      * Starts a new campaign with the provided configuration.

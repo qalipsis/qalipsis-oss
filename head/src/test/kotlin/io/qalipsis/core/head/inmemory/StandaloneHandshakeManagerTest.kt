@@ -70,8 +70,7 @@ internal class StandaloneHandshakeManagerTest {
         every { headConfiguration.heartbeatDelay } returns Duration.ofSeconds(123)
     }
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test

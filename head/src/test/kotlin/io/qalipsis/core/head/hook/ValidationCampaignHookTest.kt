@@ -55,8 +55,7 @@ import java.time.Duration
 @WithMockk
 internal class ValidationCampaignHookTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

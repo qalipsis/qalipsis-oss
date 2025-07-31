@@ -21,35 +21,40 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.isDataClassEqualTo
+import assertk.assertions.doesNotContain
 import assertk.assertions.hasSize
+import assertk.assertions.index
+import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
-import assertk.assertions.doesNotContain
-import assertk.assertions.index
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
 import io.qalipsis.core.head.jdbc.entity.ZoneEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.zone.ZoneTenantEntity
 import io.qalipsis.core.head.zone.ZoneTenantId
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.net.URL
-import java.time.Instant
 
 /**
  * @author Francisca Eze
  */
-internal class ZoneRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class ZoneRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     @Inject
     private lateinit var zoneRepository: ZoneRepository
 
     @Inject
-    private lateinit var zoneTenantRepository: ZoneTenantRepository
+    private lateinit var zoneTenantRepository: ZoneTenantRepositoryForTest
 
     private val zone = ZoneEntity(
         key = "EU",
@@ -88,8 +93,8 @@ internal class ZoneRepositoryIntegrationTest : PostgresqlTemplateTest() {
     fun `should only list the zones allowable to a specific tenant or to no tenant at all`() =
         testDispatcherProvider.run {
             // given
-            val tenant1 = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-1", "test-tenant-1"))
-            val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+            val tenant1 = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-1"))
+            val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
             val zoneEntity = zoneRepository.save(zone)
             val zoneEntity2 = zoneRepository.save(zone.copy(key = "CH"))
             val zoneEntity3 = zoneRepository.save(zone.copy(key = "AS", description = null, imagePath = null))

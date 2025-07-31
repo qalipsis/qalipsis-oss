@@ -31,7 +31,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-internal class CatchExhaustedContextStep<O>(
+class CatchExhaustedContextStep<O>(
     id: StepName,
     private val block: (suspend (context: StepContext<*, O>) -> Unit)
 ) : AbstractStep<Any?, O>(id, null) {

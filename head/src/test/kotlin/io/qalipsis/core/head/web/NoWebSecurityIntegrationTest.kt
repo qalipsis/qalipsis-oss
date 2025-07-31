@@ -21,7 +21,7 @@ package io.qalipsis.core.head.web
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.containsAll
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
@@ -34,7 +34,7 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
-import io.qalipsis.cluster.security.RoleName
+import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.web.AuthenticatedController.CallResult
@@ -72,10 +72,8 @@ internal class NoWebSecurityIntegrationTest {
             transform("status") { it.status() }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isNotNull().all {
                 prop(CallResult::tenant).isEqualTo(Defaults.TENANT)
-                prop(CallResult::name).isEqualTo(Defaults.USER)
-                prop(CallResult::roles).containsAll(
-                    *RoleName.values().asSequence().flatMap { it.permissions }.toSet().toTypedArray()
-                )
+                prop(CallResult::name).isEqualTo(Defaults.USERNAME)
+                prop(CallResult::roles).containsExactlyInAnyOrder(*Permissions.ALL_PERMISSIONS.toTypedArray())
             }
         }
     }
@@ -91,10 +89,8 @@ internal class NoWebSecurityIntegrationTest {
             transform("status") { it.status() }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body() }.isNotNull().all {
                 prop(CallResult::tenant).isEqualTo(Defaults.TENANT)
-                prop(CallResult::name).isEqualTo(Defaults.USER)
-                prop(CallResult::roles).containsAll(
-                    *RoleName.values().asSequence().flatMap { it.permissions }.toSet().toTypedArray()
-                )
+                prop(CallResult::name).isEqualTo(Defaults.USERNAME)
+                prop(CallResult::roles).containsExactlyInAnyOrder(*Permissions.ALL_PERMISSIONS.toTypedArray())
             }
         }
     }

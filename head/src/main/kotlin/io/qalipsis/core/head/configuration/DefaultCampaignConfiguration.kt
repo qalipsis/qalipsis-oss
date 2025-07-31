@@ -33,7 +33,7 @@ import javax.validation.constraints.Positive
  */
 
 @ConfigurationProperties("campaign.configuration")
-internal interface DefaultCampaignConfiguration {
+interface DefaultCampaignConfiguration {
 
     val validation: Validation
 

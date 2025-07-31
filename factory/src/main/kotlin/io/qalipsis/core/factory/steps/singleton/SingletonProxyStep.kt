@@ -32,7 +32,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-internal class SingletonProxyStep<I>(
+class SingletonProxyStep<I>(
     id: StepName,
 
     /**

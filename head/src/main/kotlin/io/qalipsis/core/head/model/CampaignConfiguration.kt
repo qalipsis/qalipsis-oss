@@ -45,7 +45,7 @@ import javax.validation.constraints.Size
     name = "Describe the details of a campaign to execute",
     title = "Details for the campaign configuration to start a new campaign into QALIPSIS"
 )
-internal data class CampaignConfiguration(
+data class CampaignConfiguration(
     @field:Schema(description = "Name of the campaign", required = true)
     @field:NotBlank
     @field:Size(min = 3, max = 300)
@@ -105,7 +105,7 @@ internal data class CampaignConfiguration(
     name = "ScenarioConfiguration request",
     title = "Details for the scenario configuration to start a new campaign into QALIPSIS"
 )
-internal data class ScenarioRequest(
+data class ScenarioRequest(
     @field:Schema(
         description = "Counts of minions that will be assigned to the scenario, when not defined by the execution profile",
         example = "100"

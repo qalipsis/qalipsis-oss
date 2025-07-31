@@ -62,8 +62,7 @@ import java.util.concurrent.TimeoutException
 @WithMockk
 internal class StandaloneCampaignReportStateKeeperImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     private val idGenerator = TestIdGenerator

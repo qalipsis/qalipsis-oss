@@ -34,7 +34,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisAbortingState(
+class RedisAbortingState(
     campaign: RunningCampaign,
     abortConfiguration: AbortRunningCampaign,
     error: String,

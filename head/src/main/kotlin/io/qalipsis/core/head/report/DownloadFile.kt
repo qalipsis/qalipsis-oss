@@ -24,7 +24,7 @@ package io.qalipsis.core.head.report
  *
  * @author Francisca Eze
  */
-internal data class DownloadFile(val filename: String, val content: ByteArray) {
+data class DownloadFile(val filename: String, val content: ByteArray) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

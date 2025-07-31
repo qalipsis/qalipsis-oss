@@ -29,7 +29,7 @@ import jakarta.inject.Singleton
  * @author Eric Jessé
  */
 @Singleton
-internal class CommunicationChannelConfiguration : CampaignLifeCycleAware {
+class CommunicationChannelConfiguration : CampaignLifeCycleAware {
 
     /**
      * Unicast channel used by the factory to consume from.

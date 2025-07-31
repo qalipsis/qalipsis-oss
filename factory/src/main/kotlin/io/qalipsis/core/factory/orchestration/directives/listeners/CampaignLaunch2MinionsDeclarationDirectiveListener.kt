@@ -51,7 +51,7 @@ import org.slf4j.event.Level
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class CampaignLaunch2MinionsDeclarationDirectiveListener(
+class CampaignLaunch2MinionsDeclarationDirectiveListener(
     private val scenarioRegistry: ScenarioRegistry,
     private val factoryChannel: FactoryChannel,
     private val idGenerator: IdGenerator,

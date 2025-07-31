@@ -42,7 +42,7 @@ import java.util.Optional
  *
  * @author Eric Jessé
  */
-internal class QalipsisApplicationContext(
+class QalipsisApplicationContext(
     private val role: DeploymentRole
 ) {
 

@@ -34,7 +34,7 @@ import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface CampaignReportRepository : CoroutineCrudRepository<CampaignReportEntity, Long> {
+interface CampaignReportRepository : CoroutineCrudRepository<CampaignReportEntity, Long> {
 
     @Join(value = "scenariosReports", type = Join.Type.LEFT_FETCH)
     suspend fun findByCampaignId(campaignId: Long): CampaignReportEntity?

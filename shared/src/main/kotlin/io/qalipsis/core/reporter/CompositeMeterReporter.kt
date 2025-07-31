@@ -26,7 +26,7 @@ import jakarta.inject.Singleton
 
 @Singleton
 @Primary
-internal class CompositeMeterReporter(private val meterReports: Collection<MeterReporter>) : MeterReporter {
+class CompositeMeterReporter(private val meterReports: Collection<MeterReporter>) : MeterReporter {
 
     override fun <T : Meter<*>> report(
         meter: T,

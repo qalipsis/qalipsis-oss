@@ -37,7 +37,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     JsonSubTypes.Type(value = DiagramCreationAndUpdateRequest::class, name = "DIAGRAM"),
     JsonSubTypes.Type(value = DataTableCreationAndUpdateRequest::class, name = "DATA_TABLE")
 )
-internal interface DataComponentCreationAndUpdateRequest{
+interface DataComponentCreationAndUpdateRequest {
     val type: DataComponentType
 }
 
@@ -49,7 +49,7 @@ internal interface DataComponentCreationAndUpdateRequest{
     name = "A diagram",
     title = "Creation or update of a data component to draw a diagram"
 )
-internal data class DiagramCreationAndUpdateRequest(
+data class DiagramCreationAndUpdateRequest(
     var dataSeriesReferences: List<String> = emptyList()
 ) : DataComponentCreationAndUpdateRequest {
 
@@ -68,7 +68,7 @@ internal data class DiagramCreationAndUpdateRequest(
     name = "A table for time-series data",
     title = "Creation or update of a data component to display tabular time-series data"
 )
-internal data class DataTableCreationAndUpdateRequest(
+data class DataTableCreationAndUpdateRequest(
     var dataSeriesReferences: List<String> = emptyList()
 ) : DataComponentCreationAndUpdateRequest {
 

@@ -21,19 +21,20 @@ package io.qalipsis.core.head.jdbc.entity
 
 import io.qalipsis.core.head.model.Profile
 import io.qalipsis.core.head.model.Tenant
-import io.qalipsis.core.head.security.User
+import io.qalipsis.core.head.security.QalipsisUser
+import java.time.Instant
 
 /**
  * Constants for the default values.
  *
  * @author Eric Jessé
  */
-internal object Defaults {
+object Defaults {
 
     /**
      * Username of QALIPSIS default user.
      */
-    const val USER = "_qalipsis_"
+    const val USERNAME = "_qalipsis_"
 
     /**
      * Reference of QALIPSIS default tenant.
@@ -44,7 +45,7 @@ internal object Defaults {
      * Profile of QALIPSIS default user.
      */
     val PROFILE = Profile(
-        user = User(tenant = TENANT, username = USER),
-        tenants = setOf(Tenant(TENANT, ""))
+        user = QalipsisUser(tenant = TENANT, username = USERNAME),
+        tenants = setOf(Tenant(TENANT, "", Instant.now()))
     )
 }

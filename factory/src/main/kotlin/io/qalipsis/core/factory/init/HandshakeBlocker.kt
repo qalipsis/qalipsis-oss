@@ -51,7 +51,7 @@ import java.util.Optional
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY])
-internal class HandshakeBlocker(
+class HandshakeBlocker(
     private val handshakeConfiguration: FactoryConfiguration.HandshakeConfiguration,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val coroutineScope: CoroutineScope,
 ) : FactoryStartupComponent, ProcessBlocker, ProcessExitCodeSupplier, DirectiveListener<FactoryShutdownDirective> {

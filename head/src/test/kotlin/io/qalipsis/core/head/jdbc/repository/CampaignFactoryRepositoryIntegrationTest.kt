@@ -28,18 +28,24 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignFactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.time.Instant
 
-internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class CampaignFactoryRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
     private lateinit var factoryRepository: FactoryRepository
@@ -51,7 +57,7 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
     private lateinit var campaignFactoryRepository: CampaignFactoryRepository
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     private val campaignPrototype =
         CampaignEntity(
@@ -84,7 +90,7 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
     internal fun `should save then update the discarded flag`() =
         testDispatcherProvider.run {
             // given
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntityForTest("my-tenant"))
             val campaign = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
             val factory1 = factoryRepository.save(factoryPrototype.copy(tenantId = tenant.id))
             val factory2 = factoryRepository.save(factoryPrototype.copy(nodeId = "other-factory", tenantId = tenant.id))
@@ -120,7 +126,7 @@ internal class CampaignFactoryRepositoryIntegrationTest : PostgresqlTemplateTest
     fun `should update the version when the entity is updated`() =
         testDispatcherProvider.run {
             // given
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntityForTest("my-tenant"))
             val campaign = campaignRepository.save(campaignPrototype.copy(tenantId = tenant.id))
             val factory = factoryRepository.save(factoryPrototype.copy(tenantId = tenant.id))
             val saved =

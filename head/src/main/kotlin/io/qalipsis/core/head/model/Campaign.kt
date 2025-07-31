@@ -35,7 +35,7 @@ import javax.validation.constraints.PositiveOrZero
     name = "Campaign details",
     title = "Details of a running or completed campaign"
 )
-internal open class Campaign(
+open class Campaign(
     @field:Schema(description = "Last change of the campaign", required = true)
     val version: Instant,
 

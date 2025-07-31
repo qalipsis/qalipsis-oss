@@ -26,7 +26,7 @@ import java.time.Instant
  *
  * @author Francisca Eze
  */
-internal interface WidgetService {
+interface WidgetService {
 
     /**
      * Fetches the latest factory states per tenant.

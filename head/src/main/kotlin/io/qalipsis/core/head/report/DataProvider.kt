@@ -24,7 +24,7 @@ import io.qalipsis.api.report.DataField
 import javax.validation.constraints.Max
 import javax.validation.constraints.Positive
 
-internal interface DataProvider {
+interface DataProvider {
 
     /**
      * Searches names of events in the tenant, matching the filters if specified.

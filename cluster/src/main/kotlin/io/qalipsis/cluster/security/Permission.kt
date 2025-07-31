@@ -20,7 +20,7 @@
 package io.qalipsis.cluster.security
 
 /**
- * Security permission granted to a [User] or [RoleName].
+ * Security permission granted to a [User].
  */
 typealias Permission = String
 
@@ -28,6 +28,7 @@ object Permissions {
 
     const val WRITE_CAMPAIGN = "write:campaign"
     const val READ_CAMPAIGN = "read:campaign"
+    const val ABORT_CAMPAIGN = "abort:campaign"
     const val READ_SCENARIO = "read:scenario"
     const val WRITE_DATA_SERIES = "write:series"
     const val READ_DATA_SERIES = "read:series"
@@ -36,37 +37,24 @@ object Permissions {
     const val READ_TIME_SERIES = "read:time-series"
     const val WRITE_DATA_SERIES_PREPARED_QUERIES = "write:series-prepared-queries"
 
-    val FOR_TESTER = setOf(
+    private val REGISTERED_PERMISSIONS = mutableSetOf(
         WRITE_CAMPAIGN,
         READ_CAMPAIGN,
-        READ_SCENARIO,
-        WRITE_DATA_SERIES,
-        READ_TIME_SERIES,
-    )
-
-    val FOR_REPORTER = setOf(
-        READ_CAMPAIGN,
-        READ_SCENARIO,
-        READ_DATA_SERIES,
-        WRITE_DATA_SERIES,
-        READ_REPORT,
-        WRITE_REPORT,
-        WRITE_DATA_SERIES,
-        READ_TIME_SERIES,
-    )
-
-    val FOR_TENANT_ADMINISTRATOR = emptySet<Permission>()
-
-    val ALL_PERMISSIONS = setOf(
-        WRITE_CAMPAIGN,
-        READ_CAMPAIGN,
+        ABORT_CAMPAIGN,
         READ_SCENARIO,
         WRITE_DATA_SERIES,
         READ_DATA_SERIES,
         READ_REPORT,
         WRITE_REPORT,
-        READ_DATA_SERIES,
         READ_TIME_SERIES,
+        WRITE_DATA_SERIES_PREPARED_QUERIES
     )
+
+    fun register(vararg permissions: Permission) {
+        REGISTERED_PERMISSIONS.addAll(permissions)
+    }
+
+    val ALL_PERMISSIONS: Set<String>
+        get() = REGISTERED_PERMISSIONS
 
 }

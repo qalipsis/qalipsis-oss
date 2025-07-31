@@ -17,7 +17,7 @@ import io.qalipsis.core.head.model.Zone
  * @author Francisca Eze
  */
 @Introspected
-internal data class CampaignReportDetail(
+data class CampaignReportDetail(
     val reportName: String,
     val campaignData: Collection<CampaignData>,
     val tableData: Collection<Collection<TimeSeriesRecord>>,
@@ -30,7 +30,7 @@ internal data class CampaignReportDetail(
  *
  */
 @Introspected
-internal data class CampaignData(
+data class CampaignData(
     val name: String,
     val zones: Set<String> = emptySet(),
     val result: ExecutionStatus?,

@@ -24,6 +24,6 @@ package io.qalipsis.core.head.jdbc.entity
  *
  * @author rklymenko
  */
-internal interface Entity {
+interface Entity {
     val id: Long
 }

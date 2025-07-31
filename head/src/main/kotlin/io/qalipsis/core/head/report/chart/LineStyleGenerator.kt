@@ -28,7 +28,7 @@ import java.awt.BasicStroke
  * @author Francisca Eze
  */
 @Singleton
-internal class LineStyleGenerator {
+class LineStyleGenerator {
 
     private lateinit var lineStore: List<BasicStroke>
 

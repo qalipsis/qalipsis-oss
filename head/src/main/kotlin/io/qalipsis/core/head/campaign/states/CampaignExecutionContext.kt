@@ -36,7 +36,7 @@ import jakarta.inject.Singleton
  * @author Eric Jessé
  */
 @Singleton
-internal class CampaignExecutionContext(
+class CampaignExecutionContext(
     val campaignService: CampaignService,
     val factoryService: FactoryService,
     val campaignReportStateKeeper: CampaignReportStateKeeper,

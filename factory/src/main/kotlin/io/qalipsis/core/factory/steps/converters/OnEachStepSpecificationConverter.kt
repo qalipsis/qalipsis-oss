@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.steps.OnEachStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class OnEachStepSpecificationConverter : StepSpecificationConverter<OnEachStepSpecification<*>> {
+class OnEachStepSpecificationConverter : StepSpecificationConverter<OnEachStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
         return stepSpecification is OnEachStepSpecification

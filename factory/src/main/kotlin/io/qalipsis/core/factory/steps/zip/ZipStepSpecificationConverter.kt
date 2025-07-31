@@ -42,7 +42,7 @@ import kotlinx.coroutines.CoroutineScope
  * @author Polina Bril
  */
 @StepConverter
-internal class ZipStepSpecificationConverter(
+class ZipStepSpecificationConverter(
     private val idGenerator: IdGenerator,
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : StepSpecificationConverter<ZipStepSpecification<*, *>> {

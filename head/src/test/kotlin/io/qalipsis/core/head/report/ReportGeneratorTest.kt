@@ -61,8 +61,7 @@ import java.time.temporal.ChronoUnit
 @WithMockk
 internal class ReportGeneratorTest {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK

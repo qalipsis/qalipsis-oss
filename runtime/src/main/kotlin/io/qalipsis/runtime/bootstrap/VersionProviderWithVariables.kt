@@ -27,7 +27,7 @@ import java.util.Properties
  *
  * @author Eric Jessé
  */
-internal class VersionProviderWithVariables : CommandLine.IVersionProvider {
+class VersionProviderWithVariables : CommandLine.IVersionProvider {
 
     override fun getVersion(): Array<String> {
         return arrayOf("QALIPSIS version ${executionProperties.getProperty("version")}")

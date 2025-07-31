@@ -55,7 +55,7 @@ import java.time.Instant
 @Singleton
 @Requires(env = [ExecutionEnvironments.HEAD])
 @ExperimentalLettuceCoroutinesApi
-internal class RedisCampaignReportStateKeeper(
+class RedisCampaignReportStateKeeper(
     private val redisKeyCommands: RedisKeyCoroutinesCommands<String, String>,
     private val redisSetCommands: RedisSetCoroutinesCommands<String, String>,
     private val redisListCommands: RedisListCoroutinesCommands<String, String>,
