@@ -29,7 +29,7 @@ import io.qalipsis.core.head.model.DataSeriesPatch
  *
  * @author Palina Bril
  */
-internal interface DataSeriesService {
+interface DataSeriesService {
 
     /**
      * Creates new the data series.

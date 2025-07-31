@@ -47,8 +47,7 @@ import java.util.concurrent.atomic.DoubleAdder
 @WithMockk
 internal class StepCounterTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

@@ -38,7 +38,7 @@ import org.slf4j.event.Level
 @Singleton
 @Requires(env = [ExecutionEnvironments.STANDALONE])
 @Replaces(HandshakeManager::class)
-internal class StandaloneHandshakeManager(
+class StandaloneHandshakeManager(
     private val headChannel: HeadChannel,
     private val factoryService: FactoryService,
     private val headConfiguration: HeadConfiguration,

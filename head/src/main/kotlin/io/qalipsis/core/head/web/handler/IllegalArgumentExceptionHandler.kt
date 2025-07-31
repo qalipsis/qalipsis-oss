@@ -36,7 +36,7 @@ import jakarta.inject.Singleton
 @Produces
 @Singleton
 @Requires(classes = [IllegalArgumentException::class, ExceptionHandler::class])
-internal class IllegalArgumentExceptionHandler : ExceptionHandler<IllegalArgumentException, MutableHttpResponse<*>> {
+class IllegalArgumentExceptionHandler : ExceptionHandler<IllegalArgumentException, MutableHttpResponse<*>> {
 
     override fun handle(request: HttpRequest<*>, exception: IllegalArgumentException): MutableHttpResponse<*> {
         return HttpResponse.status<ErrorResponse>(HttpStatus.BAD_REQUEST).body(ErrorResponse(exception.message!!))

@@ -33,7 +33,7 @@ import io.qalipsis.core.factory.steps.PipeStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class PipeStepSpecificationConverter : StepSpecificationConverter<StepSpecification<*, *, *>> {
+class PipeStepSpecificationConverter : StepSpecificationConverter<StepSpecification<*, *, *>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
         return stepSpecification is PipeStepSpecification || stepSpecification is SingletonPipeStepSpecification

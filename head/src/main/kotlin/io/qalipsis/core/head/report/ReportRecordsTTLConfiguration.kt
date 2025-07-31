@@ -30,7 +30,7 @@ import java.time.Duration
  * @author Francisca Eze
  */
 @ConfigurationProperties("report.records")
-internal interface ReportRecordsTTLConfiguration {
+interface ReportRecordsTTLConfiguration {
 
     /**
      * Duration after which old report file records are deleted.

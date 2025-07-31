@@ -25,7 +25,7 @@ import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 /**
  * Service in charge of updating the details of a scenario in the persistent layer.
  */
-internal interface ScenarioDetailsUpdater {
+interface ScenarioDetailsUpdater {
 
     /**
      * Creates, updates and deletes scenario-specific entities with accordance to scenarios received from an external source.

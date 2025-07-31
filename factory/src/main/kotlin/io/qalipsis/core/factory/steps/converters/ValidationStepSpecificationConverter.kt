@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.steps.ValidationStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class ValidationStepSpecificationConverter :
+class ValidationStepSpecificationConverter :
     StepSpecificationConverter<ValidationStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {

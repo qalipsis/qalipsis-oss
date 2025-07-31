@@ -54,6 +54,7 @@ import io.qalipsis.core.factory.orchestration.CampaignCompletionState
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
 import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
+import io.qalipsis.core.factory.redis.RedisSingleLocationMinionAssignmentKeeper.Companion.CAMPAIGN_COUNTERS
 import io.qalipsis.core.redis.RedisUtils
 import jakarta.annotation.PostConstruct
 import jakarta.inject.Singleton
@@ -77,7 +78,7 @@ import java.util.concurrent.ConcurrentHashMap
     Requires(notEnv = [ExecutionEnvironments.SINGLE_FACTORY]),
     Requires(property = "factory.assignment.strategy", value = "single-location")
 )
-internal class RedisSingleLocationMinionAssignmentKeeper(
+class RedisSingleLocationMinionAssignmentKeeper(
     private val factoryConfiguration: FactoryConfiguration,
     private val scenarioRegistry: ScenarioRegistry,
     private val communicationChannelConfiguration: CommunicationChannelConfiguration,

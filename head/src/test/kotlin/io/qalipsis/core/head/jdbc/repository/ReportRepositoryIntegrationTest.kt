@@ -34,17 +34,19 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
+import com.qalipsis.core.head.jdbc.entity.UserEntityForTest
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
-import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.model.DataComponentType
 import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
@@ -54,22 +56,26 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 
 
 /**
  * @author Joël Valère
  */
-internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class ReportRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
     private lateinit var reportRepository: ReportRepository
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     @Inject
-    private lateinit var userRepository: UserRepository
+    private lateinit var userRepository: UserRepositoryForTest
 
     @Inject
     private lateinit var dataSeriesRepository: DataSeriesRepository
@@ -80,9 +86,9 @@ internal class ReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Inject
     private lateinit var reportDataComponentRepository: ReportDataComponentRepository
 
-    private val tenantPrototype = TenantEntity(reference = "my-tenant", displayName = "test-tenant")
+    private val tenantPrototype = TenantEntityForTest(reference = "my-tenant")
 
-    private val userPrototype = UserEntity(username = "my-user", displayName = "User for test")
+    private val userPrototype = UserEntityForTest(username = "my-user")
 
     private val reportPrototype =
         ReportEntity(

@@ -29,7 +29,7 @@ import java.nio.file.Path
  *
  * @author Francisca Eze
  */
-internal interface TemplateReportService {
+interface TemplateReportService {
 
     /**
      * Use the report information to generate a pdf file.

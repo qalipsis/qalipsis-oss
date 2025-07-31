@@ -28,7 +28,7 @@ import io.qalipsis.api.messaging.unicastTopic
  *
  * @author Eric Jessé
  */
-internal object TopicBuilder {
+object TopicBuilder {
 
     fun <O> build(config: TopicConfiguration): Topic<O> {
         return when (config.type) {

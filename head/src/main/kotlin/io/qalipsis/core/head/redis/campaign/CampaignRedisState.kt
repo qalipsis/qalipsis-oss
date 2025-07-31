@@ -19,13 +19,57 @@
 
 package io.qalipsis.core.head.redis.campaign
 
-internal enum class CampaignRedisState {
-    FACTORY_DAGS_ASSIGNMENT_STATE,
-    MINIONS_ASSIGNMENT_STATE,
-    WARMUP_STATE,
-    MINIONS_STARTUP_STATE,
-    RUNNING_STATE,
-    COMPLETION_STATE,
-    FAILURE_STATE,
-    ABORTING_STATE
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * Registry of all the states managed by the [RedisCampaignExecutor].
+ */
+data class CampaignRedisState(val name: String) {
+
+    override fun toString(): String = name
+
+    companion object {
+
+        val FACTORY_DAGS_ASSIGNMENT_STATE = CampaignRedisState("factory-dags-assignment")
+
+        val MINIONS_ASSIGNMENT_STATE = CampaignRedisState("minions-assignment")
+
+        val WARMUP_STATE = CampaignRedisState("warmup")
+
+        val MINIONS_STARTUP_STATE = CampaignRedisState("minions-startup")
+
+        val RUNNING_STATE = CampaignRedisState("running")
+
+        val COMPLETION_STATE = CampaignRedisState("completion")
+
+        val FAILURE_STATE = CampaignRedisState("failure")
+
+        val ABORTING_STATE = CampaignRedisState("aborting")
+
+        private val internalStates = ConcurrentHashMap<String, CampaignRedisState>(
+        ).also {
+            it.putAll(
+                mapOf(
+                    FACTORY_DAGS_ASSIGNMENT_STATE.name to FACTORY_DAGS_ASSIGNMENT_STATE,
+                    MINIONS_ASSIGNMENT_STATE.name to MINIONS_ASSIGNMENT_STATE,
+                    WARMUP_STATE.name to WARMUP_STATE,
+                    MINIONS_STARTUP_STATE.name to MINIONS_STARTUP_STATE,
+                    RUNNING_STATE.name to RUNNING_STATE,
+                    COMPLETION_STATE.name to COMPLETION_STATE,
+                    FAILURE_STATE.name to FAILURE_STATE,
+                    ABORTING_STATE.name to ABORTING_STATE,
+                )
+            )
+        }
+
+        val states: Collection<CampaignRedisState>
+            get() = internalStates.values
+
+        fun register(state: CampaignRedisState) {
+            internalStates[state.name] = state
+        }
+
+        fun valueOf(name: String): CampaignRedisState = internalStates[name]!!
+    }
+
 }

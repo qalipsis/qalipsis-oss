@@ -41,7 +41,7 @@ import java.time.Instant
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, Long> {
+interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, Long> {
 
     suspend fun findIdByKey(campaignKey: String): Long
 

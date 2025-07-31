@@ -36,7 +36,7 @@ import kotlin.coroutines.coroutineContext
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractTopicSubscription<T>(
+abstract class AbstractTopicSubscription<T>(
     private val subscriberId: String,
     private val idleTimeout: Duration,
     private val cancellation: (() -> Unit)

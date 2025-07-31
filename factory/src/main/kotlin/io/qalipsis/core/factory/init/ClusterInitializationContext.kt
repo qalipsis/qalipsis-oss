@@ -32,7 +32,7 @@ import jakarta.inject.Singleton
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY])
-internal class ClusterInitializationContext(
+class ClusterInitializationContext(
     factoryConfiguration: FactoryConfiguration,
     communicationChannelConfiguration: CommunicationChannelConfiguration,
     factoryChannel: FactoryChannel,

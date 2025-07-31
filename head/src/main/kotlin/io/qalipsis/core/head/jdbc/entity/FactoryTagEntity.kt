@@ -33,7 +33,7 @@ import javax.validation.constraints.Size
  * @author rklymenko
  */
 @MappedEntity("factory_tag", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class FactoryTagEntity(
+data class FactoryTagEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,

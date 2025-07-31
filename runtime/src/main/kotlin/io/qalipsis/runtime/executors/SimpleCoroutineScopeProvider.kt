@@ -25,7 +25,7 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 
-internal class SimpleCoroutineScopeProvider(
+class SimpleCoroutineScopeProvider(
     override val global: CoroutineScope,
     override val campaign: CoroutineScope,
     override val io: CoroutineScope,

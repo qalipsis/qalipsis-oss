@@ -47,8 +47,7 @@ import java.time.Instant
 @WithMockk
 internal class CampaignTimeoutKeeperTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

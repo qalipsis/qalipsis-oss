@@ -29,9 +29,11 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryTagEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
@@ -39,12 +41,16 @@ import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 
 /**
  * @author rklymenko
  */
-internal class FactoryTagRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class FactoryTagRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     private val factory = FactoryEntity(
         nodeId = "the-node", registrationTimestamp = Instant.now(), registrationNodeId = "test",
@@ -56,7 +62,7 @@ internal class FactoryTagRepositoryIntegrationTest : PostgresqlTemplateTest() {
     )
 
     private val tenantPrototype =
-        TenantEntity(Instant.now(), "my-tenant", "test-tenant")
+        TenantEntityForTest(reference = "my-tenant")
 
     @Inject
     private lateinit var repository: FactoryRepository
@@ -65,7 +71,7 @@ internal class FactoryTagRepositoryIntegrationTest : PostgresqlTemplateTest() {
     private lateinit var tagRepository: FactoryTagRepository
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     @AfterEach
     internal fun tearDown(): Unit = testDispatcherProvider.run {
@@ -133,7 +139,7 @@ internal class FactoryTagRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should not save tags twice with same key for same factory`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val saved = repository.save(factory.copy(tenantId = tenant.id))
 
         // when
@@ -146,7 +152,7 @@ internal class FactoryTagRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @Test
     internal fun `should save tags twice with same key for different factories`() = testDispatcherProvider.run {
         // given
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val saved1 = repository.save(factory.copy(tenantId = tenant.id))
         val saved2 = repository.save(factory.copy(nodeId = "another node ID", tenantId = tenant.id))
 

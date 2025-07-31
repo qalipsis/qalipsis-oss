@@ -54,7 +54,7 @@ import javax.validation.constraints.Size
  * @author Eric Jessé
  */
 @MappedEntity("campaign", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class CampaignEntity(
+data class CampaignEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,

@@ -41,7 +41,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
  *
  * @author Eric Jessé
  */
-internal class StageStep<I, O>(
+class StageStep<I, O>(
     id: StepName,
     retryPolicy: RetryPolicy?,
     private val minionsKeeper: MinionsKeeper

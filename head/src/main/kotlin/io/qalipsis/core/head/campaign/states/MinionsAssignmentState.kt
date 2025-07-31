@@ -32,7 +32,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
 
-internal open class MinionsAssignmentState(
+open class MinionsAssignmentState(
     protected val campaign: RunningCampaign
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 

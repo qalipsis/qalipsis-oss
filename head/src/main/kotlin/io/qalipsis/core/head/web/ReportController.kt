@@ -69,7 +69,7 @@ import javax.validation.constraints.PositiveOrZero
     Requires(beans = [ReportService::class])
 )
 @Version("1.0")
-internal class ReportController(
+class ReportController(
     private val reportService: ReportService,
 ) {
 

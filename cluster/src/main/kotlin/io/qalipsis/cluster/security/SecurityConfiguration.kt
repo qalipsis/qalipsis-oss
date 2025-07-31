@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.core.head.model
+package io.qalipsis.cluster.security
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
@@ -45,9 +45,9 @@ import jakarta.inject.Singleton
 @JsonSubTypes(
     JsonSubTypes.Type(value = DisabledSecurityConfiguration::class, name = "DISABLED")
 )
-internal interface SecurityConfiguration
+interface SecurityConfiguration
 
 @Singleton
 @Requires(missingBeans = [SecurityConfiguration::class])
 @Introspected
-internal class DisabledSecurityConfiguration : SecurityConfiguration
+class DisabledSecurityConfiguration : SecurityConfiguration

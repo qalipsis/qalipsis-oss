@@ -27,7 +27,7 @@ import io.micronaut.context.annotation.ConfigurationProperties
  * @author Eric Jessé
  */
 @ConfigurationProperties("executors")
-internal class ExecutorsConfiguration {
+class ExecutorsConfiguration {
 
     lateinit var global: String
 

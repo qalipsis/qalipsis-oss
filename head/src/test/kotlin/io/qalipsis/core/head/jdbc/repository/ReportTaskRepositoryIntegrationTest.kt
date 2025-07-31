@@ -27,22 +27,28 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
+import com.qalipsis.core.head.jdbc.entity.UserEntityForTest
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.entity.ReportTaskEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
-import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.model.ReportTaskStatus
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 
-internal class ReportTaskRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class ReportTaskRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
     private lateinit var reportTaskRepository: ReportTaskRepository
@@ -51,21 +57,21 @@ internal class ReportTaskRepositoryIntegrationTest : PostgresqlTemplateTest() {
     private lateinit var reportRepository: ReportRepository
 
     @Inject
-    private lateinit var userRepository: UserRepository
+    private lateinit var userRepository: UserRepositoryForTest
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     private lateinit var reportTaskPrototype: ReportTaskEntity
 
-    private lateinit var savedUser: UserEntity
+    private lateinit var savedUser: UserEntityForTest
 
-    private lateinit var tenant: TenantEntity
+    private lateinit var tenant: TenantEntityForTest
 
     @BeforeEach
     fun setup() = testDispatcherProvider.run {
-        savedUser = userRepository.save(UserEntity(displayName = "dis-user", username = "my-user"))
-        tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        savedUser = userRepository.save(UserEntityForTest(username = "my-user"))
+        tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val reportPrototype = ReportEntity(
             reference = "report-ref",
             tenantId = tenant.id,

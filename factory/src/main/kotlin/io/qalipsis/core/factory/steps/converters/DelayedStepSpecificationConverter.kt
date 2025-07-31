@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.steps.DelayStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class DelayedStepSpecificationConverter : StepSpecificationConverter<DelayStepSpecification<*>> {
+class DelayedStepSpecificationConverter : StepSpecificationConverter<DelayStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
         return stepSpecification is DelayStepSpecification

@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @author Eric Jessé
  */
-internal class VerificationStep<I, O>(
+class VerificationStep<I, O>(
     id: StepName,
     private val eventsLogger: EventsLogger,
     private val meterRegistry: CampaignMeterRegistry,

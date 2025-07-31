@@ -28,7 +28,7 @@ import jakarta.inject.Singleton
  */
 @Suppress("UNCHECKED_CAST")
 @Singleton
-internal class NullRecordSerializer : RecordSerializer {
+class NullRecordSerializer : RecordSerializer {
 
     override val order: Int = -1
 

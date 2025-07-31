@@ -26,7 +26,7 @@ import io.micronaut.core.naming.conventions.StringConvention
 import jakarta.annotation.PostConstruct
 
 @ConfigurationProperties("logging")
-internal class LoggingConfiguration(
+class LoggingConfiguration(
     private val environment: Environment
 ) {
 

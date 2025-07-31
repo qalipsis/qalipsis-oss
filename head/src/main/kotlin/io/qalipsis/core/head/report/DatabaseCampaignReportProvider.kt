@@ -44,7 +44,7 @@ import jakarta.inject.Singleton
 @Singleton
 @Primary
 @Requires(beans = [DatabaseCampaignReportPublisher::class])
-internal class DatabaseCampaignReportProvider(
+class DatabaseCampaignReportProvider(
     private val campaignRepository: CampaignRepository,
     private val campaignConverter: CampaignConverter,
     private val campaignScenarioRepository: CampaignScenarioRepository,

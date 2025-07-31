@@ -33,7 +33,7 @@ import kotlinx.serialization.protobuf.ProtoBuf
  */
 @Singleton
 @ExperimentalSerializationApi
-internal class RecordDistributionSerializer(
+class RecordDistributionSerializer(
     serializers: List<RecordSerializer>,
     private val protoBuf: ProtoBuf
 ) : DistributionSerializer {

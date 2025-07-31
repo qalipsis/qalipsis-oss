@@ -31,7 +31,7 @@ import io.qalipsis.core.heartbeat.Heartbeat
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractCampaignExecutionState<C : CampaignExecutionContext>(
+abstract class AbstractCampaignExecutionState<C : CampaignExecutionContext>(
     override val campaignKey: CampaignKey
 ) : CampaignExecutionState<C> {
 

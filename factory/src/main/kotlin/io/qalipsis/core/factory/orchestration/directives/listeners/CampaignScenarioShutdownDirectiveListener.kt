@@ -42,7 +42,7 @@ import org.slf4j.event.Level
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class CampaignScenarioShutdownDirectiveListener(
+class CampaignScenarioShutdownDirectiveListener(
     private val factoryCampaignManager: FactoryCampaignManager,
     private val factoryChannel: FactoryChannel
 ) : DirectiveListener<CampaignScenarioShutdownDirective> {

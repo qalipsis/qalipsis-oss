@@ -46,7 +46,7 @@ import kotlinx.coroutines.CoroutineScope
  * @author Eric Jessé
  */
 @StepConverter
-internal class SingletonStepSpecificationConverter(
+class SingletonStepSpecificationConverter(
     private val idGenerator: IdGenerator,
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>(),

@@ -27,7 +27,7 @@ import kotlin.system.exitProcess
  *
  * @author Eric Jessé
  */
-internal object Qalipsis {
+object Qalipsis {
 
     private lateinit var qalipsisBootstrap: QalipsisBootstrap
 

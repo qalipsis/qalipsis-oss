@@ -35,8 +35,7 @@ import org.opentest4j.AssertionFailedError
 
 internal class TestDispatcherProviderTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Test

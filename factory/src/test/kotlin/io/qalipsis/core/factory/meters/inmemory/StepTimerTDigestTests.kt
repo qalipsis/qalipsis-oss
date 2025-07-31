@@ -49,8 +49,7 @@ import kotlin.random.Random
 @WithMockk
 internal class StepTimerTDigestTests {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

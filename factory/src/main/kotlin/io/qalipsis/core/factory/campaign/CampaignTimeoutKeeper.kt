@@ -37,7 +37,7 @@ import java.time.Instant
  * Service in charge of activating / deactivating the timeouts of the campaign to run in the factory.
  */
 @Singleton
-internal class CampaignTimeoutKeeper(
+class CampaignTimeoutKeeper(
     private val factoryChannel: FactoryChannel,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : CampaignLifeCycleAware {

@@ -31,7 +31,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-internal class DeadEndStep<I>(
+class DeadEndStep<I>(
     id: StepName,
     private val dagId: DirectedAcyclicGraphName,
     private val factoryCampaignManager: FactoryCampaignManager

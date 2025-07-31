@@ -49,8 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @WithMockk
 internal class MinionImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     private val coroutinesExecutionTime = Duration.ofMillis(500)

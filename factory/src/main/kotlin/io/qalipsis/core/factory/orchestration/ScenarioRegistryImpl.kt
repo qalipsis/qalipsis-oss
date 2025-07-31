@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class ScenarioRegistryImpl(
+class ScenarioRegistryImpl(
     @Property(name = "scenario.allow-empty", defaultValue = "false")
     private val allowEmptyScenario: Boolean
 ) : ScenarioRegistry, ProcessExitCodeSupplier {

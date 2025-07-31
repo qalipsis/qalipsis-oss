@@ -43,8 +43,8 @@ import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryTagRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
-import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.model.Factory
+import io.qalipsis.core.head.security.TenantProvider
 import io.qalipsis.core.heartbeat.Heartbeat
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.collect
@@ -63,14 +63,14 @@ import java.time.Instant
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 )
-internal class ClusterFactoryService(
+class ClusterFactoryService(
     private val factoryRepository: FactoryRepository,
     private val factoryTagRepository: FactoryTagRepository,
     private val factoryStateRepository: FactoryStateRepository,
     private val scenarioRepository: ScenarioRepository,
     private val campaignRepository: CampaignRepository,
     private val campaignFactoryRepository: CampaignFactoryRepository,
-    private val tenantRepository: TenantRepository,
+    private val tenantProvider: TenantProvider,
     private val scenarioDetailsUpdater: ScenarioDetailsUpdater,
 ) : FactoryService {
 
@@ -83,13 +83,17 @@ internal class ClusterFactoryService(
         handshakeRequest: HandshakeRequest,
         handshakeResponse: HandshakeResponse
     ) {
-        val tenantId = tenantRepository.findIdByReference(handshakeRequest.tenant)
+        val tenantId = tenantProvider.findIdByReference(handshakeRequest.tenant)
         val existingFactory = saveFactory(tenantId, actualNodeId, handshakeRequest, handshakeResponse)
         scenarioDetailsUpdater.saveOrUpdateScenarios(
             handshakeRequest.tenant,
             handshakeRequest.scenarios,
             existingFactory
         )
+    }
+
+    override suspend fun getFactoryTenant(nodeId: NodeId): String {
+        return factoryRepository.findTenantByNodeId(nodeId)!!
     }
 
     /**

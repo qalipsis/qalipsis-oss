@@ -39,7 +39,7 @@ import io.qalipsis.core.factory.steps.StartStopReportingStepDecorator
  * @author Eric Jessé
  */
 @StepConverter
-internal class ReportingStepDecoratorConverter(
+class ReportingStepDecoratorConverter(
     private val eventsLogger: EventsLogger,
     private val meterRegistry: CampaignMeterRegistry,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry

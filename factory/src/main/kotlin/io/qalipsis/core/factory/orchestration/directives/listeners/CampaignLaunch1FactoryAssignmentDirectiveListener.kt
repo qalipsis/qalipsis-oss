@@ -46,7 +46,7 @@ import java.time.Instant
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class CampaignLaunch1FactoryAssignmentDirectiveListener(
+class CampaignLaunch1FactoryAssignmentDirectiveListener(
     private val minionAssignmentKeeper: MinionAssignmentKeeper,
     private val campaignLifeCycleAwares: Collection<CampaignLifeCycleAware>,
     private val factoryChannel: FactoryChannel

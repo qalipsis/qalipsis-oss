@@ -35,7 +35,7 @@ import jakarta.inject.Singleton
 @Singleton
 @Primary
 @Requires(env = [ExecutionEnvironments.STANDALONE])
-internal class StandaloneInitializationContext(
+class StandaloneInitializationContext(
     factoryConfiguration: FactoryConfiguration,
     communicationChannelConfiguration: CommunicationChannelConfiguration,
     factoryChannel: FactoryChannel

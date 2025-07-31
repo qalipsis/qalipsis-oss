@@ -30,10 +30,12 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.matchesPredicate
 import assertk.assertions.size
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryStateValue
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
@@ -43,13 +45,17 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.time.Instant
 
 /**
  * @author rklymenko
  */
-internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class FactoryStateRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     private lateinit var state: FactoryStateEntity
 
@@ -57,17 +63,17 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
     private lateinit var factoryRepository: FactoryRepository
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     @Inject
     private lateinit var factoryStateRepository: FactoryStateRepository
 
-    private lateinit var tenant: TenantEntity
+    private lateinit var tenant: TenantEntityForTest
 
     @BeforeEach
     internal fun setup() =
         testDispatcherProvider.run {
-            tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+            tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-node",
@@ -209,7 +215,7 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
     internal fun `should delete the states attached to a deleted factory`() =
         testDispatcherProvider.run {
             // given
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-other-tenant", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-other-tenant"))
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-other-node" + Math.random(),
@@ -233,7 +239,7 @@ internal class FactoryStateRepositoryIntegrationTest : PostgresqlTemplateTest() 
     @Test
     fun `should retrieve latest factory state for each factory id per tenant`() = testDispatcherProvider.run {
         // given
-        val tenant2 = tenantRepository.save(TenantEntity(Instant.now(), "tenant-2", "test-tenant-2"))
+        val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "tenant-2"))
         val cutoff = Instant.now() - Duration.ofSeconds(30)
         val now = Instant.now()
         val factory1 = factoryRepository.save(

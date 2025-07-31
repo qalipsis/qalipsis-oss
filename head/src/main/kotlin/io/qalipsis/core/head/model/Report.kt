@@ -39,7 +39,7 @@ import javax.validation.constraints.Size
     name = "Report details",
     title = "Details of a report"
 )
-internal data class Report(
+data class Report(
     @field:Schema(description = "Identifier of the report", required = true)
     val reference: String,
 

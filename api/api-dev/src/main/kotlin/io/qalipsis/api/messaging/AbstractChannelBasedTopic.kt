@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractChannelBasedTopic<T>(
+abstract class AbstractChannelBasedTopic<T>(
     /**
      * Idle time of a subscription. Once a subscription passed this duration without record, it is cancelled.
      */

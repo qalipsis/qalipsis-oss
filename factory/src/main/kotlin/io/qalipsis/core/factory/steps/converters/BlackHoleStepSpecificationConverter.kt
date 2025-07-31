@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.steps.BlackHoleStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class BlackHoleStepSpecificationConverter : StepSpecificationConverter<BlackHoleStepSpecification<*>> {
+class BlackHoleStepSpecificationConverter : StepSpecificationConverter<BlackHoleStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
         return stepSpecification is BlackHoleStepSpecification

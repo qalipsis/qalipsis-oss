@@ -19,6 +19,9 @@
 
 package io.qalipsis.core.configuration
 
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+
+
 /**
  * Set of environments available to configure QALIPSIS at startup.
  *
@@ -71,8 +74,4 @@ object ExecutionEnvironments {
      */
     const val FACTORY = "factory"
 
-    /**
-     * Distributed streaming platform property configuration.
-     */
-    const val DISTRIBUTED_STREAMING_PLATFORM_PROPERTY = "streaming.platform"
 }

@@ -34,6 +34,8 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
+import com.qalipsis.core.head.jdbc.entity.UserEntityForTest
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.qalipsis.api.query.QueryAggregationOperator
@@ -41,14 +43,12 @@ import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.entity.Defaults
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
-import io.qalipsis.core.head.jdbc.entity.UserEntity
 import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
-import java.time.Duration
-import java.time.Instant
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterEach
@@ -56,26 +56,29 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
+import java.time.Instant
 
-internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
     private lateinit var dataSeriesRepository: DataSeriesRepository
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     @Inject
-    private lateinit var userRepository: UserRepository
+    private lateinit var userRepository: UserRepositoryForTest
 
-    private lateinit var defaultTenant: TenantEntity
+    private lateinit var defaultTenant: TenantEntityForTest
 
-    private val tenantPrototype = TenantEntity(
-        reference = "my-tenant",
-        displayName = "test-tenant"
-    )
+    private val tenantPrototype = TenantEntityForTest(reference = "my-tenant")
 
-    private val userPrototype = UserEntity(username = "my-user", displayName = "User for test")
+    private val userPrototype = UserEntityForTest(username = "my-user")
 
     private val dataSeriesPrototype =
         DataSeriesEntity(
@@ -98,12 +101,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
     @BeforeEach
     fun setup() = testDispatcherProvider.run {
         tenantRepository.deleteAll()
-        defaultTenant = tenantRepository.save(
-            tenantPrototype.copy(
-                reference = Defaults.TENANT,
-                displayName = Defaults.TENANT
-            )
-        )
+        defaultTenant = tenantRepository.save(tenantPrototype.copy(reference = Defaults.TENANT))
     }
 
     @AfterEach
@@ -892,7 +890,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
             )
         )
         val randomTenant =
-            tenantRepository.save(tenantPrototype.copy(reference = "random_tenant", displayName = "random_tenant"))
+            tenantRepository.save(tenantPrototype.copy(reference = "random_tenant"))
         val redDataSeries = dataSeriesRepository.save(
             dataSeriesPrototype.copy(
                 tenantId = tenant.id,
@@ -1520,8 +1518,8 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         val randomTenant =
-            tenantRepository.save(tenantPrototype.copy(reference = "random_tenant", displayName = "random_tenant"))
-        val redDataSeries = dataSeriesRepository.save(
+            tenantRepository.save(tenantPrototype.copy(reference = "random_tenant"))
+        dataSeriesRepository.save(
             dataSeriesPrototype.copy(
                 tenantId = tenant.id,
                 creatorId = creator.id,
@@ -1529,7 +1527,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 sharingMode = SharingMode.WRITE
             )
         )
-        val defaultDataSeries = dataSeriesRepository.save(
+        dataSeriesRepository.save(
             dataSeriesPrototype.copy(
                 tenantId = defaultTenant.id,
                 creatorId = defaultCreator.id,
@@ -1539,7 +1537,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 sharingMode = SharingMode.WRITE
             )
         )
-        val series3 = dataSeriesRepository.save(
+        dataSeriesRepository.save(
             dataSeriesPrototype.copy(
                 tenantId = tenant.id,
                 creatorId = creator.id,
@@ -1559,7 +1557,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 sharingMode = SharingMode.READONLY
             )
         )
-        val series5 = dataSeriesRepository.save(
+        dataSeriesRepository.save(
             dataSeriesPrototype.copy(
                 tenantId = tenant.id,
                 creatorId = randomCreator.id,
@@ -1569,7 +1567,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 sharingMode = SharingMode.WRITE
             )
         )
-        val series6 = dataSeriesRepository.save(
+        dataSeriesRepository.save(
             dataSeriesPrototype.copy(
                 tenantId = tenant.id,
                 creatorId = creator.id,
@@ -1579,7 +1577,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 sharingMode = SharingMode.WRITE
             )
         )
-        val series7 = dataSeriesRepository.save(
+        dataSeriesRepository.save(
             dataSeriesPrototype.copy(
                 tenantId = tenant.id,
                 creatorId = randomCreator.id,
@@ -1617,13 +1615,13 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
         //given
         val tenant = tenantRepository.save(tenantPrototype)
         val creator = userRepository.save(userPrototype)
-        val defaultCreator = userRepository.save(
+        userRepository.save(
             userPrototype.copy(
                 username = "default-user",
                 displayName = "Default test user for test"
             )
         )
-        val redDataSeries = dataSeriesRepository.save(
+        dataSeriesRepository.save(
             dataSeriesPrototype.copy(
                 tenantId = tenant.id,
                 creatorId = creator.id,
@@ -1641,7 +1639,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
                 sharingMode = SharingMode.NONE
             )
         )
-        val series6 = dataSeriesRepository.save(
+        dataSeriesRepository.save(
             dataSeriesPrototype.copy(
                 tenantId = tenant.id,
                 creatorId = creator.id,
@@ -1662,7 +1660,7 @@ internal class DataSeriesRepositoryIntegrationTest : PostgresqlTemplateTest() {
         )
 
         //then
-         assertThat(dataSeriesRepository.findAll()).transform { it.toList() }.all {
+        assertThat(dataSeriesRepository.findAll()).transform { it.toList() }.all {
             hasSize(1)
             index(0).prop(DataSeriesEntity::id).isEqualTo(series3.id)
         }

@@ -37,8 +37,7 @@ import java.time.Instant
 @WithMockk
 internal class DeadEndStepTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK

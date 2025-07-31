@@ -42,7 +42,7 @@ import kotlinx.coroutines.channels.SendChannel
  *
  * @author Eric Jessé
  */
-internal class StepContextImpl<IN, OUT>(
+class StepContextImpl<IN, OUT>(
     private val input: ReceiveChannel<IN> = Channel(1),
     val output: SendChannel<StepContext.StepOutputRecord<OUT>> = Channel(Channel.UNLIMITED),
     private val internalErrors: MutableCollection<StepError> = LinkedHashSet(),

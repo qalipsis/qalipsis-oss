@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit
  */
 @Singleton
 @Requires(bean = HazelcastInstance::class)
-internal class DistributedDelayedFeedbackManager(
+class DistributedDelayedFeedbackManager(
     private val hazelcastInstance: HazelcastInstance,
     private val headChannel: HeadChannel,
     private val configuration: HeadConfiguration,
@@ -98,7 +98,7 @@ internal class DistributedDelayedFeedbackManager(
     /**
      * Tasks that generates a feedback to a Hazelcast topic when executed.
      */
-    internal class DelayedFeedbackTask : Runnable, IdentifiedDataSerializable,
+    class DelayedFeedbackTask : Runnable, IdentifiedDataSerializable,
         HazelcastInstanceAware {
 
         lateinit var serializedFeedback: ByteArray
@@ -140,7 +140,7 @@ internal class DistributedDelayedFeedbackManager(
     /**
      * Factory to manage the deserialization of [DelayedFeedbackTask]s.
      */
-    internal class DelayedFeedbackTaskFactory : DataSerializableFactory {
+    class DelayedFeedbackTaskFactory : DataSerializableFactory {
 
         override fun create(typeId: Int): IdentifiedDataSerializable? {
             return if (typeId == FEEDBACK_TASK_ID) {

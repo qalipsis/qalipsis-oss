@@ -60,8 +60,7 @@ import java.time.Instant
 @WithMockk
 internal class DatabaseCampaignReportProviderTest {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK

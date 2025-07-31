@@ -39,7 +39,7 @@ import jakarta.inject.Singleton
 @Produces
 @Singleton
 @Requires(classes = [RuntimeException::class, ExceptionHandler::class])
-internal class UnexpectedExceptionHandler : ExceptionHandler<RuntimeException, MutableHttpResponse<*>> {
+class UnexpectedExceptionHandler : ExceptionHandler<RuntimeException, MutableHttpResponse<*>> {
 
     override fun handle(request: HttpRequest<*>, exception: RuntimeException): MutableHttpResponse<*> {
         return HttpResponse.status<ErrorResponse>(HttpStatus.INTERNAL_SERVER_ERROR)

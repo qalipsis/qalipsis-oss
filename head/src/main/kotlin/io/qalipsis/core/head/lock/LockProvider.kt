@@ -25,7 +25,7 @@ import io.qalipsis.api.context.CampaignKey
  *
  * @author Francisca Eze
  */
-internal interface LockProvider {
+interface LockProvider {
 
     /**
      * Executes the given action within a lock.

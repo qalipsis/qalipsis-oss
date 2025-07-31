@@ -29,7 +29,7 @@ import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import java.time.Instant
 
-internal interface FactoryCampaignManager : CampaignLifeCycleAware {
+interface FactoryCampaignManager : CampaignLifeCycleAware {
 
     val runningCampaign: Campaign
 

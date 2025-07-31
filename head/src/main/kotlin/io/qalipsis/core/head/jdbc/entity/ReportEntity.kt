@@ -52,7 +52,7 @@ import javax.validation.constraints.Size
  * @author Joël Valère
  */
 @MappedEntity("report", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class ReportEntity(
+data class ReportEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,

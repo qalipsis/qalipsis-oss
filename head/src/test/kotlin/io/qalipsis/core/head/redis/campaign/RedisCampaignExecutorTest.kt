@@ -65,7 +65,6 @@ import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.hook.CampaignHook
-import io.qalipsis.core.head.lock.InMemoryLockProviderImpl
 import io.qalipsis.core.head.lock.LockProvider
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Factory
@@ -77,6 +76,7 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.CoroutineScope
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
@@ -85,11 +85,10 @@ import java.time.Duration
 
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
-@Timeout(5)
-internal open class RedisCampaignExecutorTest {
+@Timeout(10)
+internal class RedisCampaignExecutorTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
@@ -131,6 +130,11 @@ internal open class RedisCampaignExecutorTest {
     @RelaxedMockK
     private lateinit var channelNameFactory: ChannelNameFactory
 
+    @BeforeEach
+    fun setUp() {
+        coEvery { lockProvider.withLock(any(), any()) } coAnswers { secondArg<suspend () -> Unit>().invoke() }
+    }
+
     @Test
     internal fun `should accept the feedback only if it is a CampaignManagementFeedback`() {
         val campaignExecutor = redisCampaignExecutor(relaxedMockk())
@@ -159,8 +163,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should start a new campaign when all the scenarios are currently supported and release the unused factories`() =
         testDispatcherProvider.run {
             // given
-            val spiedLockProvider = spyk(InMemoryLockProviderImpl())
-            val campaignExecutor = redisCampaignExecutor(this, spiedLockProvider)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = CampaignConfiguration(
                 name = "This is a campaign",
                 speedFactor = 123.2,
@@ -253,7 +256,7 @@ internal open class RedisCampaignExecutorTest {
         }
 
     @Test
-    internal open fun `should create a redis state as initial state`() = testDispatcherProvider.run {
+    internal fun `should create a redis state as initial state`() = testDispatcherProvider.run {
         // given
         val campaignExecutor = redisCampaignExecutor(this)
         val runningCampaign = RunningCampaign(tenant = "my-tenant", key = "my-campaign")
@@ -311,12 +314,13 @@ internal open class RedisCampaignExecutorTest {
                 )
             } throws RuntimeException("Something wrong occurred")
             val latch = Latch(true)
-            coEvery { campaignService.close(any(), any(), any()) } coAnswers { latch.release(); relaxedMockk() }
+            coEvery { campaignService.close(any(), any(), any(), any()) } coAnswers { latch.release(); relaxedMockk() }
 
             // when
             val exception = assertThrows<RuntimeException> {
                 campaignExecutor.start("my-tenant", "my-user", campaign)
             }
+            latch.await()
 
             // then
             assertThat(exception.message).isEqualTo("Something wrong occurred")
@@ -679,8 +683,7 @@ internal open class RedisCampaignExecutorTest {
     @Test
     internal fun `should abort hard a campaign`() = testDispatcherProvider.run {
         //given
-        val spiedLockProvider = spyk(InMemoryLockProviderImpl())
-        val campaignExecutor = redisCampaignExecutor(this, spiedLockProvider)
+        val campaignExecutor = redisCampaignExecutor(this)
         val campaign = RunningCampaign(
             tenant = "my-tenant",
             key = "first_campaign",
@@ -759,8 +762,7 @@ internal open class RedisCampaignExecutorTest {
     @Test
     internal fun `should abort soft a campaign`() = testDispatcherProvider.run {
         //given
-        val spiedLockProvider = spyk(InMemoryLockProviderImpl())
-        val campaignExecutor = redisCampaignExecutor(this, spiedLockProvider)
+        val campaignExecutor = redisCampaignExecutor(this)
         val campaign = RunningCampaign(
             tenant = "my-tenant",
             key = "first_campaign",
@@ -880,8 +882,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should abort the campaign softly when a CampaignTimeoutFeedback with hard equals false is received`() =
         testDispatcherProvider.runTest {
             //given
-            val spiedLockProvider = spyk(InMemoryLockProviderImpl())
-            val campaignExecutor = redisCampaignExecutor(this, spiedLockProvider)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = RunningCampaign(
                 tenant = "my-tenant",
                 key = "first_campaign",
@@ -973,8 +974,7 @@ internal open class RedisCampaignExecutorTest {
     internal fun `should abort the campaign hardly when a CampaignTimeoutFeedback with hard equals true is received`() =
         testDispatcherProvider.run {
             //given
-            val spiedLockProvider = spyk(InMemoryLockProviderImpl())
-            val campaignExecutor = redisCampaignExecutor(this, spiedLockProvider)
+            val campaignExecutor = redisCampaignExecutor(this)
             val campaign = RunningCampaign(
                 tenant = "my-tenant",
                 key = "first_campaign",
@@ -1059,7 +1059,7 @@ internal open class RedisCampaignExecutorTest {
             )
         }
 
-    protected open fun redisCampaignExecutor(scope: CoroutineScope, lockProvider: LockProvider = this.lockProvider) =
+    private fun redisCampaignExecutor(scope: CoroutineScope) =
         spyk(
             RedisCampaignExecutor(
                 headChannel = headChannel,

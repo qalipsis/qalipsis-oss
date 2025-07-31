@@ -23,7 +23,7 @@ import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.steps.Step
 
-internal interface DagTransitionStepFactory {
+interface DagTransitionStepFactory {
 
     /**
      * Creates a new step in charge or managing the transition between two directed acyclic graphs.

@@ -27,6 +27,7 @@ import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.sync.asSuspended
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.configuration.ExecutionConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
 import io.qalipsis.core.directives.Directive
@@ -43,12 +44,12 @@ import org.slf4j.event.Level
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD]),
     Requires(
-        property = ExecutionEnvironments.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY,
-        value = ExecutionEnvironments.REDIS
+        property = ExecutionConfiguration.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY,
+        value = "redis"
     )
 )
 @ExperimentalLettuceCoroutinesApi
-internal class RedisHeadChannel(
+class RedisHeadChannel(
     private val directiveRegistry: DirectiveRegistry,
     @Named(RedisPubSubConfiguration.PUBLISHER_BEAN_NAME) private val publisherCommands: RedisPubSubReactiveCommands<String, ByteArray>,
     @Named(RedisPubSubConfiguration.SUBSCRIBER_BEAN_NAME) private val subscriberCommands: RedisPubSubReactiveCommands<String, ByteArray>,

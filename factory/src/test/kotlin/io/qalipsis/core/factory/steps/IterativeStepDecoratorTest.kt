@@ -57,8 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @WithMockk
 internal class IterativeStepDecoratorTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

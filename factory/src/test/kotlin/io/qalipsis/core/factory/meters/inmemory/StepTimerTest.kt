@@ -52,8 +52,7 @@ import java.util.concurrent.TimeUnit
 @WithMockk
 internal class StepTimerTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

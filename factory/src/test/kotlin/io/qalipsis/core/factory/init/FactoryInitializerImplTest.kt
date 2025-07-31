@@ -98,8 +98,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @WithMockk
 internal class FactoryInitializerImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     private val coroutineDispatcher: CoroutineDispatcher = testDispatcherProvider.default()

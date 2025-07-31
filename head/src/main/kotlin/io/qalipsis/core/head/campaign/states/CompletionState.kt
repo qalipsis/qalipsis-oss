@@ -27,7 +27,7 @@ import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
 
-internal open class CompletionState(
+open class CompletionState(
     protected val campaign: RunningCampaign
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 

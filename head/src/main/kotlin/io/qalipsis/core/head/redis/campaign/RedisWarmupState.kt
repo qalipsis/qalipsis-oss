@@ -35,7 +35,7 @@ import io.qalipsis.core.head.campaign.states.WarmupState
 import java.time.Instant
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisWarmupState(
+class RedisWarmupState(
     campaign: RunningCampaign,
     private val operations: CampaignRedisOperations
 ) : WarmupState(campaign) {

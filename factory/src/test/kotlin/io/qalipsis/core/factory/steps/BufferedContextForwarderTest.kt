@@ -58,8 +58,7 @@ import java.time.Duration
 @ExperimentalLettuceCoroutinesApi
 internal class BufferedContextForwarderTest : AbstractRedisIntegrationTest() {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 
 @Singleton
-internal class ScenarioDetailsUpdaterImpl(
+class ScenarioDetailsUpdaterImpl(
     private val scenarioRepository: ScenarioRepository,
     private val directedAcyclicGraphRepository: DirectedAcyclicGraphRepository,
     private val directedAcyclicGraphTagRepository: DirectedAcyclicGraphTagRepository,

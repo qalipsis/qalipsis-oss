@@ -38,10 +38,9 @@ import org.junit.jupiter.api.extension.RegisterExtension
 
 
 @WithMockk
-internal abstract class AbstractStateTest {
+abstract class AbstractStateTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

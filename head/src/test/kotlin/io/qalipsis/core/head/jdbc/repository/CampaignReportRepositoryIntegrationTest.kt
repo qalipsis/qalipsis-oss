@@ -26,21 +26,27 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
+import com.qalipsis.core.head.jdbc.entity.UserEntityForTest
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
-import io.qalipsis.core.head.jdbc.entity.UserEntity
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.time.Instant
 
-internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class CampaignReportRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
     private lateinit var campaignReportRepository: CampaignReportRepository
@@ -52,17 +58,17 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     private lateinit var campaignRepository: CampaignRepository
 
     @Inject
-    private lateinit var userRepository: UserRepository
+    private lateinit var userRepository: UserRepositoryForTest
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     private lateinit var campaignReportPrototype: CampaignReportEntity
 
     @BeforeEach
     fun init() = testDispatcherProvider.run {
-        val savedUser = userRepository.save(UserEntity(displayName = "dis-user", username = "my-user"))
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val savedUser = userRepository.save(UserEntityForTest(username = "my-user"))
+        val tenant = tenantRepository.save(TenantEntityForTest("my-tenant"))
         val campaignPrototype =
             CampaignEntity(
                 key = "the-campaign-id",
@@ -156,8 +162,8 @@ internal class CampaignReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     @Test
     fun `should retrieve by campaign id`() = testDispatcherProvider.run {
         // given
-        val savedUser = userRepository.save(UserEntity(displayName = "dis-user-2", username = "my-user-2"))
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant-2", "test-tenant-2"))
+        val savedUser = userRepository.save(UserEntityForTest(username = "my-user-2"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
         val campaign = CampaignEntity(
             key = "campaign-1",
             name = "campaign 1",

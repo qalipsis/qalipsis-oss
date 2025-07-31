@@ -30,7 +30,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-internal class MapStep<I, O>(
+class MapStep<I, O>(
     id: StepName,
     retryPolicy: RetryPolicy?,
     @Suppress("UNCHECKED_CAST") private val block: ((input: I) -> O) = { value -> value as O }

@@ -27,6 +27,6 @@ import io.micronaut.core.annotation.Introspected
  * @author Francisca Eze
  */
 @Introspected
-internal data class PlotCompositeKey(val campaignKey: String, val dataSeriesReference: String) {
+data class PlotCompositeKey(val campaignKey: String, val dataSeriesReference: String) {
     val compositeKey = "$campaignKey/$dataSeriesReference"
 }

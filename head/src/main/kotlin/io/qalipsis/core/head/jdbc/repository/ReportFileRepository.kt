@@ -36,7 +36,7 @@ import java.time.Instant
 
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface ReportFileRepository : CoroutineCrudRepository<ReportFileEntity, Long> {
+interface ReportFileRepository : CoroutineCrudRepository<ReportFileEntity, Long> {
 
     /**
      * Finds a file report in a tenant by its report task reference.

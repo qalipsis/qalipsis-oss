@@ -27,7 +27,6 @@ import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
 import java.time.Duration
 import java.time.Instant
 
@@ -36,15 +35,10 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-@DisabledIfEnvironmentVariable(
-    named = "GITHUB_ACTIONS",
-    matches = "true",
-    disabledReason = "Does not work on Github Actions, to be investigated"
-)
+@Timeout(60)
 internal class StandaloneDeploymentIntegrationTest : AbstractDeploymentIntegrationTest() {
 
     @Test
-    @Timeout(10)
     internal fun `should create a process to display the help and leave`() {
         // given
         val qalipsisProcess = jvmProcessUtils.startNewJavaProcess(
@@ -62,7 +56,6 @@ internal class StandaloneDeploymentIntegrationTest : AbstractDeploymentIntegrati
     }
 
     @Test
-    @Timeout(40)
     internal fun `should start standalone and execute the scenario`() {
         val exitCode = QalipsisBootstrap().start(
             arrayOf(
@@ -81,7 +74,6 @@ internal class StandaloneDeploymentIntegrationTest : AbstractDeploymentIntegrati
     }
 
     @Test
-    @Timeout(40)
     internal fun `should start standalone and execute the scenario with failures`() {
         val exitCode = QalipsisBootstrap().start(
             arrayOf(
@@ -96,7 +88,6 @@ internal class StandaloneDeploymentIntegrationTest : AbstractDeploymentIntegrati
     }
 
     @Test
-    @Timeout(40)
     internal fun `should create a process to start standalone and execute the scenario`() {
         // given
         val before = Instant.now()

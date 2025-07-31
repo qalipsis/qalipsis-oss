@@ -29,7 +29,7 @@ import javax.validation.constraints.Positive
  */
 @ConfigurationProperties(value = "datasource")
 @Requires(property = "liquibase.enabled", notEquals = "false")
-internal interface DatasourceConfiguration {
+interface DatasourceConfiguration {
 
     @get:NotBlank
     @get:Bindable(defaultValue = "localhost")

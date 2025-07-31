@@ -24,7 +24,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
-  <changeSet id="22" author="Efrancisca">
+    <changeSet id="20" author="Efrancisca">
     <createSequence sequenceName="zone_tenant_seq" schemaName="qalipsis"/>
     <createTable tableName="zone_tenant" schemaName="qalipsis">
       <column name="zone_id" type="BIGINT" valueSequenceNext="zone_tenant_seq">

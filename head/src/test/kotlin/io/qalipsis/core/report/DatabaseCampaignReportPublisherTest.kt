@@ -27,6 +27,7 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
@@ -44,6 +45,7 @@ import io.qalipsis.core.head.report.DatabaseCampaignReportPublisher
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.flow.flowOf
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Clock
@@ -53,8 +55,7 @@ import java.time.ZoneId
 @WithMockk
 internal class DatabaseCampaignReportPublisherTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
@@ -71,6 +72,11 @@ internal class DatabaseCampaignReportPublisherTest {
 
     @InjectMockKs
     private lateinit var databaseCampaignReportPublisher: DatabaseCampaignReportPublisher
+
+    @AfterAll
+    fun tearDownAll() {
+        unmockkStatic(Clock::class)
+    }
 
     @Test
     internal fun `should save the new campaign report`() = testDispatcherProvider.run {

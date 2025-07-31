@@ -58,10 +58,10 @@ import io.qalipsis.core.head.web.handler.ErrorResponse
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject
-import java.time.Instant
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.Instant
 
 
 /**
@@ -116,7 +116,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOrder {
             reportService.create(
                 tenant = Defaults.TENANT,
-                creator = Defaults.USER,
+                creator = Defaults.USERNAME,
                 reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
             )
         }
@@ -162,7 +162,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOrder {
             reportService.create(
                 tenant = Defaults.TENANT,
-                creator = Defaults.USER,
+                creator = Defaults.USERNAME,
                 reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
             )
         }
@@ -208,7 +208,11 @@ internal class ReportControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            reportService.delete(tenant = Defaults.TENANT, username = Defaults.USER, references = setOf("q7232x", "p7121a"))
+            reportService.delete(
+                tenant = Defaults.TENANT,
+                username = Defaults.USERNAME,
+                references = setOf("q7232x", "p7121a")
+            )
         }
 
         assertThat(response).all {
@@ -236,7 +240,7 @@ internal class ReportControllerIntegrationTest {
         coEvery {
             reportService.get(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 reference = "q7232x"
             )
         } returns report
@@ -246,7 +250,7 @@ internal class ReportControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            reportService.get(tenant = Defaults.TENANT, username = Defaults.USER, reference = "q7232x")
+            reportService.get(tenant = Defaults.TENANT, username = Defaults.USERNAME, reference = "q7232x")
         }
 
         assertThat(response).all {
@@ -284,7 +288,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOrder {
             reportService.update(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 reference = "q721wx52",
                 reportCreationAndUpdateRequest = reportCreationAndUpdateRequest
             )
@@ -316,7 +320,7 @@ internal class ReportControllerIntegrationTest {
         coEvery {
             reportService.search(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = emptyList(),
                 sort = null,
                 page = 0,
@@ -331,7 +335,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOnce {
             reportService.search(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = emptyList(),
                 sort = null,
                 page = 0,
@@ -408,7 +412,7 @@ internal class ReportControllerIntegrationTest {
         coEvery {
             reportService.search(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = listOf("foo", "bar"),
                 sort = null,
                 page = 0,
@@ -423,7 +427,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOnce {
             reportService.search(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = listOf("foo", "bar"),
                 sort = null,
                 page = 0,
@@ -468,7 +472,7 @@ internal class ReportControllerIntegrationTest {
         coEvery {
             reportService.search(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = emptyList(),
                 sort = "displayName",
                 page = 0,
@@ -483,7 +487,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOnce {
             reportService.search(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = emptyList(),
                 sort = "displayName",
                 page = 0,
@@ -504,7 +508,7 @@ internal class ReportControllerIntegrationTest {
             reference = "qoi78wizened",
             status = ReportTaskStatus.PENDING,
             failureReason = null,
-            creator = Defaults.USER
+            creator = Defaults.USERNAME
         )
         coEvery { reportService.render(any(), any(), any()) } returns reportTask
 
@@ -516,7 +520,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOnce {
             reportService.render(
                 tenant = Defaults.TENANT,
-                creator = Defaults.USER,
+                creator = Defaults.USERNAME,
                 reference = "qoi78wizened"
             )
         }
@@ -549,7 +553,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOnce {
             reportService.render(
                 tenant = Defaults.TENANT,
-                creator = Defaults.USER,
+                creator = Defaults.USERNAME,
                 reference = "qoi78wizened"
             )
         }
@@ -580,7 +584,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOnce {
             reportService.read(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 taskReference = "task-1"
             )
         }
@@ -614,7 +618,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOnce {
             reportService.read(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 taskReference = "10"
             )
         }
@@ -651,7 +655,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOnce {
             reportService.read(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 taskReference = "20"
             )
         }
@@ -687,7 +691,7 @@ internal class ReportControllerIntegrationTest {
         coVerifyOnce {
             reportService.read(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 taskReference = "20"
             )
         }

@@ -1,5 +1,11 @@
 package io.qalipsis.core.head.model
 
+import io.qalipsis.core.head.model.ReportTaskStatus.COMPLETED
+import io.qalipsis.core.head.model.ReportTaskStatus.FAILED
+import io.qalipsis.core.head.model.ReportTaskStatus.PENDING
+import io.qalipsis.core.head.model.ReportTaskStatus.PROCESSING
+
+
 /**
  * Status of report file generation.
  *

@@ -43,8 +43,7 @@ import java.net.URL
 @WithMockk
 internal class PersistenceZoneServiceImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

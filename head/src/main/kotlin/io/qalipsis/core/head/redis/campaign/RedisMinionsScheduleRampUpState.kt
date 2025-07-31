@@ -32,7 +32,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.MinionsScheduleRampUpState
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisMinionsScheduleRampUpState(
+class RedisMinionsScheduleRampUpState(
     campaign: RunningCampaign,
     private val operations: CampaignRedisOperations
 ) : MinionsScheduleRampUpState(campaign) {

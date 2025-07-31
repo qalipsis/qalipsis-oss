@@ -74,7 +74,7 @@ import java.util.Optional
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class FactoryCampaignManagerImpl(
+class FactoryCampaignManagerImpl(
     private val minionsKeeper: MinionsKeeper,
     private val scenarioRegistry: ScenarioRegistry,
     private val minionAssignmentKeeper: MinionAssignmentKeeper,

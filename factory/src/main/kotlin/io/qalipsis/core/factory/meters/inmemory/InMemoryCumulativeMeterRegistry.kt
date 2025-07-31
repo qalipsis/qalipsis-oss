@@ -49,7 +49,7 @@ import java.util.concurrent.ConcurrentMap
  * @author Eric Jessé
  */
 @Singleton
-internal class InMemoryCumulativeMeterRegistry(
+class InMemoryCumulativeMeterRegistry(
     private val meterReporter: MeterReporter,
 ) : MeterRegistry, CampaignLifeCycleAware {
 

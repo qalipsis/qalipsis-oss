@@ -8,7 +8,7 @@ import io.qalipsis.core.head.model.CampaignConfiguration
  *
  * @author Svetlana Paliashchuk
  */
-internal interface CampaignConfigurationConverter {
+interface CampaignConfigurationConverter {
 
     /**
      * Converts from [CampaignConfiguration] to [RunningCampaign].

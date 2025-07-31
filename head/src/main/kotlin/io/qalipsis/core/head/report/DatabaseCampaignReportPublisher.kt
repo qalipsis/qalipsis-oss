@@ -53,7 +53,7 @@ import org.slf4j.event.Level
         defaultValue = StringUtils.TRUE
     )
 )
-internal class DatabaseCampaignReportPublisher(
+class DatabaseCampaignReportPublisher(
     private val campaignRepository: CampaignRepository,
     private val campaignReportRepository: CampaignReportRepository,
     private val scenarioReportRepository: ScenarioReportRepository,

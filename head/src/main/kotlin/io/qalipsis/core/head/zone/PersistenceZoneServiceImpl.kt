@@ -36,7 +36,7 @@ import jakarta.inject.Singleton
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 )
-internal class PersistenceZoneServiceImpl(private val zoneRepository: ZoneRepository): ZoneService {
+class PersistenceZoneServiceImpl(private val zoneRepository: ZoneRepository) : ZoneService {
 
     override suspend fun list(tenant: String): Collection<Zone> {
         return zoneRepository.findZonesByTenant(tenant).map { it.toModel() }

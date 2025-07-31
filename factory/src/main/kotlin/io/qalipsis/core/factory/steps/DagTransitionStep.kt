@@ -31,7 +31,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-internal open class DagTransitionStep<I>(
+open class DagTransitionStep<I>(
     id: StepName,
     private val dagId: DirectedAcyclicGraphName,
     private val factoryCampaignManager: FactoryCampaignManager,

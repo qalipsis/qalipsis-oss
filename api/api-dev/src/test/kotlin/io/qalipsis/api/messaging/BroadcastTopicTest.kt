@@ -37,8 +37,7 @@ import java.time.Duration
  */
 internal class BroadcastTopicTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test

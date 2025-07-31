@@ -37,7 +37,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal open class SingletonProxyStepSpecification<T>(
+open class SingletonProxyStepSpecification<T>(
     val singletonStepName: StepName,
     val next: StepSpecification<T, *, *>,
     val topic: Topic<T>,

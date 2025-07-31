@@ -20,73 +20,45 @@
   -->
 
 <databaseChangeLog
-  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
-  <changeSet id="00" author="pbril">
-    <createSequence sequenceName="tenant_seq" schemaName="qalipsis"/>
-    <createTable tableName="tenant" schemaName="qalipsis">
-      <column name="id" type="BIGINT" valueSequenceNext="tenant_seq">
-        <constraints nullable="false" primaryKey="true" primaryKeyName="tenant_pk"/>
-      </column>
-      <column name="version" type="TIMESTAMP WITH TIME ZONE">
-        <constraints nullable="false"/>
-      </column>
-      <column name="creation" type="TIMESTAMP WITH TIME ZONE">
-        <constraints nullable="false"/>
-      </column>
-      <column name="reference" type="VARCHAR(50)">
-        <constraints nullable="false" unique="true" uniqueConstraintName="unique_tenant_reference_idx"/>
-      </column>
-      <column name="display_name" type="VARCHAR(200)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="description" type="TEXT">
-        <constraints nullable="true"/>
-      </column>
-      <column name="parent" type="BIGINT">
-        <constraints nullable="true" foreignKeyName="parent_tenant_id_fk"
-          referencedTableName="tenant"
-          referencedColumnNames="id" deleteCascade="false"/>
-      </column>
-    </createTable>
+    <changeSet id="00" author="pbril">
+        <createSequence sequenceName="tenant_seq" schemaName="qalipsis"/>
+        <createTable tableName="tenant" schemaName="qalipsis">
+            <column name="id" type="BIGINT" valueSequenceNext="tenant_seq">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="tenant_pk"/>
+            </column>
+            <column name="reference" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="unique_tenant_reference_idx"/>
+            </column>
+        </createTable>
 
-    <!-- Default tenant -->
-    <insert tableName="tenant" schemaName="qalipsis">
-      <column name="id" valueSequenceNext="tenant_seq"/>
-      <column name="version" valueDate="CURRENT_TIMESTAMP"/>
-      <column name="creation" valueDate="CURRENT_TIMESTAMP"/>
-      <column name="reference" value="_qalipsis_ten_"/>
-      <column name="display_name" value="QALIPSIS"/>
-    </insert>
+        <!-- Default tenant -->
+        <insert tableName="tenant" schemaName="qalipsis">
+            <column name="id" valueSequenceNext="tenant_seq"/>
+            <column name="reference" value="_qalipsis_ten_"/>
+        </insert>
 
-    <createSequence sequenceName="user_seq" schemaName="qalipsis"/>
-    <createTable tableName="user" schemaName="qalipsis">
-      <column name="id" type="BIGINT" valueSequenceNext="user_seq">
-        <constraints nullable="false" primaryKey="true" primaryKeyName="user_pk"/>
-      </column>
-      <column name="version" type="TIMESTAMP WITH TIME ZONE">
-        <constraints nullable="false"/>
-      </column>
-      <column name="creation" type="TIMESTAMP WITH TIME ZONE">
-        <constraints nullable="false"/>
-      </column>
-      <column name="username" type="VARCHAR(150)">
-        <constraints nullable="false" unique="true" uniqueConstraintName="unique_username_idx"/>
-      </column>
-      <column name="display_name" type="VARCHAR(150)">
-        <constraints nullable="true"/>
-      </column>
-    </createTable>
+        <createSequence sequenceName="user_seq" schemaName="qalipsis"/>
+        <createTable tableName="user" schemaName="qalipsis">
+            <column name="id" type="BIGINT" valueSequenceNext="user_seq">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="user_pk"/>
+            </column>
+            <column name="username" type="VARCHAR(150)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="unique_username_idx"/>
+            </column>
+            <column name="display_name" type="VARCHAR(150)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
 
-    <!-- Default user -->
-    <insert tableName="user" schemaName="qalipsis">
-      <column name="id" valueSequenceNext="user_seq"/>
-      <column name="version" valueDate="CURRENT_TIMESTAMP"/>
-      <column name="creation" valueDate="CURRENT_TIMESTAMP"/>
-      <column name="username" value="_qalipsis_"/>
-      <column name="display_name" value="Qalipsis"/>
-    </insert>
-  </changeSet>
+        <!-- Default user -->
+        <insert tableName="user" schemaName="qalipsis">
+            <column name="id" valueSequenceNext="user_seq"/>
+            <column name="username" value="_qalipsis_"/>
+            <column name="display_name" value="Qalipsis"/>
+        </insert>
+    </changeSet>
 </databaseChangeLog>

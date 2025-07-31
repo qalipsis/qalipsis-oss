@@ -21,9 +21,6 @@ package io.qalipsis.core.factory.meters
 
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.core.bind.annotation.Bindable
-import io.qalipsis.api.meters.Throughput
-import io.qalipsis.core.factory.meters.MeasurementConfiguration.Summary
-import io.qalipsis.core.factory.meters.MeasurementConfiguration.Timer
 
 /**
  * Additional configuration properties to support percentiles and histogram measurement for
@@ -35,7 +32,7 @@ import io.qalipsis.core.factory.meters.MeasurementConfiguration.Timer
  * @author Francisca Eze
  */
 @ConfigurationProperties("meters.export")
-internal interface MeasurementConfiguration {
+interface MeasurementConfiguration {
 
     val summary: Summary
 

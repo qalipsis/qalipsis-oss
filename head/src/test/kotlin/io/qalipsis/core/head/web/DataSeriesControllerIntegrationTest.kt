@@ -60,10 +60,10 @@ import io.qalipsis.core.head.report.DataType.EVENTS
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject
-import java.time.Duration
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.Duration
 
 @WithMockk
 @MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.TRANSIENT, ExecutionEnvironments.SINGLE_HEAD])
@@ -128,7 +128,7 @@ internal class DataSeriesControllerIntegrationTest {
 
         // then
         coVerifyOrder {
-            dataSeriesService.create(tenant = Defaults.TENANT, creator = Defaults.USER, dataSeries = dataSeries)
+            dataSeriesService.create(tenant = Defaults.TENANT, creator = Defaults.USERNAME, dataSeries = dataSeries)
         }
 
         assertThat(response).all {
@@ -247,7 +247,7 @@ internal class DataSeriesControllerIntegrationTest {
         coEvery {
             dataSeriesService.update(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 reference = "q7232x",
                 patches = any()
             )
@@ -260,7 +260,7 @@ internal class DataSeriesControllerIntegrationTest {
         coVerifyOnce {
             dataSeriesService.update(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 reference = "q7232x",
                 patches = any()
             )
@@ -283,7 +283,11 @@ internal class DataSeriesControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            dataSeriesService.delete(tenant = Defaults.TENANT, username = Defaults.USER, references = setOf("q7232x", "g2723a"))
+            dataSeriesService.delete(
+                tenant = Defaults.TENANT,
+                username = Defaults.USERNAME,
+                references = setOf("q7232x", "g2723a")
+            )
         }
 
         assertThat(response).all {
@@ -307,7 +311,7 @@ internal class DataSeriesControllerIntegrationTest {
         coEvery {
             dataSeriesService.get(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 reference = "q7232x"
             )
         } returns dataSeries
@@ -317,7 +321,7 @@ internal class DataSeriesControllerIntegrationTest {
 
         // then
         coVerifyOnce {
-            dataSeriesService.get(tenant = Defaults.TENANT, username = Defaults.USER, reference = "q7232x")
+            dataSeriesService.get(tenant = Defaults.TENANT, username = Defaults.USERNAME, reference = "q7232x")
         }
 
         assertThat(response).all {
@@ -559,7 +563,7 @@ internal class DataSeriesControllerIntegrationTest {
         coEvery {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = emptyList(),
                 sort = "displayName:asc",
                 page = 0,
@@ -574,7 +578,7 @@ internal class DataSeriesControllerIntegrationTest {
         coVerifyOnce {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = emptyList(),
                 sort = "displayName:asc",
                 page = 0,
@@ -647,7 +651,7 @@ internal class DataSeriesControllerIntegrationTest {
         coEvery {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = listOf("foo", "filter-2"),
                 sort = "displayName:asc",
                 page = 0,
@@ -662,7 +666,7 @@ internal class DataSeriesControllerIntegrationTest {
         coVerifyOnce {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = listOf("foo", "filter-2"),
                 sort = "displayName:asc",
                 page = 0,
@@ -703,7 +707,7 @@ internal class DataSeriesControllerIntegrationTest {
         coEvery {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = emptyList(),
                 sort = "color",
                 page = 0,
@@ -718,7 +722,7 @@ internal class DataSeriesControllerIntegrationTest {
         coVerifyOnce {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
-                username = Defaults.USER,
+                username = Defaults.USERNAME,
                 filters = emptyList(),
                 sort = "color",
                 page = 0,

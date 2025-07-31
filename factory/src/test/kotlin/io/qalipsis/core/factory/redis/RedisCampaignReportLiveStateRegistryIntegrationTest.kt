@@ -44,8 +44,7 @@ import java.util.concurrent.TimeoutException
 @MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
 internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRedisIntegrationTest() {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject

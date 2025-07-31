@@ -35,7 +35,7 @@ import java.time.Duration
  * @author Eric Jessé
  */
 @StepConverter
-internal class IterativeStepDecoratorSpecificationConverter :
+class IterativeStepDecoratorSpecificationConverter :
     StepSpecificationDecoratorConverter<StepSpecification<*, *, *>>() {
 
     override val order: Int = 750

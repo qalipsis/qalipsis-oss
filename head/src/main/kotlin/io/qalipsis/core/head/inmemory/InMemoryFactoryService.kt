@@ -34,6 +34,7 @@ import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.head.factory.FactoryHealth
 import io.qalipsis.core.head.factory.FactoryService
+import io.qalipsis.core.head.inmemory.InMemoryFactoryService.Companion.HEALTH_QUERY_INTERVAL
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.model.Factory
 import io.qalipsis.core.heartbeat.Heartbeat
@@ -52,7 +53,7 @@ import java.util.concurrent.atomic.AtomicReference
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(env = [ExecutionEnvironments.TRANSIENT])
 )
-internal class InMemoryFactoryService(
+class InMemoryFactoryService(
     private val scenarioSummaryRepository: ScenarioSummaryRepository
 ) : FactoryService {
 
@@ -68,6 +69,7 @@ internal class InMemoryFactoryService(
     ) {
         factoriesByNodeId[actualNodeId] = LockableFactory(
             nodeId = actualNodeId,
+            tenant = handshakeRequest.tenant,
             registrationTimestamp = Instant.now(),
             unicastChannel = handshakeResponse.unicastChannel,
             version = Instant.now(),
@@ -79,6 +81,10 @@ internal class InMemoryFactoryService(
             factoriesByScenarios.computeIfAbsent(scenario.name) { concurrentSet() } += actualNodeId
         }
         scenarioSummaryRepository.saveAll(handshakeRequest.scenarios)
+    }
+
+    override suspend fun getFactoryTenant(nodeId: NodeId): String {
+        return factoriesByNodeId[nodeId]!!.tenant
     }
 
     @LogInput
@@ -172,6 +178,7 @@ internal class InMemoryFactoryService(
      */
     private class LockableFactory(
         nodeId: NodeId,
+        val tenant: String,
         registrationTimestamp: Instant,
         unicastChannel: String,
         version: Instant,

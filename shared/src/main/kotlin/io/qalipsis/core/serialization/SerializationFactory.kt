@@ -20,8 +20,8 @@
 package io.qalipsis.core.serialization
 
 import io.micronaut.context.annotation.Factory
-import io.micronaut.context.annotation.Primary
 import io.micronaut.context.annotation.Requires
+import io.micronaut.context.annotation.Secondary
 import io.qalipsis.api.serialization.JsonSerializers
 import io.qalipsis.api.serialization.ProtobufSerializers
 import io.qalipsis.api.serialization.SerializersProvider
@@ -73,15 +73,17 @@ import io.qalipsis.core.feedbacks.NodeExecutionFeedback
 import io.qalipsis.core.feedbacks.ScenarioWarmUpFeedback
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.SerializersModuleBuilder
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.protobuf.ProtoBuf
+import kotlin.reflect.KClass
 
 /**
  * Kotlin Protobuf Serialization configuration.
  *
- * Creates a [ProtoBuf] instance properly configured with serializer modules for subclasses of [Feedback] and [Directive].
+ * Creates a serializer instances properly configured with modules for subclasses of [Feedback] and [Directive].
+ *
  * This way Kotlin serialization can serialize and deserialize data using Interfaces or Parent classes and still keep reference to the original class.
  * It is needed to explicitly declare polymorphic relations due to Kotlin serialization limitations related to polymorphic objects.
  * See more [here](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/polymorphism.md).
@@ -91,156 +93,154 @@ import kotlinx.serialization.protobuf.ProtoBuf
 @Factory
 @Requires(notEnv = [ExecutionEnvironments.STANDALONE])
 @ExperimentalSerializationApi
-internal class SerializationFactory {
+class SerializationFactory {
+
+    protected open val directiveClassesAndSerializers = mapOf<KClass<out Directive>, KSerializer<out Directive>>(
+        FactoryAssignmentDirective::class to FactoryAssignmentDirective.serializer(),
+        ScenarioWarmUpDirective::class to ScenarioWarmUpDirective.serializer(),
+        CampaignShutdownDirective::class to CampaignShutdownDirective.serializer(),
+        CampaignScenarioShutdownDirective::class to CampaignScenarioShutdownDirective.serializer(),
+        CompleteCampaignDirective::class to CompleteCampaignDirective.serializer(),
+        FactoryShutdownDirective::class to FactoryShutdownDirective.serializer(),
+        CampaignAbortDirective::class to CampaignAbortDirective.serializer(),
+
+        MinionsAssignmentDirective::class to MinionsAssignmentDirective.serializer(),
+        MinionsDeclarationDirective::class to MinionsDeclarationDirective.serializer(),
+        MinionsDeclarationDirectiveReference::class to MinionsDeclarationDirectiveReference.serializer(),
+        MinionsStartDirective::class to MinionsStartDirective.serializer(),
+        MinionsShutdownDirective::class to MinionsShutdownDirective.serializer(),
+
+        MinionsRampUpPreparationDirective::class to MinionsRampUpPreparationDirective.serializer(),
+        MinionsRampUpPreparationDirectiveReference::class to MinionsRampUpPreparationDirectiveReference.serializer(),
+    )
+
+    protected open val descriptiveDirectiveClassesAndSerializers =
+        mapOf<KClass<out DescriptiveDirective>, KSerializer<out DescriptiveDirective>>(
+            FactoryAssignmentDirective::class to FactoryAssignmentDirective.serializer(),
+            ScenarioWarmUpDirective::class to ScenarioWarmUpDirective.serializer(),
+            CampaignShutdownDirective::class to CampaignShutdownDirective.serializer(),
+            CampaignScenarioShutdownDirective::class to CampaignScenarioShutdownDirective.serializer(),
+            CompleteCampaignDirective::class to CompleteCampaignDirective.serializer(),
+            FactoryShutdownDirective::class to FactoryShutdownDirective.serializer(),
+            CampaignAbortDirective::class to CampaignAbortDirective.serializer(),
+
+            MinionsAssignmentDirective::class to MinionsAssignmentDirective.serializer(),
+            MinionsStartDirective::class to MinionsStartDirective.serializer(),
+            MinionsShutdownDirective::class to MinionsShutdownDirective.serializer(),
+        )
+
+    protected open val singleUseDirectiveClassesAndSerializers =
+        mapOf<KClass<out SingleUseDirective<*>>, KSerializer<out SingleUseDirective<*>>>(
+            MinionsDeclarationDirective::class to MinionsDeclarationDirective.serializer(),
+            MinionsRampUpPreparationDirective::class to MinionsRampUpPreparationDirective.serializer(),
+        )
+
+    protected open val singleUseDirectiveReferenceClassesAndSerializers =
+        mapOf<KClass<out SingleUseDirectiveReference>, KSerializer<out SingleUseDirectiveReference>>(
+            MinionsDeclarationDirectiveReference::class to MinionsDeclarationDirectiveReference.serializer(),
+            MinionsRampUpPreparationDirectiveReference::class to MinionsRampUpPreparationDirectiveReference.serializer(),
+        )
+
+    protected open val serializedRecordClassesAndSerializers =
+        mapOf<KClass<out SerializedRecord>, KSerializer<out SerializedRecord>>(
+            BinarySerializedRecord::class to BinarySerializedRecord.serializer(),
+        )
+
+    protected open val feedbackClassesAndSerializers =
+        mapOf<KClass<out Feedback>, KSerializer<out Feedback>>(
+            CampaignStartedForDagFeedback::class to CampaignStartedForDagFeedback.serializer(),
+            FactoryAssignmentFeedback::class to FactoryAssignmentFeedback.serializer(),
+            ScenarioWarmUpFeedback::class to ScenarioWarmUpFeedback.serializer(),
+            EndOfCampaignScenarioFeedback::class to EndOfCampaignScenarioFeedback.serializer(),
+            EndOfCampaignFeedback::class to EndOfCampaignFeedback.serializer(),
+            CampaignScenarioShutdownFeedback::class to CampaignScenarioShutdownFeedback.serializer(),
+            CampaignShutdownFeedback::class to CampaignShutdownFeedback.serializer(),
+            MinionsAssignmentFeedback::class to MinionsAssignmentFeedback.serializer(),
+            MinionsStartFeedback::class to MinionsStartFeedback.serializer(),
+            CompleteMinionFeedback::class to CompleteMinionFeedback.serializer(),
+            MinionsShutdownFeedback::class to MinionsShutdownFeedback.serializer(),
+            MinionsDeclarationFeedback::class to MinionsDeclarationFeedback.serializer(),
+            MinionsRampUpPreparationFeedback::class to MinionsRampUpPreparationFeedback.serializer(),
+            FailedCampaignFeedback::class to FailedCampaignFeedback.serializer(),
+            NodeExecutionFeedback::class to NodeExecutionFeedback.serializer(),
+            CampaignAbortFeedback::class to CampaignAbortFeedback.serializer(),
+            CampaignTimeoutFeedback::class to CampaignTimeoutFeedback.serializer(),
+        )
+
+    protected open val executionProfileConfigurationClassesAndSerializers =
+        mapOf<KClass<out ExecutionProfileConfiguration>, KSerializer<out ExecutionProfileConfiguration>>(
+            AcceleratingExecutionProfileConfiguration::class to AcceleratingExecutionProfileConfiguration.serializer(),
+            ImmediateExecutionProfileConfiguration::class to ImmediateExecutionProfileConfiguration.serializer(),
+            PercentageStageExecutionProfileConfiguration::class to PercentageStageExecutionProfileConfiguration.serializer(),
+            ProgressiveVolumeExecutionProfileConfiguration::class to ProgressiveVolumeExecutionProfileConfiguration.serializer(),
+            RegularExecutionProfileConfiguration::class to RegularExecutionProfileConfiguration.serializer(),
+            StageExecutionProfileConfiguration::class to StageExecutionProfileConfiguration.serializer(),
+            TimeFrameExecutionProfileConfiguration::class to TimeFrameExecutionProfileConfiguration.serializer(),
+            DefaultExecutionProfileConfiguration::class to DefaultExecutionProfileConfiguration.serializer(),
+        )
+
+    @Singleton
+    @Secondary
+    fun protobuf(configurers: Collection<SerializationConfigurer> = emptyList()): ProtoBuf {
+        return ProtoBuf(from = ProtobufSerializers.protobuf) {
+            serializersModule = SerializersModule {
+                polymorphic(Directive::class) {
+                    directiveClassesAndSerializers.forEach { (kClass, serializer) ->
+                        subclass(kClass as KClass<Directive>, serializer as KSerializer<Directive>)
+                    }
+                }
+                polymorphic(DescriptiveDirective::class) {
+                    descriptiveDirectiveClassesAndSerializers.forEach { (kClass, serializer) ->
+                        subclass(
+                            kClass as KClass<DescriptiveDirective>,
+                            serializer as KSerializer<DescriptiveDirective>
+                        )
+                    }
+                }
+                polymorphic(SingleUseDirective::class) {
+                    singleUseDirectiveClassesAndSerializers.forEach { (kClass, serializer) ->
+                        subclass(
+                            kClass as KClass<SingleUseDirective<*>>,
+                            serializer as KSerializer<SingleUseDirective<*>>
+                        )
+                    }
+                }
+                polymorphic(SingleUseDirectiveReference::class) {
+                    singleUseDirectiveReferenceClassesAndSerializers.forEach { (kClass, serializer) ->
+                        subclass(
+                            kClass as KClass<SingleUseDirectiveReference>,
+                            serializer as KSerializer<SingleUseDirectiveReference>
+                        )
+                    }
+                }
+                polymorphic(SerializedRecord::class) {
+                    serializedRecordClassesAndSerializers.forEach { (kClass, serializer) ->
+                        subclass(kClass as KClass<SerializedRecord>, serializer as KSerializer<SerializedRecord>)
+                    }
+                }
+                polymorphic(Feedback::class) {
+                    feedbackClassesAndSerializers.forEach { (kClass, serializer) ->
+                        subclass(kClass as KClass<Feedback>, serializer as KSerializer<Feedback>)
+                    }
+                }
+                polymorphic(ExecutionProfileConfiguration::class) {
+                    executionProfileConfigurationClassesAndSerializers.forEach { (kClass, serializer) ->
+                        subclass(
+                            kClass as KClass<ExecutionProfileConfiguration>,
+                            serializer as KSerializer<ExecutionProfileConfiguration>
+                        )
+                    }
+                }
+                configurers.forEach { it.configure(this) }
+            }
+        }
+    }
+
 
     @ExperimentalSerializationApi
     @Singleton
     fun serializersProvider(protoBuf: ProtoBuf): SerializersProvider {
         return SerializersProvider(listOf(JsonSerializers.json, protoBuf))
-    }
-
-    @Singleton
-    @Primary
-    fun protobuf(configurers: Collection<SerializationConfigurer> = emptyList()) =
-        ProtoBuf(from = ProtobufSerializers.protobuf) {
-            serializersModule = SerializersModule {
-                factoryApiDirectives(this)
-                minionApiDirectives(this)
-                minionHeadDelegationApiDirectives(this)
-                feedbacksSerializer(this)
-                executionProfileConfigurations(this)
-                polymorphic(SerializedRecord::class) {
-                    subclass(BinarySerializedRecord::class, BinarySerializedRecord.serializer())
-                }
-                configurers.forEach { it.configure(this) }
-            }
-        }
-
-    private fun factoryApiDirectives(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
-        return builderAction.apply {
-            polymorphic(Directive::class) {
-                subclass(FactoryAssignmentDirective::class, FactoryAssignmentDirective.serializer())
-                subclass(ScenarioWarmUpDirective::class, ScenarioWarmUpDirective.serializer())
-                subclass(CampaignShutdownDirective::class, CampaignShutdownDirective.serializer())
-                subclass(CampaignScenarioShutdownDirective::class, CampaignScenarioShutdownDirective.serializer())
-                subclass(CompleteCampaignDirective::class, CompleteCampaignDirective.serializer())
-                subclass(FactoryShutdownDirective::class, FactoryShutdownDirective.serializer())
-                subclass(CampaignAbortDirective::class, CampaignAbortDirective.serializer())
-            }
-
-            polymorphic(DescriptiveDirective::class) {
-                subclass(CampaignScenarioShutdownDirective::class, CampaignScenarioShutdownDirective.serializer())
-                subclass(ScenarioWarmUpDirective::class, ScenarioWarmUpDirective.serializer())
-                subclass(FactoryAssignmentDirective::class, FactoryAssignmentDirective.serializer())
-                subclass(CampaignShutdownDirective::class, CampaignShutdownDirective.serializer())
-                subclass(CompleteCampaignDirective::class, CompleteCampaignDirective.serializer())
-                subclass(FactoryShutdownDirective::class, FactoryShutdownDirective.serializer())
-                subclass(CampaignAbortDirective::class, CampaignAbortDirective.serializer())
-            }
-        }
-    }
-
-    private fun minionApiDirectives(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
-        return builderAction.apply {
-            polymorphic(Directive::class) {
-                subclass(MinionsAssignmentDirective::class, MinionsAssignmentDirective.serializer())
-                subclass(MinionsDeclarationDirective::class, MinionsDeclarationDirective.serializer())
-                subclass(MinionsStartDirective::class, MinionsStartDirective.serializer())
-                subclass(MinionsShutdownDirective::class, MinionsShutdownDirective.serializer())
-            }
-
-            polymorphic(DescriptiveDirective::class) {
-                subclass(MinionsAssignmentDirective::class, MinionsAssignmentDirective.serializer())
-                subclass(MinionsStartDirective::class, MinionsStartDirective.serializer())
-                subclass(MinionsShutdownDirective::class, MinionsShutdownDirective.serializer())
-            }
-
-            polymorphic(SingleUseDirective::class) {
-                subclass(MinionsDeclarationDirective::class, MinionsDeclarationDirective.serializer())
-            }
-        }
-    }
-
-    private fun minionHeadDelegationApiDirectives(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
-        return builderAction.apply {
-
-            polymorphic(Directive::class) {
-                subclass(MinionsDeclarationDirective::class, MinionsDeclarationDirective.serializer())
-                subclass(MinionsDeclarationDirectiveReference::class, MinionsDeclarationDirectiveReference.serializer())
-                subclass(MinionsRampUpPreparationDirective::class, MinionsRampUpPreparationDirective.serializer())
-                subclass(
-                    MinionsRampUpPreparationDirectiveReference::class,
-                    MinionsRampUpPreparationDirectiveReference.serializer()
-                )
-            }
-
-            polymorphic(SingleUseDirective::class) {
-                subclass(MinionsDeclarationDirective::class, MinionsDeclarationDirective.serializer())
-                subclass(MinionsRampUpPreparationDirective::class, MinionsRampUpPreparationDirective.serializer())
-            }
-
-            polymorphic(SingleUseDirectiveReference::class) {
-                subclass(MinionsDeclarationDirectiveReference::class, MinionsDeclarationDirectiveReference.serializer())
-                subclass(
-                    MinionsRampUpPreparationDirectiveReference::class,
-                    MinionsRampUpPreparationDirectiveReference.serializer()
-                )
-            }
-        }
-    }
-
-    private fun feedbacksSerializer(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
-        return builderAction.apply {
-            polymorphic(Feedback::class) {
-                subclass(CampaignStartedForDagFeedback::class, CampaignStartedForDagFeedback.serializer())
-                subclass(FactoryAssignmentFeedback::class, FactoryAssignmentFeedback.serializer())
-                subclass(ScenarioWarmUpFeedback::class, ScenarioWarmUpFeedback.serializer())
-                subclass(EndOfCampaignScenarioFeedback::class, EndOfCampaignScenarioFeedback.serializer())
-                subclass(EndOfCampaignFeedback::class, EndOfCampaignFeedback.serializer())
-                subclass(CampaignScenarioShutdownFeedback::class, CampaignScenarioShutdownFeedback.serializer())
-                subclass(CampaignShutdownFeedback::class, CampaignShutdownFeedback.serializer())
-                subclass(MinionsAssignmentFeedback::class, MinionsAssignmentFeedback.serializer())
-                subclass(MinionsStartFeedback::class, MinionsStartFeedback.serializer())
-                subclass(CompleteMinionFeedback::class, CompleteMinionFeedback.serializer())
-                subclass(MinionsShutdownFeedback::class, MinionsShutdownFeedback.serializer())
-                subclass(MinionsDeclarationFeedback::class, MinionsDeclarationFeedback.serializer())
-                subclass(MinionsRampUpPreparationFeedback::class, MinionsRampUpPreparationFeedback.serializer())
-                subclass(FailedCampaignFeedback::class, FailedCampaignFeedback.serializer())
-                subclass(NodeExecutionFeedback::class, NodeExecutionFeedback.serializer())
-                subclass(CampaignAbortFeedback::class, CampaignAbortFeedback.serializer())
-                subclass(CampaignTimeoutFeedback::class, CampaignTimeoutFeedback.serializer())
-            }
-        }
-    }
-
-    private fun executionProfileConfigurations(builderAction: SerializersModuleBuilder): SerializersModuleBuilder {
-        return builderAction.apply {
-            polymorphic(ExecutionProfileConfiguration::class) {
-                subclass(
-                    AcceleratingExecutionProfileConfiguration::class,
-                    AcceleratingExecutionProfileConfiguration.serializer()
-                )
-                subclass(
-                    ImmediateExecutionProfileConfiguration::class,
-                    ImmediateExecutionProfileConfiguration.serializer()
-                )
-                subclass(
-                    PercentageStageExecutionProfileConfiguration::class,
-                    PercentageStageExecutionProfileConfiguration.serializer()
-                )
-                subclass(
-                    ProgressiveVolumeExecutionProfileConfiguration::class,
-                    ProgressiveVolumeExecutionProfileConfiguration.serializer()
-                )
-                subclass(RegularExecutionProfileConfiguration::class, RegularExecutionProfileConfiguration.serializer())
-                subclass(StageExecutionProfileConfiguration::class, StageExecutionProfileConfiguration.serializer())
-                subclass(
-                    TimeFrameExecutionProfileConfiguration::class,
-                    TimeFrameExecutionProfileConfiguration.serializer()
-                )
-                subclass(DefaultExecutionProfileConfiguration::class, DefaultExecutionProfileConfiguration.serializer())
-            }
-        }
     }
 
 }

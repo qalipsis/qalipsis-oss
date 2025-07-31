@@ -31,7 +31,7 @@ import java.time.Duration
  * @author Eric Jessé
  */
 @Singleton
-internal class PositiveOrZeroDurationValidator : ConstraintValidator<PositiveOrZeroDuration, Duration> {
+class PositiveOrZeroDurationValidator : ConstraintValidator<PositiveOrZeroDuration, Duration> {
 
     override fun isValid(
         value: Duration?, annotationMetadata: AnnotationValue<PositiveOrZeroDuration>,

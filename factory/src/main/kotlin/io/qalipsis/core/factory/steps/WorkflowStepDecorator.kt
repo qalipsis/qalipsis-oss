@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * @author Eric Jessé
  */
-internal class WorkflowStepDecorator<I, O>(
+class WorkflowStepDecorator<I, O>(
     override val decorated: Step<I, O>,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
     private val stepStartTimeout: Duration = Duration.ofSeconds(30)

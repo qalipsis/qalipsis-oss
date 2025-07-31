@@ -32,7 +32,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.CompletionState
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisCompletionState(
+class RedisCompletionState(
     campaign: RunningCampaign,
     private val operations: CampaignRedisOperations
 ) : CompletionState(campaign) {

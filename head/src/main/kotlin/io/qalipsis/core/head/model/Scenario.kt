@@ -37,7 +37,7 @@ import javax.validation.constraints.Size
     name = "Scenario details",
     title = "Details of a scenario to execute in campaigns"
 )
-internal data class Scenario(
+data class Scenario(
     @field:Schema(description = "Last stored update of the scenario", required = true)
     val version: Instant,
 

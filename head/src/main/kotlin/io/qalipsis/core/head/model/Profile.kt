@@ -34,10 +34,33 @@ import io.swagger.v3.oas.annotations.media.Schema
     title = "Profile of a QALIPSIS user",
     description = "Details of a QALIPSIS user and its profile"
 )
-internal data class Profile(
+open class Profile<U : User>(
     @field:Schema(description = "Details of the user")
-    val user: User,
+    val user: U,
 
     @field:Schema(description = "Tenants accessible to the user")
     val tenants: Collection<Tenant>
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Profile<*>
+
+        if (user != other.user) return false
+        if (tenants != other.tenants) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = user.hashCode()
+        result = 31 * result + tenants.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "Profile(user=$user, tenants=$tenants)"
+    }
+
+}

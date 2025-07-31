@@ -33,17 +33,22 @@ import io.qalipsis.core.head.report.CampaignReportDetail
 import io.qalipsis.core.head.report.TemplateBeanFactory
 import io.qalipsis.core.head.report.TemplateReportService
 import io.qalipsis.core.head.report.chart.ChartService
+import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.CHARACTER_ENCODING
+import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.CSS_STYLE_PATH
+import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.TIME_PATH
+import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.USER_PATH
+import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.logger
 import jakarta.inject.Singleton
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.thymeleaf.context.Context
+import org.xhtmlrenderer.pdf.ITextRenderer
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Instant
 import java.util.Base64
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.thymeleaf.context.Context
-import org.xhtmlrenderer.pdf.ITextRenderer
 import kotlin.io.path.absolutePathString
 
 
@@ -53,7 +58,7 @@ import kotlin.io.path.absolutePathString
  * @author Francisca Eze
  */
 @Singleton
-internal class ThymeleafReportServiceImpl(
+class ThymeleafReportServiceImpl(
     private val reportTaskRepository: ReportTaskRepository,
     private val chartService: ChartService,
     private val templateBeanFactory: TemplateBeanFactory,

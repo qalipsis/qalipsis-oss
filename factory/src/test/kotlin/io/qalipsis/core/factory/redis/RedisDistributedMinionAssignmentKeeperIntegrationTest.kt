@@ -81,8 +81,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 )
 internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractRedisIntegrationTest() {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

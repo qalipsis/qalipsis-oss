@@ -31,7 +31,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
  * @author Francisca Eze
  */
 @Factory
-internal class TemplateBeanFactory {
+class TemplateBeanFactory {
 
     /**
      * Returns a singleton instance of thymeleaf [TemplateEngine].

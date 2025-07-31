@@ -25,23 +25,29 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils
 import java.time.Duration
 import java.time.Instant
 
-internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class ScenarioReportRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject
     private lateinit var campaignReportRepository: CampaignReportRepository
@@ -56,13 +62,13 @@ internal class ScenarioReportRepositoryIntegrationTest : PostgresqlTemplateTest(
     private lateinit var campaignRepository: CampaignRepository
 
     @Inject
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantRepository: TenantRepositoryForTest
 
     private lateinit var scenarioReportPrototype: ScenarioReportEntity
 
     @BeforeEach
     fun setUp() = testDispatcherProvider.run {
-        val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
         val campaign = campaignRepository.save(
             CampaignEntity(
                 tenantId = tenant.id,

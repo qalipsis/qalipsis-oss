@@ -33,7 +33,7 @@ import io.qalipsis.core.factory.steps.ShelveStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class ShelveStepSpecificationConverter(
+class ShelveStepSpecificationConverter(
     private val sharedStateRegistry: SharedStateRegistry
 ) : StepSpecificationConverter<ShelveStepSpecification<*>> {
 

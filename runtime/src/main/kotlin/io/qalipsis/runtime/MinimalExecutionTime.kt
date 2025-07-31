@@ -40,7 +40,7 @@ import java.time.Duration
  * @author Eric Jessé
  */
 @Singleton
-internal class MinimalExecutionTime(
+class MinimalExecutionTime(
     @Property(name = "runtime.minimal-duration", defaultValue = "1s") private val minimalDuration: Duration
 ) : ProcessBlocker {
 

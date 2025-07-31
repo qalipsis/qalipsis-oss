@@ -21,9 +21,13 @@ package io.qalipsis.core.head.report.thymeleaf
 
 import com.lowagie.text.Image
 import io.qalipsis.api.logging.LoggerHelper.logger
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.util.*
+import io.qalipsis.core.head.report.thymeleaf.MediaReplacedElementFactory.Companion.ALT
+import io.qalipsis.core.head.report.thymeleaf.MediaReplacedElementFactory.Companion.DEFAULT_ICON_SCALE_HEIGHT
+import io.qalipsis.core.head.report.thymeleaf.MediaReplacedElementFactory.Companion.DEFAULT_ICON_SCALE_WIDTH
+import io.qalipsis.core.head.report.thymeleaf.MediaReplacedElementFactory.Companion.IMG
+import io.qalipsis.core.head.report.thymeleaf.MediaReplacedElementFactory.Companion.PDF_IMAGE
+import io.qalipsis.core.head.report.thymeleaf.MediaReplacedElementFactory.Companion.SRC
+import io.qalipsis.core.head.report.thymeleaf.MediaReplacedElementFactory.Companion.logger
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
 import org.apache.batik.transcoder.image.PNGTranscoder
@@ -36,6 +40,9 @@ import org.xhtmlrenderer.pdf.ITextFSImage
 import org.xhtmlrenderer.pdf.ITextImageElement
 import org.xhtmlrenderer.render.BlockBox
 import org.xhtmlrenderer.simple.extend.FormSubmissionListener
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.util.Base64
 
 /**
  * Custom implementation of [ReplacedElementFactory] that defines the rendering process for image elements.

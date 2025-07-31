@@ -41,8 +41,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @WithMockk
 internal class CampaignScenarioShutdownDirectiveListenerTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK

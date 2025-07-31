@@ -30,6 +30,7 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.sync.SuspendedCountLatch
+import io.qalipsis.core.configuration.ExecutionConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
 import io.qalipsis.core.directives.Directive
@@ -57,12 +58,11 @@ import java.time.Duration
 
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
-@Property(name = ExecutionEnvironments.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY, value = ExecutionEnvironments.REDIS)
+@Property(name = ExecutionConfiguration.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY, value = "redis")
 @MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
 internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK(name = "directiveListener1")

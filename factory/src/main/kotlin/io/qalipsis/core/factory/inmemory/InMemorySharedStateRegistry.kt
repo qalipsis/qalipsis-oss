@@ -39,7 +39,7 @@ import java.time.Duration
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_FACTORY])
-internal class InMemorySharedStateRegistry(
+class InMemorySharedStateRegistry(
     @Value("\${factory.cache.ttl:PT1M}") timeToLive: Duration
 ) : SharedStateRegistry {
 

@@ -33,5 +33,5 @@ import jakarta.inject.Singleton
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.TRANSIENT])
-internal class AbstractInMemoryScenariosRepository : AbstractInMemoryRepository<ScenarioSummary, ScenarioName>(),
+class AbstractInMemoryScenariosRepository : AbstractInMemoryRepository<ScenarioSummary, ScenarioName>(),
     ScenarioSummaryRepository

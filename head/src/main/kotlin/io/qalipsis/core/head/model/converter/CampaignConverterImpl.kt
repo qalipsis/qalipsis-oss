@@ -19,12 +19,13 @@
 
 package io.qalipsis.core.head.model.converter
 
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.Scenario
+import io.qalipsis.core.head.security.UserProvider
 import jakarta.inject.Singleton
 
 /**
@@ -33,18 +34,19 @@ import jakarta.inject.Singleton
  * @author Svetlana Paliashchuk
  */
 @Singleton
-internal class CampaignConverterImpl(
-    private val userRepository: UserRepository,
+@Requires(missingBeans = [CampaignConverter::class])
+class CampaignConverterImpl(
+    private val userProvider: UserProvider,
     private val scenarioRepository: CampaignScenarioRepository
 ) : CampaignConverter {
 
     override suspend fun convertToModel(campaignEntity: CampaignEntity): Campaign {
-        val configurerName = userRepository.findUsernameById(campaignEntity.configurer)
+        val configurerName = userProvider.findUsernameById(campaignEntity.configurer)
         val aborterName = campaignEntity.aborter?.let {
             if (campaignEntity.configurer == campaignEntity.aborter) {
                 configurerName
             } else {
-                userRepository.findUsernameById(campaignEntity.aborter)
+                userProvider.findUsernameById(campaignEntity.aborter)
             }
         }
         return Campaign(
@@ -64,7 +66,7 @@ internal class CampaignConverterImpl(
             },
             failureReason = campaignEntity.failureReason,
             zones = campaignEntity.zones,
-            configurerName = userRepository.findUsernameById(campaignEntity.configurer),
+            configurerName = userProvider.findUsernameById(campaignEntity.configurer),
             aborterName = aborterName,
             scenarios = scenarioRepository.findByCampaignId(campaignEntity.id).map { scenarioEntity ->
                 Scenario(

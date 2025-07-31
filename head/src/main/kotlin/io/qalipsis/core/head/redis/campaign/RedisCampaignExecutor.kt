@@ -59,7 +59,7 @@ import kotlinx.coroutines.CoroutineScope
     Requires(env = [ExecutionEnvironments.HEAD]),
     Requires(notEnv = [ExecutionEnvironments.SINGLE_HEAD])
 )
-internal class RedisCampaignExecutor(
+class RedisCampaignExecutor(
     headChannel: HeadChannel,
     factoryService: FactoryService,
     campaignService: CampaignService,

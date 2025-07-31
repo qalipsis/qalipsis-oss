@@ -55,7 +55,7 @@ import kotlin.time.Duration.Companion.seconds
     Requires(env = [ExecutionEnvironments.AUTOSTART]),
     Requires(property = "report.export.console-live.enabled", defaultValue = "false", value = "true")
 )
-internal class ConsoleCampaignProgressionReporter(
+class ConsoleCampaignProgressionReporter(
     private val consoleMeterReporter: ConsoleMeterReporter
 ) : CampaignHook, ProcessBlocker {
 

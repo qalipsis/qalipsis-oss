@@ -34,7 +34,7 @@ import io.qalipsis.core.factory.steps.UnshelveStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class UnshelveStepSpecificationConverter(
+class UnshelveStepSpecificationConverter(
     private val sharedStateRegistry: SharedStateRegistry
 ) : StepSpecificationConverter<UnshelveStepSpecification<*, *>> {
 

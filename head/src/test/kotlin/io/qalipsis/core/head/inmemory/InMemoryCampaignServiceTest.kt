@@ -49,8 +49,7 @@ import java.time.Duration
 @WithMockk
 internal class InMemoryCampaignServiceTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

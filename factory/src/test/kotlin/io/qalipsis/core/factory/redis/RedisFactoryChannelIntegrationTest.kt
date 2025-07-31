@@ -34,6 +34,7 @@ import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.every
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
+import io.qalipsis.core.configuration.ExecutionConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
 import io.qalipsis.core.directives.Directive
@@ -66,7 +67,7 @@ import java.time.temporal.ChronoUnit
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
 @PropertySource(
-    Property(name = ExecutionEnvironments.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY, value = ExecutionEnvironments.REDIS),
+    Property(name = ExecutionConfiguration.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY, value = "redis"),
     Property(name = "factory.handshake.request-channel", value = RedisFactoryChannelIntegrationTest.HANDSHAKE_CHANNEL),
     Property(name = "factory.node-id", value = "my-node"),
     Property(name = "factory.tenant", value = "my-tenant")
@@ -74,8 +75,7 @@ import java.time.temporal.ChronoUnit
 @MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
 internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest() {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject

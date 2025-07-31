@@ -57,7 +57,7 @@ import javax.validation.constraints.PositiveOrZero
 @Controller("/time-series")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
-internal class TimeSeriesController(
+class TimeSeriesController(
     private val timeSeriesDataQueryService: TimeSeriesDataQueryService,
     private val widgetService: WidgetService
 ) {
@@ -124,15 +124,15 @@ internal class TimeSeriesController(
     ): Map<String, List<TimeSeriesAggregationResult>> {
         require(from == null || until == null || from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
         return timeSeriesDataQueryService.render(
-                tenant, dataSeriesReferences, AggregationQueryExecutionRequest(
-                    tenant = tenant,
-                    campaignsReferences = campaigns,
-                    scenariosNames = scenarios.orEmpty(),
-                    from = from,
-                    until = until,
-                    aggregationTimeframe = timeframe
-                )
+            tenant, dataSeriesReferences, AggregationQueryExecutionRequest(
+                tenant = tenant,
+                campaignsReferences = campaigns,
+                scenariosNames = scenarios.orEmpty(),
+                from = from,
+                until = until,
+                aggregationTimeframe = timeframe
             )
+        )
     }
 
 
@@ -205,17 +205,17 @@ internal class TimeSeriesController(
     ): Map<String, Page<out TimeSeriesRecord>> {
         require(from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
         return timeSeriesDataQueryService.search(
-                tenant, dataSeriesReferences, DataRetrievalQueryExecutionRequest(
-                    tenant = tenant,
-                    campaignsReferences = campaigns,
-                    scenariosNames = scenarios.orEmpty(),
-                    from = from,
-                    until = until,
-                    aggregationTimeframe = timeframe,
-                    page = page,
-                    size = size
-                )
+            tenant, dataSeriesReferences, DataRetrievalQueryExecutionRequest(
+                tenant = tenant,
+                campaignsReferences = campaigns,
+                scenariosNames = scenarios.orEmpty(),
+                from = from,
+                until = until,
+                aggregationTimeframe = timeframe,
+                page = page,
+                size = size
             )
+        )
     }
 
     @Get("/summary/campaign-status")

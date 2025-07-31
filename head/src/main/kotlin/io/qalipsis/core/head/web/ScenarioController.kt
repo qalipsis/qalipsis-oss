@@ -44,7 +44,7 @@ import javax.validation.constraints.NotBlank
 @Validated
 @Controller("/scenarios")
 @Version("1.0")
-internal class ScenarioController(
+class ScenarioController(
     private val factoryService: FactoryService
 ) {
 

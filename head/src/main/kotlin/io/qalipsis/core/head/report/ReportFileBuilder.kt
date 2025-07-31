@@ -37,7 +37,7 @@ import jakarta.inject.Singleton
  * @author Francisca Eze
  */
 @Singleton
-internal class ReportFileBuilder(
+class ReportFileBuilder(
     private val timeSeriesDataQueryService: TimeSeriesDataQueryService,
     private val zoneRepository: ZoneRepository,
     private val campaignRepository: CampaignRepository,

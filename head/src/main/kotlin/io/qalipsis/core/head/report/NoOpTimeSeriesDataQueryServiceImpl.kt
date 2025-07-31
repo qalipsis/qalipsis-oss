@@ -33,7 +33,7 @@ import jakarta.inject.Singleton
  */
 @Singleton
 @Requires(missingBeans = [TimeSeriesDataProvider::class])
-internal class NoOpTimeSeriesDataQueryServiceImpl : TimeSeriesDataQueryService {
+class NoOpTimeSeriesDataQueryServiceImpl : TimeSeriesDataQueryService {
 
     override suspend fun render(
         tenant: String,

@@ -28,7 +28,7 @@ import io.qalipsis.api.report.TimeSeriesRecord
  *
  * @author Eric Jessé
  */
-internal interface TimeSeriesDataQueryService {
+interface TimeSeriesDataQueryService {
 
     /**
      * Render the aggregated data to draw diagrams.

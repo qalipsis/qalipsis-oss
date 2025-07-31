@@ -67,7 +67,7 @@ import javax.validation.constraints.Size
         TimeframeUnitDataSeriesPatch::class
     ]
 )
-internal interface DataSeriesPatch {
+interface DataSeriesPatch {
     /**
      * Applies a change on the [DataSeriesEntity] and returns true if and only if the change was actually
      * performed.
@@ -82,7 +82,7 @@ internal interface DataSeriesPatch {
  */
 @Introspected
 @Schema(title = "Patch to update the display name of a data series")
-internal class DisplayNameDataSeriesPatch(
+class DisplayNameDataSeriesPatch(
     @field:NotBlank
     @field:Size(min = 3, max = 200)
     val displayName: String
@@ -109,7 +109,7 @@ internal class DisplayNameDataSeriesPatch(
  */
 @Introspected
 @Schema(title = "Patch to update the sharing mode of a data series")
-internal class SharingModeDataSeriesPatch(
+class SharingModeDataSeriesPatch(
     private val sharingMode: SharingMode
 ) : DataSeriesPatch {
 
@@ -134,7 +134,7 @@ internal class SharingModeDataSeriesPatch(
  */
 @Introspected
 @Schema(title = "Patch to update the display color of a data series")
-internal class ColorDataSeriesPatch(
+class ColorDataSeriesPatch(
     @field:Pattern(regexp = "^#[0-9a-fA-F]{6}$")
     val color: String?,
 
@@ -166,7 +166,7 @@ internal class ColorDataSeriesPatch(
  */
 @Introspected
 @Schema(title = "Patch to update the filters of a data series")
-internal class FiltersDataSeriesPatch(
+class FiltersDataSeriesPatch(
     val filters: Set<@Valid DataSeriesFilter>
 ) : DataSeriesPatch {
 
@@ -192,7 +192,7 @@ internal class FiltersDataSeriesPatch(
  */
 @Introspected
 @Schema(title = "Patch to update the field name of a data series")
-internal class FieldNameDataSeriesPatch(
+class FieldNameDataSeriesPatch(
     @field:NotBlank
     @field:Size(max = 60)
     val fieldName: String?
@@ -219,7 +219,7 @@ internal class FieldNameDataSeriesPatch(
  */
 @Introspected
 @Schema(title = "Patch to update the name of the used meter/event")
-internal class ValueNameDataSeriesPatch(
+class ValueNameDataSeriesPatch(
     @field:NotBlank
     @field:Size(min = 3, max = 100)
     val valueName: String
@@ -246,7 +246,7 @@ internal class ValueNameDataSeriesPatch(
  */
 @Introspected
 @Schema(title = "Patch to update the aggregation operation of a data series")
-internal class AggregationOperationDataSeriesPatch(
+class AggregationOperationDataSeriesPatch(
     private val operation: QueryAggregationOperator
 ) : DataSeriesPatch {
 
@@ -271,7 +271,7 @@ internal class AggregationOperationDataSeriesPatch(
  */
 @Introspected
 @Schema(title = "Patch to update the duration to aggregate the values of a data series for scaling ")
-internal class TimeframeUnitDataSeriesPatch(
+class TimeframeUnitDataSeriesPatch(
     @field:PositiveDuration
     val timeframe: Duration?
 ) : DataSeriesPatch {
@@ -296,7 +296,7 @@ internal class TimeframeUnitDataSeriesPatch(
  * Implementation of the [DataSeriesPatch] interface, that is in charge of changing displayFormat property of a data series
  */
 @Introspected
-internal class DisplayFormatDataSeriesPatch(
+class DisplayFormatDataSeriesPatch(
     @field:Size(max = 20)
     val displayFormat: String?
 ) : DataSeriesPatch {

@@ -36,7 +36,7 @@ import java.util.Optional
  */
 @Singleton
 @Requires(beans = [AutostartCampaignConfiguration::class])
-internal class AutostartCampaignProcessExitSupplier(
+class AutostartCampaignProcessExitSupplier(
     private val autostartCampaignConfiguration: AutostartCampaignConfiguration,
     private val campaignReportStateKeeper: CampaignReportStateKeeper,
 ) : ProcessExitCodeSupplier {

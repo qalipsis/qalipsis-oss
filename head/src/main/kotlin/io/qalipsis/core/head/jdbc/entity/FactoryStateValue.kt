@@ -22,6 +22,6 @@ package io.qalipsis.core.head.jdbc.entity
 /**
  * @author rklymenko
  */
-internal enum class FactoryStateValue {
+enum class FactoryStateValue {
     REGISTERED, OFFLINE, IDLE, UNHEALTHY
 }

@@ -42,7 +42,7 @@ import javax.validation.constraints.NotNull
  * @author Joël Valère
  */
 @MappedEntity("data_component", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class ReportDataComponentEntity(
+data class ReportDataComponentEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,
@@ -60,12 +60,12 @@ internal data class ReportDataComponentEntity(
         inverseJoinColumns = [JoinColumn(name = "data_series_id")]
     )
     val dataSeries: List<@Valid DataSeriesEntity>
-) : Entity{
+) : Entity {
     constructor(
         reportId: Long,
         type: DataComponentType,
         dataSeries: List<DataSeriesEntity>
-    ): this(
+    ) : this(
         id = -1,
         reportId = reportId,
         type = type,

@@ -34,8 +34,7 @@ import java.time.Duration
  */
 internal class InMemorySharedStateRegistryTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Test

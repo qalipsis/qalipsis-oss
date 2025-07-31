@@ -77,8 +77,7 @@ import java.util.concurrent.atomic.AtomicLong
 @WithMockk
 internal class MinionsKeeperImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK

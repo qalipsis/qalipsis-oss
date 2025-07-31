@@ -42,8 +42,7 @@ import java.time.Instant
 @WithMockk
 internal class DistributedDagTransitionStepTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK

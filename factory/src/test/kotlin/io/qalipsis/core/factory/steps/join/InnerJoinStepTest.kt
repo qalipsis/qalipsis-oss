@@ -46,8 +46,7 @@ import java.time.Duration
 
 internal class InnerJoinStepTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test

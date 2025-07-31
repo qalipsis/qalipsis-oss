@@ -49,8 +49,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @WithMockk
 internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK

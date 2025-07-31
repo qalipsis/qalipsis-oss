@@ -32,7 +32,7 @@ import io.qalipsis.core.factory.steps.FilterStep
  * @author Eric Jessé
  */
 @StepConverter
-internal class FilterStepSpecificationConverter :
+class FilterStepSpecificationConverter :
     StepSpecificationConverter<FilterStepSpecification<*>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {

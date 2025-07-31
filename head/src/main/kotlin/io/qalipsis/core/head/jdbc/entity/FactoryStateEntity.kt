@@ -32,7 +32,7 @@ import java.time.Instant
  * @author rklymenko
  */
 @MappedEntity("factory_state", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class FactoryStateEntity(
+data class FactoryStateEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,

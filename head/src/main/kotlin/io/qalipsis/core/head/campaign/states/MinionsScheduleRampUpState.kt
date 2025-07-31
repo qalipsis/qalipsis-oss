@@ -29,7 +29,7 @@ import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 
-internal open class MinionsScheduleRampUpState(
+open class MinionsScheduleRampUpState(
     protected val campaign: RunningCampaign
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 

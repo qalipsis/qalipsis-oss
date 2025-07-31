@@ -24,7 +24,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
-  <changeSet id="07" author="ejesse">
+    <changeSet id="09" author="ejesse">
     <createSequence sequenceName="campaign_factory_seq" schemaName="qalipsis"/>
     <createTable tableName="campaign_factory" schemaName="qalipsis">
       <column name="id" type="BIGINT" valueSequenceNext="campaign_factory_seq">

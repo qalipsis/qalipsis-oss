@@ -42,7 +42,7 @@ import java.util.Optional
     Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE]),
     Requires(notEnv = [ExecutionEnvironments.AUTOSTART])
 )
-internal class WaitingForeverBlocker : ProcessExitCodeSupplier, DirectiveListener<FactoryShutdownDirective> {
+class WaitingForeverBlocker : ProcessExitCodeSupplier, DirectiveListener<FactoryShutdownDirective> {
 
     private val latch = Latch(true)
 

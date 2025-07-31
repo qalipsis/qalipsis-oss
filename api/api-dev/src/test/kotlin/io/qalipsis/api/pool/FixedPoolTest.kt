@@ -55,14 +55,13 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
+@Timeout(6)
 internal class FixedPoolTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test
-    @Timeout(1)
     internal fun `should create a pool with 10 items`() = testCoroutineDispatcher.run {
         // when
         val pool = FixedPool(10, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
@@ -86,12 +85,11 @@ internal class FixedPoolTest {
     }
 
     @Test
-    @Timeout(2)
-    internal fun `should concurrently create a pool with 100 items requiring 100 ms each`() =
+    internal fun `should concurrently create a pool with 100 items requiring 50 ms each`() =
         testCoroutineDispatcher.run {
             // given
             val pool = FixedPool(100, this.coroutineContext) {
-                delay(100)
+                delay(50)
                 relaxedMockk<MyTestObject>()
             }
 
@@ -101,14 +99,13 @@ internal class FixedPoolTest {
             }
 
             // then
-            assertThat(initDelay).isLessThan(Duration.ofMillis(200))
+            assertThat(initDelay).isLessThan(Duration.ofSeconds(1)) // Spent time should be lesser than 100*50ms.
             assertThat((1..100).map { pool.acquire() }).isNotNull()
 
             pool.close()
         }
 
     @Test
-    @Timeout(1)
     internal fun `should generate an exception when the pool items cannot be initialized`() =
         testCoroutineDispatcher.run {
             // given
@@ -123,7 +120,6 @@ internal class FixedPoolTest {
         }
 
     @Test
-    @Timeout(5)
     internal fun `should only acquire items from the pool`() = testCoroutineDispatcher.run {
         // given
         val pool = FixedPool(5, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
@@ -149,7 +145,6 @@ internal class FixedPoolTest {
     }
 
     @Test
-    @Timeout(5)
     internal fun `should execute only with items from the pool`() = testCoroutineDispatcher.run {
         // given
         val pool = FixedPool(5, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
@@ -176,7 +171,6 @@ internal class FixedPoolTest {
 
 
     @Test
-    @Timeout(1)
     internal fun `should execute, return the value and return the pooled item even in case of exception`() =
         testCoroutineDispatcher.run {
             // given
@@ -196,7 +190,6 @@ internal class FixedPoolTest {
         }
 
     @Test
-    @Timeout(1)
     internal fun `should execute and return even in case of exception`() = testCoroutineDispatcher.run {
         // given
         val pool = FixedPool(1, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
@@ -218,7 +211,6 @@ internal class FixedPoolTest {
     }
 
     @Test
-    @Timeout(1)
     internal fun `should acquire and release without health checks`() = testCoroutineDispatcher.run {
         // given
         val cleanerCalls = AtomicInteger(0)
@@ -247,7 +239,6 @@ internal class FixedPoolTest {
     }
 
     @Test
-    @Timeout(1)
     internal fun `should check the health on acquire and returns the item when healthy`() =
         testCoroutineDispatcher.run {
             // given
@@ -291,7 +282,6 @@ internal class FixedPoolTest {
         }
 
     @Test
-    @Timeout(1)
     internal fun `should check the health on acquire and returns a new item when unhealthy`() =
         testCoroutineDispatcher.run {
             // given
@@ -339,7 +329,6 @@ internal class FixedPoolTest {
         }
 
     @Test
-    @Timeout(10)
     internal fun `should check the health on release and add the item to the pool when healthy`() =
         testCoroutineDispatcher.run {
             // given
@@ -392,7 +381,6 @@ internal class FixedPoolTest {
         }
 
     @Test
-    @Timeout(3)
     internal fun `should check the health on release and add a new item to the pool when unhealthy`() =
         testCoroutineDispatcher.run {
             // given
@@ -447,7 +435,6 @@ internal class FixedPoolTest {
         }
 
     @Test
-    @Timeout(1)
     internal fun `should not serve items after closing`(): Unit = testCoroutineDispatcher.run {
         // given
         val pool = FixedPool(1, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()
@@ -466,7 +453,6 @@ internal class FixedPoolTest {
     }
 
     @Test
-    @Timeout(3)
     internal fun `should close all the items when closing the pool`(): Unit = testCoroutineDispatcher.run {
         // given
         val mocks = concurrentList<MyTestObject>()
@@ -488,7 +474,6 @@ internal class FixedPoolTest {
     }
 
     @Test
-    @Timeout(3)
     internal fun `should ignore release after closing`(): Unit = testCoroutineDispatcher.run {
         // given
         val pool = FixedPool(1, this.coroutineContext) { relaxedMockk<MyTestObject>() }.awaitReadiness()

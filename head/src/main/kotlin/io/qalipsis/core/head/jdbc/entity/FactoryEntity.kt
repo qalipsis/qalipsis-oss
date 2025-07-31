@@ -36,7 +36,7 @@ import javax.validation.constraints.NotBlank
  * @author rklymenko
  */
 @MappedEntity("factory", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class FactoryEntity(
+data class FactoryEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,

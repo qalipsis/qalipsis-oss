@@ -33,7 +33,7 @@ import jakarta.inject.Singleton
  * @author Eric Jessé
  */
 @Singleton
-internal class DefaultDataProvider(
+class DefaultDataProvider(
     @Nullable private val eventProvider: EventMetadataProvider?,
     @Nullable private val meterProvider: MeterMetadataProvider?
 ) : DataProvider {

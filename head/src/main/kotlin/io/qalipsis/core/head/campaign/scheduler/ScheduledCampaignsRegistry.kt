@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Francisca Eze
  */
 @Singleton
-internal class ScheduledCampaignsRegistry {
+class ScheduledCampaignsRegistry {
 
     @KTestable
     private val campaignScheduleKeyStore: ConcurrentHashMap<CampaignKey, Job> = ConcurrentHashMap()

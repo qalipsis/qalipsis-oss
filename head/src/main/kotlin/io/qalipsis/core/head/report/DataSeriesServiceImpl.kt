@@ -36,12 +36,12 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
-import io.qalipsis.core.head.jdbc.repository.TenantRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesCreationRequest
 import io.qalipsis.core.head.model.DataSeriesFilter
 import io.qalipsis.core.head.model.DataSeriesPatch
+import io.qalipsis.core.head.security.TenantProvider
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.core.head.utils.SortingUtil
 import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import jakarta.inject.Named
@@ -58,10 +58,10 @@ import io.qalipsis.api.query.Page as QalipsisPage
  */
 @Singleton
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal class DataSeriesServiceImpl(
+class DataSeriesServiceImpl(
     private val dataSeriesRepository: DataSeriesRepository,
-    private val tenantRepository: TenantRepository,
-    private val userRepository: UserRepository,
+    private val tenantProvider: TenantProvider,
+    private val userProvider: UserProvider,
     private val idGenerator: IdGenerator,
     private val dataProvider: DataProvider,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope,
@@ -69,7 +69,7 @@ internal class DataSeriesServiceImpl(
 
     override suspend fun get(tenant: String, username: String, reference: String): DataSeries {
         val dataSeriesEntity = dataSeriesRepository.findByTenantAndReference(tenant = tenant, reference = reference)
-        val creatorName = userRepository.findUsernameById(dataSeriesEntity.creatorId) ?: ""
+        val creatorName = userProvider.findUsernameById(dataSeriesEntity.creatorId) ?: ""
         if (username != creatorName && dataSeriesEntity.sharingMode == SharingMode.NONE) {
             throw HttpStatusException(HttpStatus.FORBIDDEN, "You do not have the permission to use this data series")
         }
@@ -87,8 +87,8 @@ internal class DataSeriesServiceImpl(
         val createdDataSeries = dataSeriesRepository.save(
             DataSeriesEntity(
                 reference = idGenerator.short(),
-                tenantId = tenantRepository.findIdByReference(tenant),
-                creatorId = requireNotNull(userRepository.findIdByUsername(creator)),
+                tenantId = tenantProvider.findIdByReference(tenant),
+                creatorId = requireNotNull(userProvider.findIdByUsername(creator)),
                 displayName = dataSeries.displayName,
                 sharingMode = dataSeries.sharingMode,
                 dataType = dataSeries.dataType,
@@ -124,7 +124,7 @@ internal class DataSeriesServiceImpl(
         patches: Collection<DataSeriesPatch>,
     ): DataSeries {
         val dataSeriesEntity = dataSeriesRepository.findByTenantAndReference(tenant, reference)
-        val creatorName = userRepository.findUsernameById(dataSeriesEntity.creatorId) ?: ""
+        val creatorName = userProvider.findUsernameById(dataSeriesEntity.creatorId) ?: ""
         if (username != creatorName && dataSeriesEntity.sharingMode != SharingMode.WRITE) {
             throw HttpStatusException(HttpStatus.FORBIDDEN, "You do not have the permission to update this data series")
         }
@@ -193,7 +193,7 @@ internal class DataSeriesServiceImpl(
         }
         val creatorsIds = dataSeriesEntityPage.content.map { it.creatorId }.toSet()
         val creatorsNamesByIds = if (creatorsIds.isNotEmpty()) {
-            userRepository.findAllByIdIn(creatorsIds).associate { it.id to it.displayName }
+            userProvider.findIdAndDisplayNameByIdIn(creatorsIds).associate { it.id to it.displayName }
         } else {
             emptyMap()
         }
@@ -228,7 +228,7 @@ internal class DataSeriesServiceImpl(
             val dataSeriesEntities = pagedDataSeries.content
             dataSeriesEntities.forEach { dataSeriesEntity ->
                 val tenant = tenantIdReference.getOrPut(dataSeriesEntity.tenantId) {
-                    tenantRepository.findReferenceById(dataSeriesEntity.tenantId)
+                    tenantProvider.findReferenceById(dataSeriesEntity.tenantId)
                 }
                 dataSeriesEntity.query = dataProvider.createQuery(
                     tenant, dataSeriesEntity.dataType, QueryDescription(

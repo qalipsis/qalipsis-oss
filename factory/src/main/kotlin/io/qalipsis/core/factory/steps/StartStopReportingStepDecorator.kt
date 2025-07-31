@@ -39,7 +39,7 @@ import io.qalipsis.core.exceptions.StepExecutionException
  *
  * @author Eric Jessé
  */
-internal class StartStopReportingStepDecorator<I, O>(
+class StartStopReportingStepDecorator<I, O>(
     override val decorated: Step<I, O>,
     private val eventsLogger: EventsLogger,
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry

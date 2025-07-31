@@ -29,7 +29,7 @@ import io.qalipsis.core.factory.context.StepContextImpl
  *
  * @author Eric Jessé
  */
-internal open class BlackHoleStep<I>(
+open class BlackHoleStep<I>(
     id: StepName
 ) : AbstractStep<I, Unit>(id, null) {
 

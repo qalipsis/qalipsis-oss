@@ -57,7 +57,7 @@ import javax.validation.constraints.Positive
     Requires(notEnv = [ExecutionEnvironments.SINGLE_FACTORY])
 )
 @ExperimentalLettuceCoroutinesApi
-internal class BufferedContextForwarder(
+class BufferedContextForwarder(
     private val factoryChannel: FactoryChannel,
     private val factoryCampaignManager: FactoryCampaignManager,
     private val minionAssignmentKeeper: MinionAssignmentKeeper,

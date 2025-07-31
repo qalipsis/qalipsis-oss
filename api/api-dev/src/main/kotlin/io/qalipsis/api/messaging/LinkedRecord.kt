@@ -29,7 +29,7 @@ import io.qalipsis.api.sync.ImmutableSlot
  *
  * @author Eric Jessé
  */
-internal interface LinkedRecord<T> {
+interface LinkedRecord<T> {
 
     val record: Record<T>
 

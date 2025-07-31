@@ -19,24 +19,28 @@
 
 package io.qalipsis.core.head.web.annotation
 
-import io.micronaut.context.annotation.Infrastructure
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.bind.ArgumentBinder
 import io.micronaut.core.convert.ArgumentConversionContext
 import io.micronaut.http.HttpRequest
-import io.micronaut.http.bind.binders.AnnotatedRequestArgumentBinder
 import io.qalipsis.cluster.security.Tenant
+import io.qalipsis.cluster.security.TenantBinder
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
+import jakarta.inject.Singleton
 import java.util.Optional
 
 
 /**
  * Binder to inject the default tenant reference when no security is active.
  */
-@Infrastructure
-@Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
-internal class NoOpTenantBinder : AnnotatedRequestArgumentBinder<Tenant, String> {
+@Singleton
+@Requirements(
+    Requires(missingBeans = [TenantBinder::class]),
+    Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
+)
+class NoOpTenantBinder : TenantBinder {
 
     override fun bind(
         context: ArgumentConversionContext<String>,

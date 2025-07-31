@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.model.converter
 
 import io.aerisconsulting.catadioptre.KTestable
+import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -52,7 +53,8 @@ import jakarta.inject.Singleton
  * @author Palina Bril
  */
 @Singleton
-internal class CampaignConfigurationConverterImpl(
+@Requires(missingBeans = [CampaignConfigurationConverter::class])
+class CampaignConfigurationConverterImpl(
     private val idGenerator: IdGenerator
 ) : CampaignConfigurationConverter {
 

@@ -29,7 +29,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-internal class OnEachStep<I>(
+class OnEachStep<I>(
     id: StepName,
     retryPolicy: RetryPolicy?,
     private val statement: (input: I) -> Unit

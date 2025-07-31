@@ -34,7 +34,7 @@ import jakarta.inject.Singleton
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class EventLoggerCreationListener(
+class EventLoggerCreationListener(
     @Property(name = "factory.tenant", defaultValue = "_qalipsis_ten_") private val tenant: String,
     @Property(name = "factory.tags", defaultValue = "") private val tags: MutableMap<String, String>,
     @Property(name = "factory.zone", defaultValue = "") private val zone: String?

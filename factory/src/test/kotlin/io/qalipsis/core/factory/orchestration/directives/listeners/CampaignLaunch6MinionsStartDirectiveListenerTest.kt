@@ -50,8 +50,7 @@ import java.time.Instant
 @WithMockk
 internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @MockK

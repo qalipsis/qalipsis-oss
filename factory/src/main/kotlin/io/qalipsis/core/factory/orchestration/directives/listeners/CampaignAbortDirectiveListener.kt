@@ -41,7 +41,7 @@ import org.slf4j.event.Level
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class CampaignAbortDirectiveListener(
+class CampaignAbortDirectiveListener(
     private val factoryCampaignManager: FactoryCampaignManager,
     private val factoryChannel: FactoryChannel
 ) : DirectiveListener<CampaignAbortDirective> {

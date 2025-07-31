@@ -1,4 +1,8 @@
 # Configuration of the local head
+micronaut:
+  server:
+    port: ${random.port}
+
 head:
   handshake-request-channel: handshake-request
   handshake-response-channel: handshake-response

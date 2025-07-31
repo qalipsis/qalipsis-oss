@@ -36,7 +36,7 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-internal class TimeoutStepDecorator<I, O>(
+class TimeoutStepDecorator<I, O>(
     private val timeout: Duration,
     override val decorated: Step<I, O>,
     private val meterRegistry: CampaignMeterRegistry

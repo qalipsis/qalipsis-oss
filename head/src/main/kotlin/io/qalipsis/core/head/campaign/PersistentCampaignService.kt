@@ -35,11 +35,11 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.core.head.utils.SortingUtil
 import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import jakarta.inject.Singleton
@@ -52,9 +52,9 @@ import io.qalipsis.api.query.Page as QalipsisPage
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
 )
-internal class PersistentCampaignService(
+class PersistentCampaignService(
     private val campaignRepository: CampaignRepository,
-    private val userRepository: UserRepository,
+    private val userProvider: UserProvider,
     private val campaignScenarioRepository: CampaignScenarioRepository,
     private val campaignConverter: CampaignConverter,
     private val factoryRepository: FactoryRepository,
@@ -176,7 +176,7 @@ internal class PersistentCampaignService(
         campaignRepository.findByTenantAndKey(tenant, campaignKey)?.let { campaign ->
             campaignRepository.update(
                 campaign.copy(
-                    aborter = aborter?.let { userRepository.findIdByUsername(it) },
+                    aborter = aborter?.let { userProvider.findIdByUsername(it) },
                     result = ExecutionStatus.ABORTED
                 )
             )

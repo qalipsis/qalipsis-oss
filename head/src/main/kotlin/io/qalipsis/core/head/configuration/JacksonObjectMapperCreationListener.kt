@@ -39,7 +39,7 @@ import jakarta.inject.Singleton
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
-internal class JacksonObjectMapperCreationListener : BeanCreatedEventListener<ObjectMapper> {
+class JacksonObjectMapperCreationListener : BeanCreatedEventListener<ObjectMapper> {
 
     override fun onCreated(event: BeanCreatedEvent<ObjectMapper>): ObjectMapper {
         event.bean.apply {

@@ -24,11 +24,11 @@ import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.ReportDataComponentRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataComponent
 import io.qalipsis.core.head.model.DataTable
 import io.qalipsis.core.head.model.Diagram
 import io.qalipsis.core.head.model.Report
+import io.qalipsis.core.head.security.UserProvider
 import jakarta.inject.Singleton
 
 /**
@@ -37,11 +37,11 @@ import jakarta.inject.Singleton
  * @author Joël Valère
  */
 @Singleton
-internal class ReportConverterImpl(
+class ReportConverterImpl(
     private val campaignRepository: CampaignRepository,
     private val campaignScenarioRepository: CampaignScenarioRepository,
     private val reportDataComponentRepository: ReportDataComponentRepository,
-    private val userRepository: UserRepository
+    private val userProvider: UserProvider
 ) : ReportConverter {
 
     override suspend fun convertToModel(reportEntity: ReportEntity): Report {
@@ -72,7 +72,7 @@ internal class ReportConverterImpl(
         return Report(
             reference = reportEntity.reference,
             version = reportEntity.version,
-            creator = userRepository.findUsernameById(reportEntity.creatorId) ?: "",
+            creator = userProvider.findUsernameById(reportEntity.creatorId) ?: "",
             displayName = reportEntity.displayName,
             description = reportEntity.description,
             sharingMode = reportEntity.sharingMode,
@@ -93,13 +93,13 @@ internal class ReportConverterImpl(
         return if (dataComponentEntity.type == Diagram.TYPE) {
             Diagram(datas = dataComponentEntity.dataSeries.map {
                 it.toModel(
-                    userRepository.findUsernameById(it.creatorId) ?: ""
+                    userProvider.findUsernameById(it.creatorId) ?: ""
                 )
             })
         } else {
             DataTable(datas = dataComponentEntity.dataSeries.map {
                 it.toModel(
-                    userRepository.findUsernameById(it.creatorId) ?: ""
+                    userProvider.findUsernameById(it.creatorId) ?: ""
                 )
             })
         }

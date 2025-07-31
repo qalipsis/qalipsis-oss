@@ -49,8 +49,7 @@ internal class DefaultChannelNameFactoryTest {
 
     private lateinit var defaultChannelNameFactory: DefaultChannelNameFactory
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @BeforeAll

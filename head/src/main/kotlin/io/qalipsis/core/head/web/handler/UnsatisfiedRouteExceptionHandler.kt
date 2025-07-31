@@ -40,7 +40,7 @@ import jakarta.inject.Singleton
 @Singleton
 @Requires(classes = [IllegalArgumentException::class, ExceptionHandler::class])
 @Replaces(UnsatisfiedRouteHandler::class)
-internal class UnsatisfiedRouteExceptionHandler : ExceptionHandler<UnsatisfiedRouteException, MutableHttpResponse<*>> {
+class UnsatisfiedRouteExceptionHandler : ExceptionHandler<UnsatisfiedRouteException, MutableHttpResponse<*>> {
 
     override fun handle(request: HttpRequest<*>, exception: UnsatisfiedRouteException): MutableHttpResponse<*> {
         return HttpResponse.status<ErrorResponse>(HttpStatus.BAD_REQUEST).body(ErrorResponse(exception.message!!))

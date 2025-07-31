@@ -29,10 +29,10 @@ import io.qalipsis.core.head.campaign.CampaignPreparator
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
-import io.qalipsis.core.head.jdbc.repository.TenantRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
+import io.qalipsis.core.head.security.TenantProvider
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
@@ -53,18 +53,17 @@ import java.time.ZoneId
 @MicronautTest(startApplication = false, environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 internal class DefaultCampaignSchedulerImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
-    private lateinit var userRepository: UserRepository
+    private lateinit var userProvider: UserProvider
 
     @RelaxedMockK
     private lateinit var campaignExecutor: CampaignExecutor
 
     @RelaxedMockK
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantProvider: TenantProvider
 
     @RelaxedMockK
     private lateinit var campaignRepository: CampaignRepository
@@ -84,9 +83,9 @@ internal class DefaultCampaignSchedulerImplTest {
     internal fun `should retrieve and schedule existing campaigns from database`() = testDispatcherProvider.runTest {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
-                userRepository = userRepository,
+                userProvider = userProvider,
                 campaignExecutor = campaignExecutor,
-                tenantRepository = tenantRepository,
+                tenantProvider = tenantProvider,
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
@@ -134,9 +133,9 @@ internal class DefaultCampaignSchedulerImplTest {
             defaultCampaignSchedulerImpl.schedule(refEq("key-4"), currentTime.plusMillis(10))
         }
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignExecutor,
-            tenantRepository,
+            tenantProvider,
             campaignRepository,
             factoryService,
             campaignPreparator
@@ -147,9 +146,9 @@ internal class DefaultCampaignSchedulerImplTest {
     internal fun `should start a scheduled campaign`() = testDispatcherProvider.runTest {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
-                userRepository = userRepository,
+                userProvider = userProvider,
                 campaignExecutor = campaignExecutor,
-                tenantRepository = tenantRepository,
+                tenantProvider = tenantProvider,
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
@@ -175,9 +174,9 @@ internal class DefaultCampaignSchedulerImplTest {
             scheduledCampaignsRegistry.updateSchedule("campaign-key", any<Job>())
         }
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignExecutor,
-            tenantRepository,
+            tenantProvider,
             campaignRepository,
             factoryService,
             campaignPreparator,
@@ -190,9 +189,9 @@ internal class DefaultCampaignSchedulerImplTest {
     internal fun `should execute a scheduled campaign`() = testDispatcherProvider.runTest {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
-                userRepository = userRepository,
+                userProvider = userProvider,
                 campaignExecutor = campaignExecutor,
-                tenantRepository = tenantRepository,
+                tenantProvider = tenantProvider,
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
@@ -234,8 +233,8 @@ internal class DefaultCampaignSchedulerImplTest {
 
         val latch = Latch(true)
         coEvery { campaignRepository.findByKey(refEq("campaign-key")) } returns campaignEntity
-        coEvery { userRepository.findUsernameById(1L) } returns "The configurer"
-        coEvery { tenantRepository.findReferenceById(123) } returns "my-tenant"
+        coEvery { userProvider.findUsernameById(1L) } returns "The configurer"
+        coEvery { tenantProvider.findReferenceById(123) } returns "my-tenant"
         coEvery { campaignRepository.update(any()) } returnsArgument 0
         coEvery {
             defaultCampaignSchedulerImpl.schedule(refEq("campaign-key"), refEq(nextSchedule))
@@ -248,8 +247,8 @@ internal class DefaultCampaignSchedulerImplTest {
         // then
         coVerifyOrder {
             campaignRepository.findByKey(refEq("campaign-key"))
-            userRepository.findUsernameById(1L)
-            tenantRepository.findReferenceById(123)
+            userProvider.findUsernameById(1L)
+            tenantProvider.findReferenceById(123)
             campaignExecutor.start(
                 refEq("my-tenant"),
                 refEq("The configurer"),
@@ -273,9 +272,9 @@ internal class DefaultCampaignSchedulerImplTest {
             defaultCampaignSchedulerImpl.schedule(refEq("campaign-key"), refEq(nextSchedule))
         }
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignExecutor,
-            tenantRepository,
+            tenantProvider,
             campaignRepository,
             factoryService,
             campaignPreparator
@@ -288,9 +287,9 @@ internal class DefaultCampaignSchedulerImplTest {
         testDispatcherProvider.runTest {
             defaultCampaignSchedulerImpl = spyk(
                 DefaultCampaignSchedulerImpl(
-                    userRepository = userRepository,
+                    userProvider = userProvider,
                     campaignExecutor = campaignExecutor,
-                    tenantRepository = tenantRepository,
+                    tenantProvider = tenantProvider,
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
@@ -327,9 +326,9 @@ internal class DefaultCampaignSchedulerImplTest {
                 campaignRepository.findByKey(refEq("campaign-key"))
             }
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignExecutor,
-                tenantRepository,
+                tenantProvider,
                 campaignRepository,
                 factoryService,
                 campaignPreparator
@@ -342,9 +341,9 @@ internal class DefaultCampaignSchedulerImplTest {
         testDispatcherProvider.runTest {
             defaultCampaignSchedulerImpl = spyk(
                 DefaultCampaignSchedulerImpl(
-                    userRepository = userRepository,
+                    userProvider = userProvider,
                     campaignExecutor = campaignExecutor,
-                    tenantRepository = tenantRepository,
+                    tenantProvider = tenantProvider,
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
@@ -382,7 +381,7 @@ internal class DefaultCampaignSchedulerImplTest {
             )
 
             coEvery { campaignRepository.findByKey(refEq("campaign-key")) } returns campaignEntity
-            coEvery { userRepository.findUsernameById(1L) } returns null
+            coEvery { userProvider.findUsernameById(1L) } returns null
 
             // when
             val exception = assertThrows<IllegalArgumentException> {
@@ -393,12 +392,12 @@ internal class DefaultCampaignSchedulerImplTest {
             assertThat(exception.message).isEqualTo("The provided configurer does not exist")
             coVerifyOrder {
                 campaignRepository.findByKey(refEq("campaign-key"))
-                userRepository.findUsernameById(1L)
+                userProvider.findUsernameById(1L)
             }
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignExecutor,
-                tenantRepository,
+                tenantProvider,
                 campaignRepository,
                 factoryService,
                 campaignPreparator
@@ -410,9 +409,9 @@ internal class DefaultCampaignSchedulerImplTest {
     internal fun `should schedule a campaign`() = testDispatcherProvider.run {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
-                userRepository = userRepository,
+                userProvider = userProvider,
                 campaignExecutor = campaignExecutor,
-                tenantRepository = tenantRepository,
+                tenantProvider = tenantProvider,
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
@@ -480,9 +479,9 @@ internal class DefaultCampaignSchedulerImplTest {
             defaultCampaignSchedulerImpl.schedule(refEq("my-campaign"), refEq(scheduleAt))
         }
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignExecutor,
-            tenantRepository,
+            tenantProvider,
             campaignRepository,
             factoryService,
             campaignPreparator
@@ -493,9 +492,9 @@ internal class DefaultCampaignSchedulerImplTest {
     internal fun `should not schedule a campaign when scheduleAt is null`() = testDispatcherProvider.run {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
-                userRepository = userRepository,
+                userProvider = userProvider,
                 campaignExecutor = campaignExecutor,
-                tenantRepository = tenantRepository,
+                tenantProvider = tenantProvider,
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
@@ -521,9 +520,9 @@ internal class DefaultCampaignSchedulerImplTest {
         assertThat(exception.message)
             .isEqualTo("The schedule time should be in the future")
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignExecutor,
-            tenantRepository,
+            tenantProvider,
             campaignRepository,
             factoryService,
             campaignPreparator
@@ -534,9 +533,9 @@ internal class DefaultCampaignSchedulerImplTest {
     internal fun `should not schedule a campaign when scheduleAt is not in the future`() = testDispatcherProvider.run {
         defaultCampaignSchedulerImpl = spyk(
             DefaultCampaignSchedulerImpl(
-                userRepository = userRepository,
+                userProvider = userProvider,
                 campaignExecutor = campaignExecutor,
-                tenantRepository = tenantRepository,
+                tenantProvider = tenantProvider,
                 campaignRepository = campaignRepository,
                 factoryService = factoryService,
                 campaignPreparator = campaignPreparator,
@@ -563,9 +562,9 @@ internal class DefaultCampaignSchedulerImplTest {
         assertThat(exception.message)
             .isEqualTo("The schedule time should be in the future")
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignExecutor,
-            tenantRepository,
+            tenantProvider,
             campaignRepository,
             factoryService,
             campaignPreparator
@@ -577,9 +576,9 @@ internal class DefaultCampaignSchedulerImplTest {
         testDispatcherProvider.runTest {
             defaultCampaignSchedulerImpl = spyk(
                 DefaultCampaignSchedulerImpl(
-                    userRepository = userRepository,
+                    userProvider = userProvider,
                     campaignExecutor = campaignExecutor,
-                    tenantRepository = tenantRepository,
+                    tenantProvider = tenantProvider,
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
@@ -622,9 +621,9 @@ internal class DefaultCampaignSchedulerImplTest {
                 factoryService.getActiveScenarios(refEq("my-tenant"), setOf("scenario-1", "scenario-2"))
             }
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignExecutor,
-                tenantRepository,
+                tenantProvider,
                 campaignRepository,
                 factoryService,
                 campaignPreparator
@@ -636,9 +635,9 @@ internal class DefaultCampaignSchedulerImplTest {
         testDispatcherProvider.run {
             defaultCampaignSchedulerImpl = spyk(
                 DefaultCampaignSchedulerImpl(
-                    userRepository = userRepository,
+                    userProvider = userProvider,
                     campaignExecutor = campaignExecutor,
-                    tenantRepository = tenantRepository,
+                    tenantProvider = tenantProvider,
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,
@@ -710,9 +709,9 @@ internal class DefaultCampaignSchedulerImplTest {
         testDispatcherProvider.run {
             defaultCampaignSchedulerImpl = spyk(
                 DefaultCampaignSchedulerImpl(
-                    userRepository = userRepository,
+                    userProvider = userProvider,
                     campaignExecutor = campaignExecutor,
-                    tenantRepository = tenantRepository,
+                    tenantProvider = tenantProvider,
                     campaignRepository = campaignRepository,
                     factoryService = factoryService,
                     campaignPreparator = campaignPreparator,

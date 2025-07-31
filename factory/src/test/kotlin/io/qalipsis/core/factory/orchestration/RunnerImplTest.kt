@@ -49,8 +49,7 @@ import java.time.Duration
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 internal class RunnerImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test

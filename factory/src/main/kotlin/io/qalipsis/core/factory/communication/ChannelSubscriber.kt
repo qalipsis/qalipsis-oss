@@ -40,7 +40,7 @@ import org.slf4j.MDC
  *
  * @author Joël Valère
  */
-internal abstract class ChannelSubscriber(
+abstract class ChannelSubscriber(
     private val serializer: DistributionSerializer,
     private val directiveRegistry: DirectiveRegistry,
     private val factoryConfiguration: FactoryConfiguration,

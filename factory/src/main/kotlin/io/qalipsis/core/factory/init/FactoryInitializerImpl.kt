@@ -82,7 +82,7 @@ import javax.validation.Valid
 @Singleton
 @Validated
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class FactoryInitializerImpl(
+class FactoryInitializerImpl(
     @Named(Executors.GLOBAL_EXECUTOR_NAME) private val coroutineDispatcher: CoroutineDispatcher,
     private val initializationContext: InitializationContext,
     private val scenarioRegistry: ScenarioRegistry,

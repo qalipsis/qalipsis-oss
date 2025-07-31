@@ -28,7 +28,7 @@ import jakarta.inject.Singleton
  * @author Francisca Eze
  */
 @Singleton
-internal class DefaultCampaignConstraintsProvider(
+class DefaultCampaignConstraintsProvider(
     private val defaultCampaignConfiguration: DefaultCampaignConfiguration
 ) : CampaignConstraintsProvider {
 

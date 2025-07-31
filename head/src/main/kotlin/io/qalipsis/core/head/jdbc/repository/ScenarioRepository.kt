@@ -35,7 +35,7 @@ import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, Long> {
+interface ScenarioRepository : CoroutineCrudRepository<ScenarioEntity, Long> {
 
     @Query("UPDATE scenario SET enabled = FALSE WHERE id = :id")
     override suspend fun deleteById(id: Long): Int

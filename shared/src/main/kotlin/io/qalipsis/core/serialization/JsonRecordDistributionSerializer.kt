@@ -42,7 +42,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 @Primary
 @ExperimentalSerializationApi
 @Requires(property = "streaming.serialization", value = "json")
-internal class JsonRecordDistributionSerializer : DistributionSerializer {
+class JsonRecordDistributionSerializer : DistributionSerializer {
 
     private val objectMapper = jacksonMapperBuilder()
         .addModule(Jdk8Module())

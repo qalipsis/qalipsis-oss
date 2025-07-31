@@ -27,7 +27,7 @@ import io.qalipsis.core.head.model.Report
  *
  * @author Joël Valère
  */
-internal interface ReportConverter {
+interface ReportConverter {
 
     /**
      * Converts a [ReportEntity] instance to a [Report].

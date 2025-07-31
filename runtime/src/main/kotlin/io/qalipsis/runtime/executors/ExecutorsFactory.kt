@@ -43,7 +43,7 @@ import kotlin.math.ceil
  */
 @DelicateCoroutinesApi
 @Factory
-internal class ExecutorsFactory {
+class ExecutorsFactory {
 
     private lateinit var createdScopes: Map<String, NamedCoroutineScope>
 
@@ -184,7 +184,7 @@ internal class ExecutorsFactory {
     @Bean(typed = [CoroutineScope::class])
     fun orchestrationScope() = createdScopes[Executors.ORCHESTRATION_EXECUTOR_NAME]!!
 
-    internal class NamedCoroutineScope(
+    class NamedCoroutineScope(
         val name: String,
         val dispatcher: CoroutineDispatcher,
         val context: CoroutineContext,

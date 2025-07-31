@@ -42,7 +42,7 @@ import jakarta.inject.Singleton
 @ExperimentalLettuceCoroutinesApi
 @Singleton
 @Requires(beans = [RedisDistributedMinionAssignmentKeeper::class])
-internal class DistributedDagTransitionStepFactory(
+class DistributedDagTransitionStepFactory(
     private val factoryCampaignManager: FactoryCampaignManager,
     private val localAssignmentStore: LocalAssignmentStore,
     private val contextForwarder: ContextForwarder,

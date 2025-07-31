@@ -40,16 +40,15 @@ import io.qalipsis.core.factory.meters.inmemory.catadioptre.total
 import io.qalipsis.core.reporter.MeterReporter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
-import java.time.Instant
-import java.util.concurrent.atomic.DoubleAdder
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Instant
+import java.util.concurrent.atomic.DoubleAdder
 
 @WithMockk
 internal class StepRateTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK

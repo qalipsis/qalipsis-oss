@@ -43,7 +43,7 @@ import kotlinx.coroutines.CoroutineScope
  * @author Eric Jessé
  */
 @StepConverter
-internal class InnerJoinStepSpecificationConverter(
+class InnerJoinStepSpecificationConverter(
     private val idGenerator: IdGenerator,
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
 ) : StepSpecificationConverter<InnerJoinStepSpecification<*, *>> {

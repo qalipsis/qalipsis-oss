@@ -89,8 +89,7 @@ internal class CampaignAutoStarterTest {
         startOffset = Duration.ofMillis(10)
     }
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @BeforeEach
@@ -159,7 +158,7 @@ internal class CampaignAutoStarterTest {
             coVerifyOnce {
                 campaignExecutor.start(
                     Defaults.TENANT,
-                    Defaults.USER,
+                    Defaults.USERNAME,
                     CampaignConfiguration(
                         name = "my-campaign",
                         speedFactor = 54.87,

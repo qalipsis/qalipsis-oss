@@ -9,4 +9,4 @@ import java.time.Instant
  * @author Francisca Eze
  */
 @Introspected
-internal data class CampaignSummaryResult(val start: Instant, val successful: Int = 0, val failed: Int = 0)
+data class CampaignSummaryResult(val start: Instant, val successful: Int = 0, val failed: Int = 0)

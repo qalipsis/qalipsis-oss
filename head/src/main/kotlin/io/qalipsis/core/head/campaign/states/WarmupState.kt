@@ -33,7 +33,7 @@ import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
-internal open class WarmupState(
+open class WarmupState(
     protected val campaign: RunningCampaign
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
@@ -80,7 +80,8 @@ internal open class WarmupState(
                     }
                     if (expectedFeedbacks.isEmpty()) {
                         val start = Instant.now().plusMillis(campaign.startOffsetMs)
-                        RunningState(campaign,
+                        RunningState(
+                            campaign,
                             campaign.scenarios.keys.map { scenarioName ->
                                 MinionsStartDirective(
                                     campaignKey,

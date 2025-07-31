@@ -42,7 +42,7 @@ import org.slf4j.event.Level
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.HEAD])
-internal class HandshakeManager(
+class HandshakeManager(
     private val headChannel: HeadChannel,
     private val factoryService: FactoryService,
     private val headConfiguration: HeadConfiguration,

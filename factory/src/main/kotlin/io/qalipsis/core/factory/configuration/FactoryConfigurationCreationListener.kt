@@ -34,7 +34,7 @@ import java.io.FileNotFoundException
  */
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
-internal class FactoryConfigurationCreationListener(
+class FactoryConfigurationCreationListener(
     private val idGenerator: IdGenerator
 ) : BeanCreatedEventListener<FactoryConfiguration> {
 

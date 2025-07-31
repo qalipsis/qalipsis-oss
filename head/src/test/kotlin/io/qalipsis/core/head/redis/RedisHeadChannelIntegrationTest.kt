@@ -33,6 +33,7 @@ import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.qalipsis.core.configuration.ExecutionConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
 import io.qalipsis.core.directives.Directive
@@ -61,7 +62,7 @@ import java.time.Duration
 @ExperimentalLettuceCoroutinesApi
 @WithMockk
 @PropertySource(
-    Property(name = ExecutionEnvironments.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY, value = ExecutionEnvironments.REDIS),
+    Property(name = ExecutionConfiguration.DISTRIBUTED_STREAMING_PLATFORM_PROPERTY, value = "redis"),
     Property(name = "head.handshake-request-channel", value = RedisSubscriberIntegrationTest.HANDSHAKE_REQUEST_CHANNEL),
     Property(name = "head.heartbeat-channel", value = RedisSubscriberIntegrationTest.HEARTBEAT_CHANNEL)
 )
@@ -71,8 +72,7 @@ import java.time.Duration
 )
 internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject

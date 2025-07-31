@@ -56,6 +56,13 @@ jobs:
           fail_on_failure: true
           summary: true
 
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Test and coverage Reports
+          path: '**/build/reports/'
+
       - name: Upload JARs
         uses: actions/upload-artifact@v4
         with:

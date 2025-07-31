@@ -34,7 +34,7 @@ import kotlin.reflect.KClass
 @ExperimentalSerializationApi
 @Suppress("UNCHECKED_CAST")
 @Singleton
-internal class SerialFormatRecordSerializer(
+class SerialFormatRecordSerializer(
     serializersProvider: SerializersProvider
 ) : RecordSerializer {
 

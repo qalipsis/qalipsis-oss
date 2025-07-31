@@ -31,7 +31,7 @@ import io.qalipsis.core.feedbacks.Feedback
  *
  * @author Eric Jessé
  */
-internal interface CampaignExecutionState<C : CampaignExecutionContext> {
+interface CampaignExecutionState<C : CampaignExecutionContext> {
 
     /**
      * Specifies whether the current state is a completion state and has no other next than itself.

@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap
     Requires(property = "events.export.slf4j.enabled", defaultValue = "false", value = "true"),
     Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 )
-internal class Slf4JEventsPublisher : EventsPublisher {
+class Slf4JEventsPublisher : EventsPublisher {
 
     private val loggers = ConcurrentHashMap<String, Logger>()
 

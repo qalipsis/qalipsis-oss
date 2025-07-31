@@ -39,7 +39,7 @@ import java.time.temporal.ChronoUnit
  * @author Francisca Eze
  */
 @Singleton
-internal class ReportGenerator(
+class ReportGenerator(
     val campaignRepository: CampaignRepository,
     val reportFileBuilder: ReportFileBuilder,
     val templateReportService: TemplateReportService,

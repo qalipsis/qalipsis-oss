@@ -37,7 +37,7 @@ import javax.validation.constraints.NotNull
  * @author Francisca Eze
  */
 @MappedEntity("report_file", namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase::class)
-internal data class ReportFileEntity(
+data class ReportFileEntity(
     @field:Id
     @field:GeneratedValue(GeneratedValue.Type.SEQUENCE)
     override val id: Long,

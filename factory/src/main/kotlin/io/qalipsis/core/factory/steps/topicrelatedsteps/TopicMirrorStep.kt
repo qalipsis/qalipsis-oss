@@ -38,7 +38,7 @@ import io.qalipsis.api.steps.Step
  *
  * @author Eric Jessé
  */
-internal open class TopicMirrorStep<I, T>(
+open class TopicMirrorStep<I, T>(
     id: StepName,
     private val topic: Topic<T>,
     private val predicate: (context: StepContext<I, I>, value: Any?) -> Boolean = { _, _ -> true },

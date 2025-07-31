@@ -29,7 +29,7 @@ import java.time.Instant
  * @author Eric Jessé
  */
 @Introspected
-internal open class Factory(
+open class Factory(
     val nodeId: NodeId,
     val registrationTimestamp: Instant,
     val unicastChannel: String,

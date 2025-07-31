@@ -26,7 +26,6 @@ import com.squareup.javapoet.TypeSpec
 import io.qalipsis.api.annotations.Property
 import io.qalipsis.api.annotations.Scenario
 import jakarta.inject.Named
-import org.jetbrains.annotations.NotNull
 import java.time.Instant
 import javax.annotation.processing.Messager
 import javax.lang.model.element.ElementKind
@@ -35,6 +34,7 @@ import javax.lang.model.element.Modifier.PUBLIC
 import javax.lang.model.element.Modifier.STATIC
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic.Kind.ERROR
+import javax.validation.constraints.NotNull
 
 /**
  * Facility class to generate a [TypeSpec] representing a class with the scenario metadata and supplier.

@@ -34,17 +34,18 @@ import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import assertk.assertions.prop
+import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphEntity
 import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
 import io.qalipsis.core.head.jdbc.entity.FactoryEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioEntity
-import io.qalipsis.core.head.jdbc.entity.TenantEntity
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphRepository
 import io.qalipsis.core.head.jdbc.repository.DirectedAcyclicGraphTagRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryRepository
-import io.qalipsis.core.head.jdbc.repository.PostgresqlTemplateTest
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
-import io.qalipsis.core.head.jdbc.repository.TenantRepository
+import io.qalipsis.core.head.jdbc.repository.TenantRepositoryForTest
+import io.qalipsis.core.postgres.AbstractPostgreSQLTest
+import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
@@ -53,12 +54,16 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 
 /**
  * @author rklymenko
  */
-internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplateTest() {
+internal class DirectedAcyclicGraphRepositoryIntegrationTest : AbstractPostgreSQLTest() {
+
+    @field:RegisterExtension
+    val testDispatcherProvider = TestDispatcherProvider()
 
     private lateinit var dag: DirectedAcyclicGraphEntity
 
@@ -74,10 +79,10 @@ internal class DirectedAcyclicGraphRepositoryIntegrationTest : PostgresqlTemplat
     internal fun setUpAll(
         factoryRepository: FactoryRepository,
         scenarioRepository: ScenarioRepository,
-        tenantRepository: TenantRepository
+        tenantRepository: TenantRepositoryForTest
     ) =
         testDispatcherProvider.run {
-            val tenant = tenantRepository.save(TenantEntity(Instant.now(), "my-tenant", "test-tenant"))
+            val tenant = tenantRepository.save(TenantEntityForTest(reference = "my-tenant"))
             val factory = factoryRepository.save(
                 FactoryEntity(
                     nodeId = "the-node",

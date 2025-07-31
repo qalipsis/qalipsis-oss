@@ -34,7 +34,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.MinionsAssignmentState
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisMinionsAssignmentState(
+class RedisMinionsAssignmentState(
     campaign: RunningCampaign,
     private val operations: CampaignRedisOperations
 ) : MinionsAssignmentState(campaign) {

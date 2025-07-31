@@ -22,6 +22,7 @@ plugins {
     kotlin("kapt")
     kotlin("plugin.allopen")
     kotlin("plugin.serialization")
+    `java-test-fixtures`
     id("me.champeau.jmh") version "0.7.2"
 }
 
@@ -31,9 +32,11 @@ allOpen {
     annotations(
         "io.micronaut.aop.Around",
         "jakarta.inject.Singleton",
+        "io.micronaut.context.annotation.Factory",
         "io.qalipsis.api.annotations.StepConverter",
         "io.qalipsis.api.annotations.StepDecorator",
         "io.qalipsis.api.annotations.PluginComponent",
+        "io.micronaut.context.annotation.Bean",
         "io.micronaut.validation.Validated",
         "org.openjdk.jmh.annotations.State"
     )
@@ -91,9 +94,9 @@ dependencies {
     testImplementation(project(":qalipsis-shared"))
     testImplementation(project(":qalipsis-test"))
     testImplementation("io.micronaut.test:micronaut-test-junit5")
-    testImplementation("jakarta.annotation:jakarta.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
-    testImplementation("io.aeris-consulting:catadioptre-kotlin")
+    testImplementation("jakarta.annotation:jakarta.annotation-api")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     testImplementation(testFixtures(project(":qalipsis-api-dsl")))
     testImplementation(testFixtures(project(":qalipsis-api-common")))
     testImplementation(testFixtures(project(":qalipsis-runtime")))
@@ -107,5 +110,8 @@ dependencies {
     jmh(project(":qalipsis-test"))
     //jmh("org.openjdk.jmh:jmh-generator-annprocess:1.36")
     //jmhAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.36")
+
+    testFixturesImplementation(platform(project(":qalipsis-dev-platform")))
+    testFixturesCompileOnly(project(":qalipsis-test"))
 }
 

@@ -33,7 +33,7 @@ import io.qalipsis.core.head.jdbc.entity.DirectedAcyclicGraphTagEntity
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface DirectedAcyclicGraphTagRepository :
+interface DirectedAcyclicGraphTagRepository :
     CoroutineCrudRepository<DirectedAcyclicGraphTagEntity, Long> {
 
     suspend fun deleteByDirectedAcyclicGraphIdIn(dagIds: Collection<Long>): Int

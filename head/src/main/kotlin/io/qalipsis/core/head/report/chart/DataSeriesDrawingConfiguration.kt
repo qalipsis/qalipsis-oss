@@ -35,7 +35,7 @@ import java.awt.Color
  * @author Francisca Eze
  */
 @Introspected
-internal data class DataSeriesDrawingConfiguration(var seriesIndex: Int) {
+data class DataSeriesDrawingConfiguration(var seriesIndex: Int) {
     lateinit var color: Color
     var dataSet: XYSeriesCollection = XYSeriesCollection()
     var dataSeriesDrawingIndicesByCampaign: MutableMap<String, Int> = mutableMapOf()

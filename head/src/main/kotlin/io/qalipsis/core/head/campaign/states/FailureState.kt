@@ -29,7 +29,7 @@ import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 
-internal open class FailureState(
+open class FailureState(
     protected val campaign: RunningCampaign,
     private val error: String
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {

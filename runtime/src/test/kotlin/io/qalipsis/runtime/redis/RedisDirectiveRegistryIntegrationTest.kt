@@ -51,8 +51,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 @ExperimentalLettuceCoroutinesApi
 internal class RedisDirectiveRegistryIntegrationTest : AbstractRedisIntegrationTest() {
 
-    @RegisterExtension
-    @JvmField
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @Inject

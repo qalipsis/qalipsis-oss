@@ -28,7 +28,7 @@ import java.nio.file.Path
  *
  * @author Francisca Eze
  */
-internal interface ChartService {
+interface ChartService {
 
     /**
      * Generates time series chart and returns the path of the chart image file.

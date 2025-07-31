@@ -45,7 +45,7 @@ import org.slf4j.event.Level
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.STANDALONE])
-internal class StandaloneChannel(
+class StandaloneChannel(
     private val listeners: BeanProvider<Listeners>,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val orchestrationCoroutineScope: CoroutineScope,
 ) : HeadChannel, FactoryChannel {

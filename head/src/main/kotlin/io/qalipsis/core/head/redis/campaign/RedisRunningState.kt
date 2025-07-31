@@ -41,7 +41,7 @@ import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.RunningState
 
 @ExperimentalLettuceCoroutinesApi
-internal class RedisRunningState(
+class RedisRunningState(
     campaign: RunningCampaign,
     private val operations: CampaignRedisOperations,
     private val doNotPersistStateOnInit: Boolean = false,

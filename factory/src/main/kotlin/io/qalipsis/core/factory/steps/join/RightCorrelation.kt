@@ -30,7 +30,7 @@ import io.qalipsis.api.messaging.Topic
  *
  * @author Eric Jessé
  */
-internal class RightCorrelation<T : Any>(
+class RightCorrelation<T : Any>(
 
     /**
      * ID of the [io.qalipsis.api.steps.Step] providing the remote data.

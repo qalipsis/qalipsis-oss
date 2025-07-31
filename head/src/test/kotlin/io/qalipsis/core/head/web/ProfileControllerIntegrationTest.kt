@@ -26,6 +26,7 @@ import assertk.assertions.each
 import assertk.assertions.hasSize
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.micronaut.core.type.Argument
@@ -35,16 +36,22 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.model.Profile
 import io.qalipsis.core.head.model.Tenant
+import io.qalipsis.core.head.security.QalipsisUser
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 @WithMockk
 @MicronautTest(environments = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
@@ -60,22 +67,30 @@ internal class ProfileControllerIntegrationTest {
     @MockBean(HeadConfiguration::class)
     internal fun headConfiguration() = headConfiguration
 
+    @AfterEach
+    fun tearDown() {
+        unmockkStatic(Instant::class)
+    }
+
     @Test
     fun `should retrieve the user's profile`() {
         // when
+        val now = Instant.now()
+        mockkStatic(Instant::class)
+        every { Instant.now() } returns now
         val response = httpClient.toBlocking().exchange(
             HttpRequest.GET<Unit>("/profile"),
-            Profile::class.java
+            Argument.of(Profile::class.java, QalipsisUser::class.java)
         )
 
         // then
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
-            transform("body") { it.body() }.isNotNull().all {
-                prop(Profile::user).isDataClassEqualTo(Defaults.PROFILE.user)
-                prop(Profile::tenants).all {
+            transform("body") { it.body() }.isNotNull().isInstanceOf<Profile<QalipsisUser>>().all {
+                prop(Profile<QalipsisUser>::user).isDataClassEqualTo(Defaults.PROFILE.user)
+                prop(Profile<QalipsisUser>::tenants).all {
                     hasSize(1)
-                    each { it.isDataClassEqualTo(Tenant(Defaults.TENANT, "")) }
+                    each { it.isDataClassEqualTo(Tenant(Defaults.TENANT, "", now)) }
                 }
             }
         }

@@ -29,7 +29,7 @@ import io.qalipsis.core.head.model.CampaignConfiguration
  *
  * @author Joël Valère
  */
-internal interface CampaignHook : Ordered {
+interface CampaignHook : Ordered {
 
     /**
      * Hook to process the campaign details before it is created.

@@ -44,7 +44,7 @@ import java.time.Instant
  *
  * @author Eric Jessé
  */
-internal abstract class AbstractDeploymentIntegrationTest {
+abstract class AbstractDeploymentIntegrationTest {
 
     protected val client = HttpClient.newBuilder().build()
 

@@ -42,7 +42,7 @@ import java.time.Duration
  */
 @Singleton
 @Requires(beans = [TimeSeriesDataProvider::class])
-internal class TimeSeriesDataQueryServiceImpl(
+class TimeSeriesDataQueryServiceImpl(
     private val timeSeriesDataProvider: TimeSeriesDataProvider,
     private val dataSeriesRepository: DataSeriesRepository,
     private val campaignRepository: CampaignRepository,

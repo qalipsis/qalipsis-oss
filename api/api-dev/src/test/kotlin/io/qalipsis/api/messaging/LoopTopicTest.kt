@@ -37,8 +37,7 @@ import java.time.Duration
  */
 internal class LoopTopicTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test

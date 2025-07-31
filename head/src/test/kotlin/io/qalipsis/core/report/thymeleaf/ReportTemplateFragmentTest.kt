@@ -36,6 +36,17 @@ import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode
 import io.qalipsis.core.head.report.chart.ChartServiceImpl
 import io.qalipsis.core.head.report.chart.LineStyleGenerator
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
+import org.thymeleaf.TemplateEngine
+import org.thymeleaf.context.Context
+import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect
+import org.thymeleaf.templatemode.TemplateMode
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
@@ -48,17 +59,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Base64
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInfo
-import org.thymeleaf.TemplateEngine
-import org.thymeleaf.context.Context
-import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect
-import org.thymeleaf.templatemode.TemplateMode
-import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
 
 
 @MicronautTest(startApplication = false)

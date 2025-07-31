@@ -104,7 +104,7 @@ internal class QalipsisBootstrapIntegrationTest {
         assertEquals(0, exitCode)
         assertTrue(
             qalipsisBootstrap.applicationContext.environment.activeNames.containsAll(
-                listOf(STANDALONE, AUTOSTART, "config")
+                listOf(STANDALONE, AUTOSTART)
             )
         )
     }
@@ -130,7 +130,7 @@ internal class QalipsisBootstrapIntegrationTest {
 
         assertEquals(0, exitCode)
         assertThat(qalipsisBootstrap.applicationContext.environment.activeNames).containsAll(
-            STANDALONE, AUTOSTART, "config", "these", "are", "my", "additional", "environments"
+            STANDALONE, AUTOSTART, "these", "are", "my", "additional", "environments"
         )
     }
 

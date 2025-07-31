@@ -34,7 +34,7 @@ import io.qalipsis.core.campaigns.FactoryScenarioAssignment
  *
  * @author Eric Jessé
  */
-internal interface MinionAssignmentKeeper {
+interface MinionAssignmentKeeper {
 
     /**
      * Registers the Directed Acyclic Graphs assigned to the current factory when the currently prepared

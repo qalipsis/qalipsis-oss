@@ -70,7 +70,7 @@ import javax.validation.constraints.PositiveOrZero
 @Controller("/campaigns")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
-internal class CampaignController(
+class CampaignController(
     private val campaignExecutor: CampaignExecutor,
     private val campaignService: CampaignService,
     private val clusterFactoryService: FactoryService,
@@ -200,6 +200,7 @@ internal class CampaignController(
     /**
      * REST endpoint to abort campaign.
      */
+    @Secured(Permissions.ABORT_CAMPAIGN)
     @Post("/{campaignKey}/abort")
     @Operation(
         summary = "Abort a campaign",

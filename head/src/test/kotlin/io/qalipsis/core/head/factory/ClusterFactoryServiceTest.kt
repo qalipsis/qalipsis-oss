@@ -36,6 +36,7 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.unmockkStatic
 import io.qalipsis.core.campaigns.DirectedAcyclicGraphSummary
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
@@ -55,8 +56,8 @@ import io.qalipsis.core.head.jdbc.repository.FactoryRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryStateRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryTagRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioRepository
-import io.qalipsis.core.head.jdbc.repository.TenantRepository
 import io.qalipsis.core.head.model.Factory
+import io.qalipsis.core.head.security.TenantProvider
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -65,6 +66,7 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import kotlinx.coroutines.flow.flowOf
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -79,8 +81,7 @@ import java.time.ZoneId
 @WithMockk
 internal class ClusterFactoryServiceTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
@@ -105,10 +106,15 @@ internal class ClusterFactoryServiceTest {
     private lateinit var campaignFactoryRepository: CampaignFactoryRepository
 
     @RelaxedMockK
-    private lateinit var tenantRepository: TenantRepository
+    private lateinit var tenantProvider: TenantProvider
 
     @InjectMockKs
     private lateinit var clusterFactoryService: ClusterFactoryService
+
+    @AfterAll
+    fun tearDownAll() {
+        unmockkStatic(Clock::class)
+    }
 
     @Test
     fun `should register new factory without tags`() = testDispatcherProvider.run {
@@ -558,9 +564,7 @@ internal class ClusterFactoryServiceTest {
             zone = "ru"
         )
 
-        val dag = DirectedAcyclicGraphSummary(name = "test", isSingleton = true, isUnderLoad = true)
-
-        coEvery { tenantRepository.findIdByReference("my-tenant") } returns 123
+        coEvery { tenantProvider.findIdByReference("my-tenant") } returns 123
         coEvery { factoryRepository.findByNodeIdIn(any(), listOf(actualNodeId)) } returns listOf(factoryEntity)
         coEvery { factoryStateRepository.save(any()) } returnsArgument 0
         coEvery { factoryRepository.save(any()) } returnsArgument 0
@@ -581,7 +585,7 @@ internal class ClusterFactoryServiceTest {
             prop(FactoryEntity::zone).isEqualTo("ru")
         }
         coVerifyOrder {
-            tenantRepository.findIdByReference("my-tenant")
+            tenantProvider.findIdByReference("my-tenant")
             factoryRepository.findByNodeIdIn("my-tenant", listOf(actualNodeId))
             factoryRepository.save(any())
             factoryStateRepository.save(any())
@@ -589,11 +593,24 @@ internal class ClusterFactoryServiceTest {
         }
         confirmVerified(
             factoryRepository,
-            tenantRepository,
+            tenantProvider,
             scenarioRepository,
             factoryStateRepository,
             scenarioDetailsUpdater
         )
+    }
+
+    @Test
+    internal fun `should return the tenant of the factory`() = testDispatcherProvider.run {
+        // given
+        coEvery { factoryRepository.findTenantByNodeId("the-real-node-id") } returns "my-tenant"
+
+        // when
+        val tenant = clusterFactoryService.getFactoryTenant("the-real-node-id")
+
+        // then
+        coVerifyOnce { factoryRepository.findTenantByNodeId("the-real-node-id") }
+        assertThat(tenant).isEqualTo("my-tenant")
     }
 
     @Test

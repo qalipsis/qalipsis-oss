@@ -20,6 +20,7 @@
 package io.qalipsis.core.head.web
 
 import io.micrometer.core.annotation.Timed
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
 import io.micronaut.http.annotation.Controller
@@ -31,6 +32,7 @@ import io.micronaut.validation.Validated
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.model.Profile
+import io.qalipsis.core.head.web.annotation.NoOpTenantBinder
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -42,9 +44,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
  */
 @Validated
 @Version("1.0")
-@Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
+@Requirements(
+    Requires(bean = NoOpTenantBinder::class),
+    Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
+)
 @Controller
-internal class ProfileController {
+class ProfileController {
 
     @Operation(
         summary = "User profile",
@@ -60,7 +65,7 @@ internal class ProfileController {
     @Get("/users/profile")
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Timed("users-profile")
-    suspend fun profile(authentication: Authentication): Profile {
+    suspend fun profile(): Profile<*> {
         return Defaults.PROFILE
     }
 
@@ -79,6 +84,6 @@ internal class ProfileController {
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Timed("users-permissions")
     suspend fun permissions(authentication: Authentication): Collection<String> {
-        return authentication.roles
+        return authentication.roles.sorted()
     }
 }

@@ -33,10 +33,10 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
+import io.qalipsis.cluster.security.DisabledSecurityConfiguration
+import io.qalipsis.cluster.security.SecurityConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.DefaultValuesCampaignConfiguration
-import io.qalipsis.core.head.model.DisabledSecurityConfiguration
-import io.qalipsis.core.head.model.SecurityConfiguration
 import io.qalipsis.core.head.model.Stage
 import io.qalipsis.core.head.model.Validation
 import jakarta.inject.Inject

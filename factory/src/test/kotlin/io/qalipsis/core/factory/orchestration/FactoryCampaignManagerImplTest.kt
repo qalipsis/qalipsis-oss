@@ -102,8 +102,7 @@ import java.util.Optional
 @WithMockk
 internal class FactoryCampaignManagerImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK

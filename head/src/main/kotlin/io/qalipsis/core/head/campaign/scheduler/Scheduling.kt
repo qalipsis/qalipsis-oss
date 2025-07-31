@@ -25,7 +25,7 @@ import java.time.Instant
     JsonSubTypes.Type(value = DailyScheduling::class, name = "DAILY"),
     JsonSubTypes.Type(value = MonthlyScheduling::class, name = "MONTHLY")
 )
-internal interface Scheduling {
+interface Scheduling {
 
     val timeZone: String
 

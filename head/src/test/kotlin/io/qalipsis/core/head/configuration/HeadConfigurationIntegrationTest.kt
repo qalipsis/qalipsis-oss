@@ -22,12 +22,14 @@ package io.qalipsis.core.head.configuration
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.head.configuration.HeadConfiguration.ClusterConfiguration
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -51,6 +53,9 @@ internal class HeadConfigurationIntegrationTest {
                 prop(HeadConfiguration::unicastChannelPrefix).isEqualTo("unicast-")
                 prop(HeadConfiguration::heartbeatChannel).isEqualTo("heartbeat")
                 prop(HeadConfiguration::heartbeatDelay).isEqualTo(Duration.ofSeconds(30))
+                prop(HeadConfiguration::cluster).all {
+                    prop(ClusterConfiguration::onDemandFactories).isFalse()
+                }
             }
         }
     }
@@ -87,7 +92,7 @@ internal class HeadConfigurationIntegrationTest {
                 prop(HeadConfiguration::heartbeatChannel).isEqualTo("The heartbeat channel")
                 prop(HeadConfiguration::heartbeatDelay).isEqualTo(Duration.ofMinutes(3))
                 prop(HeadConfiguration::cluster).all {
-                    prop(HeadConfiguration.ClusterConfiguration::onDemandFactories).isTrue()
+                    prop(ClusterConfiguration::onDemandFactories).isTrue()
                 }
             }
         }

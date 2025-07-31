@@ -50,8 +50,7 @@ import java.time.ZoneId
 @WithMockk
 internal class ScenarioDetailsUpdaterImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK

@@ -36,8 +36,6 @@ import io.qalipsis.core.head.jdbc.repository.ReportDataComponentRepository
 import io.qalipsis.core.head.jdbc.repository.ReportFileRepository
 import io.qalipsis.core.head.jdbc.repository.ReportRepository
 import io.qalipsis.core.head.jdbc.repository.ReportTaskRepository
-import io.qalipsis.core.head.jdbc.repository.TenantRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataComponentCreationAndUpdateRequest
 import io.qalipsis.core.head.model.DataComponentType
 import io.qalipsis.core.head.model.DataTable
@@ -49,6 +47,8 @@ import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 import io.qalipsis.core.head.model.ReportTask
 import io.qalipsis.core.head.model.ReportTaskStatus
 import io.qalipsis.core.head.model.converter.ReportConverter
+import io.qalipsis.core.head.security.TenantProvider
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.core.head.utils.SortingUtil
 import io.qalipsis.core.head.utils.SqlFilterUtils.formatsFilters
 import io.qalipsis.core.lifetime.ExitStatusException
@@ -69,10 +69,10 @@ import io.qalipsis.api.query.Page as QalipsisPage
 
 @Singleton
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal class ReportServiceImpl(
+class ReportServiceImpl(
     private val reportRepository: ReportRepository,
-    private val tenantRepository: TenantRepository,
-    private val userRepository: UserRepository,
+    private val tenantProvider: TenantProvider,
+    private val userProvider: UserProvider,
     private val campaignRepository: CampaignRepository,
     private val reportDataComponentRepository: ReportDataComponentRepository,
     private val dataSeriesRepository: DataSeriesRepository,
@@ -85,7 +85,7 @@ internal class ReportServiceImpl(
 ) : ReportService {
 
     override suspend fun get(tenant: String, username: String, reference: String): Report {
-        val currentUserId = requireNotNull(userRepository.findIdByUsername(username = username))
+        val currentUserId = requireNotNull(userProvider.findIdByUsername(username = username))
         val reportEntity = requireNotNull(
             reportRepository.findByTenantAndReferenceAndCreatorIdOrShare(
                 tenant = tenant,
@@ -126,8 +126,8 @@ internal class ReportServiceImpl(
         var createdReport = reportRepository.save(
             ReportEntity(
                 reference = idGenerator.short(),
-                tenantId = tenantRepository.findIdByReference(tenant),
-                creatorId = requireNotNull(userRepository.findIdByUsername(creator)),
+                tenantId = tenantProvider.findIdByReference(tenant),
+                creatorId = requireNotNull(userProvider.findIdByUsername(creator)),
                 displayName = reportCreationAndUpdateRequest.displayName,
                 description = reportCreationAndUpdateRequest.description,
                 sharingMode = reportCreationAndUpdateRequest.sharingMode,
@@ -156,7 +156,7 @@ internal class ReportServiceImpl(
         reference: String,
         reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest,
     ): Report {
-        val currentUserId = requireNotNull(userRepository.findIdByUsername(username = username))
+        val currentUserId = requireNotNull(userProvider.findIdByUsername(username = username))
         val reportEntity = requireNotNull(
             reportRepository.getReportIfUpdatable(
                 tenant = tenant,
@@ -222,7 +222,7 @@ internal class ReportServiceImpl(
     }
 
     override suspend fun delete(tenant: String, username: String, references: Set<String>) {
-        val currentUserId = requireNotNull(userRepository.findIdByUsername(username = username))
+        val currentUserId = requireNotNull(userProvider.findIdByUsername(username = username))
         val updatableReportsReferences =
             reportRepository.getUpdatableReportReferences(
                 tenant = tenant,

@@ -30,7 +30,7 @@ import io.qalipsis.api.steps.AbstractStep
  *
  * @author Eric Jessé
  */
-internal class FilterStep<I>(
+class FilterStep<I>(
     id: StepName,
     retryPolicy: RetryPolicy?,
     private val specification: ((input: I) -> Boolean)

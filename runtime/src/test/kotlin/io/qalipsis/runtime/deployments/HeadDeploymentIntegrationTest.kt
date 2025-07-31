@@ -23,6 +23,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.any
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotEqualTo
 import assertk.assertions.matches
 import assertk.assertions.none
 import assertk.assertions.startsWith
@@ -37,6 +38,7 @@ import io.qalipsis.core.redis.RedisRuntimeConfiguration
 import io.qalipsis.runtime.Qalipsis
 import io.qalipsis.runtime.bootstrap.QalipsisBootstrap
 import org.awaitility.Awaitility.await
+import org.awaitility.kotlin.await
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
@@ -47,6 +49,7 @@ import java.net.URI
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -88,6 +91,12 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
         }
 
         // then
+        await.await("Await for the application context to be initialized")
+            .pollInterval(Duration.ofMillis(500))
+            .atMost(Duration.ofSeconds(10))
+            .failFast(Callable { exitCodeFuture.isCompletedExceptionally })
+            .until { runCatching { qalipsisBootstrap.applicationContext }.getOrNull() != null }
+
         checkRestEndpointAvailability(httpPort)
         val qalipsisCoreSingletonObjectsPackages = qalipsisBootstrap.applicationContext
             .getProperty<Any>("singletonScope")
@@ -134,6 +143,12 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
         }
 
         // then
+        await.await("Await for the application context to be initialized")
+            .pollInterval(Duration.ofMillis(500))
+            .atMost(Duration.ofSeconds(10))
+            .failFast(Callable { exitCodeFuture.isCompletedExceptionally })
+            .until { runCatching { qalipsisBootstrap.applicationContext }.getOrNull() != null }
+
         checkRestEndpointAvailability(httpPort)
         val qalipsisCoreSingletonObjectsPackages = qalipsisBootstrap.applicationContext
             .getProperty<Any>("singletonScope")
@@ -202,9 +217,14 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
                 }
             )
         }
-        Thread.sleep(3000)
 
         // then
+        await.await("Await for the application context to be initialized")
+            .pollInterval(Duration.ofMillis(500))
+            .atMost(Duration.ofSeconds(10))
+            .failFast(Callable { exitCodeFuture.isCompletedExceptionally })
+            .until { runCatching { qalipsisBootstrap.applicationContext }.getOrNull() != null }
+
         val qalipsisCoreSingletonObjectsPackages = qalipsisBootstrap.applicationContext
             .getProperty<Any>("singletonScope")
             .getProperty<Map<Any, BeanRegistration<*>>>("singletonByBeanDefinition")
@@ -214,7 +234,12 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
         assertThat(qalipsisCoreSingletonObjectsPackages).all {
             any { it.startsWith("io.qalipsis.core.head") }
             none { it.startsWith("io.qalipsis.core.report") }
-            none { it.startsWith("io.qalipsis.core.head.web") }
+            none {
+                it.all {
+                    isNotEqualTo("io.qalipsis.core.head.web.annotation.NoOpTenantBinder")
+                    startsWith("io.qalipsis.core.head.web")
+                }
+            }
             none { it.startsWith("io.qalipsis.core.factory") }
         }
 

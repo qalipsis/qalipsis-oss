@@ -44,7 +44,7 @@ import java.time.Instant
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(property = "report.export.junit.enabled", defaultValue = "false", value = "true")
 )
-internal class JunitReportPublisher(
+class JunitReportPublisher(
     @Value("\${report.export.junit.folder}") private val reportFolder: String
 ) : CampaignReportPublisher {
 

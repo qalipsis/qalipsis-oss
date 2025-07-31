@@ -39,7 +39,7 @@ import kotlinx.serialization.modules.polymorphic
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY])
 @ExperimentalSerializationApi
-internal class FactorySerializationModuleConfiguration : SerializationConfigurer {
+class FactorySerializationModuleConfiguration : SerializationConfigurer {
 
     override fun configure(serializersModuleBuilder: SerializersModuleBuilder) {
         serializersModuleBuilder.apply {

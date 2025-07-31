@@ -34,13 +34,13 @@ import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository.CampaignKeyAndName
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.ReportDataComponentRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.DataComponentType
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataTable
 import io.qalipsis.core.head.model.Diagram
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.report.SharingMode
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
@@ -54,12 +54,11 @@ import java.time.Instant
 @WithMockk
 internal class ReportConverterImplTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK
-    private lateinit var userRepository: UserRepository
+    private lateinit var userProvider: UserProvider
 
     @MockK
     private lateinit var campaignRepository: CampaignRepository
@@ -77,7 +76,7 @@ internal class ReportConverterImplTest {
     fun `should convert simple entity to model with all empty lists`() = testDispatcherProvider.runTest {
         // given
         val version = Instant.now().minusMillis(1)
-        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery { userProvider.findUsernameById(456L) } returns "the-user"
         coEvery {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
@@ -124,9 +123,9 @@ internal class ReportConverterImplTest {
                 listOf(),
                 listOf()
             )
-            userRepository.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
         }
-        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
+        confirmVerified(userProvider, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
     }
 
     @Test
@@ -162,7 +161,7 @@ internal class ReportConverterImplTest {
                 dataSeries = listOf(dataSeriesEntity3)
             )
         )
-        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery { userProvider.findUsernameById(456L) } returns "the-user"
         coEvery {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
@@ -256,19 +255,19 @@ internal class ReportConverterImplTest {
                     "campaign-key2"
                 )
             )
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
         }
-        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
+        confirmVerified(userProvider, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
     }
 
     @Test
     fun `should convert entity to model with empty data components`() = testDispatcherProvider.runTest {
         // given
         val version = Instant.now().minusMillis(1)
-        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery { userProvider.findUsernameById(456L) } returns "the-user"
         coEvery {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
@@ -351,9 +350,9 @@ internal class ReportConverterImplTest {
                     "campaign-key3"
                 )
             )
-            userRepository.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
         }
-        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
+        confirmVerified(userProvider, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
     }
 
     @Test
@@ -389,7 +388,7 @@ internal class ReportConverterImplTest {
                 dataSeries = listOf(dataSeriesEntity3)
             )
         )
-        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery { userProvider.findUsernameById(456L) } returns "the-user"
         coEvery {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
@@ -477,12 +476,12 @@ internal class ReportConverterImplTest {
                     "camp-2"
                 )
             )
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
         }
-        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
+        confirmVerified(userProvider, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
     }
 
     @Test
@@ -518,7 +517,7 @@ internal class ReportConverterImplTest {
                 dataSeries = listOf(dataSeriesEntity3)
             )
         )
-        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery { userProvider.findUsernameById(456L) } returns "the-user"
         coEvery {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
@@ -606,12 +605,12 @@ internal class ReportConverterImplTest {
                     "campaign-key2"
                 )
             )
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
         }
-        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
+        confirmVerified(userProvider, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
     }
 
     @Test
@@ -647,7 +646,7 @@ internal class ReportConverterImplTest {
                 dataSeries = listOf(dataSeriesEntity3)
             )
         )
-        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery { userProvider.findUsernameById(456L) } returns "the-user"
         coEvery {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
@@ -718,12 +717,12 @@ internal class ReportConverterImplTest {
                 listOf(),
                 listOf()
             )
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
         }
-        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
+        confirmVerified(userProvider, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
     }
 
     @Test
@@ -759,7 +758,7 @@ internal class ReportConverterImplTest {
                 dataSeries = listOf(dataSeriesEntity3)
             )
         )
-        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery { userProvider.findUsernameById(456L) } returns "the-user"
         coEvery {
             campaignRepository.findKeysAndNamesByTenantIdAndNamePatternsOrKeys(
                 123L,
@@ -790,7 +789,7 @@ internal class ReportConverterImplTest {
             "scenario-3",
             "scenario-4"
         )
-        coEvery { userRepository.findUsernameById(456L) } returns "the-user"
+        coEvery { userProvider.findUsernameById(456L) } returns "the-user"
         val reportEntity = ReportEntity(
             id = 1L,
             reference = "report-ref",
@@ -865,11 +864,11 @@ internal class ReportConverterImplTest {
                     ), true
                 )
             )
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
-            userRepository.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
+            userProvider.findUsernameById(456L)
         }
-        confirmVerified(userRepository, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
+        confirmVerified(userProvider, campaignRepository, campaignScenarioRepository, reportDataComponentRepository)
     }
 }

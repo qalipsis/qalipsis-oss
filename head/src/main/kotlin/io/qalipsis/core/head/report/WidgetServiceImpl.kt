@@ -34,7 +34,7 @@ import kotlin.math.absoluteValue
  * @author Francisca Eze
  */
 @Singleton
-internal class WidgetServiceImpl(
+class WidgetServiceImpl(
     private val factoriesStateRepository: FactoryStateRepository,
     private val campaignRepository: CampaignRepository
 ) : WidgetService {

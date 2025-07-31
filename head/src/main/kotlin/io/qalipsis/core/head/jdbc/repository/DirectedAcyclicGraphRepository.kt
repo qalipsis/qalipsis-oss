@@ -35,7 +35,7 @@ import kotlinx.coroutines.flow.Flow
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-internal interface DirectedAcyclicGraphRepository : CoroutineCrudRepository<DirectedAcyclicGraphEntity, Long> {
+interface DirectedAcyclicGraphRepository : CoroutineCrudRepository<DirectedAcyclicGraphEntity, Long> {
 
     @Join(value = "tags", type = Join.Type.LEFT_FETCH)
     override fun findAll(): Flow<DirectedAcyclicGraphEntity>

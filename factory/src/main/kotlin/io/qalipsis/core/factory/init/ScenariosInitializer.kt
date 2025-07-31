@@ -25,7 +25,7 @@ package io.qalipsis.core.factory.init
  *
  * @author Eric Jessé
  */
-internal interface ScenariosInitializer {
+interface ScenariosInitializer {
 
     /**
      * Refreshes the scenarios

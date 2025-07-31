@@ -57,7 +57,7 @@ import kotlinx.coroutines.CoroutineScope
 @Requirements(
     Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_HEAD])
 )
-internal class StandaloneCampaignExecutor(
+class StandaloneCampaignExecutor(
     headChannel: HeadChannel,
     factoryService: FactoryService,
     campaignService: CampaignService,

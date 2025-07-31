@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 @Singleton
-internal class EventsLoggerImpl(
+class EventsLoggerImpl(
     configuration: EventsLoggerConfiguration,
     private val publishers: Collection<EventsPublisher>
 ) : EventsLogger {

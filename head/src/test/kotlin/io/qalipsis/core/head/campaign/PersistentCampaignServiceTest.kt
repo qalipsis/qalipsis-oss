@@ -48,12 +48,12 @@ import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignScenarioRepository
 import io.qalipsis.core.head.jdbc.repository.FactoryRepository
-import io.qalipsis.core.head.jdbc.repository.UserRepository
 import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConverter
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -66,8 +66,7 @@ import java.time.Instant
 @WithMockk
 internal class PersistentCampaignServiceTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
@@ -77,7 +76,7 @@ internal class PersistentCampaignServiceTest {
     private lateinit var campaignScenarioRepository: CampaignScenarioRepository
 
     @RelaxedMockK
-    private lateinit var userRepository: UserRepository
+    private lateinit var userProvider: UserProvider
 
     @RelaxedMockK
     private lateinit var campaignConverter: CampaignConverter
@@ -143,7 +142,7 @@ internal class PersistentCampaignServiceTest {
         }
 
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignConverter,
@@ -166,7 +165,7 @@ internal class PersistentCampaignServiceTest {
         }
 
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignConverter,
@@ -191,7 +190,7 @@ internal class PersistentCampaignServiceTest {
         }
 
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignConverter,
@@ -222,7 +221,7 @@ internal class PersistentCampaignServiceTest {
         }
 
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignReportStateKeeper,
@@ -266,7 +265,7 @@ internal class PersistentCampaignServiceTest {
             }
 
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConverter,
@@ -309,7 +308,7 @@ internal class PersistentCampaignServiceTest {
             }
 
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConverter,
@@ -352,7 +351,7 @@ internal class PersistentCampaignServiceTest {
             }
 
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConverter,
@@ -395,7 +394,7 @@ internal class PersistentCampaignServiceTest {
             }
 
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConverter,
@@ -448,7 +447,7 @@ internal class PersistentCampaignServiceTest {
             }
 
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConverter,
@@ -470,7 +469,7 @@ internal class PersistentCampaignServiceTest {
             configurer = 199
         )
         coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaign
-        coEvery { userRepository.findIdByUsername("my-aborter") } returns 111
+        coEvery { userProvider.findIdByUsername("my-aborter") } returns 111
         coEvery { campaignRepository.update(any()) } returnsArgument 0
 
         // when
@@ -480,7 +479,7 @@ internal class PersistentCampaignServiceTest {
         val capturedEntity = mutableListOf<CampaignEntity>()
         coVerifyOnce {
             campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
-            userRepository.findIdByUsername("my-aborter")
+            userProvider.findIdByUsername("my-aborter")
             campaignRepository.update(capture(capturedEntity))
         }
         assertThat(capturedEntity).all {
@@ -499,7 +498,7 @@ internal class PersistentCampaignServiceTest {
         }
 
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignConverter,
@@ -521,7 +520,7 @@ internal class PersistentCampaignServiceTest {
             result = ExecutionStatus.SCHEDULED
         )
         coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaign
-        coEvery { userRepository.findIdByUsername("my-aborter") } returns 111
+        coEvery { userProvider.findIdByUsername("my-aborter") } returns 111
         coEvery { campaignRepository.update(any()) } returnsArgument 0
         coEvery { scheduledCampaignsRegistry.cancelSchedule(any()) } returnsArgument 0
 
@@ -532,7 +531,7 @@ internal class PersistentCampaignServiceTest {
         val capturedEntity = mutableListOf<CampaignEntity>()
         coVerifyOnce {
             campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
-            userRepository.findIdByUsername("my-aborter")
+            userProvider.findIdByUsername("my-aborter")
             campaignRepository.update(capture(capturedEntity))
             scheduledCampaignsRegistry.cancelSchedule("my-campaign")
         }
@@ -552,7 +551,7 @@ internal class PersistentCampaignServiceTest {
         }
 
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignConverter,
@@ -619,7 +618,7 @@ internal class PersistentCampaignServiceTest {
         }
 
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignConverter,
@@ -686,7 +685,7 @@ internal class PersistentCampaignServiceTest {
         }
 
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignConverter,
@@ -711,7 +710,7 @@ internal class PersistentCampaignServiceTest {
         coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
 
         confirmVerified(
-            userRepository,
+            userProvider,
             campaignRepository,
             campaignScenarioRepository,
             campaignConverter,
@@ -735,7 +734,7 @@ internal class PersistentCampaignServiceTest {
             coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
 
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConverter,
@@ -761,7 +760,7 @@ internal class PersistentCampaignServiceTest {
             coVerifyOnce { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") }
 
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConverter,
@@ -804,7 +803,7 @@ internal class PersistentCampaignServiceTest {
             }
 
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConverter,
@@ -857,7 +856,7 @@ internal class PersistentCampaignServiceTest {
             }
 
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConverter,
@@ -913,7 +912,7 @@ internal class PersistentCampaignServiceTest {
             }
 
             confirmVerified(
-                userRepository,
+                userProvider,
                 campaignRepository,
                 campaignScenarioRepository,
                 campaignConverter,

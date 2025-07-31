@@ -30,7 +30,7 @@ import java.util.Optional
  * @author Eric Jessé
  */
 @Singleton
-internal class DefaultScenarioSpecificationsKeeper(
+class DefaultScenarioSpecificationsKeeper(
     private val injector: Injector,
     @Property(name = "scenarios-selectors") private val scenariosSelectors: Optional<String>
 ) : ScenarioSpecificationsKeeper {

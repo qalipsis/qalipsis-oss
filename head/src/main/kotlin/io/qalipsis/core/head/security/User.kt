@@ -27,11 +27,12 @@ import io.swagger.v3.oas.annotations.media.Schema
  * @author Palina Bril
  */
 @Schema(name = "User", title = "User of QALIPSIS", description = "Details of a QALIPSIS user")
-internal data class User(
-    @field:Schema(description = "Tenant owning the user", required = false)
-    val tenant: String,
+interface User {
 
-    @field:Schema(description = "Unique identifier of the user")
+    @get:Schema(description = "Tenant owning the user", required = false)
+    val tenant: String
+
+    @get:Schema(description = "Unique identifier of the user")
     val username: String
 
-)
+}

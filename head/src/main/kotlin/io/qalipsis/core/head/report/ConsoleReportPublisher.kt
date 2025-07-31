@@ -42,7 +42,7 @@ import java.time.Duration
     Requires(env = [HEAD, STANDALONE]),
     Requires(property = "report.export.console.enabled", defaultValue = "false", value = "true")
 )
-internal class ConsoleReportPublisher(
+class ConsoleReportPublisher(
     @Nullable private val consoleCampaignProgressionReporter: ConsoleCampaignProgressionReporter?
 ) : CampaignReportPublisher {
 

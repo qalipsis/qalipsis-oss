@@ -29,8 +29,8 @@ import io.micronaut.security.rules.SecurityRule
 import io.micronaut.validation.Validated
 import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import io.qalipsis.core.head.zone.ZoneService
 import io.qalipsis.core.head.model.Zone
+import io.qalipsis.core.head.zone.ZoneService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -48,7 +48,7 @@ import javax.validation.constraints.NotBlank
 @Version("1.0")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Controller("/zones")
-internal class ZoneController(private val zoneService: ZoneService) {
+class ZoneController(private val zoneService: ZoneService) {
 
     @Get
     @Operation(

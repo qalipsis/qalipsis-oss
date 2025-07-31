@@ -45,21 +45,18 @@ object ServicesFiles {
      */
     @Throws(IOException::class)
     fun readFile(input: InputStream): Set<String> {
-        return BufferedReader(InputStreamReader(input, StandardCharsets.UTF_8)).use { reader ->
-            val services = mutableSetOf<String>()
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                val commentStart = line!!.indexOf('#')
+        return BufferedReader(InputStreamReader(input, StandardCharsets.UTF_8)).readLines()
+            .map { line ->
+                line.trim()
+            }.map { line ->
+                val commentStart = line.indexOf('#')
                 if (commentStart >= 0) {
-                    line = line!!.substring(0, commentStart)
+                    line.substring(0, commentStart)
+                } else {
+                    line
                 }
-                line = line!!.trim()
-                if (line!!.isNotEmpty()) {
-                    services.add(line!!)
-                }
-            }
-            services
-        }
+            }.filterNot { line -> line.isBlank() }
+            .toSet()
     }
 
     /**

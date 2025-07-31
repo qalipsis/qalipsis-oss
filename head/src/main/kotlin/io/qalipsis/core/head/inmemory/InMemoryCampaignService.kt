@@ -36,16 +36,16 @@ import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
 import jakarta.inject.Singleton
-import java.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Instant
 
 @Singleton
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(env = [ExecutionEnvironments.TRANSIENT])
 )
-internal class InMemoryCampaignService(
+class InMemoryCampaignService(
     private val campaignConfigurationConverter: CampaignConfigurationConverter,
     private val hooks: List<CampaignHook>
 ) : CampaignService {

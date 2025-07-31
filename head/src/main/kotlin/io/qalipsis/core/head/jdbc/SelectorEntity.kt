@@ -24,7 +24,7 @@ package io.qalipsis.core.head.jdbc
  *
  * @author Eric Jessé
  */
-internal interface SelectorEntity<T : SelectorEntity<T>> {
+interface SelectorEntity<T : SelectorEntity<T>> {
 
     val key: String
 

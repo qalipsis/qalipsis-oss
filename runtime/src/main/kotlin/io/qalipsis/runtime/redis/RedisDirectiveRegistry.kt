@@ -51,7 +51,7 @@ import kotlinx.serialization.protobuf.ProtoBuf
 @Singleton
 @Requires(notEnv = [STANDALONE])
 @ExperimentalLettuceCoroutinesApi
-internal class RedisDirectiveRegistry(
+class RedisDirectiveRegistry(
     private val idGenerator: IdGenerator,
     private val protobuf: ProtoBuf,
     private val redisListCommands: RedisListCoroutinesCommands<String, String>

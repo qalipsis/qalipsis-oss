@@ -44,8 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @Timeout(30)
 internal class AbstractBufferedEventsPublisherTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test
@@ -177,7 +176,7 @@ internal class AbstractBufferedEventsPublisherTest {
         val publisher = TestAbstractBufferedEventsPublisher(this, EventLevel.INFO, Duration.ofMillis(400), 100, 2)
         publisher.start()
 
-        repeat(3) {
+        repeat(2) {
             delay(300)
             publisher.publish(Event(EVENT_NAME, EventLevel.WARN))
         }

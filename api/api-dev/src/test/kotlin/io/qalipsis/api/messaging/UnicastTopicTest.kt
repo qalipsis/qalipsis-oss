@@ -39,8 +39,7 @@ import java.time.Duration
  */
 internal class UnicastTopicTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
     @Test

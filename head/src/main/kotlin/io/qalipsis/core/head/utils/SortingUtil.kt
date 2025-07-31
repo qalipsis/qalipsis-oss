@@ -25,7 +25,7 @@ import io.qalipsis.core.head.jdbc.entity.Entity
 import java.time.Instant
 import kotlin.reflect.KClass
 
-internal object SortingUtil {
+object SortingUtil {
 
     /**
      * Sort a list of entities according to the property with the given name.

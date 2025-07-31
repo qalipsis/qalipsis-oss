@@ -35,7 +35,7 @@ import io.qalipsis.api.steps.AbstractStep
  * @property names the keys of all the values to fetch from the registry
  * @property delete when set to true, the values are removed from the registry after use
  */
-internal class UnshelveStep<I>(
+class UnshelveStep<I>(
     id: StepName,
     private val sharedStateRegistry: SharedStateRegistry,
     private val names: List<String>,
@@ -64,7 +64,7 @@ internal class UnshelveStep<I>(
  * @property shelveName the key of the value to fetch from the registry
  * @property delete when set to true, the value is removed from the registry after use
  */
-internal class SingularUnshelveStep<I, O>(
+class SingularUnshelveStep<I, O>(
     name: StepName,
     private val sharedStateRegistry: SharedStateRegistry,
     private val shelveName: String,

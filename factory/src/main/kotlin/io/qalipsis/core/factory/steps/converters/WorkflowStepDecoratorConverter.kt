@@ -36,7 +36,7 @@ import java.time.Duration
  * @author Eric Jessé
  */
 @StepConverter
-internal class WorkflowStepDecoratorConverter(
+class WorkflowStepDecoratorConverter(
     private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
     @PositiveDuration
     @Property(name = "campaign.step.start-timeout", defaultValue = "30s")

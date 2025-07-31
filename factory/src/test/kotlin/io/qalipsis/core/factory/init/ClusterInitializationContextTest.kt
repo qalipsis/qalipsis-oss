@@ -38,8 +38,7 @@ import java.time.Duration
 @WithMockk
 internal class ClusterInitializationContextTest {
 
-    @JvmField
-    @RegisterExtension
+    @field:RegisterExtension
     val testDispatcherProvider = TestDispatcherProvider()
 
     @RelaxedMockK
