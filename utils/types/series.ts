@@ -86,17 +86,6 @@ export interface DataSeriesOption extends DataSeries {
 }
 
 /**
- * Data series creation details.
- * 
- * @description
- * The properties are the same as DataSeries, but without reference and creator.
- * 
- * @see DataSeries
- */
-export interface DataSeriesCreationRequest extends Omit<DataSeries, 'reference' | 'creator' | 'version'> {
-}
-
-/**
 * The sharing mode with the other members of the tenant.
 */
 export const SharingModeConstant = {
@@ -337,9 +326,12 @@ export class AggregationDataSeriesPatch implements DataSeriesPatch {
  */
 export class TimeframeDataSeriesPatch implements DataSeriesPatch {
     type: DataSeriesPatchType;
-    timeframe: number;
+    /**
+     * value in milliseconds or in iso string format.
+     */
+    timeframe: number | string;
 
-    constructor(timeframe: number) {
+    constructor(timeframe: number | string) {
         this.type = DataSeriesPatchTypeConstant.TIME_FRAME;
         this.timeframe = timeframe;
     }
@@ -353,7 +345,11 @@ export class TimeframeDataSeriesPatch implements DataSeriesPatch {
  * 
  * @see DataSeries
  */
-export interface DataSeriesCreationRequest extends Omit<DataSeries, "reference" | "creator" | "version"> {
+export interface DataSeriesCreationRequest extends Omit<DataSeries, "reference" | "creator" | "version" | "timeframeUnit"> {
+  /**
+   * The timeframe unit can be in milliseconds or iso string format.
+   */
+  timeframeUnit: number | string
 }
 
 export interface DataField {

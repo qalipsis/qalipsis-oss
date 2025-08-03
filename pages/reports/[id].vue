@@ -20,7 +20,7 @@ import type { RouteLocationNormalized } from '#vue-router';
 
 const { fetchReportDetails } = useReportApi();
 const { fetchMultipleCampaignsDetails } = useCampaignApi();
-const { fetchAllDataSeries } = useDataSeriesApi();
+const { fetchAllDataSeries, storeAllDataSeriesToCache } = useDataSeriesApi();
 
 const route = useRoute();
 const userStore = useUserStore();
@@ -71,6 +71,7 @@ const _fetchReport = async () => {
             : [];
         const campaigns: CampaignExecutionDetails[] = reportDetails.resolvedCampaigns ? await fetchMultipleCampaignsDetails(campaignKeys): [];
         const allDataSeries: DataSeries[] = await fetchAllDataSeries();
+        storeAllDataSeriesToCache(allDataSeries)
         const allDataSeriesOptions: DataSeriesOption[] = SeriesHelper.toDataSeriesOptions(allDataSeries, []);
         
         campaignOptions = campaigns ? campaigns.map((campaignDetail, index) => ({

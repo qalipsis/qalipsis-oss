@@ -27,7 +27,7 @@
                     :height="460"
                     @zoomed="handleZoom"
                 />
-                <div v-if="isUpdatingChart" class="h-[460px] bg-gray-200">
+                <div v-if="isUpdatingChart" class="h-[460px] bg-white dark:bg-primary-900">
                 </div>
             </div>
         </div>

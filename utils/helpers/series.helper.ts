@@ -19,7 +19,7 @@ export class SeriesHelper {
       filters: form.filters,
       color: form.color ?? null,
       colorOpacity: form.colorOpacity,
-      timeframeUnit: TimeframeHelper.toMilliseconds(form.timeframeValue!, form.timeframeUnit),
+      timeframeUnit: TimeframeHelper.toIsoStringDuration(form.timeframeValue!, form.timeframeUnit),
       aggregationOperation: form.aggregationOperation!,
     }
   }
@@ -228,7 +228,7 @@ export class SeriesHelper {
       case 'timeframeValue':
       case 'timeframeUnit':
         return new TimeframeDataSeriesPatch(
-          TimeframeHelper.toMilliseconds(formValue.timeframeValue!, formValue.timeframeUnit)
+          TimeframeHelper.toIsoStringDuration(formValue.timeframeValue!, formValue.timeframeUnit),
         )
       case 'color':
       case 'colorOpacity':

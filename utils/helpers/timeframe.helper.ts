@@ -1,4 +1,5 @@
 import { differenceInCalendarDays, format, intervalToDuration } from "date-fns";
+import { Duration } from "luxon";
 
 type DurationKey =
   | "years"
@@ -30,6 +31,19 @@ export class TimeframeHelper {
         return "th";
     }
   };
+  
+  static toIsoStringDuration = (value: number, unit: TimeframeUnit): string => {
+    switch (unit) {
+      case 'MS':
+        return Duration.fromObject({ milliseconds: value }).toISO()
+      case 'SEC':
+        return Duration.fromObject({ seconds: value }).toISO()
+      case 'MIN':
+        return Duration.fromObject({ minutes: value }).toISO()
+      case 'HR':
+        return Duration.fromObject({ hours: value }).toISO()
+    }
+  }
 
   static getTimezoneOptions = (): FormMenuOption[] => {
     return Intl.supportedValuesOf("timeZone").map((timezone) => ({
