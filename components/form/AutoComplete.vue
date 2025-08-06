@@ -4,7 +4,10 @@
       :text="label"
       :hasError="hasError"
     />
-    <Combobox v-model="selectedFormControlValue">
+    <Combobox
+      v-model="selectedFormControlValue"
+      @update:modelValue="handleSelect"
+    >
       <div
         class="w-full"
         :class="TailwindClassHelper.formDropdownClass"
@@ -57,7 +60,7 @@
               v-slot="{ active, selected }"
               as="template"
             >
-              <div @click="handleOptionSelect(filteredOption)">
+              <div>
                 <slot
                   name="optionContent"
                   :option="filteredOption"
@@ -141,10 +144,12 @@ const handleInputChange = (newValue: string) => {
   debouncedInputChange(newValue)
 }
 
-const handleOptionSelect = (option: any) => {
-  inputValue.value = option[optionValueKey.value]
-  selectedFormControlValue.value = option[optionValueKey.value]
-  emit('select', option[optionValueKey.value])
-  emit('update:modelValue', option[optionValueKey.value])
+const handleSelect = (newValue: string) => {
+  const selectedOption = props.options.find((opt) => opt[optionValueKey.value] === newValue)
+  if (selectedOption) {
+    inputValue.value = selectedOption[optionLabelKey.value]
+    emit('select', newValue)
+  }
+  emit('update:modelValue', newValue)
 }
 </script>
