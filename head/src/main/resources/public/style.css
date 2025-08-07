@@ -145,10 +145,6 @@ add root styles and other general css rules
   margin: 0;
 }
 
-html,
-body {
-}
-
 html {
   font-size: 62.5%;
   font-family: "Outfit", sans-serif, -apple-system, BlinkMacSystemFont,
@@ -163,6 +159,14 @@ body {
   font-stretch: normal;
   font-style: normal;
   font-family: 'Outfit' !important;
+  margin: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 img {

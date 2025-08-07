@@ -67,21 +67,28 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
         require(data.isNotEmpty()) { "Cannot generate chart with empty data" }
         val dataSeriesDrawingConfigurations = mutableMapOf<String, DataSeriesDrawingConfiguration>()
         val campaignKeyToLineMap = mutableMapOf<String, Int>()
+
         // Re-arrange the data to build time series pairs and other data structures needed to render and style the charts.
         buildDataSet(data, campaignKeyToLineMap, dataSeriesDrawingConfigurations)
+
         // Map each dataSeries reference to a unique color.
         val dataSeriesEntityMap = dataSeries.associateBy { dataSeriesEntity -> dataSeriesEntity.reference }
         mapDataSeriesToColour(dataSeriesEntityMap, dataSeriesDrawingConfigurations)
+
         // Plot datasets, configure renderers and styling to the X and Y axes of the chart.
         val plot = plotChart(XYPlot(), dataSeriesDrawingConfigurations, campaignKeyToLineMap)
+
         // Create a chart instance using the specified plot configurations.
         val chart = createChart(plot, dataSeriesDrawingConfigurations)
+
         // Initialize temporary file location for the report file.
         val imageFilePath = Files.createTempFile(reportTempDir, "requestChart${index + 1}", ".svg")
         val svgGraphics = SVGGraphics2D(rectangleWidth, rectangleHeight)
         val rectangle = Rectangle(0, 0, rectangleWidth.toInt(), rectangleHeight.toInt())
+
         // Draw the chart on a Java 2D graphics device with the configured rectangle width and height.
         chart.draw(svgGraphics, rectangle)
+
         // Write the chart to an SVG file.
         SVGUtils.writeToSVG(imageFilePath.toFile(), svgGraphics.svgElement)
 

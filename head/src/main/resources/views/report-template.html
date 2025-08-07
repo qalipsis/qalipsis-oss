@@ -3,10 +3,7 @@
 <head>
   <title th:title="${displayName}"></title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  <link type="text/css" media="print" href="/public/style.css"
-        th:href="${stylePath}" rel="stylesheet"/>
-  <link type="text/css" media="all" href="/public/style.css"
-        th:href="@{public/style.css}" rel="stylesheet"/>
+  <style th:utext="${css}"></style>
 </head>
 <body>
 <div class="container">
@@ -31,7 +28,7 @@
     <p>No Chart available</p>
   </section>
   <section class="chart" th:each="chartImage: ${chartImages}">
-    <img class="img" th:src="${chartImage}" alt="pdf-image Requests Chart"/>
+    <img class="img" th:src="'data:image/svg+xml;base64,' + ${chartImage}" alt="pdf-image Requests Chart"/>
   </section>
   <section th:if="${eventTableData != null and eventTableData.isEmpty()}">
     <p>No TimeSeries Record available</p>

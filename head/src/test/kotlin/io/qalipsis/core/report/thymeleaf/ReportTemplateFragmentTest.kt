@@ -36,17 +36,6 @@ import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode
 import io.qalipsis.core.head.report.chart.ChartServiceImpl
 import io.qalipsis.core.head.report.chart.LineStyleGenerator
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInfo
-import org.thymeleaf.TemplateEngine
-import org.thymeleaf.context.Context
-import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect
-import org.thymeleaf.templatemode.TemplateMode
-import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
@@ -59,6 +48,17 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Base64
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
+import org.thymeleaf.TemplateEngine
+import org.thymeleaf.context.Context
+import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect
+import org.thymeleaf.templatemode.TemplateMode
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
 
 
 @MicronautTest(startApplication = false)
@@ -82,12 +82,12 @@ internal class ReportTemplateFragmentTest {
 
     private val chartTestDir = Files.createTempDirectory("chart-test-images").toAbsolutePath()
 
-
     @BeforeEach
     fun init() {
         context = Context()
         createTemplateEngine()
         snapshotDirectory = Files.createTempDirectory("__snapshot__")
+
         report = ReportEntity(
             id = 5L,
             displayName = "Report Display Name",
@@ -620,7 +620,7 @@ internal class ReportTemplateFragmentTest {
         val base64ImagePath = chartService.buildChart(aggregationResult, dataSeries, 0, chartTestDir)
         val imageByte = Files.readAllBytes(base64ImagePath).toBase64()
         val chartImageTemplate = """
-            <img class="img" src="$imageByte" alt="pdf-image Requests Chart"/>
+            <img class="img" src="data:image/svg+xml;base64,$imageByte" alt="pdf-image Requests Chart"/>
         """.trimIndent().stripNewlines()
         context.setVariable("chartImages", listOf(Files.readAllBytes(base64ImagePath).toBase64()))
 
