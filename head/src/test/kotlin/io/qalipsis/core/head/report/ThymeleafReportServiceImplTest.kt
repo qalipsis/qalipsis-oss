@@ -27,7 +27,6 @@ import assertk.assertions.isNull
 import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.micronaut.core.io.ResourceLoader
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
@@ -63,10 +62,10 @@ import java.math.BigDecimal
 import java.nio.file.Files
 import java.time.Duration
 import java.time.Instant
+import org.junit.jupiter.api.BeforeAll
 
 
 @WithMockk
-@MicronautTest
 internal class ThymeleafReportServiceImplTest {
 
     @field:RegisterExtension
@@ -105,6 +104,11 @@ internal class ThymeleafReportServiceImplTest {
     @AfterEach
     fun cleanup() {
         File(tempDirectory).deleteRecursively()
+    }
+
+    @BeforeAll
+    fun setup() {
+        templateReportService.initCss()
     }
 
     @Test

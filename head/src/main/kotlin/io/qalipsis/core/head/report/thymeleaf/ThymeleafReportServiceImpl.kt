@@ -38,12 +38,14 @@ import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Compani
 import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.TIME_PATH
 import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.USER_PATH
 import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.logger
+import jakarta.annotation.PostConstruct
 import jakarta.inject.Singleton
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.thymeleaf.context.Context
 import org.xhtmlrenderer.pdf.ITextRenderer
 import java.io.ByteArrayOutputStream
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -64,6 +66,23 @@ class ThymeleafReportServiceImpl(
     private val templateBeanFactory: TemplateBeanFactory,
     private val resourceLoader: ResourceLoader,
 ) : TemplateReportService {
+
+    /**
+     * The CSS content to be used in the report template.
+     *
+     * Initialized in [initCss] by loading `public/style.css` from the classpath
+     * and converting its contents to a UTF-8 string.
+     */
+    private lateinit var cssContent: String
+
+    @PostConstruct
+    fun initCss() {
+        val cssInputStream = javaClass.classLoader.getResourceAsStream("public/style.css")
+            ?: throw IllegalArgumentException("CSS file not found in classpath.")
+        cssInputStream.use { input ->
+            cssContent = input.readBytes().toString(StandardCharsets.UTF_8)
+        }
+    }
 
     override suspend fun generatePdf(
         report: ReportEntity,
@@ -138,6 +157,8 @@ class ThymeleafReportServiceImpl(
     ): Context {
         val assets = readResources(reportTempDir)
         return Context().apply {
+            // Configure styling.
+            setVariable("css", cssContent)
             // Configure the report title.
             setVariable("title", campaignReportDetail.reportName)
             // Configure data to populate the campaign summary section.
@@ -224,12 +245,6 @@ class ThymeleafReportServiceImpl(
     private fun readResources(reportTempDir: Path): Map<String, String> {
         val resourceMap = mutableMapOf<String, String>()
         try {
-            //Load the css file.
-            val cssPath = Files.createTempFile(reportTempDir, "style", ".css")
-            val cssInputStream = resourceLoader.getResourceAsStream("classpath:$CSS_STYLE_PATH")
-            cssInputStream?.let {
-                Files.copy(cssInputStream.get(), cssPath, StandardCopyOption.REPLACE_EXISTING)
-            }
             //Load the image icons.
             val userBytes = resourceLoader.getResourceAsStream("classpath:$USER_PATH")?.get()?.readBytes()
             val timeBytes = resourceLoader.getResourceAsStream("classpath:$TIME_PATH").get().readBytes()
@@ -237,7 +252,6 @@ class ThymeleafReportServiceImpl(
             resourceMap["timeImage"] = Base64.getEncoder().encodeToString(timeBytes)
             resourceMap["userImage"] = Base64.getEncoder().encodeToString(userBytes)
             resourceMap["logoImage"] = Base64.getEncoder().encodeToString(logoBytes)
-            resourceMap["stylePath"] = cssPath.absolutePathString()
         } catch (ex: Exception) {
             logger.debug { "Not able to load resource: $ex" }
         }
