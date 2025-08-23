@@ -41,7 +41,7 @@ import kotlin.coroutines.Continuation
  * @author Eric Jessé
  */
 @InterceptorBean(LogInput::class, LogOutput::class, LogInputAndOutput::class)
-@Requires(property = "logging.annotations.enabled", value = StringUtils.TRUE, defaultValue = StringUtils.TRUE)
+@Requires(property = "logging.annotations.enabled", value = StringUtils.TRUE, defaultValue = StringUtils.FALSE)
 internal class LoggingInterceptor : MethodInterceptor<Any, Any> {
 
     private val loggers = ConcurrentHashMap<Class<*>, KLogger>()

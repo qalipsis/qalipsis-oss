@@ -36,6 +36,7 @@ import io.qalipsis.core.head.web.annotation.NoOpTenantBinder
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
 
 /**
  * API to provide details about the current user.
@@ -49,6 +50,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 )
 @Controller
+@Tag(name = "User profile")
 class ProfileController {
 
     @Operation(

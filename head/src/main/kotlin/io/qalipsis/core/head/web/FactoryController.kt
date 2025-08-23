@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
 
 /**
  * Controller for REST calls related to factory operations.
@@ -31,6 +32,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
     Requires(beans = [WidgetService::class])
 )
 @Validated
+@Tag(name = "Factory states")
 class FactoryController(
     private val widgetService: WidgetService
 ) {

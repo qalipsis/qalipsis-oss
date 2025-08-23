@@ -123,14 +123,14 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
                             it.all {
                                 prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-1")
                                 prop(FactoryScenarioAssignment::dags).containsOnly("dag-1", "dag-2")
-                                prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(Int.MAX_VALUE)
+                                prop(FactoryScenarioAssignment::maximalMinionsCount).isEqualTo(Int.MAX_VALUE)
                             }
                         }
                         any {
                             it.all {
                                 prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-2")
                                 prop(FactoryScenarioAssignment::dags).containsOnly("dag-A", "dag-B")
-                                prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(1762)
+                                prop(FactoryScenarioAssignment::maximalMinionsCount).isEqualTo(1762)
                             }
                         }
                     }
@@ -147,7 +147,7 @@ internal class FactoryAssignmentStateTest : AbstractStateTest() {
                             it.all {
                                 prop(FactoryScenarioAssignment::scenarioName).isEqualTo("scenario-2")
                                 prop(FactoryScenarioAssignment::dags).containsOnly("dag-A", "dag-B", "dag-C")
-                                prop(FactoryScenarioAssignment::maximalMinionCount).isEqualTo(254)
+                                prop(FactoryScenarioAssignment::maximalMinionsCount).isEqualTo(254)
                             }
                         }
                     }

@@ -53,6 +53,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
 import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.NotBlank
@@ -68,6 +69,7 @@ import javax.validation.constraints.PositiveOrZero
     Requires(beans = [DataSeriesService::class])
 )
 @Version("1.0")
+@Tag(name = "Data-Series Management")
 class DataSeriesController(
     private val dataSeriesService: DataSeriesService,
     private val dataProvider: DataProvider,

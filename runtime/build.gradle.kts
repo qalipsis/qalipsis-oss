@@ -102,12 +102,12 @@ dependencies {
 
 task<JavaExec>("runQalipsis") {
     group = "application"
-    description = "Starts QALIPSIS standalone, for a PostgreSQL"
+    description = "Starts QALIPSIS standalone, for PostgreSQL"
     mainClass.set("io.qalipsis.runtime.Qalipsis")
     maxHeapSize = "256m"
     args(
         "--persistent",
-        "-e", "api-documentation"
+        //"-e", "api-documentation"
     )
     classpath =
         sourceSets["main"].runtimeClasspath +

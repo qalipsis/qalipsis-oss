@@ -24,6 +24,8 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
     <include file="changelog/creation/create-tenant.xml" relativeToChangelogFile="true"/>
+    <!--  Fixes a conflict in the change sets. -->
+    <include file="changelog/creation/fix-create-tenant-liquibase-check-sum.xml" relativeToChangelogFile="true"/>
     <include file="changelog/creation/create-factory.xml" relativeToChangelogFile="true"/>
     <include file="changelog/creation/create-factory-tag.xml" relativeToChangelogFile="true"/>
     <include file="changelog/creation/create-factory-state.xml" relativeToChangelogFile="true"/>

@@ -53,6 +53,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.Nullable
 import javax.validation.Valid
 import javax.validation.constraints.NotBlank
@@ -70,6 +71,7 @@ import javax.validation.constraints.PositiveOrZero
 @Controller("/campaigns")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
+@Tag(name = "Campaign Management")
 class CampaignController(
     private val campaignExecutor: CampaignExecutor,
     private val campaignService: CampaignService,

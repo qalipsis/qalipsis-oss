@@ -249,7 +249,6 @@ class ContextInitializer(
         return this.javaClass.classLoader.getResources("META-INF/services/qalipsis/plugin")
             .asSequence()
             .flatMap { folder -> ServicesFiles.readFile(folder.openStream()) }
-            .flatMap { file -> ServicesFiles.readFile(this.javaClass.classLoader.getResourceAsStream("META-INF/services/qalipsis/plugin/$file")) }
             .flatMap { it.split(",") }
             .map { it.trim() }
             .filter { it.isNotBlank() }
@@ -329,11 +328,11 @@ class ContextInitializer(
             try {
                 choice = readLine()?.conversion()
                 if (choice == null || !validation(choice)) {
-                    println("ERROR: ${errorMessage}")
+                    println("ERROR: $errorMessage")
                     choice = null
                 }
             } catch (e: Exception) {
-                println("ERROR: ${errorMessage}")
+                println("ERROR: $errorMessage")
             }
         }
         return choice

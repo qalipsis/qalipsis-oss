@@ -1,11 +1,8 @@
 micronaut:
   server:
-    port: 8080
-    cors:
-      enabled: true
     log-handled-exceptions: true
 redis:
-  uri: redis://localhost:16379
+  uri: redis://localhost:36379
 
 logging:
   console: true
@@ -16,7 +13,7 @@ logging:
 
 datasource:
   host: localhost
-  port: 15432
+  port: 35432
   database: qalipsis
   schema: qalipsis
   username: qalipsis

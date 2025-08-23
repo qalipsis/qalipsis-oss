@@ -43,6 +43,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.Nullable
 import java.time.Duration
 import java.time.Instant
@@ -57,6 +58,7 @@ import javax.validation.constraints.PositiveOrZero
 @Controller("/time-series")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
+@Tag(name = "Analytics data")
 class TimeSeriesController(
     private val timeSeriesDataQueryService: TimeSeriesDataQueryService,
     private val widgetService: WidgetService

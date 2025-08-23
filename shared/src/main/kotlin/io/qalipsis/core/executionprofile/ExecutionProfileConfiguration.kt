@@ -42,6 +42,7 @@ import javax.validation.constraints.Positive
 @JsonSubTypes(
     JsonSubTypes.Type(value = RegularExecutionProfileConfiguration::class, name = "REGULAR"),
     JsonSubTypes.Type(value = AcceleratingExecutionProfileConfiguration::class, name = "ACCELERATING"),
+    JsonSubTypes.Type(value = DefaultExecutionProfileConfiguration::class, name = "DEFAULT"),
     JsonSubTypes.Type(value = ImmediateExecutionProfileConfiguration::class, name = "IMMEDIATE"),
     JsonSubTypes.Type(value = ProgressiveVolumeExecutionProfileConfiguration::class, name = "PROGRESSING_VOLUME"),
     JsonSubTypes.Type(value = PercentageStageExecutionProfileConfiguration::class, name = "PERCENTAGE_STAGE"),

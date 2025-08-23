@@ -36,6 +36,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
 import javax.validation.constraints.NotBlank
 
 
@@ -48,6 +49,7 @@ import javax.validation.constraints.NotBlank
 @Version("1.0")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Controller("/zones")
+@Tag(name = "Zone details")
 class ZoneController(private val zoneService: ZoneService) {
 
     @Get

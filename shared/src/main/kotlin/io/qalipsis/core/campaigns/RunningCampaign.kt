@@ -112,7 +112,7 @@ data class FactoryConfiguration(
  *
  * @property scenarioName name of the scenario
  * @property dags names of the directed acyclic graphs assigned to the factory
- * @property maximalMinionCount maximal count of minions the factory can run for this scenario
+ * @property maximalMinionsCount maximal count of minions the factory can run for this scenario
  */
 @Serializable
 data class FactoryScenarioAssignment(
@@ -120,5 +120,5 @@ data class FactoryScenarioAssignment(
     @field:NotEmpty
     val dags: Collection<DirectedAcyclicGraphName>,
     @field:Min(1)
-    val maximalMinionCount: Int = Int.MAX_VALUE
+    val maximalMinionsCount: Int = Int.MAX_VALUE
 )

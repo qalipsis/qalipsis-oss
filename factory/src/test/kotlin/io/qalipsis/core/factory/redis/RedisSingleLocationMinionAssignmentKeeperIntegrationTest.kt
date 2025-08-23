@@ -189,13 +189,13 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
                             SCENARIO_1_DAG_3,
                             SCENARIO_1_DAG_SINGLETON_1
                         ),
-                        maximalMinionCount = Int.MAX_VALUE
+                        maximalMinionsCount = Int.MAX_VALUE
                     ),
                     FactoryScenarioAssignment(
                         SCENARIO_2, listOf(
                             SCENARIO_2_DAG_2, SCENARIO_2_DAG_3
                         ),
-                        maximalMinionCount = Int.MAX_VALUE
+                        maximalMinionsCount = Int.MAX_VALUE
                     )
                 ),
                 factory1
@@ -212,13 +212,13 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
                             SCENARIO_1_DAG_5,
                             SCENARIO_1_DAG_SINGLETON_2
                         ),
-                        maximalMinionCount = Int.MAX_VALUE
+                        maximalMinionsCount = Int.MAX_VALUE
                     ),
                     FactoryScenarioAssignment(
                         SCENARIO_2, listOf(
                             SCENARIO_2_DAG_1, SCENARIO_2_DAG_3, SCENARIO_2_DAG_4
                         ),
-                        maximalMinionCount = Int.MAX_VALUE
+                        maximalMinionsCount = Int.MAX_VALUE
                     )
                 ),
                 factory2

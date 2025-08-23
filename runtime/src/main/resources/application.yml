@@ -63,7 +63,7 @@ monitoring:
 # Micronaut configuration, which should not be changed by the users.
 micronaut:
   server:
-    port: ${monitoring.port}
+    port: ${server.port}
     cors:
       enabled: true
   session:
