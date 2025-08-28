@@ -185,7 +185,7 @@ class ReportController(
 
     @Delete
     @Operation(
-        summary = "Deletes a list report",
+        summary = "Deletes a list of reports",
         description = "Deletes a list of existing report template",
         responses = [
             ApiResponse(responseCode = "204", description = "Successful deletion "),
@@ -208,7 +208,7 @@ class ReportController(
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Reference of the report to delete",
+            description = "Reference of the report to delete, can be specified multiple times for a bulk deletion, eg: report=w65dqw&report=1265fs2",
             required = true,
             `in` = ParameterIn.QUERY
         ) @QueryValue("report") references: Set<@NotBlank String>,

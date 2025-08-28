@@ -208,7 +208,7 @@ class DataSeriesController(
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "References of the data series to delete",
+            description = "References of the data series to delete, can be specified multiple times for a bulk deletion, eg: series=w65dqw&series=1265fs2",
             required = true,
             `in` = ParameterIn.QUERY
         ) @QueryValue("series") references: Set<@NotBlank String>,
