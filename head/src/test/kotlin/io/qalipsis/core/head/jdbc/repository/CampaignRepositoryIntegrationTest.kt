@@ -108,6 +108,11 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             scheduledMinions = 123,
             result = SUCCESSFUL,
             configurer = 1L, // Default user.
+            configuration = CampaignConfiguration(
+                name = "my-campaign",
+                scenarios = mapOf("the-scenario-id" to ScenarioRequest(minionsCount = 80))
+            ),
+            zones = setOf("zone-a", "zone-b")
 
         )
 
@@ -177,6 +182,12 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             prop(CampaignEntity::result).isEqualTo(ABORTED)
             prop(CampaignEntity::configurer).isEqualTo(1L)
             prop(CampaignEntity::failureReason).isEqualTo("This is the failure")
+            prop(CampaignEntity::configuration).isEqualTo(
+                CampaignConfiguration(
+                    name = "my-campaign",
+                    scenarios = mapOf("the-scenario-id" to ScenarioRequest(minionsCount = 80))
+                )
+            )
             prop(CampaignEntity::zones).isEqualTo(setOf("fr", "at"))
         }
     }
@@ -323,6 +334,13 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
             prop(CampaignEntity::end).isNull()
             prop(CampaignEntity::result).isEqualTo(IN_PROGRESS)
+            prop(CampaignEntity::configuration).isEqualTo(
+                CampaignConfiguration(
+                    name = "my-campaign",
+                    scenarios = mapOf("the-scenario-id" to ScenarioRequest(minionsCount = 80))
+                )
+            )
+            prop(CampaignEntity::zones).isEqualTo(setOf("zone-a", "zone-b"))
         }
     }
 
@@ -379,9 +397,15 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
             prop(CampaignEntity::end).isNull()
             prop(CampaignEntity::result).isNull()
+            prop(CampaignEntity::configuration).isEqualTo(
+                CampaignConfiguration(
+                    name = "my-campaign",
+                    scenarios = mapOf("the-scenario-id" to ScenarioRequest(minionsCount = 80))
+                )
+            )
+            prop(CampaignEntity::zones).isEqualTo(setOf("zone-a", "zone-b"))
         }
     }
-
 
     @Test
     fun `should start the created campaign without timeout`() = testDispatcherProvider.run {
@@ -437,6 +461,13 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             prop(CampaignEntity::speedFactor).isEqualTo(openCampaign.speedFactor)
             prop(CampaignEntity::end).isNull()
             prop(CampaignEntity::result).isNull()
+            prop(CampaignEntity::configuration).isEqualTo(
+                CampaignConfiguration(
+                    name = "my-campaign",
+                    scenarios = mapOf("the-scenario-id" to ScenarioRequest(minionsCount = 80))
+                )
+            )
+            prop(CampaignEntity::zones).isEqualTo(setOf("zone-a", "zone-b"))
         }
     }
 
@@ -474,6 +505,13 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             prop(CampaignEntity::end).isNotNull().isGreaterThanOrEqualTo(beforeCall)
             prop(CampaignEntity::result).isEqualTo(FAILED)
             prop(CampaignEntity::failureReason).isEqualTo("The campaign fails")
+            prop(CampaignEntity::configuration).isEqualTo(
+                CampaignConfiguration(
+                    name = "my-campaign",
+                    scenarios = mapOf("the-scenario-id" to ScenarioRequest(minionsCount = 80))
+                )
+            )
+            prop(CampaignEntity::zones).isEqualTo(setOf("zone-a", "zone-b"))
         }
     }
 
@@ -517,6 +555,13 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             prop(CampaignEntity::end).isNotNull().isGreaterThanOrEqualTo(beforeCall)
             prop(CampaignEntity::result).isEqualTo(SUCCESSFUL)
             prop(CampaignEntity::failureReason).isEqualTo("The initial reason")
+            prop(CampaignEntity::configuration).isEqualTo(
+                CampaignConfiguration(
+                    name = "my-campaign",
+                    scenarios = mapOf("the-scenario-id" to ScenarioRequest(minionsCount = 80))
+                )
+            )
+            prop(CampaignEntity::zones).isEqualTo(setOf("zone-a", "zone-b"))
         }
     }
 

@@ -69,7 +69,6 @@ class JacksonObjectMapperCreationListener : BeanCreatedEventListener<ObjectMappe
             disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             disable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES)
 
-            // Null fields are ignored.
             setSerializationInclusion(JsonInclude.Include.ALWAYS)
             setDefaultPropertyInclusion(
                 JsonInclude.Value.construct(
