@@ -63,7 +63,9 @@ export const useDataSeriesApi = () => {
    * @param dataSeriesReferences The data series references to be deleted
    */
   const deleteDataSeries = async (dataSeriesReferences: string[]): Promise<void> => {
-    await Promise.all(dataSeriesReferences.map((ref) => delete$(`/data-series/${ref}`)))
+    const seriesParams = `?series=${dataSeriesReferences.join(',')}`
+
+    return delete$(`/data-series/${seriesParams}`)
   }
 
   /**
