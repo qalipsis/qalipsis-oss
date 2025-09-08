@@ -192,8 +192,9 @@ class PersistentCampaignService(
             val factories = factoryRepository.findByNodeIdIn(runningCampaign.tenant, runningCampaign.factories.keys)
             campaignRepository.update(
                 campaign.copy(
-                    zones = factories.mapNotNull { it.zone }.toSet(),
-                    failureReason = runningCampaign.message.takeIf(String::isNotBlank)
+                    // Only updates the zones if there were effectively known factories attached to the campaign.
+                    zones = factories.takeIf { it.isNotEmpty() }?.mapNotNull { it.zone }?.toSet() ?: campaign.zones,
+                    failureReason = runningCampaign.message.takeIf(String::isNotBlank) ?: campaign.failureReason
                 )
             )
         }
