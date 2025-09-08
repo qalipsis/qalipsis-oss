@@ -67,7 +67,8 @@ class CampaignPreparator(
                 configurer = requireNotNull(userProvider.findIdByUsername(configurer)),
                 configuration = configuration,
                 result = if (isScheduled) ExecutionStatus.SCHEDULED else ExecutionStatus.QUEUED,
-                start = if (isScheduled) configuration.scheduledAt else null
+                start = if (isScheduled) configuration.scheduledAt else null,
+                zones = configuration.scenarios.values.flatMap { it.zones?.keys.orEmpty() }.toSet()
             )
         )
 

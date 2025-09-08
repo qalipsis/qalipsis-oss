@@ -108,8 +108,8 @@ internal class CampaignPreparatorTest {
             name = "This is a campaign",
             speedFactor = 123.2,
             scenarios = mapOf(
-                "scenario-1" to ScenarioRequest(1),
-                "scenario-2" to ScenarioRequest(3)
+                "scenario-1" to ScenarioRequest(1, zones = mapOf("zone-1" to 10, "zone-2" to 90)),
+                "scenario-2" to ScenarioRequest(3, zones = mapOf("zone-1" to 10, "zone-3" to 90))
             )
         )
         val runningCampaign = relaxedMockk<RunningCampaign> {
@@ -160,6 +160,7 @@ internal class CampaignPreparatorTest {
                     prop(CampaignEntity::tenantId).isEqualTo(8165L)
                     prop(CampaignEntity::configuration).isSameInstanceAs(campaign)
                     prop(CampaignEntity::result).isEqualTo(QUEUED)
+                    prop(CampaignEntity::zones).isEqualTo(setOf("zone-1", "zone-2", "zone-3"))
                 }
             })
             campaignScenarioRepository.saveAll(
@@ -378,8 +379,8 @@ internal class CampaignPreparatorTest {
             timeout = Duration.ofSeconds(715),
             hardTimeout = false,
             scenarios = mapOf(
-                "scenario-1" to ScenarioRequest(1),
-                "scenario-2" to ScenarioRequest(3)
+                "scenario-1" to ScenarioRequest(1, zones = mapOf("zone-1" to 10, "zone-2" to 90)),
+                "scenario-2" to ScenarioRequest(3, zones = mapOf("zone-1" to 10, "zone-3" to 90))
             ),
             scheduledAt = scheduleAt
         )
@@ -431,6 +432,7 @@ internal class CampaignPreparatorTest {
                     prop(CampaignEntity::tenantId).isEqualTo(8165L)
                     prop(CampaignEntity::configuration).isSameInstanceAs(configuration)
                     prop(CampaignEntity::result).isEqualTo(SCHEDULED)
+                    prop(CampaignEntity::zones).isEqualTo(setOf("zone-1", "zone-2", "zone-3"))
                 }
             })
             campaignScenarioRepository.saveAll(

@@ -562,6 +562,70 @@ internal class PersistentCampaignServiceTest {
     }
 
     @Test
+    internal fun `should enrich the campaign without known factory`() = testDispatcherProvider.run {
+        // given
+        val now = Instant.now()
+        val campaign = CampaignEntity(
+            key = "my-campaign",
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            scheduledMinions = 345,
+            start = now,
+            configurer = 199,
+            failureReason = "The failure reason",
+            zones = setOf("zone-1", "zone-2", "zone-3")
+        )
+        coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaign
+        coEvery { campaignRepository.update(any()) } returnsArgument 0
+        coEvery {
+            factoryRepository.findByNodeIdIn(
+                "my-tenant",
+                setOf("factory-1", "factory-2", "factory-3")
+            )
+        } returns emptyList()
+
+        // when
+        persistentCampaignService.enrich(mockk {
+            every { tenant } returns "my-tenant"
+            every { key } returns "my-campaign"
+            every { message } returns " "
+            every { factories.keys } returns mutableSetOf("factory-1", "factory-2", "factory-3")
+        })
+
+        // then
+        coVerifyOnce {
+            campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
+            factoryRepository.findByNodeIdIn("my-tenant", setOf("factory-1", "factory-2", "factory-3"))
+            campaignRepository.update(
+                eq(
+                    CampaignEntity(
+                        key = "my-campaign",
+                        name = "This is a campaign",
+                        speedFactor = 123.2,
+                        scheduledMinions = 345,
+                        start = now,
+                        configurer = 199,
+                        failureReason = "The failure reason",
+                        zones = setOf("zone-1", "zone-2", "zone-3")
+                    ).copy(
+                        creation = campaign.creation,
+                        version = campaign.version
+                    )
+                )
+            )
+        }
+
+        confirmVerified(
+            userProvider,
+            campaignRepository,
+            campaignScenarioRepository,
+            campaignConverter,
+            factoryRepository,
+            campaignPreparator
+        )
+    }
+
+    @Test
     internal fun `should enrich the campaign without failure message`() = testDispatcherProvider.run {
         // given
         val now = Instant.now()
@@ -571,7 +635,8 @@ internal class PersistentCampaignServiceTest {
             speedFactor = 123.2,
             scheduledMinions = 345,
             start = now,
-            configurer = 199
+            configurer = 199,
+            failureReason = "The failure reason"
         )
         coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaign
         coEvery { campaignRepository.update(any()) } returnsArgument 0
@@ -607,7 +672,7 @@ internal class PersistentCampaignServiceTest {
                         scheduledMinions = 345,
                         start = now,
                         configurer = 199,
-                        failureReason = null,
+                        failureReason = "The failure reason",
                         zones = setOf("zone-1", "zone-3")
                     ).copy(
                         creation = campaign.creation,
@@ -626,7 +691,6 @@ internal class PersistentCampaignServiceTest {
             campaignPreparator
         )
     }
-
 
     @Test
     internal fun `should enrich the campaign with failure message`() = testDispatcherProvider.run {

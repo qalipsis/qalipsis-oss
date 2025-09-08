@@ -87,7 +87,8 @@ class InMemoryCampaignService(
                         it.key,
                         it.value.minionsCount
                     )
-                }
+                },
+                zones = campaignConfiguration.scenarios.values.flatMap { it.zones?.keys.orEmpty() }.toSet()
             )
             currentCampaign!!
         }

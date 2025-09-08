@@ -81,8 +81,8 @@ internal class InMemoryCampaignServiceTest {
             speedFactor = 123.2,
             timeout = Duration.ofSeconds(715),
             scenarios = mapOf(
-                "scenario-1" to ScenarioRequest(1),
-                "scenario-2" to ScenarioRequest(3)
+                "scenario-1" to ScenarioRequest(1, zones = mapOf("zone-1" to 10, "zone-2" to 90)),
+                "scenario-2" to ScenarioRequest(3, zones = mapOf("zone-1" to 10, "zone-3" to 90))
             )
         )
         val runningCampaign = relaxedMockk<RunningCampaign> {
