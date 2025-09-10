@@ -62,6 +62,7 @@ class JacksonObjectMapperCreationListener : BeanCreatedEventListener<ObjectMappe
 
             // Serialization configuration.
             disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
 
             // Deserialization configuration.
             enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
