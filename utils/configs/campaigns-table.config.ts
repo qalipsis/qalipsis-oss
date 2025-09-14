@@ -5,7 +5,7 @@ export class CampaignsTableConfig {
     key: "name",
     sortingEnabled: true
   }, {
-    title: "Scenario",
+    title: "Scenarios",
     key: "scenarioText"
   }, {
     title: "Status",
