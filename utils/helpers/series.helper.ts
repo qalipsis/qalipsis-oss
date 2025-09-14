@@ -69,9 +69,7 @@ export class SeriesHelper {
       key: el.reference,
       sharedText: SeriesHelper.sharingModeToText[el.sharingMode!],
       filterNames: el.filters?.map((filter) => filter.name),
-      formattedTimeframe: TimeframeHelper.toFormattedTimeframe(
-        TimeframeHelper.toMilliseconds(el.timeframeUnit!, 'SEC')
-      ),
+      formattedTimeframe: TimeframeHelper.toFormattedTimeframe(el.timeframeUnit),
       disabled: el.creator !== userName && el.sharingMode === SharingModeConstant.READONLY,
     }))
   }
@@ -228,7 +226,7 @@ export class SeriesHelper {
       case 'timeframeValue':
       case 'timeframeUnit':
         return new TimeframeDataSeriesPatch(
-          TimeframeHelper.toIsoStringDuration(formValue.timeframeValue!, formValue.timeframeUnit),
+          TimeframeHelper.toIsoStringDuration(formValue.timeframeValue!, formValue.timeframeUnit)
         )
       case 'color':
       case 'colorOpacity':

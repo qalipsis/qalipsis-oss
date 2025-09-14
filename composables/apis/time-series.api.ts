@@ -1,16 +1,18 @@
 export const useTimeSeriesApi = () => {
-    const { get$ } = baseApi();
+  const { get$ } = baseApi()
 
-    const fetchTimeSeriesAggregation = (queryParam: TimeSeriesAggregationQueryParam): Promise<{ [key: string]: TimeSeriesAggregationResult[] }> => {
-        return get$<{ [key: string]: TimeSeriesAggregationResult[] }, any>("/time-series/aggregate", queryParam);
-    }
+  const fetchTimeSeriesAggregation = (
+    queryParam: TimeSeriesAggregationQueryParam
+  ): Promise<{ [key: string]: TimeSeriesAggregationResult[] }> => {
+    return get$<{ [key: string]: TimeSeriesAggregationResult[] }, any>('/time-series/aggregate', queryParam)
+  }
 
-    const fetchCampaignSummary = (queryParam: CampaignSummaryResultQueryParams): Promise<CampaignSummaryResult[]> => {
-        return get$<CampaignSummaryResult[], any>("/time-series/summary/campaign-status", queryParam);
-    }
+  const fetchCampaignSummary = (queryParam: CampaignSummaryResultQueryParams): Promise<CampaignSummaryResult[]> => {
+    return get$<CampaignSummaryResult[], any>('/time-series/summary/campaign-status', queryParam)
+  }
 
-    return {
-        fetchTimeSeriesAggregation,
-        fetchCampaignSummary
-    }
+  return {
+    fetchTimeSeriesAggregation,
+    fetchCampaignSummary,
+  }
 }

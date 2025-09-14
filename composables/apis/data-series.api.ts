@@ -92,7 +92,7 @@ export const useDataSeriesApi = () => {
       colorOpacity: dataSeriesTableData.colorOpacity,
       fieldName: dataSeriesTableData.fieldName,
       aggregationOperation: dataSeriesTableData.aggregationOperation,
-      timeframeUnit: dataSeriesTableData.timeframeUnit as number,
+      timeframeUnit: dataSeriesTableData.timeframeUnit,
       displayFormat: dataSeriesTableData.displayFormat,
       filters: dataSeriesTableData.filters ?? [],
     }

@@ -4,7 +4,7 @@ export interface DefaultCampaignConfiguration {
 
 export interface Validation {
     maxMinionsCount: number;
-    maxExecutionDuration: number;
+    maxExecutionDuration: string;
     maxScenariosCount: number;
     stage: StageValidation;
 }
@@ -12,10 +12,10 @@ export interface Validation {
 export interface StageValidation {
     minMinionsCount: number;
     maxMinionsCount: number;
-    minResolution: number;
-    maxResolution: number;
-    minDuration: number;
-    maxDuration: number;
-    minStartDuration: number;
-    maxStartDuration: number;
+    minResolution: string;
+    maxResolution: string;
+    minDuration: string;
+    maxDuration: string;
+    minStartDuration: string;
+    maxStartDuration: string;
 }

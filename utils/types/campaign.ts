@@ -228,7 +228,7 @@ export interface CampaignConfiguration {
     /**
      * Limit duration of the whole campaign before it is aborted
      */
-    timeout?: number;
+    timeout?: string;
     /**
      * Limit duration of the whole campaign before it is aborted
      */

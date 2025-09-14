@@ -54,52 +54,46 @@
 </template>
 
 <script setup lang="ts">
-import { toTypedSchema } from "@vee-validate/zod";
-import { useFieldArray } from "vee-validate";
-import * as zod from "zod";
+import { toTypedSchema } from '@vee-validate/zod'
+import { useFieldArray } from 'vee-validate'
+import * as zod from 'zod'
 
 const props = defineProps<{
-  index: number;
-  configuration: DefaultCampaignConfiguration;
-  deleteHidden?: boolean;
-}>();
+  index: number
+  configuration: DefaultCampaignConfiguration
+  deleteHidden?: boolean
+}>()
 const emit = defineEmits<{
-  (e: "executionProfileChange", v: ExecutionProfileStage | null): void;
-}>();
+  (e: 'executionProfileChange', v: ExecutionProfileStage | null): void
+}>()
 
-const invalidNumberErrorMessage = "You must specify a number";
+const invalidNumberErrorMessage = 'You must specify a number'
 
-const { remove, fields } = useFieldArray<ExecutionProfileStage>("executionProfileStages");
+const { remove, fields } = useFieldArray<ExecutionProfileStage>('executionProfileStages')
 
 const stageValidation = computed(() => {
   return {
     ...props.configuration.validation.stage,
-    maxDurationInMilliSeconds: TimeframeHelper.toMilliseconds(
-      props.configuration.validation.stage.maxDuration,
-      TimeframeUnitConstant.SEC
+    maxDurationInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+      props.configuration.validation.stage.maxDuration
     ),
-    minDurationInMilliSeconds: TimeframeHelper.toMilliseconds(
-      props.configuration.validation.stage.minDuration,
-      TimeframeUnitConstant.SEC
+    minDurationInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+      props.configuration.validation.stage.minDuration
     ),
-    maxStartDurationInMilliSeconds: TimeframeHelper.toMilliseconds(
-      props.configuration.validation.stage.maxStartDuration,
-      TimeframeUnitConstant.SEC
+    maxStartDurationInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+      props.configuration.validation.stage.maxStartDuration
     ),
-    minStartDurationInMilliSeconds: TimeframeHelper.toMilliseconds(
-      props.configuration.validation.stage.minStartDuration,
-      TimeframeUnitConstant.SEC
+    minStartDurationInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+      props.configuration.validation.stage.minStartDuration
     ),
-    maxResolutionInMilliSeconds: TimeframeHelper.toMilliseconds(
-      props.configuration.validation.stage.maxResolution,
-      TimeframeUnitConstant.SEC
+    maxResolutionInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+      props.configuration.validation.stage.maxResolution
     ),
-    minResolutionInMilliSeconds: TimeframeHelper.toMilliseconds(
-      props.configuration.validation.stage.minResolution,
-      TimeframeUnitConstant.SEC
+    minResolutionInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+      props.configuration.validation.stage.minResolution
     ),
-  };
-});
+  }
+})
 
 const {
   maxMinionsCount,
@@ -110,50 +104,35 @@ const {
   minResolutionInMilliSeconds,
   maxStartDurationInMilliSeconds,
   minStartDurationInMilliSeconds,
-} = stageValidation.value;
+} = stageValidation.value
 
 const _getNumberValidationSchema = (min: number, max: number) => {
   return zod.coerce
     .number({ invalid_type_error: invalidNumberErrorMessage })
     .min(min)
     .max(max, `Value must be between ${min} and ${max}.`)
-    .nullable();
-};
+    .nullable()
+}
 
 const executionProfileSchema = {
-  minionsCount: toTypedSchema(
-    _getNumberValidationSchema(minMinionsCount, maxMinionsCount)
-  ),
-  duration: toTypedSchema(
-    _getNumberValidationSchema(
-      minDurationInMilliSeconds,
-      maxDurationInMilliSeconds
-    )
-  ),
+  minionsCount: toTypedSchema(_getNumberValidationSchema(minMinionsCount, maxMinionsCount)),
+  duration: toTypedSchema(_getNumberValidationSchema(minDurationInMilliSeconds, maxDurationInMilliSeconds)),
   startDuration: toTypedSchema(
-    _getNumberValidationSchema(
-      minStartDurationInMilliSeconds,
-      maxStartDurationInMilliSeconds
-    )
+    _getNumberValidationSchema(minStartDurationInMilliSeconds, maxStartDurationInMilliSeconds)
   ),
-  resolution: toTypedSchema(
-    _getNumberValidationSchema(
-      minResolutionInMilliSeconds,
-      maxResolutionInMilliSeconds
-    )
-  ),
-};
+  resolution: toTypedSchema(_getNumberValidationSchema(minResolutionInMilliSeconds, maxResolutionInMilliSeconds)),
+}
 
 const handleDurationInputChange = () => {
-  emit("executionProfileChange", fields.value[props.index].value);
-};
+  emit('executionProfileChange', fields.value[props.index].value)
+}
 
 const handleStartDurationInputChange = () => {
-  emit("executionProfileChange", fields.value[props.index].value);
-};
+  emit('executionProfileChange', fields.value[props.index].value)
+}
 
 const handleDeleteBtnClick = () => {
-  remove(props.index);
-  emit("executionProfileChange", null);
-};
+  remove(props.index)
+  emit('executionProfileChange', null)
+}
 </script>

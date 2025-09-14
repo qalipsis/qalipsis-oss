@@ -178,7 +178,7 @@ export class CampaignHelper {
     };
 
     if (campaignConfigForm.durationValue) {
-      campaignConfiguration.timeout = TimeframeHelper.toMilliseconds(
+      campaignConfiguration.timeout = TimeframeHelper.toIsoStringDuration(
         +campaignConfigForm.durationValue,
         campaignConfigForm.durationUnit
       );
