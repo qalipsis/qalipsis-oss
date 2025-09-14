@@ -3,9 +3,9 @@ server {
     server_tokens off;
     add_header X-Frame-Options "SAMEORIGIN";
 
-    location / {
-        charset utf-8;
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
         root /usr/share/nginx/html;
+        expires 7d;
     }
 
     location /api {
@@ -36,5 +36,12 @@ server {
         }
 
         proxy_pass  $API_URL;
+    }
+
+    location / {
+        charset utf-8;
+        root /usr/share/nginx/html;
+
+        expires -1;
     }
 }

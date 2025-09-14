@@ -28,8 +28,9 @@ docker {
     }
 
     if (System.getenv("GITHUB_ACTIONS") != "true") {
-        platform("linux/amd64", "linux/arm64")
+        tag("minikubeLocalhost", "localhost:31000/${project.name}")
     }
+    load(true)
     buildx(true)
     files(".output", "docker")
     noCache(true)
