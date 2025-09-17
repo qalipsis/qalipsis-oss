@@ -33,7 +33,7 @@ import io.qalipsis.cluster.security.Tenant
  *
  * @author Eric Jessé
  */
-@Controller("/")
+@Controller("\${server.api-root}/")
 internal class AuthenticatedController {
 
     @Get("/unsecure")

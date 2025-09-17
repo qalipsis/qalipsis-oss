@@ -1,0 +1,47 @@
+{
+  "name": "qalipsis-oss",
+  "private": true,
+  "scripts": {
+    "build": "nuxt ../build",
+    "local": "npx nuxi dev --dotenv .env.local",
+    "test": "npx nuxi dev --dotenv .env.test",
+    "generate-dev": "npx nuxi generate --dotenv .env.test",
+    "generate-docker": "npx nuxi generate --dotenv .env.docker",
+    "generate-for-java": "npx nuxi generate --dotenv .env.java",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@ckpack/vue-color": "1.6.0",
+    "@headlessui/vue": "1.7.23",
+    "@pinia/nuxt": "0.10.1",
+    "@types/luxon": "3.4.2",
+    "@types/tinycolor2": "1.4.6",
+    "@vee-validate/zod": "4.15.0",
+    "@vuepic/vue-datepicker": "11.0.2",
+    "@vueuse/core": "13.0.0",
+    "@vueuse/nuxt": "13.0.0",
+    "apexcharts": "4.5.0",
+    "date-fns": "4.1.0",
+    "fuse.js": "7.1.0",
+    "luxon": "3.6.0",
+    "nuxt": "3.16.2",
+    "pinia": "3.0.1",
+    "sass": "1.86.0",
+    "tinycolor2": "1.6.0",
+    "tippy.js": "6.3.7",
+    "vee-validate": "4.15.0",
+    "vue": "3.5.13",
+    "vue-router": "4.5.0",
+    "vue3-apexcharts": "1.7.0",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.14.0",
+    "autoprefixer": "10.4.21",
+    "nuxt-headlessui": "1.2.0",
+    "postcss": "8.5.3",
+    "tailwindcss": "3.4.3"
+  }
+}

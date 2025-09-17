@@ -64,7 +64,7 @@ import javax.validation.constraints.PositiveOrZero
  */
 
 @Validated
-@Controller("/reports")
+@Controller("\${server.api-root}/reports")
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(beans = [ReportService::class])

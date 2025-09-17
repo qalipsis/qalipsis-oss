@@ -3,6 +3,9 @@ micronaut:
   server:
     port: ${random.port}
 
+server:
+  api-root: ''
+
 head:
   handshake-request-channel: handshake-request
   handshake-response-channel: handshake-response

@@ -43,7 +43,7 @@ import javax.validation.constraints.NotBlank
 
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Validated
-@Controller("/scenarios")
+@Controller("\${server.api-root}/scenarios")
 @Version("1.0")
 @Tag(name = "Scenario details")
 class ScenarioController(

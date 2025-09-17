@@ -1,0 +1,47 @@
+/* Date picker */
+:root {
+  .dp__theme_light {
+    --dp-primary-color: #39BABC;
+    --dp-hover-color: #EBF9F9;
+    --dp-background-color: #fff;
+    --dp-primary-disabled-color: #939b9d;
+    --dp-border-color: #C1C6CD;
+    --dp-border-color-hover: #39BABC;
+    --dp-border-color-focus: #39BABC;
+
+    .dp__input {
+      &:hover {
+        background-color: #EBF9F9;
+      }
+    }
+  }
+
+  .dp__theme_dark {
+    --dp-background-color: #272B30;
+    --dp-primary-color: #39BABC;
+    --dp-border-color: #C1C6CD;
+    --dp-border-color-hover: #39BABC;
+    --dp-border-color-focus: #39BABC;
+
+    .dp__input {
+      &:hover {
+        background-color: #3B4149;
+      }
+    }
+
+    .dp__arrow_top, .dp__menu {
+      background-color: #1D2024;
+    }
+  }
+
+  .dp__input {
+    --dp-border-radius: 8px;
+    line-height: 26px;
+  }
+
+  .date-time-picker.has-error {
+    .dp__input {
+      border-color: #ff7875;
+    }
+  }
+}

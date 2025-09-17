@@ -54,13 +54,20 @@
   <p>
     The volumes are persisted to <code>deployment/volumes</code>, delete them for a fresh environment.
   </p>
+
+  <p>If you want to load a backup to PostgreSQL using PgAdmin, you can paste a file into the folder <code>deployment/volumes/pgadmin/backups</code>.
+    It will then be accessible inside PgAdmin under the path <code>/pgadmin4/backups</code>.
+    The same folder can be used to import / export any kind of data using a file via PgAdmin.
+  </p>
+  </p>
 </div>
 
 <div>
   <h2>Links</h2>
   <ul>
-    <li><a href="http://localhost:35433" target="_blank">PgAdmin</a></li>
-    <li><a href="http://localhost:34000" target="_blank">Lagoon</a></li>
+    <li><a href="http://localhost:35433" target="_blank">PgAdmin</a> (Admin for PgSQL, password is <code>qalipsis</code>)
+    </li>
+    <li><a href="http://localhost:34000" target="_blank">Lagoon</a> (Redis data)</li>
   </ul>
 </div>
 
@@ -71,6 +78,16 @@
   <p>After you started the docker compose script, open a terminal in the folder <code>deployment</code> and execute
     <code>start-qalipsis.sh</code>.</p>
   <p>QALIPSIS backend is now accessible at the address <a href="http://localhost:8400" target="_blank"><code>http://localhost:8400/</code></a>.
+  </p>
+  <p>Press <code>CTRL+C</code> to stop the service.</p>
+
+  <h3>Head with the GUI</h3>
+  <p>After you started the docker compose script, open a terminal in the folder <code>deployment</code> and execute
+    <code>start-qalipsis-with-gui.sh</code>.</p>
+  <p>QALIPSIS GUI is now accessible at the address <a href="http://localhost:8400" target="_blank"><code>http://localhost:8400/</code></a>.
+  </p>
+  <p><b>WARNING:</b> When running QALIPSIS with the GUI, the API is accessible under <a
+          href="http://localhost:8400/api/" target="_blank"><code>http://localhost:8400/api/</code></a>.
   </p>
   <p>Press <code>CTRL+C</code> to stop the service.</p>
 

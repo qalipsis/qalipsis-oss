@@ -23,3 +23,49 @@ r2dbc:
   datasources:
     default.options.maxSize: 20
     default.options.initialSize: 4
+
+events:
+  export:
+    timescaledb:
+      enabled: true
+      min-level: INFO
+      host: localhost
+      port: 35432
+      database: qalipsis
+      schema: events
+      username: qalipsis
+      password: qalipsis
+      linger-period: 10s
+      batch-size: 20000
+      publishers: 1
+  provider:
+    timescaledb:
+      enabled: true
+      host: localhost
+      port: 35432
+      database: qalipsis
+      schema: events
+      username: qalipsis
+      password: qalipsis
+
+meters:
+  export:
+    timescaledb:
+      enabled: true
+      host: localhost
+      port: 35432
+      database: qalipsis
+      schema: meters
+      username: qalipsis
+      password: qalipsis
+      step: PT10S
+
+  provider:
+    timescaledb:
+      enabled: true
+      host: localhost
+      port: 35432
+      database: qalipsis
+      schema: meters
+      username: qalipsis
+      password: qalipsis

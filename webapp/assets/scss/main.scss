@@ -1,0 +1,108 @@
+@use "components";
+@use "icons";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  * {
+    font-family: "Outfit", sans-serif;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:focus {
+    transition: background-color 0s 600000s, color 0s 600000s !important;
+  }
+
+  /* width */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: #ECEEEE;
+  }
+
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #939B9D;
+  }
+
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #5F6668;
+  }
+
+  @font-face {
+    font-family: "Outfit";
+    src: url("/fonts/static/Outfit-Thin.woff2") format("woff2"),
+    url("/fonts/static/Outfit-Thin.woff") format("woff"),
+    url("/fonts/static/Outfit-Thin.ttf") format("truetype");
+    font-weight: 100;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: "Outfit";
+    src: url("/fonts/static/Outfit-ExtraLight.woff2") format("woff2"),
+    url("/fonts/static/Outfit-ExtraLight.woff") format("woff"),
+    url("/fonts/static/Outfit-ExtraLight.ttf") format("truetype");
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Outfit";
+    src: url("/fonts/static/Outfit-Light.woff2") format("woff2"),
+    url("/fonts/static/Outfit-Light.woff") format("woff"),
+    url("/fonts/static/Outfit-Light.ttf") format("truetype");
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Outfit";
+    src: url("/fonts/static/Outfit-Regular.woff2") format("woff2"),
+    url("/fonts/static/Outfit-Regular.woff") format("woff"),
+    url("/fonts/static/Outfit-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Outfit";
+    src: url("/fonts/static/Outfit-Medium.woff2") format("woff2"),
+    url("/fonts/static/Outfit-Medium.woff") format("woff"),
+    url("/fonts/static/Outfit-Medium.ttf") format("truetype");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Outfit";
+    src: url("/fonts/static/Outfit-SemiBold.woff2") format("woff2"),
+    url("/fonts/static/Outfit-SemiBold.woff") format("woff"),
+    url("/fonts/static/Outfit-SemiBold.ttf") format("truetype");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Outfit";
+    src: url("/fonts/static/Outfit-Black.woff2") format("woff2"),
+    url("/fonts/static/Outfit-Black.woff") format("woff"),
+    url("/fonts/static/Outfit-Black.ttf") format("truetype");
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+  }
+
+}

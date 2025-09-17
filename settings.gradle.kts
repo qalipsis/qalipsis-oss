@@ -32,7 +32,9 @@ include(
     ":qalipsis-head",
     ":qalipsis-factory",
     ":qalipsis-runtime",
-    ":qalipsis-plugin-platform"
+    ":qalipsis-plugin-platform",
+
+    ":qalipsis-webapp"
 )
 
 val apiRootDir = rootDir.resolve("api")
@@ -49,3 +51,5 @@ project(":qalipsis-head").projectDir = rootDir.resolve("head")
 project(":qalipsis-factory").projectDir = rootDir.resolve("factory")
 project(":qalipsis-runtime").projectDir = rootDir.resolve("runtime")
 project(":qalipsis-plugin-platform").projectDir = rootDir.resolve("plugin-platform")
+
+project(":qalipsis-webapp").projectDir = rootDir.resolve("webapp")

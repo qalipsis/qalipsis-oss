@@ -48,7 +48,7 @@ import javax.validation.constraints.NotBlank
  * @author Palina Bril
  */
 @Validated
-@Controller("/configuration")
+@Controller("\${server.api-root}/configuration")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
 @Tag(name = "Configuration")

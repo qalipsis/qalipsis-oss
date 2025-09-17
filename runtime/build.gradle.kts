@@ -46,6 +46,15 @@ allOpen {
     )
 }
 
+sourceSets.create("localRun")
+
+repositories {
+    maven {
+        name = "qalipsis-oss-snapshots"
+        setUrl("https://maven.qalipsis.com/repository/oss-snapshots/")
+    }
+}
+
 dependencies {
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly(project(":qalipsis-factory"))
@@ -98,23 +107,47 @@ dependencies {
     if (Os.isFamily(Os.FAMILY_MAC)) {
         testRuntimeOnly(group = "io.netty", name = "netty-resolver-dns-native-macos", classifier = "osx-aarch_64")
     }
+
+    "localRunRuntimeOnly"("io.qalipsis.plugin:qalipsis-plugin-timescaledb:0.14.+")
 }
 
-task<JavaExec>("runQalipsis") {
-    group = "application"
-    description = "Starts QALIPSIS standalone, for PostgreSQL"
-    mainClass.set("io.qalipsis.runtime.Qalipsis")
-    maxHeapSize = "256m"
-    args(
-        "--persistent",
-        //"-e", "api-documentation"
-    )
-    classpath =
-        sourceSets["main"].runtimeClasspath +
-                files("build/classes/kotlin/test", "build/classes/java/test", "build/tmp/kapt3/classes/test") +
-                project(":qalipsis-head").sourceSets["main"].runtimeClasspath +
-                project(":qalipsis-factory").sourceSets["main"].runtimeClasspath
-    workingDir = File(projectDir, "workdir")
+tasks {
+    register<JavaExec>("runQalipsis") {
+        group = "application"
+        description = "Starts QALIPSIS standalone, for PostgreSQL"
+        mainClass.set("io.qalipsis.runtime.Qalipsis")
+        maxHeapSize = "256m"
+        args(
+            "--persistent",
+            "-e", "api-documentation"
+        )
+        classpath =
+            sourceSets["main"].runtimeClasspath + sourceSets["localRun"].runtimeClasspath +
+                    files("build/classes/kotlin/test", "build/classes/java/test", "build/tmp/kapt3/classes/test") +
+                    project(":qalipsis-head").sourceSets["main"].runtimeClasspath +
+                    project(":qalipsis-factory").sourceSets["main"].runtimeClasspath
+        workingDir = File(projectDir, "workdir")
 
-    dependsOn("testClasses")
+        dependsOn("testClasses")
+    }
+
+    register<JavaExec>("runQalipsisWithGui") {
+        group = "application"
+        description = "Starts QALIPSIS standalone with the GUI, for PostgreSQL"
+        mainClass.set("io.qalipsis.runtime.Qalipsis")
+        maxHeapSize = "256m"
+        args(
+            "--persistent",
+            "--gui",
+            "-e", "api-documentation"
+        )
+        classpath =
+            sourceSets["main"].runtimeClasspath + sourceSets["localRun"].runtimeClasspath +
+                    files("build/classes/kotlin/test", "build/classes/java/test", "build/tmp/kapt3/classes/test") +
+                    project(":qalipsis-head").sourceSets["main"].runtimeClasspath +
+                    project(":qalipsis-factory").sourceSets["main"].runtimeClasspath
+        workingDir = File(projectDir, "workdir")
+
+        dependsOn("testClasses")
+    }
 }

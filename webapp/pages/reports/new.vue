@@ -1,0 +1,4 @@
+<template>
+  <NewReportHeader/>
+  <NewReportContent/>
+</template>

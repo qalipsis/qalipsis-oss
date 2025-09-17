@@ -40,6 +40,11 @@ object ExecutionEnvironments {
     const val AUTOSTART = "autostart"
 
     /**
+     * Automatically starts the GUI accessible via the HTTP server.
+     */
+    const val GUI = "gui"
+
+    /**
      * Starts an instance with head and factory running aside in the same JVM.
      */
     const val STANDALONE = "standalone"

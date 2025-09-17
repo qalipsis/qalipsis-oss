@@ -63,7 +63,7 @@ import javax.validation.constraints.PositiveOrZero
 
 
 @Validated
-@Controller("/data-series")
+@Controller("\${server.api-root}/data-series")
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
     Requires(beans = [DataSeriesService::class])

@@ -1,0 +1,4 @@
+<template>
+  <SeriesHeader/>
+  <SeriesContent/>
+</template>

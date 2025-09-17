@@ -37,7 +37,7 @@ import io.swagger.v3.oas.annotations.info.Info
     )
 )
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
-@Controller("/")
+@Controller("\${server.api-root}/")
 class HomeController {
 
     @Hidden

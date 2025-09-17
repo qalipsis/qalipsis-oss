@@ -33,6 +33,9 @@ import io.qalipsis.runtime.bootstrap.DeploymentRole.FACTORY
 import io.qalipsis.runtime.bootstrap.DeploymentRole.HEAD
 import io.qalipsis.runtime.bootstrap.DeploymentRole.STANDALONE
 import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
+import java.security.MessageDigest
 import java.util.Properties
 
 /**
@@ -47,7 +50,8 @@ class ContextInitializer(
     private val scenariosSelectors: String,
     private val prompt: Boolean,
     private val autostart: Boolean,
-    private val persistent: Boolean
+    private val persistent: Boolean,
+    private val withGui: Boolean
 ) {
 
     /**
@@ -187,7 +191,11 @@ class ContextInitializer(
 
         if (autostart) {
             // Start the campaigns when everything is ready.
+            log.info { "Starting QALIPSIS in autostart mode." }
             environments.add(ExecutionEnvironments.AUTOSTART)
+        } else if (withGui) {
+            log.info { "Starting QALIPSIS with the graphical user interface. The API is now accessible under the path `/api`." }
+            environments.add(ExecutionEnvironments.GUI)
         }
         if (persistent) {
             environments.add(ExecutionEnvironments.POSTGRESQL)
@@ -204,13 +212,31 @@ class ContextInitializer(
         environments.add(ExecutionEnvironments.REDIS)
         if (autostart) {
             // Start the campaigns when everything is ready.
+            log.info { "Starting QALIPSIS in autostart mode." }
             environments.add(ExecutionEnvironments.AUTOSTART)
+        } else if (withGui) {
+            log.info { "Starting QALIPSIS with the graphical user interface. The API is now accessible under the path `/api`." }
+            environments.add(ExecutionEnvironments.GUI)
         }
         if (persistent) {
             environments.add(ExecutionEnvironments.POSTGRESQL)
         } else {
             environments.add(ExecutionEnvironments.TRANSIENT)
         }
+    }
+
+    fun copyPerfectly(input: InputStream, output: OutputStream) {
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val n = input.read(buffer)
+            if (n == -1) break
+            output.write(buffer, 0, n) // ✅ only write actual bytes read
+        }
+    }
+
+    fun md5(bytes: ByteArray): String {
+        val digest = MessageDigest.getInstance("MD5").digest(bytes)
+        return digest.joinToString("") { "%02x".format(it) }
     }
 
     /**

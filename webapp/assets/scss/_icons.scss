@@ -1,0 +1,199 @@
+@font-face {
+  font-family: 'qls-icon';
+  src: url('/fonts/static/qls-icon.eot?icibti');
+  src: url('/fonts/static/qls-icon.eot?icibti#iefix') format('embedded-opentype'),
+  url('/fonts/static/qls-icon.ttf?icibti') format('truetype'),
+  url('/fonts/static/qls-icon.woff?icibti') format('woff'),
+  url('/fonts/static/qls-icon.svg?icibti#qls-icon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+[class^='qls-'],
+[class*=' qls-'] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'qls-icon' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.qls-icon-moon:before {
+  content: "\e905";
+}
+
+.qls-icon-sun:before {
+  content: "\e925";
+}
+
+.qls-icon-activity:before {
+  content: '\e901';
+}
+
+.qls-icon-arrow-down:before {
+  content: '\e902';
+}
+
+.qls-icon-arrow-back:before {
+  content: '\e903';
+}
+
+.qls-icon-arrow-left:before {
+  content: '\e904';
+}
+
+.qls-icon-arrow-right:before {
+  content: '\e906';
+}
+
+.qls-icon-arrow-up:before {
+  content: '\e907';
+}
+
+.qls-icon-bag:before {
+  content: '\e908';
+}
+
+.qls-icon-calendar:before {
+  content: '\e909';
+}
+
+.qls-icon-category:before {
+  content: '\e90a';
+}
+
+.qls-icon-chart-fill:before {
+  content: '\e90b';
+}
+
+.qls-icon-chart-stroke:before {
+  content: '\e90c';
+}
+
+.qls-icon-check-fill:before {
+  content: '\e90d';
+}
+
+.qls-icon-close:before {
+  content: '\e90e';
+}
+
+.qls-icon-profile:before {
+  content: '\e90f';
+}
+
+.qls-icon-delete:before {
+  content: '\e900';
+}
+
+.qls-icon-document:before {
+  content: '\e910';
+}
+
+.qls-icon-duplicate:before {
+  content: '\e911';
+}
+
+.qls-icon-edit:before {
+  content: '\e912';
+}
+
+.qls-icon-filter:before {
+  content: '\e913';
+}
+
+.qls-icon-graph:before {
+  content: '\e914';
+}
+
+.qls-icon-home:before {
+  content: '\e915';
+}
+
+.qls-icon-info:before {
+  content: '\e916';
+}
+
+.qls-icon-logo:before {
+  content: '\e917';
+}
+
+.qls-icon-menu:before {
+  content: '\e918';
+}
+
+.qls-icon-menu-admin:before {
+  content: '\e919';
+}
+
+.qls-icon-collections:before {
+  content: '\e91a';
+}
+
+.qls-icon-error-chat:before {
+  content: '\e91b';
+}
+
+.qls-icon-bell:before {
+  content: '\e91c';
+}
+
+.qls-icon-rocket:before {
+  content: '\e91d';
+}
+
+.qls-icon-picker:before {
+  content: '\e91e';
+}
+
+.qls-icon-plus:before {
+  content: '\e91f';
+}
+
+.qls-icon-power:before {
+  content: '\e920';
+}
+
+.qls-icon-range:before {
+  content: '\e921';
+}
+
+.qls-icon-refresh:before {
+  content: '\e922';
+}
+
+.qls-icon-search:before {
+  content: '\e923';
+}
+
+.qls-icon-setting:before {
+  content: '\e924';
+}
+
+.qls-icon-star:before {
+  content: '\e926';
+}
+
+.qls-icon-time:before {
+  content: '\e927';
+}
+
+.qls-icon-two-users-fill:before {
+  content: '\e928';
+}
+
+.qls-icon-two-users-stroke:before {
+  content: '\e929';
+}
+
+.qls-icon-work:before {
+  content: '\e92a';
+}

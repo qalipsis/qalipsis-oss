@@ -1,0 +1,9 @@
+micronaut:
+  router:
+    static-resources:
+      gui:
+        paths: classpath:public
+        mapping: /**
+
+server:
+  api-root: /api

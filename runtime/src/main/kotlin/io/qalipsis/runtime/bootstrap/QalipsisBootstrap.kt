@@ -63,6 +63,13 @@ class QalipsisBootstrap : Callable<Unit> {
     private var persistent: Boolean = false
 
     @Option(
+        names = ["--gui", "-g"],
+        description = ["Starts the QALIPSIS GUI (mode head or standalone only when autostart is disabled), accessible via the browser."],
+        defaultValue = "false"
+    )
+    private var withGui: Boolean = false
+
+    @Option(
         names = ["-e", "--environments"],
         description = ["Environments to enable further configuration."]
     )
@@ -112,7 +119,8 @@ class QalipsisBootstrap : Callable<Unit> {
             scenariosSelectors = scenariosSelectors,
             prompt = prompt,
             autostart = autostart,
-            persistent = persistent
+            persistent = persistent,
+            withGui = withGui,
         )
         val applicationContextBuilder = contextInitializer.build()
         val appContext = QalipsisApplicationContext(contextInitializer.role)

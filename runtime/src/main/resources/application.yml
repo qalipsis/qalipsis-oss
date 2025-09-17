@@ -1,5 +1,6 @@
 server:
   port: 8400
+  api-root: ''
 
 # For the executors:
 # - 0 or less means the Kotlin Global Scope

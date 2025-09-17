@@ -25,7 +25,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
  *
  * @author Francisca Eze
  */
-@Controller("/factories")
+@Controller("\${server.api-root}/factories")
 @Version("1.0")
 @Requirements(
     Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),

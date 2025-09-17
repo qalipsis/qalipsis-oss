@@ -68,7 +68,7 @@ import javax.validation.constraints.PositiveOrZero
  * @author Palina Bril
  */
 @Validated
-@Controller("/campaigns")
+@Controller("\${server.api-root}/campaigns")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
 @Tag(name = "Campaign Management")

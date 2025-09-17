@@ -28,6 +28,7 @@
 hs_err_pid*
 
 # Gradle
+/**/.gradle/
 /.gradle/
 /build/
 /*/build/
@@ -45,3 +46,10 @@ hs_err_pid*
 /**/id.data
 .DS_Store
 /deployment/volumes/
+
+# Node
+/**/.output
+/**/dist
+/**/node_modules
+/**/.nuxt
+/**/package-lock.json

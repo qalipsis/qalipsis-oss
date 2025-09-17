@@ -55,7 +55,7 @@ import javax.validation.constraints.PositiveOrZero
 
 
 @Validated
-@Controller("/time-series")
+@Controller("\${server.api-root}/time-series")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
 @Tag(name = "Analytics data")

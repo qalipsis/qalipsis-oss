@@ -23,3 +23,9 @@ SCHEMA qalipsis_liquibase OWNER TO qalipsis;
 CREATE SCHEMA IF NOT EXISTS qalipsis;
 ALTER
 SCHEMA qalipsis OWNER TO qalipsis;
+CREATE SCHEMA IF NOT EXISTS events;
+ALTER
+SCHEMA events OWNER TO qalipsis;
+CREATE SCHEMA IF NOT EXISTS meters;
+ALTER
+SCHEMA meters OWNER TO qalipsis;

@@ -1,0 +1,4 @@
+<template>
+  <ReportsHeader/>
+  <ReportsContent/>
+</template>

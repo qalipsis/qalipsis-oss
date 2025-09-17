@@ -48,7 +48,7 @@ import javax.validation.constraints.NotBlank
 @Validated
 @Version("1.0")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
-@Controller("/zones")
+@Controller("\${server.api-root}/zones")
 @Tag(name = "Zone details")
 class ZoneController(private val zoneService: ZoneService) {
 
