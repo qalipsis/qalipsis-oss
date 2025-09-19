@@ -21,6 +21,7 @@ package io.qalipsis.core.factory.meters.inmemory
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsAll
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.hasSize
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
@@ -41,12 +42,20 @@ import io.mockk.unmockkConstructor
 import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.MeterSnapshot
 import io.qalipsis.api.meters.MeterType
-import io.qalipsis.core.factory.meters.CompositeCounter
-import io.qalipsis.core.factory.meters.CompositeDistributionSummary
-import io.qalipsis.core.factory.meters.CompositeGauge
-import io.qalipsis.core.factory.meters.CompositeTimer
 import io.qalipsis.core.factory.meters.inmemory.catadioptre.globalMeters
 import io.qalipsis.core.factory.meters.inmemory.catadioptre.meters
+import io.qalipsis.core.factory.meters.inmemory.composite.CompositeCounter
+import io.qalipsis.core.factory.meters.inmemory.composite.CompositeDistributionSummary
+import io.qalipsis.core.factory.meters.inmemory.composite.CompositeGauge
+import io.qalipsis.core.factory.meters.inmemory.composite.CompositeTimer
+import io.qalipsis.core.factory.meters.inmemory.unpublished.UnpublishedCounter
+import io.qalipsis.core.factory.meters.inmemory.unpublished.UnpublishedDistributionSummary
+import io.qalipsis.core.factory.meters.inmemory.unpublished.UnpublishedGauge
+import io.qalipsis.core.factory.meters.inmemory.unpublished.UnpublishedTimer
+import io.qalipsis.core.factory.meters.inmemory.valued.InMemoryCumulativeCounter
+import io.qalipsis.core.factory.meters.inmemory.valued.InMemoryCumulativeDistributionSummary
+import io.qalipsis.core.factory.meters.inmemory.valued.InMemoryCumulativeTimer
+import io.qalipsis.core.factory.meters.inmemory.valued.InMemoryGauge
 import io.qalipsis.core.reporter.MeterReporter
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
@@ -229,7 +238,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
                     prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").isEmpty()
                 }
-                prop("globalMeter").isNotNull()
+                prop("globalMeter").isNotNull().isInstanceOf<UnpublishedTimer>()
+                    .prop("meter").isNotNull()
                     .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
             assertThat(registry.meters().size).isEqualTo(2)
@@ -319,10 +329,11 @@ internal class InMemoryCumulativeMeterRegistryTest {
                     prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").all {
                         hasSize(2)
-                        containsAll(21.0, 86.0)
+                        containsExactlyInAnyOrder(21.0, 86.0)
                     }
                 }
-                prop("globalMeter").isNotNull()
+                prop("globalMeter").isNotNull().isInstanceOf<UnpublishedTimer>()
+                    .prop("meter").isNotNull()
                     .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
             assertThat(registry.meters().size).isEqualTo(2)
@@ -436,7 +447,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
                     prop(Meter<*>::id).isSameInstanceAs(id2)
                     prop("meterReporter").isSameInstanceAs(meterReporter)
                 }
-                prop("globalMeter").isNotNull()
+                prop("globalMeter").isNotNull().isInstanceOf<UnpublishedGauge>()
+                    .prop("meter").isNotNull()
                     .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
             assertThat(registry.meters()[id2]).isNotNull().all {
@@ -607,7 +619,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
                     prop("meterReporter").isSameInstanceAs(meterReporter)
                     typedProp<Collection<Double>>("percentiles").isEmpty()
                 }
-                prop("globalMeter").isNotNull()
+                prop("globalMeter").isNotNull().isInstanceOf<UnpublishedDistributionSummary>()
+                    .prop("meter").isNotNull()
                     .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
             assertThat(registry.meters().size).isEqualTo(2)
@@ -710,7 +723,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
                         containsAll(21.0, 35.0)
                     }
                 }
-                prop("globalMeter").isNotNull()
+                prop("globalMeter").isNotNull().isInstanceOf<UnpublishedDistributionSummary>()
+                    .prop("meter").isNotNull()
                     .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
             }
             assertThat(registry.meters().size).isEqualTo(2)
@@ -821,7 +835,8 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 prop(Meter<*>::id).isSameInstanceAs(id2)
                 prop("meterReporter").isSameInstanceAs(meterReporter)
             }
-            prop("globalMeter").isNotNull()
+            prop("globalMeter").isNotNull().isInstanceOf<UnpublishedCounter>()
+                .prop("meter").isNotNull()
                 .isSameInstanceAs(meter1.getProperty("globalMeter")) // The global meter should be reused.
         }
         assertThat(registry.meters().size).isEqualTo(2)
@@ -850,13 +865,15 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 InMemoryGauge::class
             )
             val timerSnapshot = mockk<MeterSnapshot>()
-            coEvery { anyConstructed<InMemoryCumulativeTimer>().snapshot(any()) } returns timerSnapshot
+            coEvery { anyConstructed<InMemoryCumulativeTimer>().snapshot(any()) } returns listOf(timerSnapshot)
             val gaugeSnapshot = mockk<MeterSnapshot>()
-            coEvery { anyConstructed<InMemoryGauge>().snapshot(any()) } returns gaugeSnapshot
+            coEvery { anyConstructed<InMemoryGauge>().snapshot(any()) } returns listOf(gaugeSnapshot)
             val counterSnapshot = mockk<MeterSnapshot>()
-            coEvery { anyConstructed<InMemoryCumulativeCounter>().snapshot(any()) } returns counterSnapshot
+            coEvery { anyConstructed<InMemoryCumulativeCounter>().snapshot(any()) } returns listOf(counterSnapshot)
             val summarySnapshot = mockk<MeterSnapshot>()
-            coEvery { anyConstructed<InMemoryCumulativeDistributionSummary>().snapshot(any()) } returns summarySnapshot
+            coEvery { anyConstructed<InMemoryCumulativeDistributionSummary>().snapshot(any()) } returns listOf(
+                summarySnapshot
+            )
             registry.timer(timerId)
             registry.counter(counterId)
             registry.gauge(gaugeId)
@@ -897,7 +914,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
             val timerSnapshot = mockk<MeterSnapshot> {
                 every { meterId.tags.containsKey("scenario") } returns false
             }
-            coEvery { anyConstructed<InMemoryCumulativeTimer>().snapshot(any()) } returns timerSnapshot
+            coEvery { anyConstructed<InMemoryCumulativeTimer>().snapshot(any()) } returns listOf(timerSnapshot)
             val duplicatedGaugeSnapshot = mockk<MeterSnapshot>()
             val gaugeSnapshot = mockk<MeterSnapshot> {
                 every { meterId } returns Meter.Id(
@@ -907,11 +924,11 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 )
                 every { duplicate(any()) } returns duplicatedGaugeSnapshot
             }
-            coEvery { anyConstructed<InMemoryGauge>().snapshot(any()) } returns gaugeSnapshot
+            coEvery { anyConstructed<InMemoryGauge>().snapshot(any()) } returns listOf(gaugeSnapshot)
             val counterSnapshot = mockk<MeterSnapshot> {
                 every { meterId.tags.containsKey("scenario") } returns false
             }
-            coEvery { anyConstructed<InMemoryCumulativeCounter>().snapshot(any()) } returns counterSnapshot
+            coEvery { anyConstructed<InMemoryCumulativeCounter>().snapshot(any()) } returns listOf(counterSnapshot)
             val duplicatedSummarySnapshot = mockk<MeterSnapshot>()
             val summarySnapshot = mockk<MeterSnapshot> {
                 every { meterId } returns Meter.Id(
@@ -921,7 +938,9 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 )
                 every { duplicate(any()) } returns duplicatedSummarySnapshot
             }
-            coEvery { anyConstructed<InMemoryCumulativeDistributionSummary>().snapshot(any()) } returns summarySnapshot
+            coEvery { anyConstructed<InMemoryCumulativeDistributionSummary>().snapshot(any()) } returns listOf(
+                summarySnapshot
+            )
             registry.timer(timerId)
             registry.counter(counterId)
             registry.gauge(gaugeId)
@@ -977,7 +996,7 @@ internal class InMemoryCumulativeMeterRegistryTest {
             val timerSnapshot = mockk<MeterSnapshot> {
                 every { meterId.tags.containsKey("scenario") } returns false
             }
-            coEvery { anyConstructed<InMemoryCumulativeTimer>().summarize(any()) } returns timerSnapshot
+            coEvery { anyConstructed<InMemoryCumulativeTimer>().summarize(any()) } returns listOf(timerSnapshot)
             val duplicatedGaugeSnapshot = mockk<MeterSnapshot>()
             val gaugeSnapshot = mockk<MeterSnapshot> {
                 every { meterId } returns Meter.Id(
@@ -987,11 +1006,11 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 )
                 every { duplicate(any()) } returns duplicatedGaugeSnapshot
             }
-            coEvery { anyConstructed<InMemoryGauge>().summarize(any()) } returns gaugeSnapshot
+            coEvery { anyConstructed<InMemoryGauge>().summarize(any()) } returns listOf(gaugeSnapshot)
             val counterSnapshot = mockk<MeterSnapshot> {
                 every { meterId.tags.containsKey("scenario") } returns false
             }
-            coEvery { anyConstructed<InMemoryCumulativeCounter>().summarize(any()) } returns counterSnapshot
+            coEvery { anyConstructed<InMemoryCumulativeCounter>().summarize(any()) } returns listOf(counterSnapshot)
             val duplicatedSummarySnapshot = mockk<MeterSnapshot>()
             val summarySnapshot = mockk<MeterSnapshot> {
                 every { meterId } returns Meter.Id(
@@ -1001,7 +1020,9 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 )
                 every { duplicate(any()) } returns duplicatedSummarySnapshot
             }
-            coEvery { anyConstructed<InMemoryCumulativeDistributionSummary>().summarize(any()) } returns summarySnapshot
+            coEvery { anyConstructed<InMemoryCumulativeDistributionSummary>().summarize(any()) } returns listOf(
+                summarySnapshot
+            )
             registry.timer(timerId)
             registry.counter(counterId)
             registry.gauge(gaugeId)
@@ -1055,13 +1076,15 @@ internal class InMemoryCumulativeMeterRegistryTest {
                 InMemoryGauge::class
             )
             val timerSnapshot = mockk<MeterSnapshot>()
-            coEvery { anyConstructed<InMemoryCumulativeTimer>().summarize(any()) } returns timerSnapshot
+            coEvery { anyConstructed<InMemoryCumulativeTimer>().summarize(any()) } returns listOf(timerSnapshot)
             val gaugeSnapshot = mockk<MeterSnapshot>()
-            coEvery { anyConstructed<InMemoryGauge>().summarize(any()) } returns gaugeSnapshot
+            coEvery { anyConstructed<InMemoryGauge>().summarize(any()) } returns listOf(gaugeSnapshot)
             val counterSnapshot = mockk<MeterSnapshot>()
-            coEvery { anyConstructed<InMemoryCumulativeCounter>().summarize(any()) } returns counterSnapshot
+            coEvery { anyConstructed<InMemoryCumulativeCounter>().summarize(any()) } returns listOf(counterSnapshot)
             val summarySnapshot = mockk<MeterSnapshot>()
-            coEvery { anyConstructed<InMemoryCumulativeDistributionSummary>().summarize(any()) } returns summarySnapshot
+            coEvery { anyConstructed<InMemoryCumulativeDistributionSummary>().summarize(any()) } returns listOf(
+                summarySnapshot
+            )
             registry.timer(timerId)
             registry.counter(counterId)
             registry.gauge(gaugeId)

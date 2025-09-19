@@ -10,6 +10,7 @@ logging:
     io.qalipsis.runtime.bootstrap.QalipsisApplicationContext: TRACE
     io.qalipsis.core.factory: TRACE
     io.qalipsis.core.head.campaign: TRACE
+    io.qalipsis.plugins.timescaledb.dataprovider: TRACE
 
 datasource:
   host: localhost

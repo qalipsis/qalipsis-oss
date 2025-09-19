@@ -59,6 +59,60 @@
     It will then be accessible inside PgAdmin under the path <code>/pgadmin4/backups</code>.
     The same folder can be used to import / export any kind of data using a file via PgAdmin.
   </p>
+
+  <p>
+    In order to create the minions-count data-series, please execute the following in a PgAdmin query console: <br/>
+    <code>
+      INSERT INTO qalipsis.data_series (
+      id,
+      reference,
+      version,
+      tenant_id,
+      creator_id,
+      display_name,
+      sharing_mode,
+      data_type,
+      value_name,
+      color,
+      filters,
+      field_name,
+      aggregation_operation,
+      timeframe_unit_ms,
+      display_format,
+      query,
+      color_opacity
+      )
+      VALUES (
+      (select nextval('qalipsis.data_series_seq')),
+      'minions.count', NOW(),
+      1,
+      1,
+      'Minions count',
+      'WRITE',
+      'METERS',
+      'running-minions',
+      '#0392FF',
+      '[]',
+      'value',
+      'MAX',
+      300,
+      NULL,
+      '{"ty":"METER","agSql":"with buckets as (select CAST (start AS TIMESTAMP WITH TIME ZONE), start + interval
+      ''%timeframe% ms'' - interval ''1 ms'' as end from generate_series($1::timestamp, $2::timestamp, interval
+      ''%timeframe% ms'') AS start) SELECT buckets.start AS \"bucket\", MAX(meters.value) AS result, meters.campaign AS
+      campaign FROM %schema%.meters RIGHT JOIN buckets ON meters.timestamp BETWEEN buckets.start AND buckets.end WHERE
+      meters.timestamp BETWEEN $1::timestamp AND $2::timestamp AND meters.tenant = $3 AND meters.value IS NOT NULL %s
+      AND meters.name = $4 GROUP BY meters.campaign, buckets.start, buckets.end ORDER BY meters.campaign,
+      buckets.start","agPar":{":schema":{"v":null,"t":"STRING","i":["%schema%"]},":timeframe":{"v":"300","t":"NUMBER","i":["%timeframe%"]},":start":{"v":null,"t":"STRING","i":["$1"]},":end":{"v":null,"t":"STRING","i":["$2"]},":tenant":{"v":null,"t":"STRING","i":["$3"]},"$4":{"v":"running-minions","t":"STRING","i":["$4"]}},"agIdx":5,"ctSql":"SELECT
+      COUNT(*) FROM %schema%.meters WHERE meters.timestamp BETWEEN $1::timestamp AND $2::timestamp AND meters.tenant =
+      $3 AND meters.value IS NOT NULL %s AND meters.name = $4","rtSql":"SELECT * FROM %schema%.meters WHERE
+      meters.timestamp BETWEEN $1::timestamp AND $2::timestamp AND meters.tenant = $3 AND meters.value IS NOT NULL %s
+      AND meters.name = $4 ORDER BY meters.timestamp %order% LIMIT %limit% OFFSET
+      %offset%","rtPar":{":schema":{"v":null,"t":"STRING","i":["%schema%"]},":limit":{"v":"100","t":"NUMBER","i":["%limit%"]},":offset":{"v":"0","t":"NUMBER","i":["%offset%"]},":order":{"v":"DESC","t":"STRING","i":["%order%"]},":start":{"v":null,"t":"STRING","i":["$1"]},":end":{"v":null,"t":"STRING","i":["$2"]},":tenant":{"v":null,"t":"STRING","i":["$3"]},"$4":{"v":"running-minions","t":"STRING","i":["$4"]}},"rtIdx":5}',
+      100
+      );
+
+    </code>
   </p>
 </div>
 
@@ -74,14 +128,14 @@
 <div>
   <h2>Starting the QALIPSIS backend</h2>
 
-  <h3>Head with default configuration</h3>
+  <h3>Standalone with default configuration</h3>
   <p>After you started the docker compose script, open a terminal in the folder <code>deployment</code> and execute
     <code>start-qalipsis.sh</code>.</p>
   <p>QALIPSIS backend is now accessible at the address <a href="http://localhost:8400" target="_blank"><code>http://localhost:8400/</code></a>.
   </p>
   <p>Press <code>CTRL+C</code> to stop the service.</p>
 
-  <h3>Head with the GUI</h3>
+  <h3>Standalone with the GUI</h3>
   <p>After you started the docker compose script, open a terminal in the folder <code>deployment</code> and execute
     <code>start-qalipsis-with-gui.sh</code>.</p>
   <p>QALIPSIS GUI is now accessible at the address <a href="http://localhost:8400" target="_blank"><code>http://localhost:8400/</code></a>.
