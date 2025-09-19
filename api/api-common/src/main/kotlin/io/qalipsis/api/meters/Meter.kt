@@ -39,16 +39,16 @@ interface Meter<SELF : Meter<SELF>> {
      * Generates a snapshot representing the instantaneous state of the meter. Generating a snapshot
      * resets the instantaneous states.
      *
-     * @return The snapshot that represents the instantaneous values of this meter.
+     * @return The snapshots that represent the instantaneous values of this meter.
      */
-    suspend fun snapshot(timestamp: Instant): MeterSnapshot
+    suspend fun snapshot(timestamp: Instant): Collection<MeterSnapshot>
 
     /**
      * Generates a snapshot representing the total state of the meter.
      *
-     * @return The snapshot that represents the overall values of this meter.
+     * @return The snapshots that represent the overall values of this meter.
      */
-    suspend fun summarize(timestamp: Instant): MeterSnapshot
+    suspend fun summarize(timestamp: Instant): Collection<MeterSnapshot>
 
     interface ReportingConfiguration<T : Meter<*>> {
 
