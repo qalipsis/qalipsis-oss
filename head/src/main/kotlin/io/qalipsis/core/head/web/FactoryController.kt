@@ -32,22 +32,23 @@ import io.swagger.v3.oas.annotations.tags.Tag
     Requires(beans = [WidgetService::class])
 )
 @Validated
-@Tag(name = "Factory states")
+@Tag(name = "Factory states management")
 class FactoryController(
     private val widgetService: WidgetService
 ) {
 
     @Get("/states")
     @Operation(
-        summary = "Retrieve the factory states",
+        summary = "Retrieve factory states",
+        description = "Returns the current states of the factory for the contextual tenant.",
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "success response with the factories states contained in the response body"
+                description = "Factory states retrieved successfully."
             ),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
-            ApiResponse(responseCode = "404", description = " not found"),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
+            ApiResponse(responseCode = "404", description = "Factory states not found."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -58,7 +59,7 @@ class FactoryController(
     suspend fun getFactoryStates(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @Tenant tenant: String,

@@ -77,12 +77,12 @@ class ReportController(
 
     @Post
     @Operation(
-        summary = "Create a new report",
-        description = "Create a new report template containing analysis components for several campaigns",
+        summary = "Create a report",
+        description = "Creates a new report template containing analysis components for one or more campaigns.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the successfully created report"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "200", description = "Report created successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request body or parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -93,7 +93,7 @@ class ReportController(
     suspend fun create(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
@@ -109,13 +109,13 @@ class ReportController(
 
     @Get("/{reference}")
     @Operation(
-        summary = "Retrieve a unique report",
-        description = "Retrieve a single report template and all its details",
+        summary = "Retrieve a report",
+        description = "Returns a single report template and all its details.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the report in the tenant"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
-            ApiResponse(responseCode = "404", description = "report not found"),
+            ApiResponse(responseCode = "200", description = "Report retrieved successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
+            ApiResponse(responseCode = "404", description = "Report not found."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -126,13 +126,13 @@ class ReportController(
     suspend fun get(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Reference of the report to retrieve",
+            description = "Reference of the report to retrieve.",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable reference: String,
@@ -146,13 +146,13 @@ class ReportController(
 
     @Put("/{reference}")
     @Operation(
-        summary = "Update an existing report",
-        description = "Update an existing report template",
+        summary = "Update a report",
+        description = "Updates an existing report template.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the successfully updated report"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
-            ApiResponse(responseCode = "404", description = "Report not found"),
+            ApiResponse(responseCode = "200", description = "Report updated successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request body or parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
+            ApiResponse(responseCode = "404", description = "Report not found."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -163,13 +163,13 @@ class ReportController(
     suspend fun update(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Reference of the report to update",
+            description = "Reference of the report to update.",
             required = true,
             `in` = ParameterIn.PATH
         ) @PathVariable reference: String,
@@ -185,12 +185,12 @@ class ReportController(
 
     @Delete
     @Operation(
-        summary = "Deletes a list of reports",
-        description = "Deletes a list of existing report template",
+        summary = "Delete reports",
+        description = "Deletes one or more existing report templates.",
         responses = [
-            ApiResponse(responseCode = "204", description = "Successful deletion "),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "204", description = "Reports deleted successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -202,13 +202,13 @@ class ReportController(
     suspend fun delete(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Reference of the report to delete, can be specified multiple times for a bulk deletion, eg: report=w65dqw&report=1265fs2",
+            description = "References of the reports to delete; multiple references allowed, Example: report=w65dqw&report=1265fs2.",
             required = true,
             `in` = ParameterIn.QUERY
         ) @QueryValue("report") references: Set<@NotBlank String>,
@@ -218,11 +218,12 @@ class ReportController(
 
     @Get
     @Operation(
-        summary = "Search all the reports",
+        summary = "Search reports",
+        description = "Returns a page of reports matching the specified criteria.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Page of reports matching the criteria"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "200", description = "Reports retrieved successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -233,31 +234,31 @@ class ReportController(
     suspend fun search(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Field of the report to use in order to sort the results",
+            description = "Field to sort the results by.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @QueryValue("sort", defaultValue = "") sort: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Comma-separated list of values to apply as wildcard filters on the reports fields",
+            description = "Comma-separated list of values to filter the reports.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @QueryValue("filter", defaultValue = "") filter: String,
         @Parameter(
-            description = "Page number to start retrieval from",
+            description = "Zero-based page index to retrieve.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @QueryValue("page", defaultValue = "0") @PositiveOrZero page: Int,
         @Parameter(
-            description = "Size of the page to retrieve",
+            description = "Number of reports per page.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int,
@@ -274,13 +275,13 @@ class ReportController(
 
     @Post("/{reportReference}/render")
     @Operation(
-        summary = "Renders a report",
-        description = "Generates a pdf report and returns a reference to the report task",
+        summary = "Render a report",
+        description = "Generates a PDF report and returns a reference to the report task.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the report to be rendered"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
-            ApiResponse(responseCode = "404", description = "Report not found"),
+            ApiResponse(responseCode = "200", description = "Report rendering task created successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
+            ApiResponse(responseCode = "404", description = "Report not found."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -290,13 +291,13 @@ class ReportController(
     suspend fun render(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Reference of the report to render",
+            description = "Reference of the report to render.",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable reportReference: String,
@@ -311,12 +312,13 @@ class ReportController(
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Get("/file/{taskReference}")
     @Operation(
-        summary = "Downloads a report",
+        summary = "Download a report",
+        description = "Returns the content of a generated report task.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the report to be rendered"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
-            ApiResponse(responseCode = "404", description = "report not found"),
+            ApiResponse(responseCode = "200", description = "Report downloaded successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
+            ApiResponse(responseCode = "404", description = "Report task not found."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -327,13 +329,13 @@ class ReportController(
     suspend fun download(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Reference of the task to be downloaded",
+            description = "Reference of the task to download.",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable taskReference: String,

@@ -167,7 +167,6 @@ internal class ThymeleafReportServiceImplTest {
             campaignReportDetail,
             chartImages,
             "valid-font-url",
-            Files.createTempDirectory(tempDirectory).toAbsolutePath()
         )
 
         //then
@@ -272,14 +271,14 @@ internal class ThymeleafReportServiceImplTest {
         val campaignReportDetail = relaxedMockk<CampaignReportDetail>()
         val path = Files.createTempDirectory(tempDirectory).toAbsolutePath()
         coEvery { templateBeanFactory.templateEngine() } returns TemplateEngine()
-        coEvery { templateReportService.buildContext(any(), any(), any(), any()) } returns context
+        coEvery { templateReportService.buildContext(any(), any(), any()) } returns context
 
         //when
         templateReportService.renderTemplate(campaignReportDetail, listOf(dataSeriesEntity), path)
 
         //then
         coVerifyOnce {
-            templateReportService.buildContext(campaignReportDetail, emptyList(), any(), any())
+            templateReportService.buildContext(campaignReportDetail, emptyList(), any())
             templateReportService.loadFont(path)
         }
     }

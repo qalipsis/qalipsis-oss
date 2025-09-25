@@ -309,7 +309,7 @@ internal class TimeSeriesControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
             transform("body") {
                 it.getBody(String::class.java).get()
-            }.contains("""{"errors":["The start instant of retrieval should be before the end, please check from and until arguments"]}""")
+            }.contains("""{"errors":["Start instant must be before end instant; check 'from' and 'until'."]}""")
         }
         confirmVerified(timeSeriesDataQueryService)
     }
@@ -556,7 +556,7 @@ internal class TimeSeriesControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
             transform("body") {
                 it.getBody(String::class.java).get()
-            }.isEqualTo("""{"errors":["The start instant of retrieval should be before the end, please check from and until arguments"]}""")
+            }.isEqualTo("""{"errors":["Start instant must be before end instant; check 'from' and 'until'."]}""")
         }
         confirmVerified(timeSeriesDataQueryService)
     }
@@ -819,7 +819,7 @@ internal class TimeSeriesControllerIntegrationTest {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
             transform("body") {
                 it.getBody(String::class.java).get()
-            }.contains("""{"errors":["The start instant of retrieval should be before the end, please check from and until arguments"]}""")
+            }.contains("""{"errors":["Start instant must be before end instant; check 'from' and 'until'."]}""")
         }
         coVerifyNever { widgetService.getFactoryStates(Defaults.TENANT) }
     }
