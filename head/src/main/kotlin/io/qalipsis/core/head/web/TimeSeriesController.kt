@@ -66,14 +66,15 @@ class TimeSeriesController(
 
     @Get("/aggregate")
     @Operation(
-        summary = "Aggregate time-series data over time",
+        summary = "Aggregate time-series data",
+        description = "Returns sorted aggregation results keyed by the data-series references.",
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "Sorted aggregation results keyed by the data-series references"
+                description = "Aggregation results retrieved successfully."
             ),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -83,48 +84,48 @@ class TimeSeriesController(
     suspend fun aggregate(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "References of the data-series describing the data to aggregate",
+            description = "Data-series references to aggregate.",
             required = true,
             `in` = ParameterIn.QUERY
         )
         @NotEmpty @QueryValue("series") dataSeriesReferences: Set<@NotBlank String>,
         @Parameter(
-            description = "References of the campaigns to aggregate data on",
+            description = "Campaign references to aggregate data on.",
             required = true,
             `in` = ParameterIn.QUERY
         )
         @NotEmpty @QueryValue("campaigns") campaigns: Set<@NotBlank String>,
         @Parameter(
-            description = "Names of the scenarios to aggregate data on, defaults to all the scenarios of the specified campaigns",
+            description = "Scenario names to aggregate on; defaults to all scenarios of the specified campaigns.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @Nullable @QueryValue("scenarios") scenarios: Set<@NotBlank String>?,
         @Parameter(
-            description = "Beginning of the aggregation window",
+            description = "Start of the aggregation window.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @Nullable @QueryValue("from") from: Instant?,
         @Parameter(
-            description = "End of the aggregation window",
+            description = "End of the aggregation window.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @Nullable @QueryValue("until") until: Instant?,
         @Parameter(
-            description = "Size of the time-buckets to perform the aggregations",
+            description = "Time-bucket size for aggregation.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @Nullable @PositiveDuration @QueryValue("timeframe") timeframe: Duration?
     ): Map<String, List<TimeSeriesAggregationResult>> {
-        require(from == null || until == null || from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
+        require(from == null || until == null || from < until) { "Start instant must be before end instant; check 'from' and 'until'." }
         return timeSeriesDataQueryService.render(
             tenant, dataSeriesReferences, AggregationQueryExecutionRequest(
                 tenant = tenant,
@@ -140,14 +141,15 @@ class TimeSeriesController(
 
     @Get("/search")
     @Operation(
-        summary = "Searches time-series records in a window frame",
+        summary = "Search time-series records",
+        description = "Returns time-series records in the specified window frame, sorted by time and keyed by the data-series references.",
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "Time-based sorted time-series records keyed by the data-series references"
+                description = "Time-series records retrieved successfully."
             ),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -157,55 +159,60 @@ class TimeSeriesController(
     suspend fun searchRecords(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "References of the data-series describing the data to aggregate",
+            description = "Data-series references to search.",
             required = true,
             `in` = ParameterIn.QUERY
         )
         @NotEmpty @QueryValue("series") dataSeriesReferences: Set<@NotBlank String>,
         @Parameter(
-            description = "References of the campaigns to aggregate data on",
+            description = "Campaign references to filter on.",
             required = true,
             `in` = ParameterIn.QUERY
         )
         @NotEmpty @QueryValue("campaigns") campaigns: Set<@NotBlank String>,
         @Parameter(
-            description = "Names of the scenarios to aggregate data on, defaults to all the scenarios of the specified campaigns",
+            description = "Scenario names to filter on; defaults to all scenarios of the specified campaigns.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @Nullable @QueryValue("scenarios") scenarios: Set<@NotBlank String>?,
         @Parameter(
-            description = "Beginning of the aggregation window",
+            description = "Start of the search window frame.",
             required = true,
             `in` = ParameterIn.QUERY
         )
         @Nullable @QueryValue("from") from: Instant,
         @Parameter(
-            description = "End of the aggregation window",
+            description = "End of the search window frame.",
             required = true,
             `in` = ParameterIn.QUERY
         )
         @Nullable @QueryValue("until") until: Instant,
         @Parameter(
-            description = "Size of the time-buckets to perform the aggregations",
+            description = "Time-bucket size for aggregation.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @Nullable @PositiveDuration @QueryValue("timeframe") timeframe: Duration?,
+        @Parameter(
+            description = "Zero-based page index to retrieve.",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
         @Nullable @QueryValue("page", defaultValue = "0") @PositiveOrZero page: Int,
         @Parameter(
-            description = "Size of the page to retrieve",
+            description = "Number of time-series records per page.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue("size", defaultValue = "500") @Positive @Max(10_000) size: Int
 
     ): Map<String, Page<out TimeSeriesRecord>> {
-        require(from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
+        require(from < until) { "Start instant must be before end instant; check 'from' and 'until'." }
         return timeSeriesDataQueryService.search(
             tenant, dataSeriesReferences, DataRetrievalQueryExecutionRequest(
                 tenant = tenant,
@@ -222,14 +229,15 @@ class TimeSeriesController(
 
     @Get("/summary/campaign-status")
     @Operation(
-        summary = "Aggregate campaign results data over time",
+        summary = "Retrieve campaign summary data",
+        description = "Returns aggregated campaign results over time, keyed by the campaign-series start references.",
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "aggregation results keyed by the campaign-series start references"
+                description = "Campaign summary retrieved successfully."
             ),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -239,36 +247,36 @@ class TimeSeriesController(
     suspend fun fetchCampaignSummary(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Beginning of the aggregation window",
+            description = "Start of the aggregation window.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @Nullable @QueryValue("from") from: Instant,
         @Parameter(
-            description = "End of the aggregation window",
+            description = "End of the aggregation window.",
             required = true,
             `in` = ParameterIn.QUERY
         )
         @Nullable @QueryValue("until") until: Instant?,
         @Parameter(
-            description = "Difference between UTC and the user's time zone",
+            description = "Difference between UTC and the user's time zone.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @Nullable @QueryValue("timeOffset") timeOffset: Float,
         @Parameter(
-            description = "Size of the time-buckets to perform the aggregations",
+            description = "Time-bucket size for aggregation.",
             required = false,
             `in` = ParameterIn.QUERY,
         )
         @PositiveDuration @QueryValue("timeframe", defaultValue = "PT24H") timeframe: Duration
     ): List<CampaignSummaryResult> {
-        require(until == null || from < until) { "The start instant of retrieval should be before the end, please check from and until arguments" }
+        require(until == null || from < until) { "Start instant must be before end instant; check 'from' and 'until'." }
         return widgetService.aggregateCampaignResult(tenant, from, until, timeOffset, timeframe)
     }
 }

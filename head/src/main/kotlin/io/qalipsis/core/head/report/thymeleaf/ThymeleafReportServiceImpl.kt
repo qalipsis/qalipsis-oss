@@ -135,7 +135,7 @@ class ThymeleafReportServiceImpl(
             }
         }
         val fontUrl = loadFont(reportTempDir)
-        val context = buildContext(campaignReportDetail, chartImages, fontUrl, reportTempDir)
+        val context = buildContext(campaignReportDetail, chartImages, fontUrl)
 
         return templateEngine.process("report-template", context)
     }
@@ -146,16 +146,14 @@ class ThymeleafReportServiceImpl(
      * @param campaignReportDetail contains data with which to set up the context
      * @param chartImages collection of base64 encoded strings of chart image files
      * @param fontUrl absolute string path of the font
-     * @param reportTempDir absolute path of the temporal directory to store current report related files
      */
     @KTestable
     private fun buildContext(
         campaignReportDetail: CampaignReportDetail,
         chartImages: List<String>,
-        fontUrl: String,
-        reportTempDir: Path,
+        fontUrl: String
     ): Context {
-        val assets = readResources(reportTempDir)
+        val assets = readResources()
         return Context().apply {
             // Configure styling.
             setVariable("css", cssContent)
@@ -240,9 +238,9 @@ class ThymeleafReportServiceImpl(
     private fun ByteArray.toBase64(): String = Base64.getEncoder().encodeToString(this)
 
     /**
-     * Loads the css and image resources and writes them to a temporal directory.
+     * Reads image resources from the classpath and converts them to base64 encoded strings.
      */
-    private fun readResources(reportTempDir: Path): Map<String, String> {
+    private fun readResources(): Map<String, String> {
         val resourceMap = mutableMapOf<String, String>()
         try {
             //Load the image icons.

@@ -49,17 +49,17 @@ import javax.validation.constraints.NotBlank
 @Version("1.0")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Controller("\${server.api-root}/zones")
-@Tag(name = "Zone details")
+@Tag(name = "Zone management")
 class ZoneController(private val zoneService: ZoneService) {
 
     @Get
     @Operation(
-        summary = "List of zones",
-        description = "List all the available zones to execute scenarios",
+        summary = "Retrieve zones",
+        description = "Returns all available zones where scenarios can be executed.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of available zones"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "200", description = "Zones retrieved successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")

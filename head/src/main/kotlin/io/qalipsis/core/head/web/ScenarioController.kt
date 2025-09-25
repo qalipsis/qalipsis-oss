@@ -52,12 +52,12 @@ class ScenarioController(
 
     @Get
     @Operation(
-        summary = "Get a list of available scenarios",
-        description = "Get a list of available scenarios of the tenant",
+        summary = "Retrieve scenarios",
+        description = "Returns all scenarios available for the contextual tenant. Supports sorting by `name`, `default_minions_count`, or `enabled`. Add `:desc` to sort in descending order.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the available scenarios"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "200", description = "Scenarios retrieved successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -68,12 +68,12 @@ class ScenarioController(
     suspend fun searchScenarios(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Field of the scenarios to use in order to sort the results, can be name, default_minions_count or enabled, add the postfix `:desc` to the field name to reverse the order",
+            description = "Sort field (`name`, `default_minions_count`, or `enabled`). Add `:desc` to sort in descending order.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue sort: String?

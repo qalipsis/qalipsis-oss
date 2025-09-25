@@ -71,7 +71,7 @@ import javax.validation.constraints.PositiveOrZero
 @Controller("\${server.api-root}/campaigns")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
-@Tag(name = "Campaign Management")
+@Tag(name = "Campaign management")
 class CampaignController(
     private val campaignExecutor: CampaignExecutor,
     private val campaignService: CampaignService,
@@ -86,11 +86,11 @@ class CampaignController(
     @Post
     @Operation(
         summary = "Start a new campaign",
-        description = "Start a new campaign with the provided details of campaign configuration and attach it to the contextual tenant",
+        description = "Starts a new campaign for the specified tenant using the provided configuration.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Campaign started successfully"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "200", description = "Campaign started successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request body or parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -101,7 +101,7 @@ class CampaignController(
     suspend fun execute(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
@@ -118,11 +118,11 @@ class CampaignController(
     @Post("/validate")
     @Operation(
         summary = "Validate a campaign configuration",
-        description = "Validate a campaign configuration with the contextual tenant",
+        description = "Validates a campaign configuration for the contextual tenant.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Campaign validated successfully"),
-            ApiResponse(responseCode = "400", description = "Invalid campaign configuration provide"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "200", description = "Campaign validated successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request body or parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -134,7 +134,7 @@ class CampaignController(
     suspend fun validate(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
@@ -151,11 +151,11 @@ class CampaignController(
     @Get
     @Operation(
         summary = "Search campaigns",
-        description = "Search the past and currently running campaigns, with the scenarios they executed and their status",
+        description = "Returns the past and active campaigns, including their executed scenarios and their status.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the successfully listed campaigns"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "200", description = "Campaigns retrieved successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -166,32 +166,32 @@ class CampaignController(
     suspend fun search(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Comma-separated list of values to apply as wildcard filters on the campaign, user and scenarios names",
+            description = "Comma-separated list of wildcard filters applied to campaign, user, and scenario names.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue("filter", defaultValue = "") filter: String,
         @Parameter(
-            description = "Field of the campaign to use in order to sort the results",
+            description = "Field of the campaign to use in sorting the results. Add `:desc` for descending order.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = "start:desc") sort: String,
         @Parameter(
-            description = "0-based number of the page to retrieve",
+            description = "Zero-based page index to retrieve.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = "0") @PositiveOrZero page: String,
         @Parameter(
-            description = "Size of the page to retrieve",
+            description = "Number of campaigns per page.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = "20") @Positive size: String,
         @Parameter(
-            description = "List of excluded campaign status",
+            description = "List of campaign statuses to exclude.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = "") excludedStatuses: Collection<ExecutionStatus>,
@@ -206,11 +206,11 @@ class CampaignController(
     @Post("/{campaignKey}/abort")
     @Operation(
         summary = "Abort a campaign",
-        description = "Abort a campaign with the provided campaign name and details of abortion",
+        description = "Aborts a campaign with the specified campaign key and details of abortion.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Campaign aborted successfully"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "200", description = "Campaign aborted successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -221,18 +221,18 @@ class CampaignController(
     suspend fun abort(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Key of the campaign to abort",
+            description = "Key of the campaign to abort.",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,
         @Parameter(
-            description = "Force the campaign to fail when set to true, defaults to false",
+            description = "Force the campaign to fail if set to `true`. Defaults to `false`.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @Nullable @QueryValue(defaultValue = "false") hard: Boolean,
@@ -245,12 +245,12 @@ class CampaignController(
      */
     @Get("/{campaignKeys}")
     @Operation(
-        summary = "Retrieve a list of campaigns reports",
-        description = "Reports the details of the execution of a completed or running campaigns and their scenarios",
+        summary = "Retrieve campaign reports",
+        description = "Returns execution reports for one or more completed or active campaigns, including their scenarios.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the successfully retrieved campaigns reports"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "200", description = "Campaign reports retrieved successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -261,12 +261,12 @@ class CampaignController(
     suspend fun retrieve(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Comma separated list of keys of the campaigns to retrieve",
+            description = "Comma-separated list of campaign keys.",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotEmpty @PathVariable campaignKeys: List<String>,
@@ -279,12 +279,12 @@ class CampaignController(
      */
     @Get("/{campaignKey}/configuration")
     @Operation(
-        summary = "Retrieve the initial configuration of a campaign",
-        description = "Returns the configuration received from the client when creating a new campaign",
+        summary = "Retrieve campaign configuration",
+        description = "Returns the initial configuration provided when creating the campaign.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the successfully retrieved campaign report"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "200", description = "Campaign configuration retrieved successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -295,12 +295,12 @@ class CampaignController(
     suspend fun retrieveConfiguration(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Key of the campaign to retrieve",
+            description = "Key of the campaign to retrieve.",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,
@@ -313,12 +313,12 @@ class CampaignController(
      */
     @Post("/{campaignKey}/replay")
     @Operation(
-        summary = "Replay the campaign",
-        description = "Replay campaign with the provided campaign key",
+        summary = "Replay a campaign",
+        description = "Replays a campaign using the specified key.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Campaign replayed successfully"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "200", description = "Campaign replayed successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -329,12 +329,12 @@ class CampaignController(
     suspend fun replay(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Key of the campaign to replay",
+            description = "Key of the campaign to replay.",
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable campaignKey: String,
@@ -349,12 +349,12 @@ class CampaignController(
      */
     @Post("schedule")
     @Operation(
-        summary = "Schedule a campaign test",
-        description = "Schedule a campaign with the provided details of campaign configuration and attach it to the contextual tenant",
+        summary = "Schedule a campaign",
+        description = "Schedules a campaign for the specified tenant using the provided configuration.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Campaign test has been scheduled successfully"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "200", description = "Campaign scheduled successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request body or parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -365,7 +365,7 @@ class CampaignController(
     suspend fun schedule(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
@@ -381,12 +381,12 @@ class CampaignController(
      */
     @Put("schedule/{campaignKey}")
     @Operation(
-        summary = "Updates a scheduled campaign test",
-        description = "Updates a scheduled campaign with the newly provided details of campaign configuration",
+        summary = "Update a scheduled campaign",
+        description = "Updates a scheduled campaign for the specified tenant using the provided configuration.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Scheduled campaign test has been updated successfully"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "200", description = "Scheduled campaign updated successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request body or parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -397,7 +397,7 @@ class CampaignController(
     suspend fun reschedule(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,

@@ -51,7 +51,7 @@ import javax.validation.constraints.NotBlank
 @Controller("\${server.api-root}/configuration")
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
-@Tag(name = "Configuration")
+@Tag(name = "Configuration management")
 class ConfigurationController(
     private val securityConfiguration: SecurityConfiguration,
     private val campaignConfigurationProvider: CampaignConfigurationProvider,
@@ -62,10 +62,10 @@ class ConfigurationController(
      */
     @Get("/security")
     @Operation(
-        summary = "Provide the security configuration",
-        description = "Provide the details of the strategy model to apply in the frontend and its configuration",
+        summary = "Retrieve security configuration",
+        description = "Returns the security strategy and its configuration to be applied in the frontend.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Security configuration retrieved successfully")
+            ApiResponse(responseCode = "200", description = "Security configuration retrieved successfully.")
         ]
     )
     @Secured(SecurityRule.IS_ANONYMOUS)
@@ -79,15 +79,15 @@ class ConfigurationController(
      */
     @Get("/campaign")
     @Operation(
-        summary = "Returns the default and validation values to create a new campaign",
-        description = "Provide the default and validation values to create a new campaign",
+        summary = "Retrieve default and validation values for a new campaign",
+        description = "Returns the default and validation values required to create a new campaign.",
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "Default and validation values to create a new campaign retrieved successfully"
+                description = "Default and validation values retrieved successfully."
             ),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Missing rights to execute the operation"),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation"),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -98,7 +98,7 @@ class ConfigurationController(
     suspend fun campaign(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String

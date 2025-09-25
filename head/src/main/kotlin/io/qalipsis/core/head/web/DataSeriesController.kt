@@ -69,7 +69,7 @@ import javax.validation.constraints.PositiveOrZero
     Requires(beans = [DataSeriesService::class])
 )
 @Version("1.0")
-@Tag(name = "Data-Series Management")
+@Tag(name = "Data-Series management")
 class DataSeriesController(
     private val dataSeriesService: DataSeriesService,
     private val dataProvider: DataProvider,
@@ -77,12 +77,12 @@ class DataSeriesController(
 
     @Post
     @Operation(
-        summary = "Create a new data series",
-        description = "Create a new data series with the provided details and attach it to the contextual tenant",
+        summary = "Create data series",
+        description = "Creates a new data series for the specified tenant using the provided details.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the successfully created data series"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "200", description = "Returns the created data series."),
+            ApiResponse(responseCode = "400", description = "Invalid request body or parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -93,7 +93,7 @@ class DataSeriesController(
     suspend fun create(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
@@ -109,13 +109,13 @@ class DataSeriesController(
 
     @Get("/{reference}")
     @Operation(
-        summary = "Retrieve a unique data series",
-        description = "Return a unique data series attached to the tenant, containing its details",
+        summary = "Retrieve data series",
+        description = "Returns the details of a data series for the specified tenant by its reference.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Details of the data series in the tenant"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
-            ApiResponse(responseCode = "404", description = "Data series not found"),
+            ApiResponse(responseCode = "200", description = "Data series retrieved successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
+            ApiResponse(responseCode = "404", description = "Data series not found."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -126,7 +126,7 @@ class DataSeriesController(
     suspend fun get(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @Tenant tenant: String,
@@ -146,12 +146,12 @@ class DataSeriesController(
 
     @Patch("/{reference}")
     @Operation(
-        summary = "Update a data series",
-        description = "Update the details a data series for the contextual tenant",
+        summary = "Update data series",
+        description = "Updates the specified data series for the tenant with the provided details.",
         responses = [
-            ApiResponse(responseCode = "200", description = "Updated data series"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "200", description = "Data series updated successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid body or request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
             ApiResponse(responseCode = "404", description = "Data series not found"),
         ],
         security = [
@@ -163,13 +163,13 @@ class DataSeriesController(
     suspend fun update(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Reference of the data series to update",
+            description = "Reference of the data series to update.",
             required = true,
             `in` = ParameterIn.PATH
         ) @PathVariable reference: String,
@@ -185,12 +185,12 @@ class DataSeriesController(
 
     @Delete
     @Operation(
-        summary = "Deletes a list of data series",
-        description = "Deletes a list of data series from the contextual tenant",
+        summary = "Delete data series",
+        description = "Deletes one or more data series for the contextual tenant.",
         responses = [
-            ApiResponse(responseCode = "204", description = "Successful deletion "),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "204", description = "Data series deleted successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -202,13 +202,13 @@ class DataSeriesController(
     suspend fun delete(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "References of the data series to delete, can be specified multiple times for a bulk deletion, eg: series=w65dqw&series=1265fs2",
+            description = "References of the data series to delete; multiple references allowed, Example: series=w65dqw&series=1265fs2.",
             required = true,
             `in` = ParameterIn.QUERY
         ) @QueryValue("series") references: Set<@NotBlank String>,
@@ -218,11 +218,12 @@ class DataSeriesController(
 
     @Get("/{data-type}/names")
     @Operation(
-        summary = "List some events or meters names to help with auto-completion",
+        summary = "Retrieve data names",
+        description = "Returns a list of event or meter names for the specified data type to help with auto-completion.",
         responses = [
-            ApiResponse(responseCode = "200", description = "List of first names matching the filter"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "200", description = "Event or meter names retrieved successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -233,17 +234,17 @@ class DataSeriesController(
         @Tenant tenant: String,
         @Parameter(
             name = "data-type",
-            description = "Type of the data related to the tags to search",
+            description = "Type of data related to the tags to search. Options: `events` or `meters`.",
             required = true,
             `in` = ParameterIn.PATH
         ) @PathVariable("data-type") dataType: DataType,
         @Parameter(
-            description = "Comma-separated list of values to apply as wildcard filters on the names",
+            description = "Comma-separated list of filters to apply to names.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @QueryValue("filter", defaultValue = "") filter: String,
         @Parameter(
-            description = "Size of the page to retrieve",
+            description = "Number of data names per page.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int,
@@ -253,14 +254,15 @@ class DataSeriesController(
 
     @Get("/{data-type}/fields")
     @Operation(
-        summary = "List all the fields that can be used for charts of events or meters",
+        summary = "Retrieve data fields",
+        description = "Returns all fields that can be used for charts of the specified data type, including types and units. Data-type options include: `events` or `meters`.",
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "List of fields that can be used in reports charts, with their types and units"
+                description = "Data fields successfully retrieved."
             ),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -271,7 +273,7 @@ class DataSeriesController(
         @Tenant tenant: String,
         @Parameter(
             name = "data-type",
-            description = "Type of the data related to the tags to search",
+            description = "Type of data related to the tags to search. Options: `events` or `meters`.",
             required = true,
             `in` = ParameterIn.PATH
         ) @PathVariable("data-type") dataType: DataType,
@@ -281,11 +283,12 @@ class DataSeriesController(
 
     @Get("/{data-type}/tags")
     @Operation(
-        summary = "List some tags to help with auto-completion",
+        summary = "Retrieve data tags",
+        description = "Returns a list of tags and their values for the specified data type to help with auto-completion.",
         responses = [
-            ApiResponse(responseCode = "200", description = "List of first tags matching the filter and their values"),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "200", description = "Data tags retrieved successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -296,17 +299,17 @@ class DataSeriesController(
         @Tenant tenant: String,
         @Parameter(
             name = "data-type",
-            description = "Type of the data related to the tags to search",
+            description = "Type of data related to the tags to search. Options: `events` or `meters`.",
             required = true,
             `in` = ParameterIn.PATH
         ) @PathVariable("data-type") dataType: DataType,
         @Parameter(
-            description = "Comma-separated list of values to apply as wildcard filters on the tags names",
+            description = "Comma-separated list of filters to apply to tag names.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @QueryValue("filter", defaultValue = "") filter: String,
         @Parameter(
-            description = "Size of the page to retrieve",
+            description = "Number of data series per page.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int,
@@ -316,14 +319,15 @@ class DataSeriesController(
 
     @Get("/")
     @Operation(
-        summary = "Search all the data series",
+        summary = "Search data series",
+        description = "Returns a list of data series that match the search parameters for the contextual tenant. Supports filtering and sorting.",
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "List of data series that matches the search parameters"
+                description = "Data series retrieved successfully."
             ),
-            ApiResponse(responseCode = "400", description = "Invalid request supplied"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
@@ -333,31 +337,31 @@ class DataSeriesController(
     suspend fun searchDataSeries(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant",
+            description = "Contextual tenant.",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
-            description = "Sorting property and order, example: name:DESC",
+            description = "Sorting property and order, e.g., `name:DESC`.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @QueryValue("sort", defaultValue = "displayName:asc") sort: String,
         @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
-            description = "Comma-separated list of values to apply as wildcard filters on the data series fields",
+            description = "Comma-separated filters to apply to data series fields.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @QueryValue("filter", defaultValue = "") filter: String,
         @Parameter(
-            description = "Page number to start retrieval from",
+            description = "Zero-based page index to retrieve.",
             required = false,
             `in` = ParameterIn.QUERY
         )
         @QueryValue("page", defaultValue = "0") @PositiveOrZero page: Int,
         @Parameter(
-            description = "Size of the page to retrieve",
+            description = "Number of data series per page.",
             required = false,
             `in` = ParameterIn.QUERY
         ) @QueryValue("size", defaultValue = "20") @Positive @Max(100) size: Int,
@@ -374,11 +378,11 @@ class DataSeriesController(
 
     @Patch("/refresh-all")
     @Operation(
-        summary = "Refresh the prepared queries of the data series",
-        description = "Update the prepared queries of all the data series",
+        summary = "Refresh prepared queries",
+        description = "Updates the prepared queries for all data series.",
         responses = [
-            ApiResponse(responseCode = "202", description = "Data series refreshed"),
-            ApiResponse(responseCode = "401", description = "Operation not allowed"),
+            ApiResponse(responseCode = "202", description = "Data series queries refreshed successfully."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
         ],
         security = [
             SecurityRequirement(name = "JWT")
