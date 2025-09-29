@@ -285,3 +285,10 @@ const _setScenarioConfigChartDataSeries = (executionProfileStages: ExecutionProf
   }, 100)
 }
 </script>
+
+<style lang="scss" scoped>
+  // Workaround to hide the export csv button.
+  ::v-deep .apexcharts-menu-item.exportCSV {
+    display: none;
+  }
+</style>

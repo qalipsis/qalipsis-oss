@@ -3,57 +3,71 @@
     <div class="flex justify-between items-center w-full">
       <div class="flex items-center">
         <BaseIcon
-            icon="qls-icon-arrow-back"
-            class="cursor-pointer pl-1 pr-5 hover:text-primary-500 text-2xl"
-            @click="navigateTo('/campaigns')"
+          icon="qls-icon-arrow-back"
+          class="cursor-pointer pl-1 pr-5 hover:text-primary-500 text-2xl"
+          @click="navigateTo('/campaigns')"
         />
         <BaseTitle
-            v-model:content="campaignName"
-            :editable="true"
+          v-model:content="campaignName"
+          :editable="true"
         />
       </div>
       <div class="flex items-center">
         <BaseSwitch
-            @checkedChange="handleCheckedChange"
-            :numberOfSelectedItems="selectedRowKeys.length"
+          @checkedChange="handleCheckedChange"
+          :numberOfSelectedItems="selectedRowKeys.length"
         />
-        <div
+        <BaseTooltip text="Advanced configuration">
+          <div
             class="cursor-pointer pl-2"
             @click="handleSettingBtnClick"
-        >
-          <BaseIcon
+          >
+            <BaseIcon
               icon="qls-icon-setting"
               class="text-2xl text-gray-600 dark:text-gray-100 hover:text-primary-500"
-          />
-        </div>
+            />
+          </div>
+        </BaseTooltip>
         <BaseSearch
-            class="ml-2"
-            placeholder="Search scenario..."
-            size="large"
-            @search="handleSearch"
+          class="ml-2"
+          placeholder="Search scenario..."
+          size="large"
+          @search="handleSearch"
         />
         <BaseButton
-            class="ml-2"
-            :text="executionText"
-            @click="handleRunBtnClick"
-            :disabled="selectedRowKeys.length === 0"
+          class="ml-2"
+          :text="executionText"
+          @click="handleRunBtnClick"
+          :disabled="executionButtonDisabled"
         />
       </div>
     </div>
   </BaseHeader>
   <CampaignConfigDrawer
-      v-if="open"
-      :campaignConfigurationForm="campaignConfigForm"
-      v-model:open="open"
-      @submit="handleCampaignConfigFormSubmit($event)"
+    v-if="open"
+    :campaignConfigurationForm="campaignConfigForm"
+    v-model:open="open"
+    @submit="handleCampaignConfigFormSubmit($event)"
   />
+  <BaseModal
+    v-if="defaultCampaignNameModalOpen"
+    v-model:open="defaultCampaignNameModalOpen"
+    title="Run immediately"
+    confirmBtnText="Execute now"
+    :closable="true"
+    @confirmBtnClick="handleDefaultCampaignNameModalConfirmBtnClick"
+  >
+    <section>
+      <span>You haven’t set a custom name for the new campaign. Do you want to run it anyway?</span>
+    </section>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
 const scenarioTaleStore = useScenarioTableStore()
 const toastStore = useToastStore()
 
-const {selectedRowKeys} = storeToRefs(scenarioTaleStore)
+const { selectedRowKeys, scenarioConfig } = storeToRefs(scenarioTaleStore)
 
 const props = defineProps<{
   campaignConfiguration: DefaultCampaignConfiguration
@@ -62,7 +76,7 @@ const props = defineProps<{
   campaignConfigForm?: CampaignConfigurationForm
 }>()
 
-const {createCampaign, scheduleCampaign, updateCampaignConfig} = useCampaignApi()
+const { createCampaign, scheduleCampaign, updateCampaignConfig } = useCampaignApi()
 
 const campaignConfigForm = ref<CampaignConfigurationForm>({
   timeoutType: props.campaignConfigForm?.timeoutType ?? TimeoutTypeConstant.SOFT,
@@ -77,10 +91,18 @@ const campaignConfigForm = ref<CampaignConfigurationForm>({
   timezone: props.campaignConfigForm?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
   scheduledTime: props.campaignConfigForm?.scheduledTime ?? null,
 })
-const campaignName = ref(props.campaignName ?? 'New Campaign')
+
+const DEFAULT_CAMPAIGN_NAME = 'New Campaign'
+
+const campaignName = ref(props.campaignName ?? DEFAULT_CAMPAIGN_NAME)
 const open = ref(false)
+const defaultCampaignNameModalOpen = ref(false)
 const executionText = computed(() => {
   return campaignConfigForm.value?.scheduled ? 'Schedule' : 'Run immediately'
+})
+
+const executionButtonDisabled = computed(() => {
+  return selectedRowKeys.value.length === 0 || selectedRowKeys.value.some(selectedRowKey => !scenarioConfig.value[selectedRowKey])
 })
 
 const handleSearch = (searchTerm: string) => {
@@ -113,15 +135,37 @@ const handleCampaignConfigFormSubmit = (form: CampaignConfigurationForm) => {
   campaignConfigForm.value = form
 }
 
-const handleRunBtnClick = async () => {
+const handleRunBtnClick = () => {
+  if (campaignName.value === DEFAULT_CAMPAIGN_NAME && !campaignConfigForm.value?.scheduled) {
+    defaultCampaignNameModalOpen.value = true
+  } else {
+    _executeCampaign()
+  }
+}
+
+const handleDefaultCampaignNameModalConfirmBtnClick = () => {
+  _executeCampaign()
+}
+
+const _executeCampaign = async () => {
   const selectedScenarioConfigMap: {
     [key: string]: ScenarioConfigurationForm
   } = {}
+  const defaultStage = props.campaignConfiguration.validation.stage
+
   scenarioTaleStore.selectedRows.forEach((scenario) => {
     if (scenarioTaleStore.scenarioConfig[scenario.name]) {
-      selectedScenarioConfigMap[scenario.name] = scenarioTaleStore.scenarioConfig[scenario.name]
+      selectedScenarioConfigMap[scenario.name] = {
+        ...scenarioTaleStore.scenarioConfig[scenario.name],
+        executionProfileStages: scenarioTaleStore.scenarioConfig[scenario.name].executionProfileStages.map(
+          (executionProfileStage) => ({
+            ...executionProfileStage,
+            // Sets the min resolution from the campaign configuration to each execution profile stages.
+            resolution: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minResolution),
+          })
+        ),
+      }
     } else {
-      const defaultStage = props.campaignConfiguration.validation.stage
       const defaultScenarioForm: ScenarioConfigurationForm = {
         executionProfileStages: [
           {
@@ -138,9 +182,9 @@ const handleRunBtnClick = async () => {
   })
 
   const request = CampaignHelper.toCampaignConfiguration(
-      campaignName.value,
-      campaignConfigForm.value!,
-      selectedScenarioConfigMap
+    campaignName.value,
+    campaignConfigForm.value!,
+    selectedScenarioConfigMap
   )
 
   try {
@@ -161,7 +205,7 @@ const handleRunBtnClick = async () => {
       navigateTo(`/campaigns/${newCampaign.key}`)
     }
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
 </script>

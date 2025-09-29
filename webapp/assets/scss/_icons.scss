@@ -26,6 +26,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.qls-icon-error-fill:before {
+  content: "\e92b";
+}
+
 .qls-icon-moon:before {
   content: "\e905";
 }
