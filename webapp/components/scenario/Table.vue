@@ -1,7 +1,7 @@
 <template>
   <BaseTable
       :data-source="dataSource"
-      :table-column-configs="ScenariosTableConfig.TABLE_COLUMNS"
+      :table-column-configs="SCENARIO_TABLE_COLUMNS"
       :total-elements="totalElements"
       :page-size="pageSize"
       :current-page-index="currentPageIndex"
@@ -10,7 +10,6 @@
       :selected-row-keys="selectedRowKeys"
       :all-data-source-included="true"
       rowKey="name"
-      row-class="group"
       @page-change="handlePaginationChange"
       @selection-change="handleSelectionChange"
       @refresh="handleRefreshBtnClick"
@@ -22,7 +21,7 @@
     </template>
     <template #actionCell="{ record }">
       <div
-          class="flex items-center cursor-pointer h-8 invisible group-hover:visible"
+          class="flex items-center cursor-pointer h-8 relative"
           @click="handleConfigureBtnClick(record as ScenarioSummary)"
       >
         <BaseTooltip text="Configure">
@@ -31,6 +30,20 @@
               class="text-2xl text-gray-600 dark:text-gray-100 hover:text-primary-500"
           />
         </BaseTooltip>
+        <div v-if="selectedRowKeys.includes(record.name)"  class="absolute top-0 left-4">
+          <div v-if="!scenarioConfig[record.name]">
+            <BaseIcon
+              icon="qls-icon-error-fill"
+              class="text-base text-gray-400"
+            />
+          </div>
+          <div v-else>
+            <BaseIcon
+              icon="qls-icon-check-fill"
+              class="text-base text-green-500"
+            />
+          </div>
+        </div>
       </div>
     </template>
   </BaseTable>
@@ -55,7 +68,7 @@ const {fetchScenarios} = useScenarioApi();
 const toastStore = useToastStore();
 const scenarioTableStore = useScenarioTableStore();
 
-const {selectedRowKeys, dataSource, totalElements, pageSize, currentPageIndex} = storeToRefs(scenarioTableStore);
+const {selectedRowKeys, dataSource, totalElements, pageSize, currentPageIndex, scenarioConfig} = storeToRefs(scenarioTableStore);
 
 let selectedScenarioSummary: ScenarioSummary;
 
@@ -114,11 +127,17 @@ const handleConfigureBtnClick = (scenarioSummary: ScenarioSummary) => {
 const handleScenarioConfigFormSubmit = (form: ScenarioConfigurationForm) => {
   scenarioTableStore.scenarioConfig[selectedScenarioSummary!.name] = form;
   if (!scenarioTableStore.selectedRows.some(r => r.name === selectedScenarioSummary!.name)) {
-    scenarioTableStore.selectedRows.push(selectedScenarioSummary)
+    scenarioTableStore.selectedRows = [
+      ...scenarioTableStore.selectedRows,
+      selectedScenarioSummary
+    ]
   }
 
   if (!scenarioTableStore.selectedRowKeys.some(rowKey => rowKey === selectedScenarioSummary!.name)) {
-    scenarioTableStore.selectedRowKeys.push(selectedScenarioSummary.name)
+    scenarioTableStore.selectedRowKeys = [
+      ...scenarioTableStore.selectedRowKeys,
+      selectedScenarioSummary.name
+    ]
   }
 }
 

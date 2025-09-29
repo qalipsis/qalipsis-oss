@@ -253,13 +253,13 @@ const activeSorterKey = ref('')
 const activeSorterDirection = ref<'' | SortingDirection>('')
 
 watch(
-    () => props.dataSource,
+    () => [props.dataSource, props.selectedRowKeys],
     () => {
+      allSelectedRowKeys.value = props.selectedRowKeys ? [...props.selectedRowKeys] : []
       currentPageSelectedRowKeys.value = props.dataSource
           .map((rowKey) => rowKey[props.rowKey])
           .filter((rowKey) => allSelectedRowKeys.value.includes(rowKey) || props.selectedRowKeys?.includes(rowKey))
       rowAllSelectionChecked.value = currentPageSelectedRowKeys.value.length === props.dataSource.length
-      allSelectedRowKeys.value = props.selectedRowKeys ? [...props.selectedRowKeys] : []
       _updateDisplayRows()
       _updateCachedRows()
     }

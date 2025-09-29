@@ -1,51 +1,42 @@
 <template>
   <div class="grid grid-cols-12 gap-2 mb-2">
-    <div class="col-span-2">
+    <div class="col-span-4">
       <FormInput
-          label="Minions"
-          suffix="qty"
-          :form-control-name="`executionProfileStages[${index}].minionsCount`"
-          :field-validation-schema="executionProfileSchema.minionsCount"
-          @input="emit('executionProfileChange', fields[index].value)"
+        label="Minions"
+        suffix="qty"
+        :form-control-name="`executionProfileStages[${index}].minionsCount`"
+        :field-validation-schema="executionProfileSchema.minionsCount"
+        @input="emit('executionProfileChange', fields[index].value)"
       />
     </div>
-    <div class="col-span-3">
+    <div class="col-span-4">
       <FormInput
-          label="Duration"
-          suffix="ms"
-          :form-control-name="`executionProfileStages[${index}].duration`"
-          :field-validation-schema="executionProfileSchema.duration"
-          @input="handleDurationInputChange"
-      />
-    </div>
-    <div class="col-span-3">
-      <FormInput
-          label="Start"
-          suffix="ms"
-          :form-control-name="`executionProfileStages[${index}].startDuration`"
-          :field-validation-schema="executionProfileSchema.startDuration"
-          @input="handleStartDurationInputChange"
+        label="Duration"
+        suffix="ms"
+        :form-control-name="`executionProfileStages[${index}].duration`"
+        :field-validation-schema="executionProfileSchema.duration"
+        @input="emit('executionProfileChange', fields[index].value)"
       />
     </div>
     <div class="col-span-4">
       <div class="flex items-center">
         <div class="flex-grow">
           <FormInput
-              label="Start resolution"
-              suffix="ms"
-              :form-control-name="`executionProfileStages[${index}].resolution`"
-              :field-validation-schema="executionProfileSchema.resolution"
-              @input="emit('executionProfileChange', fields[index].value)"
+            label="Start"
+            suffix="ms"
+            :form-control-name="`executionProfileStages[${index}].startDuration`"
+            :field-validation-schema="executionProfileSchema.startDuration"
+            @input="emit('executionProfileChange', fields[index].value)"
           />
         </div>
         <div
-            v-if="!deleteHidden"
-            class="flex-shrink-0 flex items-center pt-8 px-2 cursor-pointer hover:text-primary-500 text-gray-600"
-            @click="handleDeleteBtnClick"
+          v-if="!deleteHidden"
+          class="flex-shrink-0 flex items-center pt-8 px-2 cursor-pointer hover:text-primary-500 text-gray-600"
+          @click="handleDeleteBtnClick"
         >
           <BaseIcon
-              class="text-xl"
-              icon="qls-icon-delete"
+            class="text-xl"
+            icon="qls-icon-delete"
           />
         </div>
       </div>
@@ -54,8 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import {toTypedSchema} from '@vee-validate/zod'
-import {useFieldArray} from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+import { useFieldArray } from 'vee-validate'
 import * as zod from 'zod'
 
 const props = defineProps<{
@@ -69,28 +60,22 @@ const emit = defineEmits<{
 
 const invalidNumberErrorMessage = 'You must specify a number'
 
-const {remove, fields} = useFieldArray<ExecutionProfileStage>('executionProfileStages')
+const { remove, fields } = useFieldArray<ExecutionProfileStage>('executionProfileStages')
 
 const stageValidation = computed(() => {
   return {
     ...props.configuration.validation.stage,
     maxDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
-        props.configuration.validation.stage.maxDuration
+      props.configuration.validation.stage.maxDuration
     ),
     minDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
-        props.configuration.validation.stage.minDuration
+      props.configuration.validation.stage.minDuration
     ),
     maxStartDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
-        props.configuration.validation.stage.maxStartDuration
+      props.configuration.validation.stage.maxStartDuration
     ),
     minStartDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
-        props.configuration.validation.stage.minStartDuration
-    ),
-    maxResolutionInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
-        props.configuration.validation.stage.maxResolution
-    ),
-    minResolutionInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
-        props.configuration.validation.stage.minResolution
+      props.configuration.validation.stage.minStartDuration
     ),
   }
 })
@@ -100,35 +85,24 @@ const {
   minMinionsCount,
   maxDurationInMilliSeconds,
   minDurationInMilliSeconds,
-  maxResolutionInMilliSeconds,
-  minResolutionInMilliSeconds,
   maxStartDurationInMilliSeconds,
   minStartDurationInMilliSeconds,
 } = stageValidation.value
 
 const _getNumberValidationSchema = (min: number, max: number) => {
   return zod.coerce
-      .number({invalid_type_error: invalidNumberErrorMessage})
-      .min(min)
-      .max(max, `Value must be between ${min} and ${max}.`)
-      .nullable()
+    .number({ invalid_type_error: invalidNumberErrorMessage })
+    .min(min)
+    .max(max, `Value must be between ${min} and ${max}.`)
+    .nullable()
 }
 
 const executionProfileSchema = {
   minionsCount: toTypedSchema(_getNumberValidationSchema(minMinionsCount, maxMinionsCount)),
   duration: toTypedSchema(_getNumberValidationSchema(minDurationInMilliSeconds, maxDurationInMilliSeconds)),
   startDuration: toTypedSchema(
-      _getNumberValidationSchema(minStartDurationInMilliSeconds, maxStartDurationInMilliSeconds)
+    _getNumberValidationSchema(minStartDurationInMilliSeconds, maxStartDurationInMilliSeconds)
   ),
-  resolution: toTypedSchema(_getNumberValidationSchema(minResolutionInMilliSeconds, maxResolutionInMilliSeconds)),
-}
-
-const handleDurationInputChange = () => {
-  emit('executionProfileChange', fields.value[props.index].value)
-}
-
-const handleStartDurationInputChange = () => {
-  emit('executionProfileChange', fields.value[props.index].value)
 }
 
 const handleDeleteBtnClick = () => {

@@ -6,7 +6,7 @@ export {ColorsConfig} from "./configs/colors.config";
 export {ReportDetailsConfig} from "./configs/report-details.config";
 export {ReportsTableConfig} from "./configs/reports-table.config";
 export {ScenarioDetailsConfig} from "./configs/scenario-details.config";
-export {ScenariosTableConfig} from "./configs/scenarios-table.config";
+export { SCENARIO_TABLE_COLUMNS } from "./configs/scenarios-table.config";
 export {SeriesDetailsConfig} from "./configs/series-details.config";
 export {SeriesTableConfig} from "./configs/series-table.config";
 export {ToastConfig} from "./configs/toast.config";
