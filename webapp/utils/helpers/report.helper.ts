@@ -95,6 +95,16 @@ export class ReportHelper {
         // Sets the x-axis config type to be numeric
         chartOptions.xaxis!.type = 'numeric';
         chartOptions.xaxis!.tooltip!.enabled = false;
+        chartOptions.xaxis!.labels!.formatter = (value) => {
+            const sec = Number(value);
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+
+            return [h, m, s]
+            .map(v => v < 10 ? "0" + v : v)
+            .join(":");
+        }
 
         // Prepare the data series
         aggregations.forEach(([key, values]) => {
