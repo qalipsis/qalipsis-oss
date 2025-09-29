@@ -37,20 +37,22 @@ export const useCampaignDetailsStore = defineStore("CampaignDetails", {
             if (!this.campaignDetails) return;
 
             // Prepares the query params.
-            const queryParams: TimeSeriesAggregationQueryParam = {
-                campaigns: this.campaignDetails.key,
-                // Note: always add the minions count reference in the query params.
-                series: [SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE, ...this.selectedDataSeriesReferences].join(','),
-                scenarios: this.selectedScenarioNames.join(','),
+            const queryParams: TimeSeriesAggregationQueryParam = AggregationDataHelper.getTimeSeriesAggregationQueryParam({
+                campaigns: [this.campaignDetails.key],
+                series: this.selectedDataSeriesReferences,
+                selectedScenarios: this.selectedScenarioNames,
+                availableScenarios: this.campaignDetails.scenarios
+                    ? this.campaignDetails.scenarios.map(scenario => scenario.name)
+                    : [],
                 from: this.campaignDetails.start,
-            }
-            if (this.campaignDetails.end) {
-                queryParams.until = this.campaignDetails.end;
-            }
+                until: this.campaignDetails.end
+            })
+
             // Fetches the data from the time series service.
             this.isLoadingChart = true;
             const {fetchTimeSeriesAggregation} = useTimeSeriesApi();
             const aggregationResult = await fetchTimeSeriesAggregation(queryParams);
+
             // Converts the aggregation result to the chart data.
             const chartData = CampaignHelper.toChartData(aggregationResult, this.selectedDataSeries, this.campaignDetails);
 

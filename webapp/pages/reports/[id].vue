@@ -23,7 +23,6 @@ const {fetchMultipleCampaignsDetails} = useCampaignApi();
 const {fetchAllDataSeries, storeAllDataSeriesToCache} = useDataSeriesApi();
 
 const route = useRoute();
-const userStore = useUserStore();
 const toastStore = useToastStore();
 const reportDetailsStore = useReportDetailsStore();
 const isReady = ref(false);

@@ -13,6 +13,7 @@ export {ToastConfig} from "./configs/toast.config";
 export {ThemeConfig} from "./configs/theme.config"
 
 // Helpers
+export {AggregationDataHelper} from "./helpers/aggregation-data.helper";
 export {CampaignHelper} from "./helpers/campaign.helper";
 export {ChartHelper} from "./helpers/chart.helper";
 export {ColorHelper} from "./helpers/color.helper";

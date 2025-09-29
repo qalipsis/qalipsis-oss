@@ -65,14 +65,13 @@ const handleSelectedDataSeriesChange = (dataSeriesOptions: DataSeriesOption[]) =
 }
 
 const _updateTableData = async (dataSeriesOptions: DataSeriesOption[]) => {
-  const selectedDataSeriesReferences = dataSeriesOptions.map(dataSeriesOption => dataSeriesOption.reference);
-  // Note: always add the minions count data series reference for querying the time series data
-  const seriesReferences = [SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE, ...selectedDataSeriesReferences].join(",");
-  const queryParam: TimeSeriesAggregationQueryParam = {
-    series: seriesReferences,
-    scenarios: reportDetailsStore.selectedScenarioNames.join(','),
-    campaigns: reportDetailsStore.activeCampaignOptions.map(campaignOption => campaignOption.key).join(',')
-  }
+  const queryParam: TimeSeriesAggregationQueryParam = AggregationDataHelper.getTimeSeriesAggregationQueryParam({
+    series: dataSeriesOptions.map(dataSeriesOption => dataSeriesOption.reference),
+    campaigns: reportDetailsStore.activeCampaignOptions.map(campaignOption => campaignOption.key),
+    selectedScenarios: reportDetailsStore.selectedScenarioNames,
+    availableScenarios: reportDetailsStore.scenarioNames
+  })
+
   try {
     const timeSeriesAggregationResult = await fetchTimeSeriesAggregation(queryParam);
     tableData.value = ReportHelper.toReportDetailsTableData(timeSeriesAggregationResult, dataSeriesOptions, reportDetailsStore.activeCampaignOptions);
