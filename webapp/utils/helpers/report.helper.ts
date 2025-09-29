@@ -126,7 +126,7 @@ export class ReportHelper {
                     name: `${chartOptionData.dataSeriesName}{${campaignName}}`,
                     data: campaignSeriesValues.map(v => ({
                         meta: new Date(v.start).getTime(),
-                        x: v.elapsed,
+                        x: TimeframeHelper.isoStringToTargetTimeframeUnit(v.elapsed, 'SEC'),
                         y: chartOptionData.isDurationNanoField ? (v.value / 1_000_000).toFixed(6) : (v.value).toFixed(chartOptionData.decimal)
                     })),
                     color: chartOptionData.dataSeriesColor
@@ -182,7 +182,7 @@ export class ReportHelper {
                             campaignKey: res.campaign,
                             campaignName: campaignKeyToName[res.campaign],
                             startTime: res.start,
-                            elapsed: res.elapsed,
+                            elapsed: TimeframeHelper.isoStringToTargetTimeframeUnit(res.elapsed, 'SEC'),
                             elapsedText: `${res.elapsed} s`,
                             value: res.value,
                             startTimeText: TimeframeHelper.toSpecificFormat(new Date(res.start), 'dd/MM/yyyy, HH:mm:ss'),

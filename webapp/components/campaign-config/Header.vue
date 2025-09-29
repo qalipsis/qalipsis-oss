@@ -126,9 +126,9 @@ const handleRunBtnClick = async () => {
         executionProfileStages: [
           {
             minionsCount: defaultStage.minMinionsCount,
-            duration: TimeframeHelper.isoStringToMilliseconds(defaultStage.minDuration),
-            startDuration: TimeframeHelper.isoStringToMilliseconds(defaultStage.minStartDuration),
-            resolution: TimeframeHelper.isoStringToMilliseconds(defaultStage.minResolution),
+            duration: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minDuration),
+            startDuration: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minStartDuration),
+            resolution: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minResolution),
           },
         ],
         zones: [],

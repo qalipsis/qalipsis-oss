@@ -29,6 +29,7 @@ export interface ChartOptionData {
      * A flag to indicate if the field from the data series is duration nano field
      */
     isDurationNanoField: boolean;
+
     /**
      * A flag to indicate if the data series is minion count
      */
