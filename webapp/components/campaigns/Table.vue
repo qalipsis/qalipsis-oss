@@ -93,7 +93,7 @@
         :closable="true"
         @confirmBtnClick="handleConfirmAbortBtnClick"
     >
-      <span>{{ campaignAbortModalContent }}</span>
+      <span>Are you sure you want to cancel this scheduled campaign? This will cancel all future executions.</span>
     </BaseModal>
   </div>
 </template>
@@ -118,7 +118,6 @@ const {fetchCampaignConfig, createCampaign, abortCampaign} = useCampaignApi()
 const selectedRowKeys = computed(() => campaignsTableStore.selectedRowKeys)
 
 const campaignAbortModalOpen = ref(false)
-const campaignAbortModalContent = ref('')
 
 let selectedCampaignTableData: CampaignTableData
 
@@ -179,7 +178,6 @@ const handleRefreshBtnClick = () => {
 
 const handleAbortBtnClick = (campaignTableData: CampaignTableData) => {
   selectedCampaignTableData = campaignTableData
-  campaignAbortModalContent.value = `Do you want to abort the scheduled campaign "${campaignTableData.name}"?`
   campaignAbortModalOpen.value = true
 }
 

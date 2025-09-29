@@ -37,17 +37,17 @@
       :open="campaignStopModalOpen"
       :closable="true"
       @close="campaignStopModalOpen = false">
-    <span>How do you want to interrupt the running campaign?</span>
+    <span>Do you really want to abort this campaign? This will cause all running scenarios to fail.</span>
     <template #customFooter>
       <div class="flex items-center justify-around">
         <BaseButton
             btn-style="outlined"
             text="Soft"
-            @click="handleSoftStopButtonClick"
+            @click="campaignStopModalOpen = false"
         />
         <BaseButton
-            text="Hard"
-            @click="handleHardStopButtonClick"
+            text="Abort"
+            @click="handleAbortButtonClick"
         />
       </div>
     </template>
@@ -164,11 +164,7 @@ const handleZoom = (_: any, {xaxis}: any) => {
   })
 }
 
-const handleSoftStopButtonClick = () => {
-  _stopCampaign(false);
-}
-
-const handleHardStopButtonClick = () => {
+const handleAbortButtonClick = () => {
   _stopCampaign(true);
 }
 
