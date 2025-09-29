@@ -74,22 +74,22 @@ const {remove, fields} = useFieldArray<ExecutionProfileStage>('executionProfileS
 const stageValidation = computed(() => {
   return {
     ...props.configuration.validation.stage,
-    maxDurationInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+    maxDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
         props.configuration.validation.stage.maxDuration
     ),
-    minDurationInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+    minDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
         props.configuration.validation.stage.minDuration
     ),
-    maxStartDurationInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+    maxStartDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
         props.configuration.validation.stage.maxStartDuration
     ),
-    minStartDurationInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+    minStartDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
         props.configuration.validation.stage.minStartDuration
     ),
-    maxResolutionInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+    maxResolutionInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
         props.configuration.validation.stage.maxResolution
     ),
-    minResolutionInMilliSeconds: TimeframeHelper.isoStringToMilliseconds(
+    minResolutionInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
         props.configuration.validation.stage.minResolution
     ),
   }

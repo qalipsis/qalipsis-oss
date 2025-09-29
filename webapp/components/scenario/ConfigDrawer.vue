@@ -120,7 +120,7 @@ const emit = defineEmits<{
 
 const title = computed(() => `Configuration of ${props.scenario.name}`)
 const maxDurationInMilliSeconds = computed(() =>
-    TimeframeHelper.isoStringToMilliseconds(props.configuration.validation.maxExecutionDuration)
+    TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.maxExecutionDuration)
 )
 
 const zoneOptions = ref<FormMenuOption[]>([])
@@ -140,9 +140,9 @@ const {handleSubmit, values, meta, validate} = useForm<ScenarioConfigurationForm
     executionProfileStages: props.scenarioForm?.executionProfileStages ?? [
       {
         minionsCount: props.configuration.validation.stage.minMinionsCount,
-        duration: TimeframeHelper.isoStringToMilliseconds(props.configuration.validation.stage.minDuration),
-        startDuration: TimeframeHelper.isoStringToMilliseconds(props.configuration.validation.stage.minStartDuration),
-        resolution: TimeframeHelper.isoStringToMilliseconds(props.configuration.validation.stage.minResolution),
+        duration: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minDuration),
+        startDuration: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minStartDuration),
+        resolution: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minResolution),
       },
     ],
     zones: props.scenarioForm?.zones ?? [],
@@ -158,9 +158,9 @@ onMounted(() => {
   const initialExecutionProfiles: ExecutionProfileStage[] = props.scenarioForm?.executionProfileStages ?? [
     {
       minionsCount: props.configuration.validation.stage.minMinionsCount,
-      duration: TimeframeHelper.isoStringToMilliseconds(props.configuration.validation.stage.minDuration),
-      startDuration: TimeframeHelper.isoStringToMilliseconds(props.configuration.validation.stage.minStartDuration),
-      resolution: TimeframeHelper.isoStringToMilliseconds(props.configuration.validation.stage.minResolution),
+      duration: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minDuration),
+      startDuration: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minStartDuration),
+      resolution: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minResolution),
     },
   ]
   _setScenarioConfigChartDataSeries(initialExecutionProfiles)
@@ -205,9 +205,9 @@ const handleExecutionProfileChange = (executionProfileStage: ExecutionProfileSta
 const handleAddExecutionProfileBtnClick = () => {
   pushExecutionProfile({
     minionsCount: props.configuration.validation.stage.minMinionsCount,
-    duration: TimeframeHelper.isoStringToMilliseconds(props.configuration.validation.stage.minDuration),
-    startDuration: TimeframeHelper.isoStringToMilliseconds(props.configuration.validation.stage.minStartDuration),
-    resolution: TimeframeHelper.isoStringToMilliseconds(props.configuration.validation.stage.minResolution),
+    duration: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minDuration),
+    startDuration: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minStartDuration),
+    resolution: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minResolution),
   })
   _setScenarioConfigChartDataSeries(values.executionProfileStages)
   // Validates the summary of minions
