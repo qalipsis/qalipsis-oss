@@ -225,7 +225,7 @@ fun Project.configureNotPlatform() {
             }
         }
 
-        if (!project.file("src/main/kotlin").isDirectory) {
+        if (!project.file("src/main/kotlin").isDirectory && project.name != "qalipsis-webapp") {
             project.logger.lifecycle("Disabling publish for ${project.name}")
             withType<AbstractPublishToMaven> {
                 enabled = false

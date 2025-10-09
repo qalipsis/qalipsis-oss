@@ -23,20 +23,11 @@ plugins {
 }
 
 description = "QALIPSIS Web OSS"
-version = File(rootDir, "project.version").readText().trim().lowercase()
 
 node {
     version = "20.11.0"
     yarnVersion = "1.22.19"
     download = true
-}
-
-sourceSets {
-    main {
-        resources {
-            //srcDir(".output/")
-        }
-    }
 }
 
 tasks {
