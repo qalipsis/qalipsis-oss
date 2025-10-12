@@ -205,7 +205,8 @@ export interface CampaignOption extends CampaignExecutionDetails {
 
 export const TimeoutTypeConstant = {
     SOFT: 'soft',
-    HARD: 'hard'
+    HARD: 'hard',
+    NONE: 'none'
 } as const
 
 export type TimeoutType = typeof TimeoutTypeConstant[keyof typeof TimeoutTypeConstant];
