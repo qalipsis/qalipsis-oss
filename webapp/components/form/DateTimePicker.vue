@@ -15,6 +15,7 @@
         :min-date="minDate"
         :clearable="false"
         @update:model-value="handleDate"
+        :alt-position="customPosition"
         time-picker-inline
     />
     <FormErrorMessage :errorMessage="errorMessage"/>
@@ -25,6 +26,8 @@
 import VueDatePicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import {type TypedSchema, useField} from 'vee-validate'
+
+const customPosition = (_: any) => ({ top: 0, left: 0 });
 
 const props = defineProps<{
   label: string

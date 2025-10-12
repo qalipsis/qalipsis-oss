@@ -3,6 +3,10 @@ import {TimeoutTypeConstant} from '../types/campaign';
 export class CampaignDetailsConfig {
     static CAMPAIGN_TIMEOUT_OPTIONS = [
         {
+            label: "None",
+            value: TimeoutTypeConstant.NONE,
+        },
+        {
             label: "Soft Timeout",
             value: TimeoutTypeConstant.SOFT,
         },

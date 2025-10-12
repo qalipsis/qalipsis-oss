@@ -5,7 +5,7 @@
         <BaseIcon
           icon="qls-icon-arrow-back"
           class="cursor-pointer pl-1 pr-5 hover:text-primary-500 text-2xl"
-          @click="navigateTo('/campaigns')"
+          @click="handleBackBtnClick"
         />
         <BaseTitle
           v-model:content="campaignName"
@@ -79,9 +79,9 @@ const props = defineProps<{
 const { createCampaign, scheduleCampaign, updateCampaignConfig } = useCampaignApi()
 
 const campaignConfigForm = ref<CampaignConfigurationForm>({
-  timeoutType: props.campaignConfigForm?.timeoutType ?? TimeoutTypeConstant.SOFT,
+  timeoutType: props.campaignConfigForm?.timeoutType ?? TimeoutTypeConstant.NONE,
   durationValue: props.campaignConfigForm?.durationValue ?? '',
-  durationUnit: props.campaignConfigForm?.durationUnit ?? 'MS',
+  durationUnit: props.campaignConfigForm?.durationUnit ?? TimeframeUnitConstant.MS,
   scheduled: props.campaignConfigForm?.scheduled ?? false,
   repeatEnabled: props.campaignConfigForm?.repeatEnabled ?? false,
   repeatTimeRange: props.campaignConfigForm?.repeatTimeRange ?? 'DAILY',
@@ -104,6 +104,10 @@ const executionText = computed(() => {
 const executionButtonDisabled = computed(() => {
   return selectedRowKeys.value.length === 0 || selectedRowKeys.value.some(selectedRowKey => !scenarioConfig.value[selectedRowKey])
 })
+
+const handleBackBtnClick = () => {
+  navigateTo('/campaigns')
+}
 
 const handleSearch = (searchTerm: string) => {
   scenarioTaleStore.$patch({
