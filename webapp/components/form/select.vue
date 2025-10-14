@@ -57,6 +57,7 @@
                   readonly
                   type="text"
                   class="cursor-pointer"
+                  autocomplete="off" 
                   :class="TailwindClassHelper.formInputClass"
                   :value="selectedOptionLabel"
                   :placeholder="placeholder"

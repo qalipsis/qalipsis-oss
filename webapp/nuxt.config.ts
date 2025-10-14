@@ -51,6 +51,7 @@ export default defineNuxtConfig({
     runtimeConfig: {
         // Public keys that are exposed to the client
         public: {
+            projectName: 'webapp-oss',
             apiBaseUrl: process.env.API_BASE_URL || 'localhost:3000',
         }
     },

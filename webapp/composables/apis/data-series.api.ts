@@ -106,8 +106,10 @@ export const useDataSeriesApi = () => {
      * @param dataType The data type.
      * @returns The available value names.
      */
-    const fetchValueNames = (dataType: DataType): Promise<string[]> => {
-        return get$<string[], unknown>(`/data-series/${dataType}/names`)
+    const fetchValueNames = (dataType: DataType, query?: string): Promise<string[]> => {
+        const requestUrl = `/data-series/${dataType}/names${query ? `?filter=${query}&size=20` : ''}`
+
+        return get$<string[], unknown>(requestUrl)
     }
 
     /**

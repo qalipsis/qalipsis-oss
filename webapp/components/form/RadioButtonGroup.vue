@@ -13,6 +13,7 @@
       <FormRadioButton
           :value="option.value"
           :label="option.label"
+          :disabled="disabled"
           v-model="value"
           @update:modelValue="emit('change', value)"
       >

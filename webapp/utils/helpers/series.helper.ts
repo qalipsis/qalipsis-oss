@@ -64,14 +64,17 @@ export class SeriesHelper {
     }
 
     static toDataSeriesTableData(dataSeries: DataSeries[], userName: string): DataSeriesTableData[] {
-        return dataSeries.map<DataSeriesTableData>((el) => ({
-            ...el,
-            key: el.reference,
-            sharedText: SeriesHelper.sharingModeToText[el.sharingMode!],
-            filterNames: el.filters?.map((filter) => filter.name),
-            formattedTimeframe: TimeframeHelper.toFormattedTimeframe(el.timeframeUnit),
-            disabled: el.creator !== userName && el.sharingMode === SharingModeConstant.READONLY,
-        }))
+        return dataSeries.map<DataSeriesTableData>((el) => {
+
+            return {
+                ...el,
+                key: el.reference,
+                sharedText: SeriesHelper.sharingModeToText[el.sharingMode!],
+                filterNames: el.filters?.map((filter) => filter.name),
+                formattedTimeframe: TimeframeHelper.toFormattedTimeframe(el.timeframeUnit),
+                disabled: el.creator !== userName && el.sharingMode === SharingModeConstant.READONLY,
+            }
+        })
     }
 
     static getFilterOperatorOptions(): FormMenuOption[] {
