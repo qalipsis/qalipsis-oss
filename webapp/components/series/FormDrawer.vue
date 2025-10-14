@@ -1,161 +1,149 @@
 <template>
   <BaseDrawer
-      :open="open"
-      :title="title"
-      :width="800"
-      :confirm-btn-disabled="
-      dataSeries?.disabled || Object.keys(errors).length > 0
-    "
-      :confirm-btn-text="confirmBtnText"
-      @close="emit('update:open', false)"
-      @confirm-btn-click="handleConfirmBtnClick"
+    :open="open"
+    :title="title"
+    :width="800"
+    :confirm-btn-disabled="dataSeries?.disabled || Object.keys(errors).length > 0"
+    :confirm-btn-text="confirmBtnText"
+    @close="emit('update:open', false)"
+    @confirm-btn-click="handleConfirmBtnClick"
   >
     <form class="p-2">
-      <div class="grid grid-cols-12 gap-2">
+      <div class="grid grid-cols-12 gap-x-2 gap-y-5">
         <div class="col-span-12">
           <FormInput
-              label="Name"
-              form-control-name="name"
-              :field-validation-schema="fieldValidationSchema.name"
-              :disabled="dataSeries?.disabled"
+            label="Name"
+            form-control-name="name"
+            :field-validation-schema="fieldValidationSchema.name"
+            :disabled="dataSeries?.disabled"
           />
         </div>
-        <div class="col-span-12">
+        <div class="col-span-12" v-if="config.public.projectName !== WEBAPP_OSS_PROJECT_NAME">
           <FormSelect
-              label="Sharing mode"
-              form-control-name="sharingMode"
-              :field-validation-schema="fieldValidationSchema.sharingMode"
-              :options="sharingModeOptions"
-              :disabled="dataSeries?.disabled"
+            label="Sharing mode"
+            form-control-name="sharingMode"
+            :field-validation-schema="fieldValidationSchema.sharingMode"
+            :options="sharingModeOptions"
+            :disabled="dataSeries?.disabled"
           />
         </div>
-        <div class="col-span-4">
+        <div class="col-span-6">
           <FormRadioButtonGroup
-              label="Time series type"
-              form-control-name="dataType"
-              :options="dataTypeOptions"
-              :disabled="dataTypeOptionDisabled || dataSeries?.disabled"
-              @change="handleDataTypeChange"
+            label="Time series type"
+            form-control-name="dataType"
+            :options="dataTypeOptions"
+            :disabled="dataTypeOptionDisabled || dataSeries?.disabled"
+            @change="handleDataTypeChange"
           />
         </div>
-        <div class="col-span-8">
+        <div class="col-span-6">
           <FormAutoComplete
-              v-if="hasValueNameFetched"
-              form-control-name="valueName"
-              :label="valueNameLabel"
-              :options="valueNameOptions"
-              :disabled="dataSeries?.disabled"
-              :field-validation-schema="fieldValidationSchema.valueName"
+            v-if="hasValueNameFetched"
+            form-control-name="valueName"
+            :customSearchEnabled="true"
+            :label="valueNameLabel"
+            :options="valueNameOptions"
+            :disabled="dataSeries?.disabled"
+            :field-validation-schema="fieldValidationSchema.valueName"
+            @search="handleFieldNameSearch($event)"
           />
           <BaseSpinner v-else></BaseSpinner>
         </div>
-        <div class="col-span-4">
-          <FormAutoComplete
-              v-if="hasFieldNameFetched"
-              label="Field"
-              form-control-name="fieldName"
-              :options="fieldNameOptions"
-              :disabled="dataSeries?.disabled"
-              :field-validation-schema="fieldValidationSchema.fieldName"
-              @change="handleFieldNameChange($event)"
-          />
-          <BaseSpinner v-else></BaseSpinner>
-        </div>
-        <div class="col-span-4">
+        <div class="col-span-6">
           <FormSelect
-              label="Aggregation"
-              form-control-name="aggregationOperation"
-              :options="aggregationOperatorOptions"
-              :disabled="
-              aggregationOperationFieldDisabled || dataSeries?.disabled
-            "
-              :field-validation-schema="
-              fieldValidationSchema.aggregationOperation
-            "
+            v-if="hasFieldNameFetched"
+            label="Field"
+            form-control-name="fieldName"
+            :options="fieldNameOptions"
+            :disabled="dataSeries?.disabled"
+            :field-validation-schema="fieldValidationSchema.fieldName"
+            @change="handleFieldNameChange($event)"
+          />
+          <BaseSpinner v-else></BaseSpinner>
+        </div>
+        <div class="col-span-6">
+          <FormSelect
+            label="Aggregation"
+            form-control-name="aggregationOperation"
+            :options="aggregationOperatorOptions"
+            :disabled="aggregationOperationFieldDisabled || dataSeries?.disabled"
+            :field-validation-schema="fieldValidationSchema.aggregationOperation"
           />
         </div>
-        <div class="col-span-4">
+        <div class="col-span-4 hidden">
           <FormInputSelect
-              label="Timeframe"
-              form-input-control-name="timeframeValue"
-              form-select-control-name="timeframeUnit"
-              :input-field-validation-schema="
-              fieldValidationSchema.timeframeValue
-            "
-              :select-field-validation-schema="
-              fieldValidationSchema.timeframeUnit
-            "
-              :options="timeframeUnitOptions"
-              :input-disabled="dataSeries?.disabled"
-              :select-disabled="dataSeries?.disabled"
+            label="Timeframe"
+            form-input-control-name="timeframeValue"
+            form-select-control-name="timeframeUnit"
+            :input-field-validation-schema="fieldValidationSchema.timeframeValue"
+            :select-field-validation-schema="fieldValidationSchema.timeframeUnit"
+            :options="timeframeUnitOptions"
+            :input-disabled="dataSeries?.disabled"
+            :select-disabled="dataSeries?.disabled"
           />
         </div>
         <div class="col-span-2">
-          <FormLabel text="Color"/>
+          <FormLabel text="Color" />
           <div class="relative">
-            <div
-                :class="
-                dataSeries?.disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-              "
-            >
+            <div :class="dataSeries?.disabled ? 'cursor-not-allowed' : 'cursor-pointer'">
               <div
-                  class="h-10 rounded-md"
-                  :class="{ 'pointer-events-none': dataSeries?.disabled }"
-                  :style="{ backgroundColor: enrichedColorHexCode }"
-                  @click="handleColorBtnClick"
+                class="h-10 rounded-md"
+                :class="{ 'pointer-events-none': dataSeries?.disabled }"
+                :style="{ backgroundColor: enrichedColorHexCode }"
+                @click="handleColorBtnClick"
               ></div>
             </div>
             <div class="absolute z-10">
               <BaseColorPicker
-                  v-model:open="colorPickerOpen"
-                  v-model:hexCodeValue="enrichedColorHexCode"
-                  :disabled="dataSeries?.disabled"
-                  @change="handleColorChange($event)"
+                v-model:open="colorPickerOpen"
+                v-model:hexCodeValue="enrichedColorHexCode"
+                :disabled="dataSeries?.disabled"
+                @change="handleColorChange($event)"
               />
             </div>
           </div>
         </div>
         <div class="col-span-2">
           <FormInput
-              label="Hex"
-              form-control-name="color"
-              :disabled="dataSeries?.disabled"
-              :field-validation-schema="fieldValidationSchema.color"
-              @input="handleColorInput"
+            label="Hex"
+            form-control-name="color"
+            :disabled="dataSeries?.disabled"
+            :field-validation-schema="fieldValidationSchema.color"
+            @input="handleColorInput"
           />
         </div>
         <div class="col-span-2">
           <FormInput
-              label="Opacity"
-              form-control-name="colorOpacity"
-              :disabled="dataSeries?.disabled"
-              :field-validation-schema="fieldValidationSchema.colorOpacity"
-              @input="handleColorInput"
+            label="Opacity"
+            form-control-name="colorOpacity"
+            :disabled="dataSeries?.disabled"
+            :field-validation-schema="fieldValidationSchema.colorOpacity"
+            @input="handleColorInput"
           />
         </div>
         <div class="col-span-12 my-2">
-          <BaseDivideLine/>
+          <BaseDivideLine />
         </div>
         <div class="col-span-12">
           <template v-if="hasTagFetched">
             <SeriesFormFilter
-                v-for="(field, index) in fields"
-                :key="field.key"
-                :index="index"
-                :tagMap="tagMap"
-                :disabled="dataSeries?.disabled"
+              v-for="(field, index) in fields"
+              :key="field.key"
+              :index="index"
+              :tagMap="tagMap"
+              :disabled="dataSeries?.disabled"
             />
           </template>
           <BaseSpinner v-else></BaseSpinner>
         </div>
         <div class="col-span-12 mt-2">
           <BaseButton
-              icon="qls-icon-plus"
-              btn-style="outlined"
-              class="w-full"
-              text="Add new filter"
-              @click="handleAddNewFilterBtnClick"
-              :disabled="dataSeries?.disabled"
+            icon="qls-icon-plus"
+            btn-style="outlined"
+            class="w-full"
+            text="Add new filter"
+            @click="handleAddNewFilterBtnClick"
+            :disabled="dataSeries?.disabled"
           />
         </div>
       </div>
@@ -164,214 +152,192 @@
 </template>
 
 <script setup lang="ts">
-import {useFieldArray, useForm} from "vee-validate";
-import {toTypedSchema} from "@vee-validate/zod";
-import * as zod from "zod";
+import { useFieldArray, useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+import * as zod from 'zod'
 
-type Timer = string | number | NodeJS.Timeout | null | undefined;
+type Timer = string | number | NodeJS.Timeout | null | undefined
+
+const WEBAPP_OSS_PROJECT_NAME = 'webapp-oss'
+const config = useRuntimeConfig()
 
 const props = defineProps<{
-  open: boolean;
-  dataSeries?: DataSeriesTableData;
-}>();
+  open: boolean
+  dataSeries?: DataSeriesTableData
+}>()
 const emit = defineEmits<{
-  (e: "dataSeriesUpdated"): void;
-  (e: "update:open", v: boolean): void;
-}>();
+  (e: 'dataSeriesUpdated'): void
+  (e: 'update:open', v: boolean): void
+}>()
 
-const {
-  fetchValueNames,
-  fetchFields,
-  fetchTags,
-  isValidDisplayName,
-  updateDataSeries,
-  createDataSeries,
-} = useDataSeriesApi();
+const { fetchValueNames, fetchFields, fetchTags, isValidDisplayName, updateDataSeries, createDataSeries } =
+  useDataSeriesApi()
 
-const toastStore = useToastStore();
+const toastStore = useToastStore()
 
 const initialFormValue: DataSeriesForm = {
-  name: props.dataSeries?.displayName ?? "",
-  sharingMode: props.dataSeries?.sharingMode ?? null,
+  name: props.dataSeries?.displayName ?? '',
+  sharingMode: props.dataSeries?.sharingMode ?? config.public.projectName === WEBAPP_OSS_PROJECT_NAME ? 'NONE' : null,
   dataType: props.dataSeries?.dataType ?? DataTypeConstant.EVENTS,
-  valueName: props.dataSeries?.valueName ?? "",
-  fieldName: props.dataSeries?.fieldName ?? "",
+  valueName: props.dataSeries?.valueName ?? '',
+  fieldName: props.dataSeries?.fieldName ?? '',
   aggregationOperation: props.dataSeries?.aggregationOperation ?? null,
-  timeframeValue: props.dataSeries?.formattedTimeframe.value ?? null,
-  timeframeUnit:
-      props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnitConstant.MS,
+  timeframeValue: props.dataSeries?.formattedTimeframe.value ?? 5000,
+  timeframeUnit: props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnitConstant.MS,
   color: props.dataSeries?.color ?? ColorsConfig.PRIMARY_COLOR_HEX_CODE,
   colorOpacity: props.dataSeries?.colorOpacity ?? 100,
   filters: props.dataSeries?.filters ?? [],
-};
-const {handleSubmit, setFieldValue, values, errors} = useForm<DataSeriesForm>(
-    {
-      initialValues: {
-        name: props.dataSeries?.displayName ?? "",
-        sharingMode: props.dataSeries?.sharingMode ?? null,
-        dataType: props.dataSeries?.dataType ?? DataTypeConstant.EVENTS,
-        valueName: props.dataSeries?.valueName ?? "",
-        fieldName: props.dataSeries?.fieldName ?? "",
-        aggregationOperation: props.dataSeries?.aggregationOperation ?? null,
-        timeframeValue: props.dataSeries?.formattedTimeframe.value ?? null,
-        timeframeUnit:
-            props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnitConstant.MS,
-        color: props.dataSeries?.color ?? ColorsConfig.PRIMARY_COLOR_HEX_CODE,
-        colorOpacity: props.dataSeries?.colorOpacity ?? 100,
-        filters: props.dataSeries?.filters ?? [],
-      },
-    }
-);
+}
+const { handleSubmit, setFieldValue, values, errors } = useForm<DataSeriesForm>({
+  initialValues: {
+    name: props.dataSeries?.displayName ?? '',
+    sharingMode: props.dataSeries?.sharingMode ?? config.public.projectName === WEBAPP_OSS_PROJECT_NAME ? 'NONE' : null,
+    dataType: props.dataSeries?.dataType ?? DataTypeConstant.EVENTS,
+    valueName: props.dataSeries?.valueName ?? '',
+    fieldName: props.dataSeries?.fieldName ?? '',
+    aggregationOperation: props.dataSeries?.aggregationOperation ?? null,
+    timeframeValue: props.dataSeries?.formattedTimeframe.value ?? 5000,
+    timeframeUnit: props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnitConstant.MS,
+    color: props.dataSeries?.color ?? ColorsConfig.PRIMARY_COLOR_HEX_CODE,
+    colorOpacity: props.dataSeries?.colorOpacity ?? 100,
+    filters: props.dataSeries?.filters ?? [],
+  },
+})
 /**
  * The push function and the fields from the filter field.
  */
-const {push, fields} = useFieldArray<DataSeriesFilter>("filters");
+const { push, fields } = useFieldArray<DataSeriesFilter>('filters')
 
-const requiredErrorMessage = "is required";
-const sharingModeOptions = SeriesHelper.getSharingModeOptions();
-const dataTypeOptions = SeriesHelper.getTimeSeriesTypeOptions();
-const timeframeUnitOptions = TimeframeHelper.getTimeframeUnitOptions();
-const aggregationOperatorOptions = SeriesHelper.getAggregationOperatorOptions();
+const requiredErrorMessage = 'is required'
+const sharingModeOptions = SeriesHelper.getSharingModeOptions()
+const dataTypeOptions = SeriesHelper.getTimeSeriesTypeOptions()
+const timeframeUnitOptions = TimeframeHelper.getTimeframeUnitOptions()
+const aggregationOperatorOptions = SeriesHelper.getAggregationOperatorOptions()
 // @ts-ignore
 const fieldValidationSchema = {
   name: toTypedSchema(
-      zod
-          .string()
-          .nonempty(requiredErrorMessage)
-          .min(3)
-          .max(200)
-          .nullable()
-          .refine(
-              (value: string | null) => {
-                if (nameValidationTimer) clearTimeout(nameValidationTimer);
+    zod
+      .string()
+      .nonempty(requiredErrorMessage)
+      .min(3)
+      .max(200)
+      .nullable()
+      .refine(
+        (value: string | null) => {
+          if (nameValidationTimer) clearTimeout(nameValidationTimer)
 
-                return new Promise((resolve) => {
-                  nameValidationTimer = setTimeout(async () => {
-                    if (value && value.trim() !== props.dataSeries?.displayName) {
-                      const isValid = await isValidDisplayName(value.trim());
-                      resolve(isValid);
-                    }
-
-                    resolve(true);
-                  }, 200);
-                });
-              },
-              {
-                message: "This name has been reserved already",
+          return new Promise((resolve) => {
+            nameValidationTimer = setTimeout(async () => {
+              if (value && value.trim() !== props.dataSeries?.displayName) {
+                const isValid = await isValidDisplayName(value.trim())
+                resolve(isValid)
               }
-          )
-  ),
-  sharingMode: toTypedSchema(
-      zod.string().nonempty(requiredErrorMessage).nullable()
-  ),
-  dataType: toTypedSchema(
-      zod.string().nonempty(requiredErrorMessage).nullable()
-  ),
-  valueName: toTypedSchema(
-      zod.string().nonempty(requiredErrorMessage).nullable()
-  ),
-  fieldName: toTypedSchema(
-      zod
-          .string()
-          .nullable()
-          .refine(
-              (value) => {
-                if (
-                    values.aggregationOperation ===
-                    QueryAggregationOperatorConstant.COUNT
-                )
-                  return true;
 
-                return value ? true : false;
-              },
-              {
-                message: requiredErrorMessage,
-              }
-          )
-  ),
-  aggregationOperation: toTypedSchema(
-      zod.string().nonempty(requiredErrorMessage).nullable()
-  ),
-  timeframeValue: toTypedSchema(
-      zod.coerce
-          .number({invalid_type_error: "You must specify a number"})
-          .min(0)
-          .nullable()
-          .refine((value) => value ? true : false, {
-            message: "Number is required",
+              resolve(true)
+            }, 200)
           })
+        },
+        {
+          message: 'This name has been reserved already',
+        }
+      )
+  ),
+  sharingMode: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
+  dataType: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
+  valueName: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
+  fieldName: toTypedSchema(
+    zod
+      .string()
+      .nullable()
+      .refine(
+        (value) => {
+          if (values.aggregationOperation === QueryAggregationOperatorConstant.COUNT) return true
+
+          return value ? true : false
+        },
+        {
+          message: requiredErrorMessage,
+        }
+      )
+  ),
+  aggregationOperation: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
+  timeframeValue: toTypedSchema(
+    zod.coerce
+      .number({ invalid_type_error: 'You must specify a number' })
+      .min(0)
+      .nullable()
+      .refine((value) => (value ? true : false), {
+        message: 'Number is required',
+      })
   ),
   timeframeUnit: toTypedSchema(zod.string().nullable()),
   color: toTypedSchema(
-      zod
-          .string()
-          .nullable()
-          .refine((value) => ColorHelper.isValidHexCode(value as string))
+    zod
+      .string()
+      .nullable()
+      .refine((value) => ColorHelper.isValidHexCode(value as string))
   ),
   colorOpacity: toTypedSchema(
-      zod.coerce
-          .number({invalid_type_error: "You must specify a number"})
-          .min(1)
-          .max(100, "Value must be between 1 and 100.")
-          .nullable()
+    zod.coerce
+      .number({ invalid_type_error: 'You must specify a number' })
+      .min(1)
+      .max(100, 'Value must be between 1 and 100.')
+      .nullable()
   ),
-};
+}
 
-let dataFields: DataField[] = [];
-let nameValidationTimer: Timer = null;
-const valueNameOptions = ref<FormMenuOption[]>([]);
-const fieldNameOptions = ref<FormMenuOption[]>([]);
-const enrichedColorHexCode = ref(
-    ColorHelper.enrichHexCodeWithOpacity(values.color, values.colorOpacity)
-);
-const aggregationOperationFieldDisabled = ref(false);
-const tagMap = ref<{ [key: string]: string[] }>({});
-const colorPickerOpen = ref(false);
-const hasTagFetched = ref(false);
-const hasValueNameFetched = ref(false);
-const hasFieldNameFetched = ref(false);
+let dataFields: DataField[] = []
+let nameValidationTimer: Timer = null
+const valueNameOptions = ref<FormMenuOption[]>([])
+const fieldNameOptions = ref<FormMenuOption[]>([])
+const enrichedColorHexCode = ref(ColorHelper.enrichHexCodeWithOpacity(values.color, values.colorOpacity))
+const aggregationOperationFieldDisabled = ref(false)
+const tagMap = ref<{ [key: string]: string[] }>({})
+const colorPickerOpen = ref(false)
+const hasTagFetched = ref(false)
+const hasValueNameFetched = ref(false)
+const hasFieldNameFetched = ref(false)
 
-const title = computed(() =>
-    props.dataSeries ? "Update a series" : "Create a series"
-);
-const confirmBtnText = computed(() =>
-    props.dataSeries ? "Save changes" : "Create"
-);
-const dataTypeOptionDisabled = computed(() =>
-    props.dataSeries ? true : false
-);
-const valueNameLabel = computed(() =>
-    values.dataType === DataTypeConstant.EVENTS ? "Event name" : "Meter name"
-);
+const title = computed(() => (props.dataSeries ? 'Update a series' : 'Create a series'))
+const confirmBtnText = computed(() => (props.dataSeries ? 'Save changes' : 'Create'))
+const dataTypeOptionDisabled = computed(() => (props.dataSeries ? true : false))
+const valueNameLabel = computed(() => (values.dataType === DataTypeConstant.EVENTS ? 'Event name' : 'Meter name'))
 
 onMounted(async () => {
-  const dataType = props.dataSeries?.dataType ?? DataTypeConstant.EVENTS;
-  _prepareValueNameFieldOptions(dataType);
-  _prepareTagMap(dataType);
-  await _prepareFieldOptions(dataType);
-  _shouldAggregationOperationFieldDisabled(values.fieldName);
-});
+  const dataType = props.dataSeries?.dataType ?? DataTypeConstant.EVENTS
+  _prepareValueNameFieldOptions(dataType)
+  _prepareTagMap(dataType)
+  await _prepareFieldOptions(dataType)
+  _shouldAggregationOperationFieldDisabled(values.fieldName)
+})
 
 onBeforeUnmount(() => {
-  if (nameValidationTimer) clearTimeout(nameValidationTimer);
-});
+  if (nameValidationTimer) clearTimeout(nameValidationTimer)
+})
+
+const handleFieldNameSearch = async (query: string) => {
+  console.log(query)
+   try {
+    const valueNames = await fetchValueNames(values.dataType, query)
+    valueNameOptions.value = valueNames.map((valueName) => ({
+      label: valueName,
+      value: valueName,
+    }))
+  } catch (error) {
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
+  }
+}
 
 const handleColorInput = () => {
-  if (errors.value.color || errors.value.colorOpacity) return;
+  if (errors.value.color || errors.value.colorOpacity) return
 
-  enrichedColorHexCode.value = ColorHelper.enrichHexCodeWithOpacity(
-      values.color,
-      values.colorOpacity
-  );
-};
+  enrichedColorHexCode.value = ColorHelper.enrichHexCodeWithOpacity(values.color, values.colorOpacity)
+}
 
 const handleColorChange = (enrichedHexCodeWithOpacity: string) => {
-  setFieldValue("color", ColorHelper.getHexCode(enrichedHexCodeWithOpacity));
-  setFieldValue(
-      "colorOpacity",
-      ColorHelper.getOpacity(enrichedHexCodeWithOpacity)
-  );
-};
+  setFieldValue('color', ColorHelper.getHexCode(enrichedHexCodeWithOpacity))
+  setFieldValue('colorOpacity', ColorHelper.getOpacity(enrichedHexCodeWithOpacity))
+}
 
 /**
  * Handles the field name change event.
@@ -379,121 +345,119 @@ const handleColorChange = (enrichedHexCodeWithOpacity: string) => {
  * @param selectedFieldName The selected field name from the field options.
  */
 const handleFieldNameChange = (selectedFieldName: string) => {
-  _shouldAggregationOperationFieldDisabled(selectedFieldName);
-};
+  _shouldAggregationOperationFieldDisabled(selectedFieldName)
+}
 
 const handleDataTypeChange = (newDataType: string) => {
-  const dataType = newDataType as DataType;
-  _prepareValueNameFieldOptions(dataType);
-  _prepareFieldOptions(dataType);
-  _prepareTagMap(dataType);
-};
+  const dataType = newDataType as DataType
+  _resetFieldsWhenDataTypeChange()
+  _prepareValueNameFieldOptions(dataType)
+  _prepareFieldOptions(dataType)
+  _prepareTagMap(dataType)
+}
 
 const handleColorBtnClick = () => {
-  colorPickerOpen.value = true;
-};
+  colorPickerOpen.value = true
+}
 
 const handleAddNewFilterBtnClick = () => {
   push({
-    name: "",
-    value: "",
-  });
-};
+    name: '',
+    value: '',
+  })
+}
 
 const handleConfirmBtnClick = handleSubmit(async (values: DataSeriesForm) => {
-  const isEditingSeries = props.dataSeries ? true : false;
+  const isEditingSeries = props.dataSeries ? true : false
   if (isEditingSeries) {
-    _updateDataSeries(values);
+    _updateDataSeries(values)
   } else {
-    _createDataSeries(values);
+    _createDataSeries(values)
   }
-});
+})
+
+const _resetFieldsWhenDataTypeChange = () => {
+  // Resets event name, field, aggregation
+  setFieldValue('valueName', '')
+  setFieldValue('fieldName', '')
+  setFieldValue('aggregationOperation', 'COUNT')
+  aggregationOperationFieldDisabled.value = true
+}
 
 const _updateDataSeries = async (formValues: DataSeriesForm) => {
-  const dataSeriesPatchRequests = SeriesHelper.toDataSeriesPatchRequest(
-      initialFormValue,
-      formValues
-  );
+  const dataSeriesPatchRequests = SeriesHelper.toDataSeriesPatchRequest(initialFormValue, formValues)
 
   if (dataSeriesPatchRequests.length === 0) {
-    toastStore.info({text: 'No changes detected'});
-    return;
+    toastStore.info({ text: 'No changes detected' })
+    return
   }
 
   try {
-    await updateDataSeries(
-        props.dataSeries!.reference,
-        dataSeriesPatchRequests
-    );
-    emit("update:open", false);
-    emit("dataSeriesUpdated");
-    toastStore.success({text: `${formValues.name} has been updated!`});
+    await updateDataSeries(props.dataSeries!.reference, dataSeriesPatchRequests)
+    emit('update:open', false)
+    emit('dataSeriesUpdated')
+    toastStore.success({ text: `${formValues.name} has been updated!` })
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-};
+}
 
 const _createDataSeries = async (formValues: DataSeriesForm) => {
-  const dataSeriesPatchRequests =
-      SeriesHelper.toDataSeriesCreationRequest(formValues);
+  const dataSeriesPatchRequests = SeriesHelper.toDataSeriesCreationRequest(formValues)
 
   try {
-    await createDataSeries(dataSeriesPatchRequests);
-    emit("update:open", false);
-    emit("dataSeriesUpdated");
-    toastStore.success({text: `${formValues.name} has been successfully created!`});
+    await createDataSeries(dataSeriesPatchRequests)
+    emit('update:open', false)
+    emit('dataSeriesUpdated')
+    toastStore.success({ text: `${formValues.name} has been successfully created!` })
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-};
+}
 
 const _shouldAggregationOperationFieldDisabled = (fieldName: string) => {
-  const selectedFieldOption = dataFields.find((f) => f.name === fieldName);
+  const selectedFieldOption = dataFields.find((f) => f.name === fieldName)
   if (selectedFieldOption?.type !== DataFieldTypeConstant.NUMBER) {
-    setFieldValue(
-        "aggregationOperation",
-        QueryAggregationOperatorConstant.COUNT
-    );
+    setFieldValue('aggregationOperation', QueryAggregationOperatorConstant.COUNT)
   }
-  aggregationOperationFieldDisabled.value =
-      selectedFieldOption?.type !== DataFieldTypeConstant.NUMBER ? true : false;
-};
+  aggregationOperationFieldDisabled.value = selectedFieldOption?.type !== DataFieldTypeConstant.NUMBER ? true : false
+}
 
 const _prepareTagMap = async (dataType: DataType) => {
-  hasTagFetched.value = false;
+  hasTagFetched.value = false
   try {
-    tagMap.value = await fetchTags(dataType);
-    hasTagFetched.value = true;
+    tagMap.value = await fetchTags(dataType)
+    hasTagFetched.value = true
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-};
+}
 
 const _prepareValueNameFieldOptions = async (dataType: DataType) => {
-  hasValueNameFetched.value = false;
+  hasValueNameFetched.value = false
   try {
-    const valueNames = await fetchValueNames(dataType);
+    const valueNames = await fetchValueNames(dataType)
     valueNameOptions.value = valueNames.map((valueName) => ({
       label: valueName,
       value: valueName,
-    }));
-    hasValueNameFetched.value = true;
+    }))
+    hasValueNameFetched.value = true
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-};
+}
 
 const _prepareFieldOptions = async (dataType: DataType) => {
-  hasFieldNameFetched.value = false;
+  hasFieldNameFetched.value = false
   try {
-    dataFields = await fetchFields(dataType);
+    dataFields = await fetchFields(dataType)
     fieldNameOptions.value = dataFields.map((field) => ({
       label: field.name,
       value: field.name,
-    }));
-    hasFieldNameFetched.value = true;
+    }))
+    hasFieldNameFetched.value = true
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-};
+}
 </script>

@@ -9,11 +9,13 @@
         :class="[TailwindClassHelper.radioButtonClass, TailwindClassHelper.radioButtonActiveClass]"
         :value="value"
         :checked="isChecked"
+        :disabled="disabled"
     />
     <label
         v-if="label"
-        class="pl-2 cursor-pointer"
+        class="pl-2"
         :for="value"
+        :class="disabled ? 'cursor-not-allowed' : 'cursor-pointer'"
     >{{ label }}</label
     >
   </div>
@@ -24,6 +26,7 @@ const props = defineProps<{
   value: string
   modelValue?: string
   label?: string | number
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -35,6 +38,8 @@ const isChecked = computed(() => {
 })
 
 const handleOptionClick = () => {
+  if (props.disabled) return
+
   emit('update:modelValue', props.value)
 }
 </script>
