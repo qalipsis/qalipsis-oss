@@ -104,6 +104,10 @@ internal class InMemoryCumulativeCounter(
 
     override fun count(): Double = total.toDouble() + buckets[currentBucketHolder.get()].count()
 
+    override fun toString(): String {
+        return "InMemoryCumulativeCounter(id=$id)"
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

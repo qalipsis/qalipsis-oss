@@ -22,9 +22,9 @@ package io.qalipsis.api.meters.steps
 import io.qalipsis.api.annotations.Spec
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.Rate
-import io.qalipsis.api.meters.steps.failure.RateFailureConditionSpec
-import io.qalipsis.api.meters.steps.failure.impl.ComparableValueFailureSpecification
-import io.qalipsis.api.meters.steps.failure.impl.RateFailureConditionSpecImpl
+import io.qalipsis.api.meters.steps.expectations.RateExpectationSpec
+import io.qalipsis.api.meters.steps.expectations.impl.ComparableValueMeterExpectationSpecification
+import io.qalipsis.api.meters.steps.expectations.impl.RateExpectationSpecImpl
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.ConfigurableStepSpecification
 import io.qalipsis.api.steps.StepSpecification
@@ -39,7 +39,7 @@ interface RateMeterStepSpecification<INPUT> : StepSpecification<INPUT, INPUT, Ra
     /**
      * Allows specification of failure conditions on the rate meter.
      */
-    fun shouldFailWhen(block: RateFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
+    fun shouldSatisfy(block: RateExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
 }
 
 /**
@@ -54,10 +54,10 @@ data class RateMeterStepSpecificationImpl<INPUT>(
 ) : RateMeterStepSpecification<INPUT>,
     AbstractStepSpecification<INPUT, INPUT, RateMeterStepSpecification<INPUT>>() {
 
-    var checks: MutableList<ComparableValueFailureSpecification<Rate, Double>> = mutableListOf()
+    var checks: MutableList<ComparableValueMeterExpectationSpecification<Rate, Double>> = mutableListOf()
 
-    override fun shouldFailWhen(block: RateFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
-        val rateFailureConditionSpec = RateFailureConditionSpecImpl()
+    override fun shouldSatisfy(block: RateExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
+        val rateFailureConditionSpec = RateExpectationSpecImpl()
         rateFailureConditionSpec.block()
         checks = rateFailureConditionSpec.checks
         return this
@@ -78,6 +78,7 @@ fun <INPUT> StepSpecification<*, INPUT, *>.rate(
     block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> TrackedThresholdRatio
 ): RateMeterStepSpecification<INPUT> {
     val step = RateMeterStepSpecificationImpl(name, block)
+    step.name = name
     this.add(step)
     return step
 }

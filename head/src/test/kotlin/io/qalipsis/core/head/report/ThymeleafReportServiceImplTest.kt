@@ -52,6 +52,7 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -62,7 +63,6 @@ import java.math.BigDecimal
 import java.nio.file.Files
 import java.time.Duration
 import java.time.Instant
-import org.junit.jupiter.api.BeforeAll
 
 
 @WithMockk

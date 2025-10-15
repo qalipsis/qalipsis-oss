@@ -17,24 +17,25 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure.impl
+package io.qalipsis.api.meters.steps.expectations.impl
 
-import io.qalipsis.api.meters.Counter
-import io.qalipsis.api.meters.steps.failure.CounterFailureConditionSpec
+import io.qalipsis.api.meters.Gauge
+import io.qalipsis.api.meters.steps.expectations.GaugeExpectationSpec
 
 /**
- * Implementation of [CounterFailureConditionSpec] to extract the count property and evaluate it against
- * a threshold or range-based conditions.
+ * Implementation of [GaugeExpectationSpec] to extract the current value property of the gauge
+ * and evaluate it against a threshold or range-based conditions.
  *
  * @author Francisca Eze
  */
-class CounterFailureConditionSpecImpl : CounterFailureConditionSpec {
+class GaugeExpectationSpecImpl : GaugeExpectationSpec {
 
-    val checks = mutableListOf<ComparableValueFailureSpecification<Counter, Double>>()
+    val checks = mutableListOf<ComparableValueMeterExpectationSpecification<Gauge, Double>>()
 
-    override val count: ComparableValueFailureSpecification<Counter, Double>
+    override val value: ComparableValueMeterExpectationSpecification<Gauge, Double>
         get() {
-            val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(Counter::count)
+            val comparableValueFailureSpecification =
+                ComparableValueMeterExpectationSpecificationImpl("count", Gauge::value)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }

@@ -39,7 +39,7 @@ internal class EqualsCheckerTest {
     @Test
     fun `should not return any exception when the condition is successful` () {
         // given
-        val checker = EqualsChecker(24.0)
+        val checker = EqualsChecker("field 1", 24.0)
 
         // when + then
         assertNull(checker.check(24.0))
@@ -49,7 +49,7 @@ internal class EqualsCheckerTest {
     @ValueSource(doubles = [4.0, 17.0, 32.0, -23.0, 29.0, 81.0, 0.0, 29.99])
     fun `should return an exception when value is less than or greater than the threshold` (value: Double) {
         // given
-        val checker = EqualsChecker(23.0)
+        val checker = EqualsChecker("field 1", 23.0)
 
         // when
         val exception = checker.check(value)
@@ -57,7 +57,7 @@ internal class EqualsCheckerTest {
         // then
         assertThat(exception).isNotNull().all {
             isInstanceOf(MeterAssertionViolation::class.java)
-            prop(MeterAssertionViolation::message).isEqualTo("Value should be equal to 23.0")
+            prop(MeterAssertionViolation::message).isEqualTo("The field 1 is $value but should be equal to 23.0")
         }
     }
 

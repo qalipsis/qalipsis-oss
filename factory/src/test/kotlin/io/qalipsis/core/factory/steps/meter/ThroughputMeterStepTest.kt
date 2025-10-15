@@ -27,11 +27,11 @@ import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.confirmVerified
-import io.mockk.verify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
+import io.mockk.verify
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.meters.CampaignMeterRegistry
@@ -52,13 +52,13 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.steps.StepTestHelper.createStepContext
-import java.time.Duration
 import kotlinx.coroutines.channels.Channel
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 
 /**
  * @author Francisca Eze
@@ -101,8 +101,8 @@ internal class ThroughputMeterStepTest {
             { _, _ -> 22.0 }
         val checkers =
             listOf<Pair<Throughput.() -> Double, ValueChecker<Double>>>(
-                Pair({ 12.60 }, BetweenChecker(12.0, 18.0)),
-                Pair({ 12.60 }, LessThanChecker(18.0))
+                Pair({ 12.60 }, BetweenChecker("max", 12.0, 18.0)),
+                Pair({ 12.60 }, LessThanChecker("mean", 18.0))
             )
         val meterTags = mapOf<String, String>()
         val throughputMeterStep = spyk(
@@ -191,7 +191,7 @@ internal class ThroughputMeterStepTest {
                     campaignMeterRegistry = campaignMeterRegistry,
                     checkPeriod = Duration.ofMillis(100),
                     percentiles = setOf(95.0, 99.0),
-                    ), recordPrivateCalls = true
+                ), recordPrivateCalls = true
             )
             every {
                 campaignMeterRegistry.throughput(
@@ -244,8 +244,8 @@ internal class ThroughputMeterStepTest {
                 { _, _ -> 38.5 }
             val checkers =
                 listOf<Pair<Throughput.() -> Double, ValueChecker<Double>>>(
-                    Pair({ 13.60 }, LessThanChecker(12.0)),
-                    Pair({ 12.60 }, GreaterThanOrEqualChecker(27.0))
+                    Pair({ 13.60 }, LessThanChecker("max", 12.0)),
+                    Pair({ 12.60 }, GreaterThanOrEqualChecker("mean", 27.0))
                 )
             val latch = SuspendedCountLatch(2, true)
             every {
@@ -268,8 +268,8 @@ internal class ThroughputMeterStepTest {
                     checkers = checkers,
                     campaignMeterRegistry = campaignMeterRegistry,
                     checkPeriod = Duration.ofMillis(100),
-                    percentiles = setOf(95.0, 99.0 ),
-                    ), recordPrivateCalls = true
+                    percentiles = setOf(95.0, 99.0),
+                ), recordPrivateCalls = true
             )
             coEvery { throughputMeterStep.checkState(any<StepStartStopContext>()) } coAnswers {
                 callOriginal()
@@ -308,8 +308,8 @@ internal class ThroughputMeterStepTest {
 
                 campaignReportLiveStateRegistry.put(
                     "my-campaign", "my-scenario", "throughput-step", ReportMessageSeverity.ERROR, null, """
-                        Value should be less than 12.0
-                        Value should be greater than or equal to 27.0
+                        The max is 13.6 but should be less than 12.0
+                        The mean is 12.6 but should be greater than or equal to 27.0
                     """.trimIndent()
                 )
             }
@@ -331,7 +331,7 @@ internal class ThroughputMeterStepTest {
             val block: (context: StepContext<Int, Int>, input: Int) -> Double =
                 { _, _ -> 52.0 }
             val checkers = listOf<Pair<Throughput.() -> Double, ValueChecker<Double>>>(
-                Pair({ 18.0 }, LessThanOrEqualChecker(18.0))
+                Pair({ 18.0 }, LessThanOrEqualChecker("mean", 18.0))
             )
             val latch = SuspendedCountLatch(2, true)
             val throughputMeterStep = spyk(
@@ -346,7 +346,7 @@ internal class ThroughputMeterStepTest {
                     campaignMeterRegistry = campaignMeterRegistry,
                     checkPeriod = Duration.ofMillis(100),
                     percentiles = setOf(95.0, 99.0),
-                    ), recordPrivateCalls = true
+                ), recordPrivateCalls = true
             )
             every {
                 campaignMeterRegistry.throughput(

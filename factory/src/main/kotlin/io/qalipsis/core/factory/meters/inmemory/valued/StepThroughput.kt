@@ -238,6 +238,10 @@ internal class StepThroughput(
         return this
     }
 
+    override fun toString(): String {
+        return "StepThroughput(id=$id, unit=$unit, percentiles=$percentiles)"
+    }
+
     companion object TimeHelper {
 
         private const val BUCKET_COUNT = 3

@@ -120,7 +120,7 @@ internal class ConsoleRenderer(
         val completed = progressionState.completedMinions.get()
         val scheduled = progressionState.scheduledMinions.get().coerceAtLeast(started)
             .coerceAtLeast(0)
-        val threeColsSize = renderWidth / 2
+        val threeColsSize = renderWidth / 3
 
         p {
             bold {
@@ -175,7 +175,7 @@ internal class ConsoleRenderer(
         scenarioState: ScenarioState,
         renderWidth: Int
     ) {
-        val threeColsSize = renderWidth / 2
+        val threeColsSize = renderWidth / 3
         bold {
             text("Scenario $scenarioName".padEnd(threeColsSize))
         }

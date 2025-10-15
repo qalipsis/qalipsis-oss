@@ -48,4 +48,8 @@ class CompositeThroughput(
         globalMeter.record(amount)
     }
 
+    override fun toString(): String {
+        return "CompositeThroughput(scenarioMeter=$scenarioMeter, globalMeter=$globalMeter)"
+    }
+
 }

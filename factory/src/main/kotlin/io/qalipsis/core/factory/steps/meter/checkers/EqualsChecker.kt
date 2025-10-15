@@ -25,15 +25,18 @@ import io.qalipsis.core.factory.steps.meter.MeterAssertionViolation
 /**
  * Asserts the value is equal to the expected threshold, using the "equal to" operator.
  *
- * @param threshold the reference value used in comparison
+ * @param expected the reference value used in comparison
  *
  * @author Francisca Eze
  */
-class EqualsChecker<T : Comparable<T>>(private val threshold: T) : ValueChecker<T> {
+class EqualsChecker<T : Comparable<T>>(
+    private val valueName: String,
+    private val expected: T
+) : ValueChecker<T> {
 
     override fun check(value: T): MeterAssertionViolation? {
-        return supplyUnless(value == threshold) {
-            MeterAssertionViolation("Value should be equal to $threshold")
+        return supplyUnless(value == expected) {
+            MeterAssertionViolation("The $valueName is $value but should be equal to $expected")
         }
     }
 }

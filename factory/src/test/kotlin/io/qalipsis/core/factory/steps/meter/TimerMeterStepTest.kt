@@ -27,11 +27,11 @@ import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.confirmVerified
-import io.mockk.verify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
+import io.mockk.verify
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.meters.CampaignMeterRegistry
@@ -52,13 +52,13 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.steps.StepTestHelper.createStepContext
-import java.time.Duration
 import kotlinx.coroutines.channels.Channel
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 
 /**
  * @author Francisca Eze
@@ -101,8 +101,11 @@ internal class TimerMeterStepTest {
             { _, _ -> Duration.ofMillis(1000) }
         val checkers =
             listOf<Pair<Timer.() -> Duration, ValueChecker<Duration>>>(
-                Pair({ Duration.ofMillis(1200) }, BetweenChecker(Duration.ofMillis(1000), Duration.ofMillis(2000))),
-                Pair({ Duration.ofMillis(1200) }, LessThanChecker(Duration.ofMillis(300))),
+                Pair(
+                    { Duration.ofMillis(1200) },
+                    BetweenChecker("max", Duration.ofMillis(1000), Duration.ofMillis(2000))
+                ),
+                Pair({ Duration.ofMillis(1200) }, LessThanChecker("mean", Duration.ofMillis(300))),
             )
         every {
             campaignMeterRegistry.timer(
@@ -249,9 +252,9 @@ internal class TimerMeterStepTest {
                 listOf<Pair<Timer.() -> Duration, ValueChecker<Duration>>>(
                     Pair(
                         { Duration.ofMillis(1200) },
-                        NotBetweenChecker(Duration.ofMillis(1000), Duration.ofMillis(2000))
+                        NotBetweenChecker("max", Duration.ofMillis(1000), Duration.ofMillis(2000))
                     ),
-                    Pair({ Duration.ofMillis(1200) }, GreaterThanChecker(Duration.ofMillis(300))),
+                    Pair({ Duration.ofMillis(1200) }, GreaterThanChecker("mean", Duration.ofMillis(300))),
                 )
             val latch = SuspendedCountLatch(2, true)
             val timerMeterStep = spyk(
@@ -314,7 +317,7 @@ internal class TimerMeterStepTest {
 
                 campaignReportLiveStateRegistry.put(
                     "my-campaign", "my-scenario", "timer-step", ReportMessageSeverity.ERROR, null, """
-                    Value PT1.2S should not be between bounds: PT1S and PT2S
+                    The max is PT1.2S but should not be between bounds: PT1S and PT2S
                 """.trimIndent()
                 )
             }
@@ -338,7 +341,7 @@ internal class TimerMeterStepTest {
 
             val checkers =
                 listOf<Pair<Timer.() -> Duration, ValueChecker<Duration>>>(
-                    Pair({ Duration.ofMillis(1200) }, GreaterThanChecker(Duration.ofMillis(300))),
+                    Pair({ Duration.ofMillis(1200) }, GreaterThanChecker("mean", Duration.ofMillis(300))),
                 )
             val latch = SuspendedCountLatch(2, true)
             val timerMeterStep = spyk(

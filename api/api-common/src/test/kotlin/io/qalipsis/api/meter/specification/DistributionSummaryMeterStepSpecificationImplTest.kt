@@ -55,7 +55,7 @@ internal class DistributionSummaryMeterStepSpecificationImplTest {
         val specification: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
         previousStep.summary(name = "my-test-summary", specification)
-            .shouldFailWhen {
+            .shouldSatisfy {
                 max.isGreaterThan(12.0)
                 mean.isLessThan(14.0)
             }

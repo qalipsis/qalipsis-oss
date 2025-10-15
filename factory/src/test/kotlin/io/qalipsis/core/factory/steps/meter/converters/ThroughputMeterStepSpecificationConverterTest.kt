@@ -117,7 +117,7 @@ internal class ThroughputMeterStepSpecificationConverterTest :
         val block: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
         val spec = ThroughputMeterStepSpecificationImpl("test-throughput", block)
-            .shouldFailWhen {
+            .shouldSatisfy {
                 max.isGreaterThan(12.0)
                 mean.isLessThan(14.0)
                 percentile(50.0).isEqual(67.99)
@@ -162,7 +162,7 @@ internal class ThroughputMeterStepSpecificationConverterTest :
                             every { percentile(50.0) } returns 1654.2342
                         })
                     }.isEqualTo(1654.2342)
-                    prop("checker") { it.second }.isInstanceOf(EqualsChecker::class).prop("threshold").isEqualTo(67.99)
+                    prop("checker") { it.second }.isInstanceOf(EqualsChecker::class).prop("expected").isEqualTo(67.99)
                 }
             }
         }

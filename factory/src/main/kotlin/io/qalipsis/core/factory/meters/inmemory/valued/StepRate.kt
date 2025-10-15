@@ -115,10 +115,15 @@ internal class StepRate(
         return id.hashCode()
     }
 
+    override fun toString(): String {
+        return "StepRate(id=$id)"
+    }
+
     override fun report(configure: Meter.ReportingConfiguration<Rate>.() -> Unit): Rate {
         if (!reportingConfigured.compareAndExchange(false, true)) {
             this.configure()
         }
         return this
     }
+
 }

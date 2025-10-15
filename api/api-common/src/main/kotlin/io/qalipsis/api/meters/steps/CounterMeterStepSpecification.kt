@@ -22,9 +22,9 @@ package io.qalipsis.api.meters.steps
 import io.qalipsis.api.annotations.Spec
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.Counter
-import io.qalipsis.api.meters.steps.failure.CounterFailureConditionSpec
-import io.qalipsis.api.meters.steps.failure.impl.ComparableValueFailureSpecification
-import io.qalipsis.api.meters.steps.failure.impl.CounterFailureConditionSpecImpl
+import io.qalipsis.api.meters.steps.expectations.CounterExpectationSpec
+import io.qalipsis.api.meters.steps.expectations.impl.ComparableValueMeterExpectationSpecification
+import io.qalipsis.api.meters.steps.expectations.impl.CounterExpectationSpecImpl
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.ConfigurableStepSpecification
 import io.qalipsis.api.steps.StepSpecification
@@ -41,7 +41,7 @@ interface CounterMeterStepSpecification<INPUT> :
     /**
      * Allows specification of failure conditions on the count meter.
      */
-    fun shouldFailWhen(block: CounterFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
+    fun shouldSatisfy(block: CounterExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
 }
 
 /**
@@ -54,10 +54,10 @@ data class CounterMeterStepSpecificationImpl<INPUT>(
 ) : CounterMeterStepSpecification<INPUT>,
     AbstractStepSpecification<INPUT, INPUT, CounterMeterStepSpecification<INPUT>>() {
 
-    var checks: MutableList<ComparableValueFailureSpecification<Counter, Double>> = mutableListOf()
+    var checks: MutableList<ComparableValueMeterExpectationSpecification<Counter, Double>> = mutableListOf()
 
-    override fun shouldFailWhen(block: CounterFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
-        val counterFailureConditionSpecImpl = CounterFailureConditionSpecImpl()
+    override fun shouldSatisfy(block: CounterExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
+        val counterFailureConditionSpecImpl = CounterExpectationSpecImpl()
         counterFailureConditionSpecImpl.block()
         checks = counterFailureConditionSpecImpl.checks
         return this
@@ -78,6 +78,7 @@ fun <INPUT> StepSpecification<*, INPUT, *>.counter(
     block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> Double
 ): CounterMeterStepSpecification<INPUT> {
     val step = CounterMeterStepSpecificationImpl(name, block)
+    step.name = name
     this.add(step)
     return step
 }

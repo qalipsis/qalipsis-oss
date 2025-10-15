@@ -24,7 +24,9 @@ package io.qalipsis.api.meters.steps.checkSpecification
  *
  * @author Francisca Eze
  */
-sealed interface ValueCheckSpecification<T>
+sealed interface ValueCheckSpecification<T> {
+    val valueName: String
+}
 
 /**
  * Custom specification that allows for comparison of a value against a threshold.

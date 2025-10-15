@@ -24,5 +24,6 @@ package io.qalipsis.api.meters.steps.checkSpecification
  *
  * @author Francisca Eze
  */
-class BetweenValueSpecification<T : Comparable<T>>(override val lowerBound: T, override val upperBound: T) :
-    RangeValueCheckSpecification<T>
+class BetweenValueSpecification<T : Comparable<T>>(
+    override val valueName: String, override val lowerBound: T, override val upperBound: T
+) : RangeValueCheckSpecification<T>

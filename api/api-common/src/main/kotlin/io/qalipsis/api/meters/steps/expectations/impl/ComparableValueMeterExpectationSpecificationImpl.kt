@@ -17,7 +17,7 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure.impl
+package io.qalipsis.api.meters.steps.expectations.impl
 
 import io.qalipsis.api.meters.Meter
 import io.qalipsis.api.meters.steps.checkSpecification.BetweenValueSpecification
@@ -30,42 +30,43 @@ import io.qalipsis.api.meters.steps.checkSpecification.NotBetweenValueSpecificat
 import io.qalipsis.api.meters.steps.checkSpecification.ValueCheckSpecification
 
 /**
- * Implementation of the [ComparableValueFailureSpecification].
+ * Implementation of the [ComparableValueMeterExpectationSpecification].
  *
  * @author Francisca Eze
  */
-class ComparableValueFailureSpecificationImpl<M : Meter<M>, T : Comparable<T>>(
+class ComparableValueMeterExpectationSpecificationImpl<M : Meter<M>, T : Comparable<T>>(
+    private val valueName: String,
     override val valueExtractor: M.() -> T,
-) : ComparableValueFailureSpecification<M, T> {
+) : ComparableValueMeterExpectationSpecification<M, T> {
 
     override var checkSpec: ValueCheckSpecification<T>? = null
 
     override fun isGreaterThan(threshold: T) {
-        checkSpec = GreaterThanValueSpecification(threshold)
+        checkSpec = GreaterThanValueSpecification(valueName, threshold)
     }
 
     override fun isLessThan(threshold: T) {
-        checkSpec = LessThanValueSpecification(threshold)
+        checkSpec = LessThanValueSpecification(valueName, threshold)
     }
 
     override fun isBetween(lowerBound: T, upperBound: T) {
-        checkSpec = BetweenValueSpecification(lowerBound, upperBound)
+        checkSpec = BetweenValueSpecification(valueName, lowerBound, upperBound)
     }
 
     override fun isNotBetween(lowerBound: T, upperBound: T) {
-        checkSpec = NotBetweenValueSpecification(lowerBound, upperBound)
+        checkSpec = NotBetweenValueSpecification(valueName, lowerBound, upperBound)
     }
 
     override fun isEqual(threshold: T) {
-        checkSpec = EqualValueSpecification(threshold)
+        checkSpec = EqualValueSpecification(valueName, threshold)
     }
 
     override fun isGreaterThanOrEqual(threshold: T) {
-        checkSpec = GreaterThanOrEqualValueSpecification(threshold)
+        checkSpec = GreaterThanOrEqualValueSpecification(valueName, threshold)
     }
 
     override fun isLessThanOrEqual(threshold: T) {
-        checkSpec = LessThanOrEqualValueSpecification(threshold)
+        checkSpec = LessThanOrEqualValueSpecification(valueName, threshold)
     }
 
 }

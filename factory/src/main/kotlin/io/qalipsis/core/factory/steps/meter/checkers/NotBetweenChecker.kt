@@ -31,13 +31,14 @@ import io.qalipsis.core.factory.steps.meter.MeterAssertionViolation
  * @author Francisca Eze
  */
 class NotBetweenChecker<T : Comparable<T>>(
+    private val valueName: String,
     private val lowerBound: T,
     private val upperBound: T
 ) : ValueChecker<T> {
 
     override fun check(value: T): MeterAssertionViolation? {
         return supplyUnless(isNotBetween(value, lowerBound, upperBound)) {
-            MeterAssertionViolation("Value $value should not be between bounds: $lowerBound and $upperBound")
+            MeterAssertionViolation("The $valueName is $value but should not be between bounds: $lowerBound and $upperBound")
         }
     }
 

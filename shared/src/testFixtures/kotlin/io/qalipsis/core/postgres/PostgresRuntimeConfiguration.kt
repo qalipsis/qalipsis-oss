@@ -29,7 +29,7 @@ object PostgresRuntimeConfiguration {
     /**
      * Default image name and tag.
      */
-    private const val DEFAULT_DOCKER_IMAGE = "postgres:14.1-alpine"
+    private const val DEFAULT_DOCKER_IMAGE = "postgres:16-alpine"
 
     /**
      * Default db name.

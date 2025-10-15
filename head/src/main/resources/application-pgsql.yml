@@ -12,10 +12,17 @@ datasource:
     maxIdleTime: PT4M
     maxAcquireTime: PT5S
 
+datasources:
+  default: # Required only for Liquibase.
+    url: jdbc:postgresql://${datasource.host}:${datasource.port}/${datasource.database}?ApplicationName=qalipsis_jdbc
+    username: ${datasource.username}
+    password: ${datasource.password}
+    maximum-pool-size: 4
+
 r2dbc:
   datasources:
     default:
-      url: r2dbc:postgresql://${datasource.host}:${datasource.port}/${datasource.database}
+      url: r2dbc:postgresql://${datasource.host}:${datasource.port}/${datasource.database}?ApplicationName=qalipsis_r2dbc
       username: ${datasource.username}
       password: ${datasource.password}
       schema-generate: none

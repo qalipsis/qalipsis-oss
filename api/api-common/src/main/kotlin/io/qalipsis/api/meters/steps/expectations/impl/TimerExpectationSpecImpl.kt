@@ -17,45 +17,48 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure.impl
+package io.qalipsis.api.meters.steps.expectations.impl
 
 import io.qalipsis.api.meters.Timer
-import io.qalipsis.api.meters.steps.failure.FailureSpecification
-import io.qalipsis.api.meters.steps.failure.TimerFailureConditionSpec
+import io.qalipsis.api.meters.steps.expectations.MeterExpectationSpecification
+import io.qalipsis.api.meters.steps.expectations.TimerExpectationSpec
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 /**
- * Implementation of [TimerFailureConditionSpec] to extract one or more properties of a [Timer]
+ * Implementation of [TimerExpectationSpec] to extract one or more properties of a [Timer]
  * and evaluate them against a threshold or range-based conditions.
  *
  * @author Francisca Eze
  */
-class TimerFailureConditionSpecImpl(val percentiles: MutableSet<Double>) : TimerFailureConditionSpec {
+class TimerExpectationSpecImpl(val percentiles: MutableSet<Double>) : TimerExpectationSpec {
 
-    val checks = mutableListOf<ComparableValueFailureSpecification<Timer, Duration>>()
+    val checks = mutableListOf<ComparableValueMeterExpectationSpecification<Timer, Duration>>()
 
-    override val max: FailureSpecification<Duration>
+    override val max: MeterExpectationSpecification<Duration>
         get() {
             val valueExtractor: Timer.() -> Duration = { Duration.ofMillis(max(TimeUnit.MICROSECONDS).toLong()) }
-            val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(valueExtractor)
+            val comparableValueFailureSpecification =
+                ComparableValueMeterExpectationSpecificationImpl("max", valueExtractor)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
 
-    override val mean: FailureSpecification<Duration>
+    override val mean: MeterExpectationSpecification<Duration>
         get() {
             val valueExtractor: Timer.() -> Duration = { Duration.ofMillis(mean(TimeUnit.MICROSECONDS).toLong()) }
-            val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(valueExtractor)
+            val comparableValueFailureSpecification =
+                ComparableValueMeterExpectationSpecificationImpl("mean", valueExtractor)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
 
-    override fun percentile(percentile: Double): FailureSpecification<Duration> {
+    override fun percentile(percentile: Double): MeterExpectationSpecification<Duration> {
         val valueExtractor: Timer.() -> Duration =
             { Duration.ofMillis(percentile(percentile, TimeUnit.MICROSECONDS).toLong()) }
         percentiles.add(percentile)
-        val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(valueExtractor)
+        val comparableValueFailureSpecification =
+            ComparableValueMeterExpectationSpecificationImpl("percentile($percentile)", valueExtractor)
         checks.add(comparableValueFailureSpecification)
         return comparableValueFailureSpecification
     }

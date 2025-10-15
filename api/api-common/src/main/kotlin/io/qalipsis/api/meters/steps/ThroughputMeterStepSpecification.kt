@@ -22,9 +22,9 @@ package io.qalipsis.api.meters.steps
 import io.qalipsis.api.annotations.Spec
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.Throughput
-import io.qalipsis.api.meters.steps.failure.ThroughputFailureConditionSpec
-import io.qalipsis.api.meters.steps.failure.impl.ComparableValueFailureSpecification
-import io.qalipsis.api.meters.steps.failure.impl.ThroughputFailureConditionSpecImpl
+import io.qalipsis.api.meters.steps.expectations.ThroughputExpectationSpec
+import io.qalipsis.api.meters.steps.expectations.impl.ComparableValueMeterExpectationSpecification
+import io.qalipsis.api.meters.steps.expectations.impl.ThroughputExpectationSpecImpl
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.ConfigurableStepSpecification
 import io.qalipsis.api.steps.StepSpecification
@@ -41,7 +41,7 @@ interface ThroughputMeterStepSpecification<INPUT> :
     /**
      * Allows specification of failure conditions on the throughput meter.
      */
-    fun shouldFailWhen(block: ThroughputFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
+    fun shouldSatisfy(block: ThroughputExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
 
 }
 
@@ -57,12 +57,12 @@ data class ThroughputMeterStepSpecificationImpl<INPUT>(
 ) : ThroughputMeterStepSpecification<INPUT>,
     AbstractStepSpecification<INPUT, INPUT, ThroughputMeterStepSpecification<INPUT>>() {
 
-    var checks: MutableList<ComparableValueFailureSpecification<Throughput, Double>> = mutableListOf()
+    var checks: MutableList<ComparableValueMeterExpectationSpecification<Throughput, Double>> = mutableListOf()
 
     val percentiles: MutableSet<Double> = mutableSetOf()
 
-    override fun shouldFailWhen(block: ThroughputFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
-        val throughputFailureConditionSpec = ThroughputFailureConditionSpecImpl(percentiles)
+    override fun shouldSatisfy(block: ThroughputExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
+        val throughputFailureConditionSpec = ThroughputExpectationSpecImpl(percentiles)
         throughputFailureConditionSpec.block()
         checks = throughputFailureConditionSpec.checks
         return this
@@ -80,9 +80,10 @@ data class ThroughputMeterStepSpecificationImpl<INPUT>(
  */
 fun <INPUT> StepSpecification<*, INPUT, *>.throughput(
     name: String,
-    block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> Double
+    block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> Double = { _, _ -> 1.0 }
 ): ThroughputMeterStepSpecification<INPUT> {
     val step = ThroughputMeterStepSpecificationImpl(name, block)
+    step.name = name
     this.add(step)
     return step
 }

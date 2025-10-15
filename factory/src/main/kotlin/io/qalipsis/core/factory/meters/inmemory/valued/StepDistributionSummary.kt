@@ -147,4 +147,8 @@ internal class StepDistributionSummary(
     override fun hashCode(): Int {
         return id.hashCode()
     }
+
+    override fun toString(): String {
+        return "StepDistributionSummary(id=$id)"
+    }
 }

@@ -62,4 +62,8 @@ class CompositeRate(
         scenarioMeter.decrementBenchmark(amount)
         globalMeter.decrementBenchmark(amount)
     }
+
+    override fun toString(): String {
+        return "CompositeRate(scenarioMeter=$scenarioMeter, globalMeter=$globalMeter)"
+    }
 }

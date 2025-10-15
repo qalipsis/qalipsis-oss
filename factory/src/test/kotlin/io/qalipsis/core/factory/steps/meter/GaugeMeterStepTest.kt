@@ -26,11 +26,11 @@ import io.aerisconsulting.catadioptre.setProperty
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
-import io.mockk.verify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
+import io.mockk.verify
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.meters.CampaignMeterRegistry
@@ -51,13 +51,13 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.steps.StepTestHelper.createStepContext
-import java.time.Duration
 import kotlinx.coroutines.channels.Channel
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.time.Duration
 
 /**
  * @author Francisca Eze
@@ -106,8 +106,8 @@ internal class GaugeMeterStepTest {
             { _, _ -> 12.0 }
         val checkers =
             listOf<Pair<Gauge.() -> Double, ValueChecker<Double>>>(
-                Pair({ 12.60 }, BetweenChecker(12.0, 18.0)),
-                Pair({ 12.60 }, LessThanChecker(18.0))
+                Pair({ 12.60 }, BetweenChecker("count", 12.0, 18.0)),
+                Pair({ 12.60 }, LessThanChecker("count", 18.0))
             )
         val gaugeMeterStep = spyk(
             GaugeMeterStep(
@@ -232,8 +232,8 @@ internal class GaugeMeterStepTest {
                 { _, _ -> 12.0 }
             val checkers =
                 listOf<Pair<Gauge.() -> Double, ValueChecker<Double>>>(
-                    Pair({ 13.60 }, NotBetweenChecker(12.0, 18.0)),
-                    Pair({ 12.60 }, GreaterThanChecker(18.0))
+                    Pair({ 13.60 }, NotBetweenChecker("count", 12.0, 18.0)),
+                    Pair({ 12.60 }, GreaterThanChecker("count", 18.0))
                 )
             val latch = SuspendedCountLatch(2, true)
             val gaugeMeterStep = spyk(
@@ -286,8 +286,8 @@ internal class GaugeMeterStepTest {
 
                 campaignReportLiveStateRegistry.put(
                     "my-campaign", "my-scenario", "gauge-step", ReportMessageSeverity.ERROR, null, """
-                    Value 13.6 should not be between bounds: 12.0 and 18.0
-                    Value should be greater than 18.0
+                    The count is 13.6 but should not be between bounds: 12.0 and 18.0
+                    The count is 12.6 but should be greater than 18.0
                 """.trimIndent()
                 )
             }
@@ -310,7 +310,7 @@ internal class GaugeMeterStepTest {
                 { _, _ -> 12.0 }
             val checkers =
                 listOf<Pair<Gauge.() -> Double, ValueChecker<Double>>>(
-                    Pair({ 21.60 }, GreaterThanChecker(18.0))
+                    Pair({ 21.60 }, GreaterThanChecker("count", 18.0))
                 )
             val latch = SuspendedCountLatch(2, true)
 

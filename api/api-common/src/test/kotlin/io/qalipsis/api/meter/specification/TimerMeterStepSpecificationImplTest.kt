@@ -55,7 +55,7 @@ internal class TimerMeterStepSpecificationImplTest {
         val specification: (context: StepContext<Unit, Unit>, input: Unit) -> Duration =
             { _, _ -> Duration.of(1800000, ChronoUnit.MILLIS) }
         previousStep.timer(name = "my-test-timer", specification)
-            .shouldFailWhen {
+            .shouldSatisfy {
                 max.isGreaterThan(Duration.of(2, ChronoUnit.SECONDS))
                 mean.isLessThan(Duration.of(1, ChronoUnit.SECONDS))
                 percentile(45.0).isEqual(Duration.ofMillis(300))

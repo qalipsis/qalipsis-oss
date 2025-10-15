@@ -47,4 +47,8 @@ class CompositeDistributionSummary(
         scenarioMeter.record(amount)
         globalMeter.record(amount)
     }
+
+    override fun toString(): String {
+        return "CompositeDistributionSummary(scenarioMeter=$scenarioMeter, globalMeter=$globalMeter)"
+    }
 }
