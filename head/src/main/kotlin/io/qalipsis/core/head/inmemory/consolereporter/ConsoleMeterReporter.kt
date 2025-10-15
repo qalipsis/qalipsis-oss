@@ -96,16 +96,20 @@ class ConsoleMeterReporter : MeterReporter {
         stepName: StepName,
         renderWidth: Int
     ) {
-        if (!stepName.startsWith('_')) {
+        if (!stepName.startsWith('_')) { // Steps that do not have an explicit name should not be displayed.
             meters[scenarioName]?.get(stepName)?.toSortedMap()?.apply {
                 val colsCount = values.maxOf { it.values.size }
-                val cellWidth = (renderWidth / colsCount) - 2 // Remove two spaces for the borders.
+                val targetWidth = renderWidth - colsCount - 1 // Remove spaces for the borders.
+                val cellWidth = targetWidth / colsCount
                 with(renderScope) {
                     grid(
-                        Cols { repeat(colsCount) { fixed(width = cellWidth - 1) } },
+                        Cols {
+                            star() // Use the first column to adjust the full size of the grid, considering the roundings.
+                            repeat(colsCount - 1) { fixed(width = cellWidth) }
+                        },
                         characters = GridCharacters.CURVED,
                         paddingLeftRight = 0,
-                        //targetWidth = renderWidth - colsCount * 2 // Remove two spaces by cell for the borders.
+                        targetWidth = targetWidth
                     ) {
                         forEach { (rowIndex, columns) ->
                             columns.forEach { (columnIndex, cellValues) ->
@@ -131,7 +135,6 @@ class ConsoleMeterReporter : MeterReporter {
             }
         }
     }
-
 
     override fun clean() {
         meters.clear()

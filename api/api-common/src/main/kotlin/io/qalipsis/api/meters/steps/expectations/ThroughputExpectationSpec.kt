@@ -17,34 +17,34 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure
+package io.qalipsis.api.meters.steps.expectations
 
 /**
- * Defines the failure condition specification for throughput-based meters. It defines
+ * Defines the expectation specification for throughput-based meters. It defines
  * how the properties of a [Throughput] should be evaluated against a threshold
  * or range-based conditions.
  *
  * @author Francisca Eze
  */
-interface ThroughputFailureConditionSpec {
+interface ThroughputExpectationSpec {
 
     /**
      * Allows evaluation of failure conditions on a percentile property.
      */
-    fun percentile(percentile: Double): FailureSpecification<Double>
+    fun percentile(percentile: Double): MeterExpectationSpecification<Double>
 
     /**
      * Allows evaluation of failure conditions on the max property.
      */
-    val max: FailureSpecification<Double>
+    val max: MeterExpectationSpecification<Double>
 
     /**
      * Allows evaluation of failure conditions on the mean property.
      */
-    val mean: FailureSpecification<Double>
+    val mean: MeterExpectationSpecification<Double>
 
     /**
      * Allows evaluation of failure conditions on the current value property.
      */
-    val current: FailureSpecification<Double>
+    val current: MeterExpectationSpecification<Double>
 }

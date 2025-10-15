@@ -17,14 +17,14 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure
+package io.qalipsis.api.meters.steps.expectations
 
 /**
  * Defines a structured way to evaluate failure conditions through comparisons functions.
  *
  * @author Francisca Eze
  */
-interface FailureSpecification<T : Comparable<T>> {
+interface MeterExpectationSpecification<T : Comparable<T>> {
     /**
      * Asserts the value extracted from the meter is greater than the specified threshold.
      *

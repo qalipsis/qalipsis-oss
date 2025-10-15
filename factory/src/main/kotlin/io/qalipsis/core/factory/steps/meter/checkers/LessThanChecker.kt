@@ -29,11 +29,14 @@ import io.qalipsis.core.factory.steps.meter.MeterAssertionViolation
  *
  * @author Francisca Eze
  */
-class LessThanChecker<T : Comparable<T>>(private val threshold: T) : ValueChecker<T> {
+class LessThanChecker<T : Comparable<T>>(
+    private val valueName: String,
+    private val threshold: T
+) : ValueChecker<T> {
 
     override fun check(value: T): MeterAssertionViolation? {
         return supplyUnless(value < threshold) {
-            MeterAssertionViolation("Value should be less than $threshold")
+            MeterAssertionViolation("The $valueName is $value but should be less than $threshold")
         }
     }
 }

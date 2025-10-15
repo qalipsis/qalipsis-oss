@@ -38,8 +38,8 @@ import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factory.steps.meter.RateMeterStep
 import io.qalipsis.core.factory.steps.meter.checkers.LessThanChecker
 import io.qalipsis.core.factory.steps.meter.checkers.ValueChecker
-import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.assertk.prop
+import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import kotlinx.coroutines.runBlocking
@@ -112,7 +112,7 @@ internal class RateMeterStepSpecificationConverterTest :
         // given
         val block: (context: StepContext<Unit, Unit>, input: Unit) -> TrackedThresholdRatio =
             { _, _ -> TrackedThresholdRatio(2.0, 17.9) }
-        val spec = RateMeterStepSpecificationImpl("test-rate", block).shouldFailWhen {
+        val spec = RateMeterStepSpecificationImpl("test-rate", block).shouldSatisfy {
             current.isLessThan(19.0)
         }
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)

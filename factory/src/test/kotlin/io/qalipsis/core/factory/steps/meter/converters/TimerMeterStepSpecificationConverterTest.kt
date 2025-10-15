@@ -41,17 +41,17 @@ import io.qalipsis.core.factory.steps.meter.checkers.GreaterThanChecker
 import io.qalipsis.core.factory.steps.meter.checkers.LessThanChecker
 import io.qalipsis.core.factory.steps.meter.checkers.LessThanOrEqualChecker
 import io.qalipsis.core.factory.steps.meter.checkers.ValueChecker
-import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.assertk.prop
+import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
-import java.time.Duration
-import java.time.temporal.ChronoUnit
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.Duration
+import java.time.temporal.ChronoUnit
+import java.util.concurrent.TimeUnit
 
 /**
  * @author Francisca Eze
@@ -120,7 +120,7 @@ internal class TimerMeterStepSpecificationConverterTest :
         // given
         val block: (context: StepContext<Unit, Unit>, input: Unit) -> Duration =
             { _, _ -> Duration.ofMillis(1000) }
-        val spec = TimerMeterStepSpecificationImpl("test-timer", block).shouldFailWhen {
+        val spec = TimerMeterStepSpecificationImpl("test-timer", block).shouldSatisfy {
             max.isGreaterThan(Duration.of(2, ChronoUnit.SECONDS))
             mean.isLessThan(Duration.of(1, ChronoUnit.SECONDS))
             percentile(45.0).isEqual(Duration.ofMillis(300))
@@ -165,7 +165,8 @@ internal class TimerMeterStepSpecificationConverterTest :
                             every { percentile(45.0, TimeUnit.MICROSECONDS) } returns 100.0
                         })
                     }.isEqualTo(Duration.ofMillis(100))
-                    prop("checker") { it.second }.isInstanceOf(EqualsChecker::class).prop("threshold").isEqualTo(Duration.ofMillis(300))
+                    prop("checker") { it.second }.isInstanceOf(EqualsChecker::class).prop("expected")
+                        .isEqualTo(Duration.ofMillis(300))
                 }
                 index(3).all {
                     prop("value extractor") { it.first }.transform {

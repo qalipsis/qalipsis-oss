@@ -39,8 +39,8 @@ import io.qalipsis.core.factory.steps.meter.checkers.GreaterThanChecker
 import io.qalipsis.core.factory.steps.meter.checkers.GreaterThanOrEqualChecker
 import io.qalipsis.core.factory.steps.meter.checkers.LessThanChecker
 import io.qalipsis.core.factory.steps.meter.checkers.ValueChecker
-import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.assertk.prop
+import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import kotlinx.coroutines.runBlocking
@@ -116,7 +116,7 @@ internal class DistributionSummaryMeterStepSpecificationConverterTest :
         val block: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
         val spec = DistributionSummaryMeterStepSpecificationImpl("test-throughput", block)
-            .shouldFailWhen {
+            .shouldSatisfy {
                 max.isGreaterThan(12.0)
                 mean.isLessThan(14.0)
                 percentile(45.0).isGreaterThanOrEqual(299.9)

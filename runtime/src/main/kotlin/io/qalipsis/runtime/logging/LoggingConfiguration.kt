@@ -62,7 +62,7 @@ class LoggingConfiguration(
 
         var enabled: Boolean = true
 
-        var pattern: String = "%d{yyyy-MM-dd'T'HH:mm:ss.SSS,UTC}Z %5p --- [%t] %logger.%M.%L : %m%n}"
+        var pattern: String = "%d{yyyy-MM-dd'T'HH:mm:ss.SSS,UTC}Z %5p --- [%t] %logger.%M.%L : %m%n"
 
         var minLogLevel: String = "${Level.INFO}"
 

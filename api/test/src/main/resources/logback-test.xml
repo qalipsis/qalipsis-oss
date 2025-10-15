@@ -38,6 +38,10 @@
         <appender-ref ref="console"/>
     </logger>
 
+    <logger level="off" name="io.micronaut.context.condition" additivity="false">
+        <appender-ref ref="console"/>
+    </logger>
+
     <root level="${LOGGING_LEVEL:-INFO}">
         <appender-ref ref="console"/>
     </root>

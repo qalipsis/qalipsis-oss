@@ -37,8 +37,8 @@ import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factory.steps.meter.GaugeMeterStep
 import io.qalipsis.core.factory.steps.meter.checkers.LessThanChecker
 import io.qalipsis.core.factory.steps.meter.checkers.ValueChecker
-import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.assertk.prop
+import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.AbstractStepSpecificationConverterTest
 import kotlinx.coroutines.runBlocking
@@ -112,7 +112,7 @@ internal class GaugeMeterStepSpecificationConverterTest :
         val block: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
         val spec = GaugeMeterStepSpecificationImpl("test-gauge", block)
-            .shouldFailWhen {
+            .shouldSatisfy {
                 value.isLessThan(10.0)
             }
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)

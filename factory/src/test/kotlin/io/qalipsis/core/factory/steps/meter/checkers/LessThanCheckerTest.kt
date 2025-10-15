@@ -37,9 +37,9 @@ internal class LessThanCheckerTest {
 
     @ParameterizedTest
     @ValueSource(doubles = [20.0, 17.0, -32.0, 22.0])
-    fun `should not return any exception when the condition is successful` () {
+    fun `should not return any exception when the condition is successful`() {
         // given
-        val checker = LessThanChecker(23.0)
+        val checker = LessThanChecker("field 1", 23.0)
 
         // when + then
         assertNull(checker.check(20.0))
@@ -47,9 +47,9 @@ internal class LessThanCheckerTest {
 
     @ParameterizedTest
     @ValueSource(doubles = [24.0, 32.0, 23.0, 29.0, 81.0])
-    fun `should return an exception when value is not less than the threshold` (value: Double) {
+    fun `should return an exception when value is not less than the threshold`(value: Double) {
         // given
-        val checker = LessThanChecker(23.0)
+        val checker = LessThanChecker("field 1", 23.0)
 
         // when
         val exception = checker.check(value)
@@ -57,7 +57,7 @@ internal class LessThanCheckerTest {
         // then
         assertThat(exception).isNotNull().all {
             isInstanceOf(MeterAssertionViolation::class.java)
-            prop(MeterAssertionViolation::message).isEqualTo("Value should be less than 23.0")
+            prop(MeterAssertionViolation::message).isEqualTo("The field 1 is $value but should be less than 23.0")
         }
     }
 }

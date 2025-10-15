@@ -22,9 +22,9 @@ package io.qalipsis.api.meters.steps
 import io.qalipsis.api.annotations.Spec
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.Timer
-import io.qalipsis.api.meters.steps.failure.TimerFailureConditionSpec
-import io.qalipsis.api.meters.steps.failure.impl.ComparableValueFailureSpecification
-import io.qalipsis.api.meters.steps.failure.impl.TimerFailureConditionSpecImpl
+import io.qalipsis.api.meters.steps.expectations.TimerExpectationSpec
+import io.qalipsis.api.meters.steps.expectations.impl.ComparableValueMeterExpectationSpecification
+import io.qalipsis.api.meters.steps.expectations.impl.TimerExpectationSpecImpl
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.ConfigurableStepSpecification
 import io.qalipsis.api.steps.StepSpecification
@@ -42,7 +42,7 @@ interface TimerMeterStepSpecification<INPUT> :
     /**
      * Allows specification of failure conditions on the timer meter.
      */
-    fun shouldFailWhen(block: TimerFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
+    fun shouldSatisfy(block: TimerExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
 }
 
 /**
@@ -57,12 +57,12 @@ data class TimerMeterStepSpecificationImpl<INPUT>(
 ) : TimerMeterStepSpecification<INPUT>,
     AbstractStepSpecification<INPUT, INPUT, TimerMeterStepSpecification<INPUT>>() {
 
-    var checks: MutableList<ComparableValueFailureSpecification<Timer, Duration>> = mutableListOf()
+    var checks: MutableList<ComparableValueMeterExpectationSpecification<Timer, Duration>> = mutableListOf()
 
     val percentiles: MutableSet<Double> = mutableSetOf()
 
-    override fun shouldFailWhen(block: TimerFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
-        val timerFailureConditionSpecImpl = TimerFailureConditionSpecImpl(percentiles)
+    override fun shouldSatisfy(block: TimerExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
+        val timerFailureConditionSpecImpl = TimerExpectationSpecImpl(percentiles)
         timerFailureConditionSpecImpl.block()
         checks = timerFailureConditionSpecImpl.checks
         return this
@@ -83,6 +83,7 @@ fun <INPUT> StepSpecification<*, INPUT, *>.timer(
     block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> Duration
 ): TimerMeterStepSpecification<INPUT> {
     val step = TimerMeterStepSpecificationImpl(name, block)
+    step.name = name
     this.add(step)
     return step
 }

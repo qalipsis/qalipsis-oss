@@ -53,7 +53,7 @@ internal class CounterMeterStepSpecificationImplTest {
         val specification: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
         previousStep.counter(name = "test-counter", specification)
-            .shouldFailWhen {
+            .shouldSatisfy {
                 count.isLessThan(12.0)
 
                 assertThat(

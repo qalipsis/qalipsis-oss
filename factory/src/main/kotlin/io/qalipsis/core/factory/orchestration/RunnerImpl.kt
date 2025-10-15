@@ -320,9 +320,9 @@ class RunnerImpl(
                     stepContext.addError(StepError(t))
                     stepContext.isExhausted = true
                     if (log.isTraceEnabled) {
-                        log.warn(t) { "Step completed with an exception, the context is marked as exhausted: ${t.message}" }
+                        log.debug(t) { "Step completed with an exception, the context is marked as exhausted: ${t.message}" }
                     } else {
-                        log.warn { "Step completed with an exception, the context is marked as exhausted: ${t.message}" }
+                        log.debug { "Step completed with an exception, the context is marked as exhausted: ${t.message}" }
                     }
                 }
             } else {

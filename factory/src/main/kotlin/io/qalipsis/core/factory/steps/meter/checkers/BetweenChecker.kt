@@ -32,6 +32,7 @@ import io.qalipsis.core.factory.steps.meter.MeterAssertionViolation
  * @author Francisca Eze
  */
 class BetweenChecker<T : Comparable<T>>(
+    private val valueName: String,
     private val lowerBound: T,
     private val upperBound: T
 ) : ValueChecker<T> {
@@ -43,7 +44,7 @@ class BetweenChecker<T : Comparable<T>>(
                 lowerBound,
                 upperBound
             )
-        ) { MeterAssertionViolation("Value $value should be between bounds: $lowerBound and $upperBound") }
+        ) { MeterAssertionViolation("The $valueName is $value but should be between bounds: $lowerBound and $upperBound") }
     }
 
     /**

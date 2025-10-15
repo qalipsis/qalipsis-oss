@@ -53,7 +53,7 @@ internal class GaugeMeterStepSpecificationImplTest {
         val specification: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
         previousStep.gauge(name = "test-gauge", specification)
-            .shouldFailWhen {
+            .shouldSatisfy {
                 value.isEqual(13.0)
             }
 

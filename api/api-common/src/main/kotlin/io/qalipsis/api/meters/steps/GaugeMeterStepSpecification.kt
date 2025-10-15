@@ -22,9 +22,9 @@ package io.qalipsis.api.meters.steps
 import io.qalipsis.api.annotations.Spec
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.Gauge
-import io.qalipsis.api.meters.steps.failure.GaugeFailureConditionSpec
-import io.qalipsis.api.meters.steps.failure.impl.ComparableValueFailureSpecification
-import io.qalipsis.api.meters.steps.failure.impl.GaugeFailureConditionSpecImpl
+import io.qalipsis.api.meters.steps.expectations.GaugeExpectationSpec
+import io.qalipsis.api.meters.steps.expectations.impl.ComparableValueMeterExpectationSpecification
+import io.qalipsis.api.meters.steps.expectations.impl.GaugeExpectationSpecImpl
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.ConfigurableStepSpecification
 import io.qalipsis.api.steps.StepSpecification
@@ -40,7 +40,7 @@ interface GaugeMeterStepSpecification<INPUT> : StepSpecification<INPUT, INPUT, G
     /**
      * Allows specification of failure conditions on the gauge meter.
      */
-    fun shouldFailWhen(block: GaugeFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
+    fun shouldSatisfy(block: GaugeExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
 }
 
 /**
@@ -55,10 +55,10 @@ data class GaugeMeterStepSpecificationImpl<INPUT>(
 ) : GaugeMeterStepSpecification<INPUT>,
     AbstractStepSpecification<INPUT, INPUT, GaugeMeterStepSpecification<INPUT>>() {
 
-    var checks: MutableList<ComparableValueFailureSpecification<Gauge, Double>> = mutableListOf()
+    var checks: MutableList<ComparableValueMeterExpectationSpecification<Gauge, Double>> = mutableListOf()
 
-    override fun shouldFailWhen(block: GaugeFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
-        val gaugeFailureConditionSpecImpl = GaugeFailureConditionSpecImpl()
+    override fun shouldSatisfy(block: GaugeExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
+        val gaugeFailureConditionSpecImpl = GaugeExpectationSpecImpl()
         gaugeFailureConditionSpecImpl.block()
         checks = gaugeFailureConditionSpecImpl.checks
         return this
@@ -79,6 +79,7 @@ fun <INPUT> StepSpecification<*, INPUT, *>.gauge(
     block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> Double
 ): GaugeMeterStepSpecification<INPUT> {
     val step = GaugeMeterStepSpecificationImpl(name, block)
+    step.name = name
     this.add(step)
     return step
 }

@@ -24,5 +24,5 @@ package io.qalipsis.api.meters.steps.checkSpecification
  *
  * @author Francisca Eze
  */
-class GreaterThanValueSpecification<T : Comparable<T>>(override val expected: T) :
+class GreaterThanValueSpecification<T : Comparable<T>>(override val valueName: String, override val expected: T) :
     SingleThresholdValueCheckSpecification<T>

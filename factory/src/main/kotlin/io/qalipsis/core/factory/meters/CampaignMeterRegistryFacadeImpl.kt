@@ -91,6 +91,8 @@ class CampaignMeterRegistryFacadeImpl(
         }
     }
 
+    override fun getOrder(): Int = Integer.MIN_VALUE
+
     override suspend fun init(campaign: Campaign) {
         currentCampaignKey = campaign.campaignKey
         publishers = publisherFactories.map { it.getPublisher() }
@@ -125,7 +127,8 @@ class CampaignMeterRegistryFacadeImpl(
         logger.debug { "Shutting down the publication of meters for the campaign $currentCampaignKey" }
         publishers.forEach { it.stop() }
         logger.debug { "The publication of meters has been shut down for the campaign $currentCampaignKey" }
-        currentCampaignKey = null
+        // The current campaign key is kept on purpose, in order to ensure that closing meters are still
+        // related to the same campaign.
     }
 
     @KTestable

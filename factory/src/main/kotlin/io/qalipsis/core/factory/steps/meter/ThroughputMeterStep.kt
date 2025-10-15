@@ -20,7 +20,6 @@
 package io.qalipsis.core.factory.steps.meter
 
 import io.aerisconsulting.catadioptre.KTestable
-import java.util.concurrent.atomic.AtomicReference
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
@@ -41,6 +40,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Step to create a [Throughput] that allows for specification of failure conditions
@@ -63,6 +63,8 @@ class ThroughputMeterStep<I>(
 
     private lateinit var meter: Throughput
 
+    private var initialized = AtomicBoolean(false)
+
     @KTestable
     private var statusJob: Job? = null
 
@@ -76,51 +78,53 @@ class ThroughputMeterStep<I>(
     private var messageId: String? = null
 
     override suspend fun start(context: StepStartStopContext) {
-        meter = campaignMeterRegistry.throughput(
-            scenarioName = context.scenarioName,
-            stepName = context.stepName,
-            name = meterName,
-            tags = context.toMetersTags(),
-            percentiles = percentiles
-        ).report {
-            // This block configures the display of the meter values into the live reporter.
+        if (initialized.compareAndSet(false, true)) {
+            meter = campaignMeterRegistry.throughput(
+                scenarioName = context.scenarioName,
+                stepName = context.stepName,
+                name = meterName,
+                tags = context.toMetersTags(),
+                percentiles = percentiles
+            ).report {
+                // This block configures the display of the meter values into the live reporter.
 
-            // The first row on the console contains the count of calls, mean and max values.
-            display(
-                "\u2713 %,.0f",
-                severity = { severity.get() },
-                row = 0,
-                column = 0,
-                Throughput::current
-            )
-            display(
-                "mean: %,.3f ms",
-                severity = { severity.get() },
-                row = 0,
-                column = 1,
-                Throughput::mean
-            )
-            display(
-                "max: %,.3f ms",
-                severity = { severity.get() },
-                row = 0,
-                column = 2,
-                Throughput::max
-            )
-
-            // Values for percentiles are displayed in order in an additional row,
-            // limited to 10 values by security.
-            percentiles.sorted().take(10).forEachIndexed { index, percentile ->
+                // The first row on the console contains the count of calls, mean and max values.
                 display(
-                    "${percentile}%%: %,.3f ms",
+                    "\u2713 %,.0f",
                     severity = { severity.get() },
-                    row = 1,
-                    column = index.toShort()
-                ) { this.percentile(percentile) }
-            }
-        }
+                    row = 0,
+                    column = 0,
+                    Throughput::current
+                )
+                display(
+                    "mean: %,.0f",
+                    severity = { severity.get() },
+                    row = 0,
+                    column = 1,
+                    Throughput::mean
+                )
+                display(
+                    "max: %,.0f",
+                    severity = { severity.get() },
+                    row = 0,
+                    column = 2,
+                    Throughput::max
+                )
 
-        startStatusCheck(context)
+                // Values for percentiles are displayed in order in an additional row,
+                // limited to 10 values by security.
+                percentiles.sorted().take(10).forEachIndexed { index, percentile ->
+                    display(
+                        "${percentile}%%: %,.0f",
+                        severity = { severity.get() },
+                        row = 1,
+                        column = index.toShort()
+                    ) { this.percentile(percentile) }
+                }
+            }
+
+            startStatusCheck(context)
+        }
     }
 
     /**
@@ -161,6 +165,7 @@ class ThroughputMeterStep<I>(
 
         // Verifies once more at the end to get the final state.
         checkState(context)
+        initialized.compareAndSet(true, false)
         super.stop(context)
     }
 

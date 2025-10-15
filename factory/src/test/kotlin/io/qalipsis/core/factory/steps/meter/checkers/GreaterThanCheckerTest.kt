@@ -21,10 +21,10 @@ package io.qalipsis.core.factory.steps.meter.checkers
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.isNotNull
-import assertk.assertions.isInstanceOf
-import assertk.assertions.prop
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
+import assertk.assertions.prop
 import io.qalipsis.core.factory.steps.meter.MeterAssertionViolation
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.params.ParameterizedTest
@@ -37,9 +37,9 @@ internal class GreaterThanCheckerTest {
 
     @ParameterizedTest
     @ValueSource(doubles = [24.0, 23.01, 29.0, 81.0])
-    fun `should not return any exception when the value is greater than the threshold` (value: Double) {
+    fun `should not return any exception when the value is greater than the threshold`(value: Double) {
         // given
-        val checker = GreaterThanChecker(23.0)
+        val checker = GreaterThanChecker("field 1", 23.0)
 
         // when + then
         assertNull(checker.check(value))
@@ -47,9 +47,9 @@ internal class GreaterThanCheckerTest {
 
     @ParameterizedTest
     @ValueSource(doubles = [4.0, 17.0, 0.0, 23.0, -29.0])
-    fun `should return an exception when value is not greater than the threshold` (value: Double) {
+    fun `should return an exception when value is not greater than the threshold`(value: Double) {
         // given
-        val checker = GreaterThanChecker(23.0)
+        val checker = GreaterThanChecker("field 1", 23.0)
 
         // when
         val exception = checker.check(value)
@@ -57,7 +57,7 @@ internal class GreaterThanCheckerTest {
         // then
         assertThat(exception).isNotNull().all {
             isInstanceOf(MeterAssertionViolation::class.java)
-            prop(MeterAssertionViolation::message).isEqualTo("Value should be greater than 23.0")
+            prop(MeterAssertionViolation::message).isEqualTo("The field 1 is $value but should be greater than 23.0")
         }
     }
 }

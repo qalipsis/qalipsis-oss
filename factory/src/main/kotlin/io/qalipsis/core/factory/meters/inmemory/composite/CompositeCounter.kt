@@ -52,4 +52,9 @@ class CompositeCounter(
         scenarioMeter.increment(amount)
         globalMeter.increment(amount)
     }
+
+    override fun toString(): String {
+        return "CompositeCounter(scenarioMeter=$scenarioMeter, globalMeter=$globalMeter)"
+    }
+
 }

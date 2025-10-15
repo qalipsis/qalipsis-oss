@@ -64,4 +64,8 @@ class CompositeTimer(
         scenarioMeter.record(duration)
         globalMeter.record(duration)
     }
+
+    override fun toString(): String {
+        return "CompositeTimer(scenarioMeter=$scenarioMeter, globalMeter=$globalMeter)"
+    }
 }

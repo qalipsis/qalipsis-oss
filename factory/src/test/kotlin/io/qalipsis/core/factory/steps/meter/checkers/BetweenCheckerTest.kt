@@ -37,9 +37,9 @@ internal class BetweenCheckerTest {
 
     @ParameterizedTest
     @ValueSource(doubles = [24.0, 27.0, 26.0, 28.50, 23.07, 25.54])
-    fun `should not return any exception when the condition is successful` () {
+    fun `should not return any exception when the condition is successful`() {
         // given
-        val checker = BetweenChecker(23.0, 29.0)
+        val checker = BetweenChecker("field 1", 23.0, 29.0)
 
         // when + then
         assertNull(checker.check(24.0))
@@ -47,9 +47,9 @@ internal class BetweenCheckerTest {
 
     @ParameterizedTest
     @ValueSource(doubles = [4.0, 17.0, 32.0, 23.0, 29.0, 81.0, -23.0, -29.0, -25.0])
-    fun `should return an exception when value is not between the specified threshold` (value: Double) {
+    fun `should return an exception when value is not between the specified threshold`(value: Double) {
         // given
-        val checker = BetweenChecker(23.0, 29.0)
+        val checker = BetweenChecker("field 1", 23.0, 29.0)
 
         // when
         val violation = checker.check(value)
@@ -57,7 +57,7 @@ internal class BetweenCheckerTest {
         // then
         assertThat(violation).isNotNull().all {
             isInstanceOf(MeterAssertionViolation::class.java)
-            prop(MeterAssertionViolation::message).isEqualTo("Value $value should be between bounds: 23.0 and 29.0")
+            prop(MeterAssertionViolation::message).isEqualTo("The field 1 is $value but should be between bounds: 23.0 and 29.0")
         }
     }
 }

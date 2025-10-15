@@ -37,9 +37,9 @@ internal class GreaterThanOrEqualsCheckerTest {
 
     @ParameterizedTest
     @ValueSource(doubles = [24.0, 32.0, 29.0, 81.0, 24.01])
-    fun `should not return any exception when the condition is successful` (value: Double) {
+    fun `should not return any exception when the condition is successful`(value: Double) {
         // given
-        val checker = GreaterThanOrEqualChecker(24.0)
+        val checker = GreaterThanOrEqualChecker("field 1", 24.0)
 
         // when + then
         assertNull(checker.check(value))
@@ -47,9 +47,9 @@ internal class GreaterThanOrEqualsCheckerTest {
 
     @ParameterizedTest
     @ValueSource(doubles = [4.0, 17.0, 22.0, 22.99, -23.0])
-    fun `should return an exception when value is less than the threshold` (value: Double) {
+    fun `should return an exception when value is less than the threshold`(value: Double) {
         // given
-        val checker = GreaterThanOrEqualChecker(23.0)
+        val checker = GreaterThanOrEqualChecker("field 1", 23.0)
 
         // when
         val exception = checker.check(value)
@@ -57,7 +57,7 @@ internal class GreaterThanOrEqualsCheckerTest {
         // then
         assertThat(exception).isNotNull().all {
             isInstanceOf(MeterAssertionViolation::class.java)
-            prop(MeterAssertionViolation::message).isEqualTo("Value should be greater than or equal to 23.0")
+            prop(MeterAssertionViolation::message).isEqualTo("The field 1 is $value but should be greater than or equal to 23.0")
         }
 
     }

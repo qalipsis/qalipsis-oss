@@ -17,30 +17,19 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure
-
-import java.time.Duration
+package io.qalipsis.api.meters.steps.expectations
 
 /**
- * Defines the failure condition specification for timer-based meters. It defines how the
- * properties of a [Timer] should be evaluated against a threshold or range-based conditions.
+ * Defines the expectation specification for counter-based meters. It defines
+ * how the allowable properties of a [Counter] should be evaluated against a threshold
+ * or range-based conditions.
  *
  * @author Francisca Eze
  */
-interface TimerFailureConditionSpec {
+interface CounterExpectationSpec {
 
     /**
-     * Allows evaluation of failure conditions on a percentile property.
+     * Allows evaluation of failure conditions on the count property.
      */
-    fun percentile(percentile: Double): FailureSpecification<Duration>
-
-    /**
-     * Allows evaluation of failure conditions on the max property.
-     */
-    val max: FailureSpecification<Duration>
-
-    /**
-     * Allows evaluation of failure conditions on the average property.
-     */
-    val mean: FailureSpecification<Duration>
+    val count: MeterExpectationSpecification<Double>
 }

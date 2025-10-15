@@ -17,21 +17,28 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure.impl
-
-import io.qalipsis.api.meters.Meter
-import io.qalipsis.api.meters.steps.checkSpecification.ValueCheckSpecification
-import io.qalipsis.api.meters.steps.failure.FailureSpecification
+package io.qalipsis.api.meters.steps.expectations
 
 /**
- * Definition of a failure specification that defines how to extract a comparable value from a [Meter]
- * and how to evaluate this value against a given threshold.
+ * Defines the expectation specification for summary-based meters. It defines how the
+ * properties of a [DistributionSummary] should be evaluated against a threshold or range-based conditions.
  *
  * @author Francisca Eze
  */
-interface ComparableValueFailureSpecification<M : Meter<M>, T : Comparable<T>> : FailureSpecification<T> {
+interface DistributionSummaryExpectationSpec {
 
-    val valueExtractor: M.() -> T
+    /**
+     * Allows evaluation of failure conditions on a percentile property.
+     */
+    fun percentile(percentile: Double): MeterExpectationSpecification<Double>
 
-    var checkSpec: ValueCheckSpecification<T>?
+    /**
+     * Allows evaluation of failure conditions on the max property.
+     */
+    val max: MeterExpectationSpecification<Double>
+
+    /**
+     * Allows evaluation of failure conditions on the average property.
+     */
+    val mean: MeterExpectationSpecification<Double>
 }

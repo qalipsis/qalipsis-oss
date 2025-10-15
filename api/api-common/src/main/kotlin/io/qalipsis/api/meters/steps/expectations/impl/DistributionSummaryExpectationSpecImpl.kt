@@ -17,41 +17,44 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure.impl
+package io.qalipsis.api.meters.steps.expectations.impl
 
 import io.qalipsis.api.meters.DistributionSummary
-import io.qalipsis.api.meters.steps.failure.DistributionSummaryFailureConditionSpec
-import io.qalipsis.api.meters.steps.failure.FailureSpecification
+import io.qalipsis.api.meters.steps.expectations.DistributionSummaryExpectationSpec
+import io.qalipsis.api.meters.steps.expectations.MeterExpectationSpecification
 
 /**
- * Implementation of [DistributionSummaryFailureConditionSpec] to extract one or more properties of a [DistributionSummary]
+ * Implementation of [DistributionSummaryExpectationSpec] to extract one or more properties of a [DistributionSummary]
  * and evaluate them against a threshold or range-based conditions.
  *
  * @author Francisca Eze
  */
-class DistributionSummaryFailureConditionSpecImpl(val percentiles: MutableSet<Double>) :
-    DistributionSummaryFailureConditionSpec {
+class DistributionSummaryExpectationSpecImpl(val percentiles: MutableSet<Double>) :
+    DistributionSummaryExpectationSpec {
 
-    val checks = mutableListOf<ComparableValueFailureSpecification<DistributionSummary, Double>>()
+    val checks = mutableListOf<ComparableValueMeterExpectationSpecification<DistributionSummary, Double>>()
 
-    override val max: ComparableValueFailureSpecification<DistributionSummary, Double>
+    override val max: ComparableValueMeterExpectationSpecification<DistributionSummary, Double>
         get() {
-            val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(DistributionSummary::max)
+            val comparableValueFailureSpecification =
+                ComparableValueMeterExpectationSpecificationImpl("max", DistributionSummary::max)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
 
-    override val mean: FailureSpecification<Double>
+    override val mean: MeterExpectationSpecification<Double>
         get() {
-            val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(DistributionSummary::mean)
+            val comparableValueFailureSpecification =
+                ComparableValueMeterExpectationSpecificationImpl("mean", DistributionSummary::mean)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
 
-    override fun percentile(percentile: Double): FailureSpecification<Double> {
+    override fun percentile(percentile: Double): MeterExpectationSpecification<Double> {
         val valueExtractor: DistributionSummary.() -> Double = { percentile(percentile) }
         percentiles.add(percentile)
-        val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(valueExtractor)
+        val comparableValueFailureSpecification =
+            ComparableValueMeterExpectationSpecificationImpl("percentile($percentile)", valueExtractor)
         checks.add(comparableValueFailureSpecification)
         return comparableValueFailureSpecification
     }

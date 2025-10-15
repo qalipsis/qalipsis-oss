@@ -17,47 +17,51 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure.impl
+package io.qalipsis.api.meters.steps.expectations.impl
 
 import io.qalipsis.api.meters.Throughput
-import io.qalipsis.api.meters.steps.failure.FailureSpecification
-import io.qalipsis.api.meters.steps.failure.ThroughputFailureConditionSpec
+import io.qalipsis.api.meters.steps.expectations.MeterExpectationSpecification
+import io.qalipsis.api.meters.steps.expectations.ThroughputExpectationSpec
 
 /**
- * Implementation of [ThroughputFailureConditionSpec] to extract one or more properties of a [Throughput]
+ * Implementation of [ThroughputExpectationSpec] to extract one or more properties of a [Throughput]
  * and evaluate them against a threshold or range-based conditions.
  *
  * @author Francisca Eze
  */
-class ThroughputFailureConditionSpecImpl(val percentiles: MutableSet<Double>) : ThroughputFailureConditionSpec {
+class ThroughputExpectationSpecImpl(val percentiles: MutableSet<Double>) : ThroughputExpectationSpec {
 
-    val checks = mutableListOf<ComparableValueFailureSpecification<Throughput, Double>>()
+    val checks = mutableListOf<ComparableValueMeterExpectationSpecification<Throughput, Double>>()
 
-    override val max: ComparableValueFailureSpecification<Throughput, Double>
+    override val max: ComparableValueMeterExpectationSpecification<Throughput, Double>
         get() {
-            val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(Throughput::max)
+            val comparableValueFailureSpecification =
+                ComparableValueMeterExpectationSpecificationImpl("max", Throughput::max)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
 
-    override val mean: FailureSpecification<Double>
+    override val mean: MeterExpectationSpecification<Double>
         get() {
-            val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(Throughput::mean)
+            val comparableValueFailureSpecification =
+                ComparableValueMeterExpectationSpecificationImpl("mean", Throughput::mean)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
 
-    override val current: FailureSpecification<Double>
+    override val current: MeterExpectationSpecification<Double>
         get() {
-            val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(Throughput::current)
+            val comparableValueFailureSpecification =
+                ComparableValueMeterExpectationSpecificationImpl("current throughput", Throughput::current)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
 
-    override fun percentile(percentile: Double): FailureSpecification<Double> {
+    override fun percentile(percentile: Double): MeterExpectationSpecification<Double> {
         val valueExtractor: Throughput.() -> Double = { percentile(percentile) }
         percentiles.add(percentile)
-        val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(valueExtractor)
+        val comparableValueFailureSpecification =
+            ComparableValueMeterExpectationSpecificationImpl("percentile($percentile)", valueExtractor)
         checks.add(comparableValueFailureSpecification)
         return comparableValueFailureSpecification
     }

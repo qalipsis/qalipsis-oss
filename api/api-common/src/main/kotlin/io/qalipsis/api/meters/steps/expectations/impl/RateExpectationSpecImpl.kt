@@ -17,24 +17,27 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure.impl
+package io.qalipsis.api.meters.steps.expectations.impl
 
-import io.qalipsis.api.meters.Gauge
-import io.qalipsis.api.meters.steps.failure.GaugeFailureConditionSpec
+import io.qalipsis.api.meters.Rate
+import io.qalipsis.api.meters.steps.expectations.MeterExpectationSpecification
+import io.qalipsis.api.meters.steps.expectations.RateExpectationSpec
 
 /**
- * Implementation of [GaugeFailureConditionSpec] to extract the current value property of the gauge
- * and evaluate it against a threshold or range-based conditions.
+ * Implementation of [RateExpectationSpec] to extract the current value property and evaluate it against
+ * a threshold or range-based conditions.
  *
  * @author Francisca Eze
  */
-class GaugeFailureConditionSpecImpl : GaugeFailureConditionSpec {
 
-    val checks = mutableListOf<ComparableValueFailureSpecification<Gauge, Double>>()
+class RateExpectationSpecImpl : RateExpectationSpec {
 
-    override val value: ComparableValueFailureSpecification<Gauge, Double>
+    val checks = mutableListOf<ComparableValueMeterExpectationSpecification<Rate, Double>>()
+
+    override val current: MeterExpectationSpecification<Double>
         get() {
-            val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(Gauge::value)
+            val comparableValueFailureSpecification =
+                ComparableValueMeterExpectationSpecificationImpl("current rate", Rate::current)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }

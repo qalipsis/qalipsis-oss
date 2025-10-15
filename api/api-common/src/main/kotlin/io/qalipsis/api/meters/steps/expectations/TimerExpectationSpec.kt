@@ -17,19 +17,30 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure
+package io.qalipsis.api.meters.steps.expectations
+
+import java.time.Duration
 
 /**
- * Defines the failure condition specification for gauge-based meters. It defines
- * how the current value of a [Gauge] should be evaluated against a threshold
- * or range-based conditions.
+ * Defines the expectation specification for timer-based meters. It defines how the
+ * properties of a [Timer] should be evaluated against a threshold or range-based conditions.
  *
  * @author Francisca Eze
  */
-interface GaugeFailureConditionSpec {
+interface TimerExpectationSpec {
 
     /**
-     * Allows evaluation of failure conditions on the current value property.
+     * Allows evaluation of failure conditions on a percentile property.
      */
-    val value: FailureSpecification<Double>
+    fun percentile(percentile: Double): MeterExpectationSpecification<Duration>
+
+    /**
+     * Allows evaluation of failure conditions on the max property.
+     */
+    val max: MeterExpectationSpecification<Duration>
+
+    /**
+     * Allows evaluation of failure conditions on the average property.
+     */
+    val mean: MeterExpectationSpecification<Duration>
 }

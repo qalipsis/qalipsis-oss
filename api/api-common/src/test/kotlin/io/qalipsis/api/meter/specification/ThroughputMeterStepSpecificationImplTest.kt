@@ -53,7 +53,7 @@ internal class ThroughputMeterStepSpecificationImplTest {
         val specification: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
         previousStep.throughput(name = "test-throughput", specification)
-            .shouldFailWhen {
+            .shouldSatisfy {
                 max.isGreaterThan(12.0)
                 mean.isLessThan(14.0)
             }

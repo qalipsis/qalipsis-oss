@@ -17,19 +17,19 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure
+package io.qalipsis.api.meters.steps.expectations
 
 /**
- * Defines the failure condition specification for counter-based meters. It defines
- * how the allowable properties of a [Counter] should be evaluated against a threshold
+ * Defines the expectation specification for gauge-based meters. It defines
+ * how the current value of a [Gauge] should be evaluated against a threshold
  * or range-based conditions.
  *
  * @author Francisca Eze
  */
-interface CounterFailureConditionSpec {
+interface GaugeExpectationSpec {
 
     /**
-     * Allows evaluation of failure conditions on the count property.
+     * Allows evaluation of failure conditions on the current value property.
      */
-    val count: FailureSpecification<Double>
+    val value: MeterExpectationSpecification<Double>
 }

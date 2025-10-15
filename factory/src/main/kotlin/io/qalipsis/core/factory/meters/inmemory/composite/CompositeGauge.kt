@@ -61,4 +61,8 @@ class CompositeGauge(
         return scenarioMeter.increment(amount)
     }
 
+    override fun toString(): String {
+        return "CompositeGauge(scenarioMeter=$scenarioMeter, globalMeter=$globalMeter)"
+    }
+
 }

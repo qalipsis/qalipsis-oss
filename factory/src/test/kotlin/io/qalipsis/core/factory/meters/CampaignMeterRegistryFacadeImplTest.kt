@@ -23,7 +23,7 @@ import assertk.assertThat
 import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
-import assertk.assertions.isNull
+import assertk.assertions.isNotNull
 import assertk.assertions.isSameInstanceAs
 import assertk.assertions.isTrue
 import io.aerisconsulting.catadioptre.coInvokeInvisible
@@ -239,7 +239,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
 
             //then
             assertThat(campaignMeterRegistry.ticker().isClosedForReceive).isTrue()
-            assertThat(campaignMeterRegistry.currentCampaignKey()).isNull()
+            assertThat(campaignMeterRegistry.currentCampaignKey()).isNotNull()
             coVerifyOrder {
                 campaignMeterRegistry.init(campaign)
                 publisherFactory1.getPublisher()

@@ -17,19 +17,22 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.checkSpecification
+package io.qalipsis.api.meters.steps.expectations.impl
+
+import io.qalipsis.api.meters.Meter
+import io.qalipsis.api.meters.steps.checkSpecification.ValueCheckSpecification
+import io.qalipsis.api.meters.steps.expectations.MeterExpectationSpecification
 
 /**
- * Defines the different types of comparison specifications that are supported.
+ * Definition of a failure specification that defines how to extract a comparable value from a [Meter]
+ * and how to evaluate this value against a given threshold.
  *
  * @author Francisca Eze
  */
-enum class SpecificationType {
-    LESS_THAN,
-    MORE_THAN,
-    BETWEEN,
-    NOT_BETWEEN,
-    EQUAL,
-    GREATER_THAN_OR_EQUAL,
-    LESS_THAN_OR_EQUAL
+interface ComparableValueMeterExpectationSpecification<M : Meter<M>, T : Comparable<T>> :
+    MeterExpectationSpecification<T> {
+
+    val valueExtractor: M.() -> T
+
+    var checkSpec: ValueCheckSpecification<T>?
 }

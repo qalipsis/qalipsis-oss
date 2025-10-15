@@ -17,26 +17,25 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure.impl
+package io.qalipsis.api.meters.steps.expectations.impl
 
-import io.qalipsis.api.meters.Rate
-import io.qalipsis.api.meters.steps.failure.FailureSpecification
-import io.qalipsis.api.meters.steps.failure.RateFailureConditionSpec
+import io.qalipsis.api.meters.Counter
+import io.qalipsis.api.meters.steps.expectations.CounterExpectationSpec
 
 /**
- * Implementation of [RateFailureConditionSpec] to extract the current value property and evaluate it against
+ * Implementation of [CounterExpectationSpec] to extract the count property and evaluate it against
  * a threshold or range-based conditions.
  *
  * @author Francisca Eze
  */
+class CounterExpectationSpecImpl : CounterExpectationSpec {
 
-class RateFailureConditionSpecImpl : RateFailureConditionSpec {
+    val checks = mutableListOf<ComparableValueMeterExpectationSpecification<Counter, Double>>()
 
-    val checks = mutableListOf<ComparableValueFailureSpecification<Rate, Double>>()
-
-    override val current: FailureSpecification<Double>
+    override val count: ComparableValueMeterExpectationSpecification<Counter, Double>
         get() {
-            val comparableValueFailureSpecification = ComparableValueFailureSpecificationImpl(Rate::current)
+            val comparableValueFailureSpecification =
+                ComparableValueMeterExpectationSpecificationImpl("count", Counter::count)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }

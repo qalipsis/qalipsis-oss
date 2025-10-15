@@ -191,6 +191,10 @@ internal class InMemoryCumulativeTimer(
         return id.hashCode()
     }
 
+    override fun toString(): String {
+        return "InMemoryCumulativeTimer(id=$id)"
+    }
+
     companion object {
 
         private const val MICROSECONDS_IN_NANOSECONDS = 1 / 1000.0

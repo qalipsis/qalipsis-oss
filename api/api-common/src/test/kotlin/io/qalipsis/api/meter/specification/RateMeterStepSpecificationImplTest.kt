@@ -54,7 +54,7 @@ internal class RateMeterStepSpecificationImplTest {
         val specification: (context: StepContext<Unit, Unit>, input: Unit) -> TrackedThresholdRatio =
             { _, _ -> TrackedThresholdRatio(12.0, 15.0) }
         previousStep.rate(name = "test-rate", specification)
-            .shouldFailWhen {
+            .shouldSatisfy {
                 current.isLessThan(7.0)
             }
 

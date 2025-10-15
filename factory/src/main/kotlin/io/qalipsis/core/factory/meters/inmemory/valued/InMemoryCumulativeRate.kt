@@ -122,4 +122,8 @@ internal class InMemoryCumulativeRate(
         return id.hashCode()
     }
 
+    override fun toString(): String {
+        return "InMemoryCumulativeRate(id=$id)"
+    }
+
 }

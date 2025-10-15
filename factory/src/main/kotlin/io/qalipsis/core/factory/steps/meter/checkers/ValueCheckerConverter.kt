@@ -43,13 +43,26 @@ class ValueCheckerConverter {
         checkSpec: ValueCheckSpecification<T>
     ): ValueChecker<T> {
         return when (checkSpec) {
-            is LessThanValueSpecification -> LessThanChecker(checkSpec.expected)
-            is GreaterThanValueSpecification -> GreaterThanChecker(checkSpec.expected)
-            is EqualValueSpecification -> EqualsChecker(checkSpec.expected)
-            is BetweenValueSpecification -> BetweenChecker(checkSpec.lowerBound, checkSpec.upperBound)
-            is NotBetweenValueSpecification -> NotBetweenChecker(checkSpec.lowerBound, checkSpec.upperBound)
-            is LessThanOrEqualValueSpecification -> LessThanOrEqualChecker(checkSpec.expected)
-            is GreaterThanOrEqualValueSpecification -> GreaterThanOrEqualChecker(checkSpec.expected)
+            is LessThanValueSpecification -> LessThanChecker(checkSpec.valueName, checkSpec.expected)
+            is GreaterThanValueSpecification -> GreaterThanChecker(checkSpec.valueName, checkSpec.expected)
+            is EqualValueSpecification -> EqualsChecker(checkSpec.valueName, checkSpec.expected)
+            is BetweenValueSpecification -> BetweenChecker(
+                checkSpec.valueName,
+                checkSpec.lowerBound,
+                checkSpec.upperBound
+            )
+
+            is NotBetweenValueSpecification -> NotBetweenChecker(
+                checkSpec.valueName,
+                checkSpec.lowerBound,
+                checkSpec.upperBound
+            )
+
+            is LessThanOrEqualValueSpecification -> LessThanOrEqualChecker(checkSpec.valueName, checkSpec.expected)
+            is GreaterThanOrEqualValueSpecification -> GreaterThanOrEqualChecker(
+                checkSpec.valueName,
+                checkSpec.expected
+            )
         }
     }
 }

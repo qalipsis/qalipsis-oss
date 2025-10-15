@@ -22,9 +22,9 @@ package io.qalipsis.api.meters.steps
 import io.qalipsis.api.annotations.Spec
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.DistributionSummary
-import io.qalipsis.api.meters.steps.failure.DistributionSummaryFailureConditionSpec
-import io.qalipsis.api.meters.steps.failure.impl.ComparableValueFailureSpecification
-import io.qalipsis.api.meters.steps.failure.impl.DistributionSummaryFailureConditionSpecImpl
+import io.qalipsis.api.meters.steps.expectations.DistributionSummaryExpectationSpec
+import io.qalipsis.api.meters.steps.expectations.impl.ComparableValueMeterExpectationSpecification
+import io.qalipsis.api.meters.steps.expectations.impl.DistributionSummaryExpectationSpecImpl
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.ConfigurableStepSpecification
 import io.qalipsis.api.steps.StepSpecification
@@ -41,7 +41,7 @@ interface DistributionSummaryMeterStepSpecification<INPUT> :
     /**
      * Allows specification of failure conditions on the distribution summary meter.
      */
-    fun shouldFailWhen(block: DistributionSummaryFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
+    fun shouldSatisfy(block: DistributionSummaryExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *>
 }
 
 /**
@@ -56,12 +56,12 @@ data class DistributionSummaryMeterStepSpecificationImpl<INPUT>(
 ) : DistributionSummaryMeterStepSpecification<INPUT>,
     AbstractStepSpecification<INPUT, INPUT, DistributionSummaryMeterStepSpecification<INPUT>>() {
 
-    var checks: MutableList<ComparableValueFailureSpecification<DistributionSummary, Double>> = mutableListOf()
+    var checks: MutableList<ComparableValueMeterExpectationSpecification<DistributionSummary, Double>> = mutableListOf()
 
     val percentiles: MutableSet<Double> = mutableSetOf()
 
-    override fun shouldFailWhen(block: DistributionSummaryFailureConditionSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
-        val summaryFailureConditionSpecImpl = DistributionSummaryFailureConditionSpecImpl(percentiles)
+    override fun shouldSatisfy(block: DistributionSummaryExpectationSpec.() -> Unit): ConfigurableStepSpecification<INPUT, INPUT, *> {
+        val summaryFailureConditionSpecImpl = DistributionSummaryExpectationSpecImpl(percentiles)
         summaryFailureConditionSpecImpl.block()
         checks = summaryFailureConditionSpecImpl.checks
         return this
@@ -83,6 +83,7 @@ fun <INPUT> StepSpecification<*, INPUT, *>.summary(
     block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> Double
 ): DistributionSummaryMeterStepSpecification<INPUT> {
     val step = DistributionSummaryMeterStepSpecificationImpl(name, block)
+    step.name = name
     this.add(step)
     return step
 }

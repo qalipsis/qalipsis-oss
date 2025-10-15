@@ -17,19 +17,19 @@
  *
  */
 
-package io.qalipsis.api.meters.steps.failure
+package io.qalipsis.api.meters.steps.expectations
 
 /**
- * Defines the failure condition specification for rate-based meters. It defines
+ * Defines the expectation specification for rate-based meters. It defines
  * how the current value of a [Rate] should be evaluated against a threshold
  * or range-based conditions.
  *
  * @author Francisca Eze
  */
-interface RateFailureConditionSpec {
+interface RateExpectationSpec {
 
     /**
      * Allows evaluation of failure conditions on the current value property.
      */
-    val current: FailureSpecification<Double>
+    val current: MeterExpectationSpecification<Double>
 }

@@ -152,4 +152,8 @@ internal class InMemoryCumulativeThroughput(
     override fun hashCode(): Int {
         return id.hashCode()
     }
+
+    override fun toString(): String {
+        return "InMemoryCumulativeThroughput(id=$id)"
+    }
 }
