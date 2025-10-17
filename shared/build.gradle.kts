@@ -64,13 +64,14 @@ kapt {
 }
 
 dependencies {
+    api(platform(project(":qalipsis-dev-platform")))
     api("io.micronaut.redis:micronaut-redis-lettuce")
-    api("org.apache.commons:commons-lang3:3.+")
+    api("org.apache.commons:commons-lang3")
+
     compileOnly("io.aeris-consulting:catadioptre-annotations")
     compileOnly("io.swagger.core.v3:swagger-annotations")
     compileOnly("org.graalvm.nativeimage:svm")
 
-    implementation(platform(project(":qalipsis-dev-platform")))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive")
     implementation(project(":qalipsis-api-common"))
     implementation(project(":qalipsis-api-dsl"))

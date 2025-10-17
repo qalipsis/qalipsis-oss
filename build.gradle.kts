@@ -108,7 +108,7 @@ jreleaser {
                     url.set("https://maven.qalipsis.com/repository/oss-snapshots/")
                     snapshotUrl.set("https://maven.qalipsis.com/repository/oss-snapshots/")
                     applyMavenCentralRules.set(true)
-                    verifyPom.set(false)
+                    verifyPom.set(true)
                     snapshotSupported.set(true)
                     closeRepository.set(true)
                     releaseRepository.set(true)
@@ -274,15 +274,6 @@ fun Project.configureNotPlatform() {
                         name.set(this@configureNotPlatform.name)
                         description.set(this@configureNotPlatform.description)
 
-                        if (version.toString().endsWith("-SNAPSHOT")) {
-                            this.withXml {
-                                this.asNode().appendNode("distributionManagement").appendNode("repository").apply {
-                                    this.appendNode("id", "central-snapshots")
-                                    this.appendNode("name", "Central Portal Snapshots")
-                                    this.appendNode("url", "https://central.sonatype.com/repository/maven-snapshots")
-                                }
-                            }
-                        }
                         url.set("https://qalipsis.io")
                         licenses {
                             license {

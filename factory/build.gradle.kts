@@ -62,6 +62,8 @@ jmh {
 }
 
 dependencies {
+    api(platform(project(":qalipsis-dev-platform")))
+
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations")
 
@@ -70,7 +72,6 @@ dependencies {
     implementation(project(":qalipsis-api-dsl"))
     implementation(project(":qalipsis-api-processors"))
 
-    implementation(platform(project(":qalipsis-dev-platform")))
     implementation("com.google.guava:guava")
     implementation("com.github.ben-manes.caffeine:caffeine")
     implementation("cool.graph:cuid-java:0.1.1")

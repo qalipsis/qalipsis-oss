@@ -28,6 +28,7 @@ val kotlinCoroutines = "1.8.1"
 val kotlinSerialization = "1.6.3"
 
 val micronaut = "3.9.7"
+val micronautViews = "3.8.2"
 val jackson = "2.18.4"
 val klogging = "3.0.5"
 val logback = "1.4.14"
@@ -53,6 +54,7 @@ javaPlatform {
 dependencies {
     // Platform modules.
     api(platform("io.micronaut:micronaut-bom:${micronaut}"))
+    api(platform("io.micronaut.views:micronaut-views-bom:${micronautViews}"))
     api(platform("com.fasterxml.jackson:jackson-bom:$jackson"))
     api(platform("org.testcontainers:testcontainers-bom:$testContainers"))
     api(platform("io.netty:netty-bom:$netty"))

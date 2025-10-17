@@ -43,7 +43,7 @@ kotlin.sourceSets["test"].kotlin.srcDir(layout.buildDirectory.dir("generated/sou
 kapt.useBuildCache = false
 
 dependencies {
-    implementation(platform(project(":qalipsis-dev-platform")))
+    api(platform(project(":qalipsis-dev-platform")))
     compileOnly("io.aeris-consulting:catadioptre-annotations")
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")

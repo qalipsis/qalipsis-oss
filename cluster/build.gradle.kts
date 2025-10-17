@@ -47,7 +47,8 @@ kapt {
 }
 
 dependencies {
-    implementation(platform(project(":qalipsis-dev-platform")))
+    api(platform(project(":qalipsis-dev-platform")))
+
     implementation(project(":qalipsis-api-dev"))
 
     compileOnly("io.swagger.core.v3:swagger-annotations")

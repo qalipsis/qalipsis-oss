@@ -41,7 +41,7 @@ kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catad
 kapt.useBuildCache = false
 
 dependencies {
-    implementation(platform(project(":qalipsis-dev-platform")))
+    api(platform(project(":qalipsis-dev-platform")))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations")
 

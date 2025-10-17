@@ -37,7 +37,6 @@ kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/catad
 kapt.useBuildCache = false
 
 dependencies {
-    implementation(platform(project(":qalipsis-dev-platform")))
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.swagger.core.v3:swagger-annotations")
     compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json")
@@ -45,7 +44,7 @@ dependencies {
     compileOnly("io.aeris-consulting:catadioptre-annotations")
     compileOnly("io.aeris-consulting:catadioptre-kotlin")
 
-    implementation("cool.graph:cuid-java")
+    api(platform(project(":qalipsis-dev-platform")))
     api(project(":qalipsis-api-dev"))
     api(project(":qalipsis-api-dsl"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
@@ -59,6 +58,7 @@ dependencies {
     kapt("io.micronaut:micronaut-graal")
     kapt("io.aeris-consulting:catadioptre-annotations")
 
+    implementation("cool.graph:cuid-java")
     implementation("com.google.guava:guava")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm")
     implementation("org.apache.commons:commons-text:1.11.0")

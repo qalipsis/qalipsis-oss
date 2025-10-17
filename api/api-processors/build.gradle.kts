@@ -30,7 +30,7 @@ kapt {
 }
 
 dependencies {
-    implementation(platform(project(":qalipsis-dev-platform")))
+    api(platform(project(":qalipsis-dev-platform")))
     implementation(kotlin("reflect"))
     implementation(project(":qalipsis-api-dsl"))
 

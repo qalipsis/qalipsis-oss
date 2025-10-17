@@ -60,12 +60,12 @@ dependencies {
     compileOnly(project(":qalipsis-factory"))
     compileOnly(project(":qalipsis-head"))
 
+    api(platform(project(":qalipsis-dev-platform")))
     api(project(":qalipsis-api-common"))
     api(project(":qalipsis-api-dsl"))
     api(project(":qalipsis-api-processors"))
     api(project(":qalipsis-shared"))
 
-    implementation(platform(project(":qalipsis-dev-platform")))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 
     api("ch.qos.logback:logback-classic")

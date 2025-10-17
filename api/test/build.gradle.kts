@@ -25,7 +25,7 @@ plugins {
 description = "QALIPSIS Test Utils"
 
 dependencies {
-    implementation(platform(project(":qalipsis-dev-platform")))
+    api(platform(project(":qalipsis-dev-platform")))
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation(project(":qalipsis-api-common"))
 

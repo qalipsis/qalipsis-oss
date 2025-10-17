@@ -49,18 +49,19 @@ kapt {
 }
 
 dependencies {
+    api(platform(project(":qalipsis-dev-platform")))
+
     compileOnly("org.graalvm.nativeimage:svm")
     compileOnly("io.aeris-consulting:catadioptre-annotations")
     compileOnly("io.swagger.core.v3:swagger-annotations")
     compileOnly("io.micronaut.data:micronaut-data-jdbc")
 
-    implementation(platform(project(":qalipsis-dev-platform")))
     implementation(project(":qalipsis-shared"))
     implementation(project(":qalipsis-cluster"))
     implementation(project(":qalipsis-api-common"))
     implementation(project(":qalipsis-api-dsl"))
     implementation(project(":qalipsis-api-processors"))
-    implementation("com.varabyte.kotter:kotter-jvm:1.+")
+    implementation("com.varabyte.kotter:kotter-jvm:1.2.1")
 
     implementation("io.micronaut.security:micronaut-security")
     implementation("com.google.guava:guava")
@@ -88,16 +89,13 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-paranamer")
     implementation("org.apache.commons:commons-lang3")
     implementation("org.postgresql:postgresql")
-    implementation("org.thymeleaf:thymeleaf:3.1.1.RELEASE")
     implementation("io.micronaut.views:micronaut-views-thymeleaf")
     implementation("org.xhtmlrenderer:flying-saucer-pdf:9.1.22") {
         exclude("org.bouncycastle")
     }
-    implementation("org.xhtmlrenderer:flying-saucer-core")
     implementation("org.jsoup:jsoup")
     implementation("org.apache.xmlgraphics:batik-transcoder:1.17")
     implementation("org.apache.xmlgraphics:batik-codec:1.17")
-    implementation("org.thymeleaf.extras:thymeleaf-extras-java8time")
     implementation("org.jfree:jfreechart:1.0.19")
     implementation("org.jfree:org.jfree.svg:5.0.5")
     implementation("com.hazelcast:hazelcast-all:4.2.8")
