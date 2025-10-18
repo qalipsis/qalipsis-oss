@@ -108,7 +108,7 @@ dependencies {
         testRuntimeOnly(group = "io.netty", name = "netty-resolver-dns-native-macos", classifier = "osx-aarch_64")
     }
 
-    "localRunRuntimeOnly"("io.qalipsis.plugin:qalipsis-plugin-timescaledb:0.14.+")
+    "localRunRuntimeOnly"("io.qalipsis.plugin:qalipsis-plugin-timescaledb:0.16.+")
 }
 
 tasks {
