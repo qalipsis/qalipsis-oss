@@ -36,7 +36,7 @@ class ThroughputExpectationSpecImpl(val percentiles: MutableSet<Double>) : Throu
     override val max: ComparableValueMeterExpectationSpecification<Throughput, Double>
         get() {
             val comparableValueFailureSpecification =
-                ComparableValueMeterExpectationSpecificationImpl("max", Throughput::max)
+                ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.MAX), Throughput::max)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
@@ -44,7 +44,7 @@ class ThroughputExpectationSpecImpl(val percentiles: MutableSet<Double>) : Throu
     override val mean: MeterExpectationSpecification<Double>
         get() {
             val comparableValueFailureSpecification =
-                ComparableValueMeterExpectationSpecificationImpl("mean", Throughput::mean)
+                ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.MEAN), Throughput::mean)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
@@ -52,7 +52,7 @@ class ThroughputExpectationSpecImpl(val percentiles: MutableSet<Double>) : Throu
     override val current: MeterExpectationSpecification<Double>
         get() {
             val comparableValueFailureSpecification =
-                ComparableValueMeterExpectationSpecificationImpl("current throughput", Throughput::current)
+                ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.THROUGHPUT), Throughput::current)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
@@ -61,7 +61,7 @@ class ThroughputExpectationSpecImpl(val percentiles: MutableSet<Double>) : Throu
         val valueExtractor: Throughput.() -> Double = { percentile(percentile) }
         percentiles.add(percentile)
         val comparableValueFailureSpecification =
-            ComparableValueMeterExpectationSpecificationImpl("percentile($percentile)", valueExtractor)
+            ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.PERCENTILE, percentile), valueExtractor)
         checks.add(comparableValueFailureSpecification)
         return comparableValueFailureSpecification
     }

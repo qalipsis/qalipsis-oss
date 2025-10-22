@@ -37,7 +37,7 @@ class RateExpectationSpecImpl : RateExpectationSpec {
     override val current: MeterExpectationSpecification<Double>
         get() {
             val comparableValueFailureSpecification =
-                ComparableValueMeterExpectationSpecificationImpl("current rate", Rate::current)
+                ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.RATE), Rate::current)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
