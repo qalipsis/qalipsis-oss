@@ -37,7 +37,7 @@ class DistributionSummaryExpectationSpecImpl(val percentiles: MutableSet<Double>
     override val max: ComparableValueMeterExpectationSpecification<DistributionSummary, Double>
         get() {
             val comparableValueFailureSpecification =
-                ComparableValueMeterExpectationSpecificationImpl("max", DistributionSummary::max)
+                ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.MAX), DistributionSummary::max)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
@@ -45,7 +45,7 @@ class DistributionSummaryExpectationSpecImpl(val percentiles: MutableSet<Double>
     override val mean: MeterExpectationSpecification<Double>
         get() {
             val comparableValueFailureSpecification =
-                ComparableValueMeterExpectationSpecificationImpl("mean", DistributionSummary::mean)
+                ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.MEAN), DistributionSummary::mean)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }
@@ -54,7 +54,7 @@ class DistributionSummaryExpectationSpecImpl(val percentiles: MutableSet<Double>
         val valueExtractor: DistributionSummary.() -> Double = { percentile(percentile) }
         percentiles.add(percentile)
         val comparableValueFailureSpecification =
-            ComparableValueMeterExpectationSpecificationImpl("percentile($percentile)", valueExtractor)
+            ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.PERCENTILE, percentile), valueExtractor)
         checks.add(comparableValueFailureSpecification)
         return comparableValueFailureSpecification
     }

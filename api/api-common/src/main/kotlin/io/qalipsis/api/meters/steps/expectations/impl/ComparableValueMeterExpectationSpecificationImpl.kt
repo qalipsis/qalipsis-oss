@@ -35,38 +35,44 @@ import io.qalipsis.api.meters.steps.checkSpecification.ValueCheckSpecification
  * @author Francisca Eze
  */
 class ComparableValueMeterExpectationSpecificationImpl<M : Meter<M>, T : Comparable<T>>(
-    private val valueName: String,
+    metric  : Metric,
     override val valueExtractor: M.() -> T,
 ) : ComparableValueMeterExpectationSpecification<M, T> {
 
     override var checkSpec: ValueCheckSpecification<T>? = null
 
+    private val metricValue = if (metric.metricValue == MetricValue.PERCENTILE) {
+        "${metric.metricValue.valueName}(${metric.percentile})"
+    } else {
+        metric.metricValue.valueName
+    }
+
     override fun isGreaterThan(threshold: T) {
-        checkSpec = GreaterThanValueSpecification(valueName, threshold)
+        checkSpec = GreaterThanValueSpecification(metricValue, threshold)
     }
 
     override fun isLessThan(threshold: T) {
-        checkSpec = LessThanValueSpecification(valueName, threshold)
+        checkSpec = LessThanValueSpecification(metricValue, threshold)
     }
 
     override fun isBetween(lowerBound: T, upperBound: T) {
-        checkSpec = BetweenValueSpecification(valueName, lowerBound, upperBound)
+        checkSpec = BetweenValueSpecification(metricValue, lowerBound, upperBound)
     }
 
     override fun isNotBetween(lowerBound: T, upperBound: T) {
-        checkSpec = NotBetweenValueSpecification(valueName, lowerBound, upperBound)
+        checkSpec = NotBetweenValueSpecification(metricValue, lowerBound, upperBound)
     }
 
     override fun isEqual(threshold: T) {
-        checkSpec = EqualValueSpecification(valueName, threshold)
+        checkSpec = EqualValueSpecification(metricValue, threshold)
     }
 
     override fun isGreaterThanOrEqual(threshold: T) {
-        checkSpec = GreaterThanOrEqualValueSpecification(valueName, threshold)
+        checkSpec = GreaterThanOrEqualValueSpecification(metricValue, threshold)
     }
 
     override fun isLessThanOrEqual(threshold: T) {
-        checkSpec = LessThanOrEqualValueSpecification(valueName, threshold)
+        checkSpec = LessThanOrEqualValueSpecification(metricValue, threshold)
     }
 
 }
