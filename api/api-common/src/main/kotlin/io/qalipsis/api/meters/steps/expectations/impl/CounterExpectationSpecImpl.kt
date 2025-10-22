@@ -35,7 +35,7 @@ class CounterExpectationSpecImpl : CounterExpectationSpec {
     override val count: ComparableValueMeterExpectationSpecification<Counter, Double>
         get() {
             val comparableValueFailureSpecification =
-                ComparableValueMeterExpectationSpecificationImpl("count", Counter::count)
+                ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.COUNT), Counter::count)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }

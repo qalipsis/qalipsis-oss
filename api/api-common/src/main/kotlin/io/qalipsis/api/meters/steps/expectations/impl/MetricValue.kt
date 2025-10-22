@@ -18,25 +18,27 @@
  */
 
 package io.qalipsis.api.meters.steps.expectations.impl
-
-import io.qalipsis.api.meters.Gauge
-import io.qalipsis.api.meters.steps.expectations.GaugeExpectationSpec
-
 /**
- * Implementation of [GaugeExpectationSpec] to extract the current value property of the gauge
- * and evaluate it against a threshold or range-based conditions.
+ * Enum representing different metric values that can be evaluated.
  *
  * @author Francisca Eze
  */
-class GaugeExpectationSpecImpl : GaugeExpectationSpec {
-
-    val checks = mutableListOf<ComparableValueMeterExpectationSpecification<Gauge, Double>>()
-
-    override val value: ComparableValueMeterExpectationSpecification<Gauge, Double>
-        get() {
-            val comparableValueFailureSpecification =
-                ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.COUNT), Gauge::value)
-            checks.add(comparableValueFailureSpecification)
-            return comparableValueFailureSpecification
-        }
+enum class MetricValue(val valueName: String) {
+    COUNT("count"),
+    MEAN("mean"),
+    MAX("max"),
+    RATE("current rate"),
+    THROUGHPUT("current throughput"),
+    PERCENTILE("percentile")
 }
+
+
+/**
+ * Data class representing a metric with its value type and an optional percentile.
+ *
+ * @author Francisca Eze
+ */
+data class Metric(
+    val metricValue: MetricValue,
+    val percentile: Double? = null
+)
