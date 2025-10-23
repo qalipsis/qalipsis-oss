@@ -15,7 +15,6 @@ const toastStore = useToastStore()
 const route = useRoute()
 const campaignDetails = ref<CampaignExecutionDetails>()
 const isPageReady = ref(false)
-const polling = ref()
 
 onMounted(async () => {
   // Fetches the campaign details.
@@ -65,29 +64,20 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   campaignDetailsStore.$reset()
-  if (polling.value) {
-    clearInterval(polling.value)
-  }
 })
 
-const _triggerRefreshInterval = () => {
-  // Keep refreshing the campaign details every 5 seconds.
-  polling.value = setInterval(async () => {
-    await _fetchCampaignDetails()
+const _triggerRefreshInterval = async () => {
+  await _fetchCampaignDetails()
+  campaignDetailsStore.$patch({
+    campaignDetails: campaignDetails.value,
+    selectedScenarioNames: campaignDetails.value?.scenarios
+      ? campaignDetails.value.scenarios.map((s) => s.name)
+      : [],
+  })
 
-    // Updates the campaign details store.
-    campaignDetailsStore.$patch({
-      campaignDetails: campaignDetails.value,
-      selectedScenarioNames: campaignDetails.value?.scenarios
-          ? campaignDetails.value?.scenarios?.map((s) => s.name)
-          : [],
-    })
-
-    // Remove the interval when the status is not IN_PROGRESS anymore.
-    if (polling.value && campaignDetails.value?.status !== 'IN_PROGRESS') {
-      clearInterval(polling.value)
-    }
-  }, 5000)
+  if (campaignDetails.value?.status === 'IN_PROGRESS') {
+    setTimeout(_triggerRefreshInterval, 5000)
+  }
 }
 
 const _fetchCampaignDetails = async () => {
