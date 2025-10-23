@@ -240,13 +240,13 @@ internal class ChartServiceImplTest {
         val reportDir = Files.createTempDirectory("test").toAbsolutePath()
 
         //when
-        val plot = chartService.buildChart(aggregationResult, dataSeries, 1, reportDir)
+        val plot = chartService.buildChart(aggregationResult, dataSeries, 1, reportDir, mapOf("campaign-1" to "Campaign 1", "campaign-2" to "Campaign 2", "campaign-3" to "Campaign 3"))
 
         //then
         val content = String(Files.readAllBytes(plot), StandardCharsets.UTF_8)
         assertNotNull(content)
         assertTrue(content.contains("Execution time"))
-        assertTrue(content.contains("campaign-1/data-series-1"))
+        assertTrue(content.contains("Campaign 1/my-name"))
 
     }
 
@@ -256,13 +256,13 @@ internal class ChartServiceImplTest {
         val reportDir = Files.createTempDirectory("test").toAbsolutePath()
 
         //when
-        val plot = chartService.buildChart(aggregationResult, emptyList(), 1, reportDir)
+        val plot = chartService.buildChart(aggregationResult, emptyList(), 1, reportDir, mapOf("campaign-1" to "Campaign 1", "campaign-2" to "Campaign 2", "campaign-3" to "Campaign 3"))
 
         //then
         val content = String(Files.readAllBytes(plot), StandardCharsets.UTF_8)
         assertNotNull(content)
-        assertTrue(content.contains("Execution time"))
-        assertTrue(content.contains("campaign-1/data-series-1"))
+        assertTrue(content.contains("Execution time (s)"))
+        assertTrue(content.contains("Campaign 1/data-series-1"))
     }
 
     @Test
@@ -278,7 +278,7 @@ internal class ChartServiceImplTest {
 
         //when
         val caught = assertThrows<IllegalArgumentException> {
-            chartService.buildChart(emptyMap(), dataSeries, 1, reportDir)
+            chartService.buildChart(emptyMap(), dataSeries, 1, reportDir, mapOf("campaign-1" to "Campaign 1"))
         }
 
         // then
@@ -294,7 +294,7 @@ internal class ChartServiceImplTest {
         val campaignKeyToLineMap = mutableMapOf<String, Int>()
 
         //when
-        chartService.buildDataSet(aggregationResult, campaignKeyToLineMap, dataSeriesDrawingConfigurations)
+        chartService.buildDataSet(aggregationResult, campaignKeyToLineMap, dataSeriesDrawingConfigurations, mapOf("campaign-1" to "Campaign 1", "campaign-2" to "Campaign 2", "campaign-3" to "Campaign 3", "campaign-5" to "Campaign 5", "campaign-5" to "Campaign 5"), mapOf("data-series-1" to dataSeriesEntity))
 
         //then
         assertThat(dataSeriesDrawingConfigurations.size).isEqualTo(4)
@@ -409,9 +409,9 @@ internal class ChartServiceImplTest {
         val plot = chartService.plotChart(XYPlot(), dataSeriesDrawingConfigurations, campaignKeyToLineMap)
 
         //then
-        assertThat(plot.domainAxis.label).isEqualTo("Execution time")
-        assertThat(plot.domainAxis.labelFont).isEqualTo(Font("Outfit", Font.PLAIN, 10))
-        assertThat(plot.domainAxis.lowerMargin).isEqualTo(0.08)
+        assertThat(plot.domainAxis.label).isEqualTo("Execution time (s)")
+        assertThat(plot.domainAxis.labelFont).isEqualTo(Font("Outfit", Font.BOLD, 10))
+        assertThat(plot.domainAxis.lowerMargin).isEqualTo(0.12)
         assertThat(plot.datasetCount).isEqualTo(2)
         assertThat(plot.getDataset(0)).isEqualTo(dataset1)
         assertThat(plot.getDataset(1)).isEqualTo(XYSeriesCollection())

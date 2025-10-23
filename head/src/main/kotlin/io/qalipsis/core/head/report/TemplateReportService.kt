@@ -41,6 +41,9 @@ interface TemplateReportService {
      * @param dataSeries collection of DataSeriesEntity related to current report generation
      * @param tenant Identifier of the tenant owning the report
      * @param reportTempDir absolute path of the temporal directory to store current report related files
+     * @param campaignReferenceToName map of campaign references to campaign names
+     *
+     * @return byte array representing the generated pdf file
      */
     suspend fun generatePdf(
         report: ReportEntity,
@@ -49,6 +52,7 @@ interface TemplateReportService {
         creator: String,
         dataSeries: Collection<DataSeriesEntity>,
         tenant: String,
-        reportTempDir: Path
+        reportTempDir: Path,
+        campaignReferenceToName: Map<String, String>
     ): ByteArray
 }

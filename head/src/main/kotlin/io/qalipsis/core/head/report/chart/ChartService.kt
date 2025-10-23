@@ -42,6 +42,7 @@ interface ChartService {
         data: Map<String, List<TimeSeriesAggregationResult>>,
         dataSeries: Collection<DataSeriesEntity>,
         index: Int,
-        reportTempDir: Path
+        reportTempDir: Path,
+        campaignReferenceToName: Map<String, String>
     ): Path
 }

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<div class="campaign-container" th:fragment="campaign-scenario-summary(campaign, timeImage, userImage, rocket, circleCheck, redTriangle, notification, shield, triangle)">
+    <div class="card">
+        <!-- TOP SUMMARY -->
+        <div class="top clearfix">
+            <div class="col-left">
+                <div>
+                    <span class="color"></span>
+                    <span class="title" th:text="${campaign.name}">New Campaign</span>
+                </div>
+                <div>
+                    <div class="button-wrapper" th:replace="~{fragments/button :: button (${campaign.result})}"
+                         th:classappend="${campaign.result}">
+                    </div>
+                    <div th:unless="${campaign.resolvedZones == null}" th:each="zone: ${campaign.resolvedZones}"
+                         class="float-left campaign-summary-top-third">
+                        <span th:if="${zone.imagePath != null}" class="zone float-left"
+                        th:style="'background-image: url(' + ${zone.imagePath}+ '); background-repeat: no-repeat, repeat; background-size: cover;'"></span>
+                        <div th:unless="${zone.imagePath != null}" class="zone float-left">
+                            <span class="zone-content" th:text="${zone.key}">KEY</span>
+                        </div>
+                        <div class="float-left">
+                            <p class="text-faint" style="margin-bottom: 2px;">Load zone</p>
+                            <p th:text="${zone.title}">Frankfurt</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-mid">
+                <div class="mid-section">
+                    <div class="stat-title">Duration</div>
+                    <div style="font-size:14px; font-weight:500;" class="stat-row">
+                        <img class="float-left img" style="margin-right: 4px; padding-top: 2px; width: 12px;" th:src="${timeImage}"
+                             alt="pdf-image time icon"/>
+                        <span th:text="${#temporals.format(campaign.start, 'yyyy-MM-dd')}"></span><br/>
+                        <span class="muted" th:text="${#temporals.format(campaign.start, 'HH:mm:ss')}"></span>
+                    </div>
+                    <div class="small-muted" th:text="${new java.lang.Integer(campaign.executionTime/ 60)} + 'm' + ' ' + ${campaign.executionTime} % 60 + 's' "></div>
+                </div>
+
+                <div class="mid-section">
+                    <div class="stat-title">Minion</div>
+                    <div style="font-size:14px; font-weight:500;" class="stat-row">
+                        <img class="float-left img" style="padding-top: 2px; width: 16px;" th:src="${rocket}"
+                             alt="pdf-image rocket icon"/>
+                        <span style="font-weight:500; margin-left:6px;" th:text="${campaign.startedMinions + ' started'}"></span>
+                    </div>
+                    <div class="small-muted" th:text="${campaign.completedMinions + ' (' + #numbers.formatInteger((campaign.completedMinions * 100.0) / campaign.startedMinions, 0) + '%) completed'}"></div>
+                </div>
+
+                <div class="mid-section">
+                    <div class="stat-title">Steps</div>
+                    <div class="stat-item">
+                        <img class="float-left img" style="padding-top: 2px; width: 12px; margin-right: 4px;" th:src="${circleCheck}"
+                             alt="pdf-image success icon"/>
+                        <span class="stat-highlight" th:text="${campaign.successfulExecutions + ' successful ('
+                         + #numbers.formatDecimal(
+                             (campaign.successfulExecutions * 100.0) / (campaign.successfulExecutions + campaign.failedExecutions),
+                             0, 0
+                           ) + '%)'}"></span>
+                    </div>
+                    <div class="stat-item">
+                        <img class="float-left img" style="padding-top: 2px; width: 12px; margin-right: 4px;" th:src="${redTriangle}"
+                             alt="pdf-image error icon"/>
+                        <span class="stat-danger" th:text="${campaign.failedExecutions + ' failed ('
+                         + #numbers.formatDecimal(
+                             (campaign.failedExecutions * 100.0) / (campaign.successfulExecutions + campaign.failedExecutions),
+                             0, 0
+                           ) + '%)'}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-right">
+                <div class="icons">
+                    <span><img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${notification}"
+                               alt="pdf-image notification icon"/><span th:text="${campaign.total}">0</span></span>
+                    <span ><img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${shield}"
+                                alt="pdf-image success icon"/><span th:text="${campaign.info}">0</span></span>
+                    <span><img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${triangle}"
+                               alt="pdf-image warning icon"/><span th:text="${campaign.warning}">0</span></span>
+                    <span><img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${redTriangle}"
+                                                      alt="pdf-image error icon"/><span th:text="${campaign.error}">0</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- TABLE HEADER -->
+        <div class="table-header clearfix">
+            <div class="th-col th-name">Scenario Name</div>
+            <div class="th-col th-start">Start Time</div>
+            <div class="th-col th-duration">Duration</div>
+            <div class="th-col th-minions">Minions</div>
+            <div class="th-col th-exec">Executions</div>
+            <div class="th-col th-msg">Messages</div>
+        </div>
+
+        <!-- SCENARIOS -->
+        <div th:each="scenario : ${campaign.scenarios}">
+            <div class="row clearfix">
+                <div class="cell cell-name">
+                    <div>
+                        <span class="color"></span>
+                        <span style="font-weight:500; font-size:14px;" th:text="${scenario.name}">First Scenario</span>
+                    </div>
+                    <div class="button-wrapper" th:replace="~{fragments/button :: button (${scenario.status})}"
+                         th:classappend="${scenario.status}">
+                        <span></span>
+                    </div>
+                </div>
+
+                <div class="cell cell-time">
+                    <div> <img class="float-left img" style="margin-right: 4px; padding-top: 2px; width: 12px;" th:src="${timeImage}"
+                               alt="pdf-image time icon"/> <span th:text="${#temporals.format(scenario.start, 'yyyy-MM-dd')}"></span></div>
+                    <div class="muted" th:text="${#temporals.format(scenario.start, 'HH:mm:ss')}"></div>
+                </div>
+
+                <div class="cell cell-dur">
+                    <div th:text="${scenario.duration}"></div>
+                </div>
+
+                <div class="cell cell-minions">
+                    <div> <img class="float-left img" style="padding-top: 2px; width: 16px;" th:src="${rocket}"
+                               alt="pdf-image minion icon"/> <span style="font-weight:500;" th:text="${scenario.startedMinions + ' started'}"></span></div>
+                    <div class="small-muted" th:text="${scenario.completedMinions + ' (' + #numbers.formatInteger((scenario.completedMinions * 100.0) / scenario.startedMinions, 0) + '%) completed'}"></div>
+                </div>
+
+                <div class="cell cell-exec">
+                    <div> <img class="float-left img" style="padding-top: 2px; width: 12px; margin-right: 4px; " th:src="${circleCheck}"
+                               alt="pdf-image success icon"/><span style="color:#2fa66e; font-weight:700;" th:text="${scenario.successfulExecutions + ' ('
+                         + #numbers.formatDecimal(
+                             (scenario.successfulExecutions * 100.0) / (scenario.successfulExecutions + scenario.failedExecutions),
+                             0, 0
+                           ) + '%)'}"></span></div>
+                    <div> <img class="float-left img" style="margin-right: 4px; padding-top: 2px; width: 12px;" th:src="${triangle}"
+                               alt="pdf-image error icon"/> <span style="color:#d75b5b; font-weight:700;" th:text="${scenario.failedExecutions + ' ('
+                         + #numbers.formatDecimal(
+                             (scenario.failedExecutions * 100.0) / (scenario.successfulExecutions + scenario.failedExecutions),
+                             0, 0
+                           ) + '%)'}"></span></div>
+                </div>
+
+                <div class="cell cell-msg">
+                    <div class="icons">
+                        <span> <img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${notification}"
+                                    alt="pdf-image notification icon"/> <span th:text="${scenario.info + scenario.warning + scenario.error }">0</span></span>
+                        <span> <img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${shield}"
+                                    alt="pdf-image info icon"/> <span th:text="${scenario.info}">0</span></span>
+                        <span> <img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${triangle}"
+                                    alt="pdf-image warning icon"/> <span th:text="${scenario.warning}">0</span></span>
+                        <span> <img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${redTriangle}"
+                                    alt="pdf-image error icon"/> <span th:text="${scenario.error}">0</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

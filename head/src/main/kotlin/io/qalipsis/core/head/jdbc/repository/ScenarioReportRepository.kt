@@ -33,4 +33,8 @@ import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
  */
 @R2dbcRepository(dialect = Dialect.POSTGRES)
 @Requires(notEnv = [ExecutionEnvironments.TRANSIENT])
-interface ScenarioReportRepository : CoroutineCrudRepository<ScenarioReportEntity, Long>
+interface ScenarioReportRepository : CoroutineCrudRepository<ScenarioReportEntity, Long> {
+
+    suspend fun findByCampaignReportIdIn(campaignReportIds: Collection<Long>): List<ScenarioReportEntity>
+
+}
