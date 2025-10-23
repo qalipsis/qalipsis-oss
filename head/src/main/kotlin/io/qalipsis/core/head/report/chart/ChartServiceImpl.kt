@@ -31,7 +31,6 @@ import org.jfree.chart.LegendItem
 import org.jfree.chart.LegendItemCollection
 import org.jfree.chart.LegendItemSource
 import org.jfree.chart.StandardChartTheme
-import org.jfree.chart.axis.DateAxis
 import org.jfree.chart.axis.NumberAxis
 import org.jfree.chart.block.BlockBorder
 import org.jfree.chart.plot.XYPlot
@@ -47,6 +46,7 @@ import java.awt.Rectangle
 import java.io.BufferedInputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.text.DecimalFormat
 import java.util.Random
 
 
@@ -63,16 +63,20 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
         dataSeries: Collection<DataSeriesEntity>,
         index: Int,
         reportTempDir: Path,
+        campaignReferenceToName: Map<String, String>
+
     ): Path {
         require(data.isNotEmpty()) { "Cannot generate chart with empty data" }
         val dataSeriesDrawingConfigurations = mutableMapOf<String, DataSeriesDrawingConfiguration>()
         val campaignKeyToLineMap = mutableMapOf<String, Int>()
 
-        // Re-arrange the data to build time series pairs and other data structures needed to render and style the charts.
-        buildDataSet(data, campaignKeyToLineMap, dataSeriesDrawingConfigurations)
-
-        // Map each dataSeries reference to a unique color.
+        // Map each dataSeries reference to its name.
         val dataSeriesEntityMap = dataSeries.associateBy { dataSeriesEntity -> dataSeriesEntity.reference }
+
+        // Re-arrange the data to build time series pairs and other data structures needed to render and style the charts.
+        buildDataSet(data, campaignKeyToLineMap, dataSeriesDrawingConfigurations, campaignReferenceToName, dataSeriesEntityMap)
+
+        // Map each dataSeries reference to its unique color.
         mapDataSeriesToColour(dataSeriesEntityMap, dataSeriesDrawingConfigurations)
 
         // Plot datasets, configure renderers and styling to the X and Y axes of the chart.
@@ -83,8 +87,8 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
 
         // Initialize temporary file location for the report file.
         val imageFilePath = Files.createTempFile(reportTempDir, "requestChart${index + 1}", ".svg")
-        val svgGraphics = SVGGraphics2D(rectangleWidth, rectangleHeight)
-        val rectangle = Rectangle(0, 0, rectangleWidth.toInt(), rectangleHeight.toInt())
+        val svgGraphics = SVGGraphics2D(RECTANGLE_WIDTH, RECTANGLE_HEIGHT)
+        val rectangle = Rectangle(0, 0, RECTANGLE_WIDTH.toInt(), RECTANGLE_HEIGHT.toInt())
 
         // Draw the chart on a Java 2D graphics device with the configured rectangle width and height.
         chart.draw(svgGraphics, rectangle)
@@ -103,12 +107,15 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
      * @param data map of dataSeries references to the [TimeSeriesAggregationResult]
      * @param campaignKeyToLineMap campaign keys mapped to their respective line indexes
      * @param dataSeriesDrawingConfigurations dataseries references each mapped to its drawing configurations
+     * @param campaignReferenceToName map of campaign references to their unique names
      */
     @KTestable
     private fun buildDataSet(
         data: Map<String, List<TimeSeriesAggregationResult>>,
         campaignKeyToLineMap: MutableMap<String, Int>,
         dataSeriesDrawingConfigurations: MutableMap<String, DataSeriesDrawingConfiguration>,
+        campaignReferenceToName: Map<String, String>,
+        dataSeriesEntityMap: Map<String, DataSeriesEntity>
     ) {
         logger.info { "Starting chart generation" }
         var colorIndex = 0
@@ -121,6 +128,7 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
             val dataSeriesDrawingConfiguration =
                 dataSeriesDrawingConfigurations.getOrDefault(dataSeriesKey, DataSeriesDrawingConfiguration(-1))
             dataSeriesDrawingConfiguration.seriesIndex = colorIndex++
+            dataSeriesDrawingConfiguration.name = dataSeriesEntityMap[dataSeriesKey]?.displayName ?: dataSeriesKey
             // Update the dataSeriesDrawingConfiguration store.
             dataSeriesDrawingConfigurations[dataSeriesKey] = dataSeriesDrawingConfiguration
             // Map of unique time series sets, used in further generation of the dataset collection.
@@ -131,7 +139,12 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
                 val plotCompositeKey = PlotCompositeKey(campaignKey, dataSeriesKey)
                 // Create new [XYSeries] or get a pre-existing series and add new key-value pairs.
                 val xySeries = xySeriesMap.getOrDefault(plotCompositeKey, XYSeries(plotCompositeKey.compositeKey))
-                    .also { it.add(timeSeriesAggregationResult.elapsed.toNanos(), timeSeriesAggregationResult.value) }
+                    .also {
+                        it.add(
+                            timeSeriesAggregationResult.elapsed.toNanos() / 1_000_000_000.0,
+                            timeSeriesAggregationResult.value
+                        )
+                    }
                 xySeriesMap[plotCompositeKey] = xySeries
                 // Store each unique campaign key to an index to be used in assigning line styles per campaign key.
                 campaignKeyToLineMap[campaignKey].alsoWhenNull {
@@ -140,7 +153,7 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
             }
             // Create different datasets collection by dataSeries reference from the key-value batches
             // of the [XYSeries] created above.
-            createDatasetCollection(xySeriesMap, dataSeriesDrawingConfigurations)
+            createDatasetCollection(xySeriesMap, dataSeriesDrawingConfigurations, campaignReferenceToName)
         }
     }
 
@@ -156,6 +169,7 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
     private fun createDatasetCollection(
         xySeriesMap: Map<PlotCompositeKey, XYSeries>,
         dataSeriesDrawingConfigurations: MutableMap<String, DataSeriesDrawingConfiguration>,
+        campaignReferenceToName: Map<String, String>
     ) {
         xySeriesMap.forEach { (xySeriesKey, xySeriesEntry) ->
             // Split the series key to get the campaign key and dataSeries reference.
@@ -170,6 +184,8 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
             val dataSeriesDrawingIndicesByCampaign = dataSeriesDrawingConfiguration.dataSeriesDrawingIndicesByCampaign
             // Store the index of series for unique campaign keys in an xySeriesCollection.
             dataSeriesDrawingIndicesByCampaign[campaignKey] = xySeriesCollection.seriesCount
+            // Modify the series key to a more readable format for the legend.
+            xySeriesEntry.key = "${campaignReferenceToName[campaignKey]}/${dataSeriesDrawingConfiguration.name}"
             // Add modified series to dataset collection.
             xySeriesCollection.addSeries(xySeriesEntry)
             dataSeriesDrawingConfiguration.dataSet = xySeriesCollection
@@ -219,11 +235,16 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
             xyPlot.setRenderer(seriesIndex, splineRenderer)
             // Set range axes values and colors.
             val colour = dataSeriesDrawingConfiguration.color
-            val rangeAxis = NumberAxis().apply {
+            val rangeAxis = NumberAxis(if (seriesIndex == 0) "Minions count" else null).apply {
                 tickLabelPaint = colour
                 labelPaint = colour
                 axisLinePaint = colour
+                isAutoRange = true
+                standardTickUnits = NumberAxis.createIntegerTickUnits()
+                tickMarkInsideLength = (2f)
+                tickMarkOutsideLength = (2f)
             }
+
             xyPlot.setRangeAxis(seriesIndex, rangeAxis)
             // Map different dataset to unique axes.
             xyPlot.mapDatasetToRangeAxis(seriesIndex, seriesIndex)
@@ -231,9 +252,10 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
         // Set domain axes values and colors.
         xyPlot.apply {
             isDomainGridlinesVisible = false
-            domainAxis = DateAxis("Execution time").apply {
-                labelFont = Font(FONT_FAMILY, Font.PLAIN, 10)
-                lowerMargin = 0.08
+            domainAxis = NumberAxis("Execution time (s)").apply {
+                labelFont = Font(FONT_FAMILY, Font.BOLD, 10)
+                lowerMargin = 0.12
+                numberFormatOverride = DecimalFormat("#.## 's'")
             }
             outlinePaint = null
         }
@@ -259,6 +281,7 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
             } ?: generateRandomColour().darker()
             dataSeriesDrawingConfiguration.apply {
                 color = seriesColor
+                name = dataSeriesEntity?.displayName ?: dataSeriesKey
             }
         }
     }
@@ -339,11 +362,11 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
             itemFont = Font(FONT_FAMILY, Font.PLAIN, 10)
         }
         val source = LegendItemSource {
-            val legendItemCollection = LegendItemCollection()
-            dataSeriesDrawingConfigurations.forEach { (dataSeriesReference, dataSeriesDrawingConfiguration) ->
-                legendItemCollection.add(LegendItem(dataSeriesReference, dataSeriesDrawingConfiguration.color))
+            LegendItemCollection().apply {
+                dataSeriesDrawingConfigurations.forEach { (_, dataSeriesDrawingConfiguration) ->
+                    this.add(LegendItem(dataSeriesDrawingConfiguration.name, dataSeriesDrawingConfiguration.color))
+                }
             }
-            legendItemCollection
         }
         return chart.apply {
             addLegend(LegendTitle(source))
@@ -364,9 +387,9 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
     private companion object {
         private const val FONT_FAMILY = "Outfit"
 
-        private const val rectangleWidth = 935.0
+        private const val RECTANGLE_WIDTH = 935.0
 
-        private const val rectangleHeight = 320.0
+        private const val RECTANGLE_HEIGHT = 580.0
 
         private val logger = logger()
     }

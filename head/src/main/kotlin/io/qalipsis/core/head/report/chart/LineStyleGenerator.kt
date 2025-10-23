@@ -33,26 +33,33 @@ class LineStyleGenerator {
     private lateinit var lineStore: List<BasicStroke>
 
     init {
-        val basicDash = floatArrayOf(8.0f, 8.0f)
-        val aaDash = floatArrayOf(35f, 25f, 35f, 25f)
-        val dot = floatArrayOf(1f, 0f, 1f)
-        val twoDash = floatArrayOf(15f, 15f, 5f, 15f, 15f)
-        val longShortDash = floatArrayOf(20.0f, 5.0f, 3.0f, 5.0f)
-        val solidStroke = BasicStroke(1.0f)
+
+        //Medium dash-gap pattern.
+        val basicDash = floatArrayOf(10f, 5f)
+        // Long-short alternating pattern.// medium dash-gap pattern
+        val aaDash = floatArrayOf(30f, 10f, 5f, 10f)
+        // Dotted line (short dot, long gap).
+        val dot = floatArrayOf(2f, 6f)
+        // Two short dashes + one long.
+        val twoDash = floatArrayOf(20f, 5f, 5f, 5f, 20f, 5f)
+        // Long-short-long-short repeating.
+        val longShortDash = floatArrayOf(25f, 5f, 10f, 5f)
+        // Thin solid line.
+        val solidStroke = BasicStroke(0.8f)
         val dashed = BasicStroke(
-            1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 10.0f, basicDash, 0f
+            0.6f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, basicDash, 0f
         )
         val dotted = BasicStroke(
-            1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 10.0f, dot, 0f
+            1.2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dot, 0f
         )
         val aa = BasicStroke(
-            1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 10.0f, aaDash, 0f
+            0.6f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, aaDash, 0f
         )
         val twoDashes = BasicStroke(
-            1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 10.0f, twoDash, 0f
+            0.6f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, twoDash, 0f
         )
         val longShort = BasicStroke(
-            1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 10.0f, longShortDash, 0f
+            0.6f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, longShortDash, 0f
         )
 
         lineStore = listOf(solidStroke, dashed, dotted, aa, twoDashes, longShort)

@@ -31,12 +31,11 @@ import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.model.Zone
-import io.qalipsis.core.head.report.CampaignData
+import io.qalipsis.core.head.report.CampaignReportData
 import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode
 import io.qalipsis.core.head.report.chart.ChartServiceImpl
 import io.qalipsis.core.head.report.chart.LineStyleGenerator
-import java.io.File
 import java.io.FileWriter
 import java.io.IOException
 import java.math.BigDecimal
@@ -59,6 +58,7 @@ import org.thymeleaf.context.Context
 import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect
 import org.thymeleaf.templatemode.TemplateMode
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
+import java.io.File
 
 
 @MicronautTest(startApplication = false)
@@ -70,7 +70,7 @@ internal class ReportTemplateFragmentTest {
 
     private lateinit var report: ReportEntity
 
-    private lateinit var campaignDataPrototype: CampaignData
+    private lateinit var campaignDataPrototype: CampaignReportData
 
     private lateinit var context: Context
 
@@ -88,6 +88,8 @@ internal class ReportTemplateFragmentTest {
         createTemplateEngine()
         snapshotDirectory = Files.createTempDirectory("__snapshot__")
 
+        Files.createDirectories(snapshotDirectory)
+
         report = ReportEntity(
             id = 5L,
             displayName = "Report Display Name",
@@ -102,7 +104,7 @@ internal class ReportTemplateFragmentTest {
             dataComponents = listOf(),
             query = "report-query",
         )
-        campaignDataPrototype = CampaignData(
+        campaignDataPrototype = CampaignReportData(
             name = "Fifth Campaign",
             result = ExecutionStatus.ABORTED,
             startedMinions = 6,
@@ -111,6 +113,9 @@ internal class ReportTemplateFragmentTest {
             failedExecutions = 1,
             zones = emptySet(),
             executionTime = Instant.parse("2022-02-20T11:25:30.00Z").toEpochMilli().minus(Instant.now().toEpochMilli()),
+            start = Instant.now(),
+            campaignReportId = 123L,
+            campaignKey = "campaign-5"
         ).apply {
             resolvedZones = setOf(
                 Zone(
@@ -185,7 +190,7 @@ internal class ReportTemplateFragmentTest {
         //given
         context.setVariable(
             "campaigns", listOf(
-                campaignDataPrototype, CampaignData(
+                campaignDataPrototype, CampaignReportData(
                     name = "Campaign Seven",
                     result = ExecutionStatus.SUCCESSFUL,
                     startedMinions = 46,
@@ -194,6 +199,9 @@ internal class ReportTemplateFragmentTest {
                     failedExecutions = 21,
                     executionTime = 74,
                     zones = setOf("CAN", "SA"),
+                    start = Instant.now(),
+                    campaignReportId = 123L,
+                    campaignKey = "campaign-7"
                 ).apply {
                     resolvedZones = setOf(
                         Zone(
@@ -241,7 +249,7 @@ internal class ReportTemplateFragmentTest {
     fun `should render the campaign summary`(testInfo: TestInfo) {
         //given
         context.setVariable(
-            "campaign", CampaignData(
+            "campaign", CampaignReportData(
                 name = "Campaign Seven",
                 result = ExecutionStatus.SUCCESSFUL,
                 startedMinions = 46,
@@ -250,6 +258,9 @@ internal class ReportTemplateFragmentTest {
                 executionTime = 1691,
                 failedExecutions = 21,
                 zones = setOf("CN", "SA"),
+                start = Instant.now(),
+                campaignReportId = 123L,
+                campaignKey = "campaign-7"
             ).apply {
                 resolvedZones = setOf(
                     Zone(
@@ -269,14 +280,15 @@ internal class ReportTemplateFragmentTest {
         )
 
         //when
-        val result = templateEngine.process("fragments/campaign-summary", context)
+        val result = templateEngine.process("fragments/campaign-scenario-summary", context)
 
         //then
-        assertTrue(result.contains("""<div class="campaign-summary">"""))
-        assertTrue(result.contains("""<h3 class="float-left pb-3">Campaign Seven</h3>"""))
-        assertTrue(result.contains("""<span class="campaign-details-more-info-item-value">46</span>"""))
-        assertTrue(result.contains("""<span class="campaign-details-more-info-item-value">25</span>"""))
-        assertTrue(result.contains("""<span class="campaign-details-more-info-item-value">21</span>"""))
+        assertTrue(result.contains("""<span class="title">Campaign Seven</span>"""))
+        assertTrue(result.contains("""<div class="small-muted">28m 11s</div>"""))
+        assertTrue(result.contains("""<span style="font-weight:500; margin-left:6px;">46 started</span>"""))
+        assertTrue(result.contains("""<div class="small-muted">46 (100%) completed</div>"""))
+        assertTrue(result.contains("""<span class="stat-highlight">25 successful (54%)</span>"""))
+        assertTrue(result.contains("""<span class="stat-danger">21 failed (46%)</span>"""))
         writeSnapshot(testInfo.displayName, result)
     }
 
@@ -617,10 +629,10 @@ internal class ReportTemplateFragmentTest {
             dataSeriesEntity.copy(reference = "data-series-3", color = null, colorOpacity = null),
             dataSeriesEntity.copy(reference = "data-series-4", color = "#000000", colorOpacity = 50),
         )
-        val base64ImagePath = chartService.buildChart(aggregationResult, dataSeries, 0, chartTestDir)
+        val base64ImagePath = chartService.buildChart(aggregationResult, dataSeries, 0, chartTestDir, mapOf("campaign-1" to "Campaign One", "campaign-2" to "Campaign Two", "campaign-3" to "Campaign Three", "campaign-4" to "Campaign Four", "campaign-5" to "Campaign Five"))
         val imageByte = Files.readAllBytes(base64ImagePath).toBase64()
         val chartImageTemplate = """
-            <img class="img" src="data:image/svg+xml;base64,$imageByte" alt="pdf-image Requests Chart"/>
+            <img class="img" src="$imageByte" alt="pdf-image Requests Chart"/>
         """.trimIndent().stripNewlines()
         context.setVariable("chartImages", listOf(Files.readAllBytes(base64ImagePath).toBase64()))
 
@@ -1053,10 +1065,11 @@ internal class ReportTemplateFragmentTest {
         )
 
         val title = "Latest Event Report"
-        val base64ImagePath1 = chartService.buildChart(aggregationResult, dataSeries, 0, chartTestDir)
-        val base64ImagePath2 = chartService.buildChart(aggregationResult2, dataSeries, 1, chartTestDir)
+        val base64ImagePath1 = chartService.buildChart(aggregationResult, dataSeries, 0, chartTestDir, mapOf("campaign-1" to "Campaign One", "campaign-2" to "Campaign Two", "campaign-3" to "Campaign Three", "campaign-4" to "Campaign Four", "campaign-5" to "Campaign Five"))
+        val base64ImagePath2 = chartService.buildChart(aggregationResult2, dataSeries, 1, chartTestDir, mapOf("campaign-1" to "Campaign One", "campaign-2" to "Campaign Two", "campaign-3" to "Campaign Three", "campaign-4" to "Campaign Four", "campaign-5" to "Campaign Five"))
         context.apply {
             setVariable("title", title)
+            setVariable("generatedTime", Instant.parse("2025-03-18T16:31:47.445312Z"))
             setVariable("campaigns", campaignList)
             setVariable("eventTableData", listOf(eventTableData1, eventTableData2))
             setVariable(
@@ -1069,12 +1082,13 @@ internal class ReportTemplateFragmentTest {
         val result = templateEngine.process("report-template", context)
 
         //then
-        assertTrue { result.contains("""<h1 class="float-left">Latest Event Report</h1>""") }
-        assertTrue { result.contains("""<div class="campaign-summary">""") }
-        assertTrue { result.contains("""<h3 class="campaign-name">Campaign Seven</h3>""") }
-        assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">46</span>""") }
-        assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">25</span>""") }
-        assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">21</span>""") }
+        assertTrue { result.contains("""<h1>Latest Event Report</h1>""") }
+        assertTrue { result.contains("""<span class="title">Fifth Campaign</span>""") }
+        assertTrue { result.contains("""<div class="button-wrapper ABORTED">""") }
+        assertTrue { result.contains("""<div class="small-muted">5 (83%) completed</div>""") }
+        assertTrue { result.contains("""<span style="font-weight:500; margin-left:6px;">6 started</span>""") }
+        assertTrue { result.contains("""<span class="stat-highlight">5 successful (83%)</span>""") }
+        assertTrue { result.contains("""<span class="stat-danger">1 failed (17%)</span>""") }
         assertTrue { result.contains("""<td class="data-series-table-data" timestamp="2023-03-16T09:15:22.445312Z">${timestamp1}</td>""") }
         assertTrue { result.contains("""<td class="data-series-table-data">Requests Per second2</td>""") }
         assertTrue { result.contains("""<td class="data-series-table-data">cassandra.save.saving.all2</td>""") }
@@ -1435,10 +1449,11 @@ internal class ReportTemplateFragmentTest {
         )
 
         val title = "Latest Meter Report"
-        val base64Image1 = chartService.buildChart(aggregationResult, dataSeries, 0, chartTestDir)
-        val base64Image2 = chartService.buildChart(aggregationResult2, dataSeries, 1, chartTestDir)
+        val base64Image1 = chartService.buildChart(aggregationResult, dataSeries, 0, chartTestDir, mapOf("campaign-1" to "Campaign One", "campaign-2" to "Campaign Two", "campaign-3" to "Campaign Three", "campaign-4" to "Campaign Four", "campaign-5" to "Campaign Five"))
+        val base64Image2 = chartService.buildChart(aggregationResult2, dataSeries, 1, chartTestDir, mapOf("campaign-1" to "Campaign One", "campaign-2" to "Campaign Two", "campaign-3" to "Campaign Three", "campaign-4" to "Campaign Four", "campaign-5" to "Campaign Five"))
         context.apply {
             setVariable("title", title)
+            setVariable("generatedTime", Instant.parse("2025-03-18T16:31:47.445312Z"))
             setVariable("campaigns", campaignList)
             setVariable("meterTableData", listOf(meterTableData))
             setVariable(
@@ -1451,12 +1466,12 @@ internal class ReportTemplateFragmentTest {
         val result = templateEngine.process("report-template", context)
 
         //then
-        assertTrue { result.contains("""<h1 class="float-left">Latest Meter Report</h1>""") }
-        assertTrue { result.contains("""<div class="campaign-summary">""") }
-        assertTrue { result.contains("""<h3 class="campaign-name">Campaign Seven</h3>""") }
-        assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">46</span>""") }
-        assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">25</span>""") }
-        assertTrue { result.contains("""<span class="campaign-details-more-info-item-value">21</span>""") }
+        assertTrue { result.contains("""<h1>Latest Meter Report</h1>""") }
+        assertTrue { result.contains("""<div class="campaign-container">""") }
+        assertTrue { result.contains("""<span class="title">Fifth Campaign</span>""") }
+        assertTrue { result.contains("""<span style="font-weight:500; margin-left:6px;">6 started</span>""") }
+        assertTrue { result.contains("""<div class="small-muted">5 (83%) completed</div>""") }
+        assertTrue { result.contains("""<span class="stat-highlight">5 successful (83%)</span>""") }
         assertTrue { result.contains("""<td class="data-series-table-data" timestamp="2023-03-18T13:01:07.445312Z">${timestamp1}</td>""") }
         assertTrue { result.contains("""<td class="data-series-table-data">Active minions</td>""") }
         assertTrue { result.contains("""<td class="data-series-table-data">cassandra.poll.polling.all</td>""") }

@@ -29,6 +29,7 @@ import java.awt.Color
  *
  * @property seriesIndex index of a unique data series set in a collection
  * @property color [java.awt.Color] object containing the color property to assign series
+ * @property name display name of the data series
  * @property dataSet collection of related(by data series reference) batches of [XYSeries]
  * @property dataSeriesDrawingIndicesByCampaign holds the campaignKey to series indices of the collection, to use in generating line-styles and colors
  *
@@ -37,6 +38,7 @@ import java.awt.Color
 @Introspected
 data class DataSeriesDrawingConfiguration(var seriesIndex: Int) {
     lateinit var color: Color
+    lateinit var name: String
     var dataSet: XYSeriesCollection = XYSeriesCollection()
     var dataSeriesDrawingIndicesByCampaign: MutableMap<String, Int> = mutableMapOf()
 }

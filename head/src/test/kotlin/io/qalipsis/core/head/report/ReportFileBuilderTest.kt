@@ -212,7 +212,7 @@ internal class ReportFileBuilderTest {
                 )
             )
         )
-        val campaignData = CampaignData(
+        val campaignReportData = CampaignReportData(
             name = "campaign-1",
             result = ExecutionStatus.ABORTED,
             startedMinions = 6,
@@ -220,9 +220,12 @@ internal class ReportFileBuilderTest {
             successfulExecutions = 5,
             failedExecutions = 1,
             zones = setOf("GER", "DM"),
-            executionTime = 15
+            executionTime = 15,
+            start = null,
+            campaignReportId = 1234L,
+            campaignKey = "campaign1"
         )
-        val campaignData2 = campaignData.copy(
+        val campaignReportData2 = campaignReportData.copy(
             name = "campaign-2",
             result = ExecutionStatus.SUCCESSFUL,
             startedMinions = 46,
@@ -266,13 +269,13 @@ internal class ReportFileBuilderTest {
         val result = reportFileBuilder.populateCampaignReportDetail(
             reportEntity,
             "my-tenant",
-            listOf(campaignData, campaignData2)
+            listOf(campaignReportData, campaignReportData2)
         )
 
         //then
         assertThat(result).all {
             prop(CampaignReportDetail::reportName).isEqualTo("current-report")
-            prop(CampaignReportDetail::campaignData).isEqualTo(listOf(campaignData, campaignData2))
+            prop(CampaignReportDetail::campaignReportData).isEqualTo(listOf(campaignReportData, campaignReportData2))
             prop(CampaignReportDetail::chartData).isEqualTo(
                 listOf(
                     mapOf(

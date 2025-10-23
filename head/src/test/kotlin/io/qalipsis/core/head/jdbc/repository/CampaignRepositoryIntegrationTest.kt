@@ -1642,33 +1642,35 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     ),
                 )
             ).count()
+            val campaignReportId6 = CampaignReportEntity(
+                campaignId = campaign6.id,
+                startedMinions = 1000,
+                completedMinions = 990,
+                successfulExecutions = 990,
+                failedExecutions = 10,
+                SUCCESSFUL
+            ).let { campaignReportRepository.save(it).id }
+
+            val campaignReportId8 = CampaignReportEntity(
+                campaignId = campaign8.id,
+                startedMinions = 300,
+                completedMinions = 110,
+                successfulExecutions = 56,
+                failedExecutions = 20,
+                ABORTED
+            ).let { campaignReportRepository.save(it).id }
+
+            val campaignReportId11 =  CampaignReportEntity(
+                campaignId = campaign11.id,
+                startedMinions = 280,
+                completedMinions = 87,
+                successfulExecutions = 41,
+                failedExecutions = 65,
+                WARNING
+            ).let { campaignReportRepository.save(it).id }
 
             campaignReportRepository.saveAll(
                 listOf(
-                    CampaignReportEntity(
-                        campaignId = campaign6.id,
-                        startedMinions = 1000,
-                        completedMinions = 990,
-                        successfulExecutions = 990,
-                        failedExecutions = 10,
-                        SUCCESSFUL
-                    ),
-                    CampaignReportEntity(
-                        campaignId = campaign8.id,
-                        startedMinions = 300,
-                        completedMinions = 110,
-                        successfulExecutions = 56,
-                        failedExecutions = 20,
-                        ABORTED
-                    ),
-                    CampaignReportEntity(
-                        campaignId = campaign11.id,
-                        startedMinions = 280,
-                        completedMinions = 87,
-                        successfulExecutions = 41,
-                        failedExecutions = 65,
-                        WARNING
-                    ),
                     CampaignReportEntity(
                         campaignId = campaign7.id,
                         startedMinions = 455,
@@ -1704,6 +1706,9 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         completedMinions = 110,
                         successfulExecutions = 56,
                         failedExecutions = 20,
+                        start = Instant.parse("2022-02-20T11:25:30Z"),
+                        campaignReportId = campaignReportId8,
+                        campaignKey = "campaign-8"
                     ),
                     CampaignData(
                         name = "campaign 6",
@@ -1717,6 +1722,9 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         completedMinions = 990,
                         successfulExecutions = 990,
                         failedExecutions = 10,
+                        start = Instant.parse("2022-02-20T11:25:30Z"),
+                        campaignReportId = campaignReportId6,
+                        campaignKey = "campaign-6"
                     ),
                     CampaignData(
                         name = "campaign 11",
@@ -1730,6 +1738,9 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         completedMinions = 87,
                         successfulExecutions = 41,
                         failedExecutions = 65,
+                        start = Instant.parse("2022-02-20T11:25:30Z"),
+                        campaignReportId = campaignReportId11,
+                        campaignKey = "campaign-11"
                     )
                 )
             }
@@ -1788,25 +1799,25 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     ),
                 )
             ).count()
+            val campaignReportId8 = CampaignReportEntity(
+                campaignId = campaign8.id,
+                startedMinions = 300,
+                completedMinions = 110,
+                successfulExecutions = 56,
+                failedExecutions = 20,
+                ABORTED
+            ).let { campaignReportRepository.save(it).id }
+            val campaignReportId11 = CampaignReportEntity(
+                campaignId = campaign11.id,
+                startedMinions = 280,
+                completedMinions = 87,
+                successfulExecutions = 41,
+                failedExecutions = 65,
+                WARNING
+            ).let { campaignReportRepository.save(it).id }
 
             campaignReportRepository.saveAll(
                 listOf(
-                    CampaignReportEntity(
-                        campaignId = campaign8.id,
-                        startedMinions = 300,
-                        completedMinions = 110,
-                        successfulExecutions = 56,
-                        failedExecutions = 20,
-                        ABORTED
-                    ),
-                    CampaignReportEntity(
-                        campaignId = campaign11.id,
-                        startedMinions = 280,
-                        completedMinions = 87,
-                        successfulExecutions = 41,
-                        failedExecutions = 65,
-                        WARNING
-                    ),
                     CampaignReportEntity(
                         campaignId = campaign7.id,
                         startedMinions = 455,
@@ -1842,6 +1853,9 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         completedMinions = 110,
                         successfulExecutions = 56,
                         failedExecutions = 20,
+                        start = Instant.parse("2022-02-20T11:25:30Z"),
+                        campaignReportId = campaignReportId8,
+                        campaignKey = "campaign-8"
                     ),
                     CampaignData(
                         name = "campaign 11",
@@ -1855,6 +1869,9 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         completedMinions = 87,
                         successfulExecutions = 41,
                         failedExecutions = 65,
+                        start = Instant.parse("2022-02-20T11:25:30Z"),
+                        campaignReportId = campaignReportId11,
+                        campaignKey = "campaign-11"
                     )
                 )
             }
@@ -1927,6 +1944,14 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     ),
                 )
             ).count()
+            val campaignReportId11 = CampaignReportEntity(
+                campaignId = campaign11.id,
+                startedMinions = 280,
+                completedMinions = 87,
+                successfulExecutions = 41,
+                failedExecutions = 65,
+                WARNING
+            ).let { campaignReportRepository.save(it).id }
 
             campaignReportRepository.saveAll(
                 listOf(
@@ -1945,14 +1970,6 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         successfulExecutions = 56,
                         failedExecutions = 20,
                         ABORTED
-                    ),
-                    CampaignReportEntity(
-                        campaignId = campaign11.id,
-                        startedMinions = 280,
-                        completedMinions = 87,
-                        successfulExecutions = 41,
-                        failedExecutions = 65,
-                        WARNING
                     ),
                     CampaignReportEntity(
                         campaignId = campaign7.id,
@@ -1997,6 +2014,9 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         completedMinions = 87,
                         successfulExecutions = 41,
                         failedExecutions = 65,
+                        start = Instant.parse("2022-02-20T11:25:30Z"),
+                        campaignReportId = campaignReportId11,
+                        campaignKey = "campaign-11"
                     )
                 )
             }
@@ -2199,6 +2219,14 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     ),
                 )
             ).count()
+            val campaignReportId11 = CampaignReportEntity(
+                campaignId = campaign11.id,
+                startedMinions = 280,
+                completedMinions = 87,
+                successfulExecutions = 41,
+                failedExecutions = 65,
+                WARNING
+            ).let { campaignReportRepository.save(it).id }
 
             campaignReportRepository.saveAll(
                 listOf(
@@ -2217,14 +2245,6 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         successfulExecutions = 56,
                         failedExecutions = 20,
                         ABORTED
-                    ),
-                    CampaignReportEntity(
-                        campaignId = campaign11.id,
-                        startedMinions = 280,
-                        completedMinions = 87,
-                        successfulExecutions = 41,
-                        failedExecutions = 65,
-                        WARNING
                     ),
                     CampaignReportEntity(
                         campaignId = campaign7.id,
@@ -2269,6 +2289,9 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         completedMinions = 87,
                         successfulExecutions = 41,
                         failedExecutions = 65,
+                        start = Instant.parse("2022-02-20T11:25:30Z"),
+                        campaignReportId = campaignReportId11,
+                        campaignKey = "campaign-11"
                     )
                 )
             }
@@ -2341,33 +2364,33 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     ),
                 )
             ).count()
+            val campaignReportId6 = CampaignReportEntity(
+                campaignId = campaign6.id,
+                startedMinions = 1000,
+                completedMinions = 990,
+                successfulExecutions = 990,
+                failedExecutions = 10,
+                SUCCESSFUL
+            ).let { campaignReportRepository.save(it).id }
+            val campaignReportId8 = CampaignReportEntity(
+                campaignId = campaign8.id,
+                startedMinions = 300,
+                completedMinions = 110,
+                successfulExecutions = 56,
+                failedExecutions = 20,
+                ABORTED
+            ).let { campaignReportRepository.save(it).id }
+            val campaignReportId11 = CampaignReportEntity(
+                campaignId = campaign11.id,
+                startedMinions = 280,
+                completedMinions = 87,
+                successfulExecutions = 41,
+                failedExecutions = 65,
+                WARNING
+            ).let { campaignReportRepository.save(it).id }
 
             campaignReportRepository.saveAll(
                 listOf(
-                    CampaignReportEntity(
-                        campaignId = campaign6.id,
-                        startedMinions = 1000,
-                        completedMinions = 990,
-                        successfulExecutions = 990,
-                        failedExecutions = 10,
-                        SUCCESSFUL
-                    ),
-                    CampaignReportEntity(
-                        campaignId = campaign8.id,
-                        startedMinions = 300,
-                        completedMinions = 110,
-                        successfulExecutions = 56,
-                        failedExecutions = 20,
-                        ABORTED
-                    ),
-                    CampaignReportEntity(
-                        campaignId = campaign11.id,
-                        startedMinions = 280,
-                        completedMinions = 87,
-                        successfulExecutions = 41,
-                        failedExecutions = 65,
-                        WARNING
-                    ),
                     CampaignReportEntity(
                         campaignId = campaign7.id,
                         startedMinions = 455,
@@ -2409,6 +2432,9 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         completedMinions = 110,
                         successfulExecutions = 56,
                         failedExecutions = 20,
+                        start = Instant.parse("2022-02-20T11:25:30Z"),
+                        campaignReportId = campaignReportId8,
+                        campaignKey = "campaign-8"
                     ),
                     CampaignData(
                         name = "campaign 6",
@@ -2422,6 +2448,9 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         completedMinions = 990,
                         successfulExecutions = 990,
                         failedExecutions = 10,
+                        start = Instant.parse("2022-02-20T11:25:30Z"),
+                        campaignReportId = campaignReportId6,
+                        campaignKey = "campaign-6"
                     ),
                     CampaignData(
                         name = "campaign 11",
@@ -2435,6 +2464,9 @@ internal class CampaignRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                         completedMinions = 87,
                         successfulExecutions = 41,
                         failedExecutions = 65,
+                        start = Instant.parse("2022-02-20T11:25:30Z"),
+                        campaignReportId = campaignReportId11,
+                        campaignKey = "campaign-11"
                     )
                 )
             }

@@ -59,6 +59,13 @@ interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long>
     suspend fun findByTenantAndReference(tenant: String, reference: String): DataSeriesEntity
 
     @Query(
+        """SELECT *
+            FROM data_series
+            WHERE reference = :reference AND EXISTS (SELECT 1 FROM tenant WHERE data_series.tenant_id = tenant.id AND (tenant.reference = :tenant OR tenant.reference = '${Defaults.TENANT}'))"""
+    )
+    suspend fun findByTenantOrDefaultTenantAndReference(tenant: String, reference: String): DataSeriesEntity
+
+    @Query(
         """SELECT 
             data_series.id, 
             data_series.reference, 

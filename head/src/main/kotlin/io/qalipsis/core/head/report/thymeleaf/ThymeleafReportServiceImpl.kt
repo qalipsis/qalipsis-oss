@@ -33,11 +33,6 @@ import io.qalipsis.core.head.report.CampaignReportDetail
 import io.qalipsis.core.head.report.TemplateBeanFactory
 import io.qalipsis.core.head.report.TemplateReportService
 import io.qalipsis.core.head.report.chart.ChartService
-import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.CHARACTER_ENCODING
-import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.CSS_STYLE_PATH
-import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.TIME_PATH
-import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.USER_PATH
-import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl.Companion.logger
 import jakarta.annotation.PostConstruct
 import jakarta.inject.Singleton
 import org.jsoup.Jsoup
@@ -75,6 +70,21 @@ class ThymeleafReportServiceImpl(
      */
     private lateinit var cssContent: String
 
+    /**
+     * List of report icon names and their corresponding file names.
+     */
+    private val reportIcons = listOf(
+        "userImage" to "user.svg",
+        "timeImage" to "time.svg",
+        "logoImage" to "logo.svg",
+        "circleCheck" to "circleCheck.svg",
+        "rocket" to "rocket.svg",
+        "triangle" to "triangle.svg",
+        "shield" to "shield.svg",
+        "redTriangle" to "redTriangle.svg",
+        "notification" to "notification.svg"
+    )
+
     @PostConstruct
     fun initCss() {
         val cssInputStream = javaClass.classLoader.getResourceAsStream("public/style.css")
@@ -91,7 +101,8 @@ class ThymeleafReportServiceImpl(
         creator: String,
         dataSeries: Collection<DataSeriesEntity>,
         tenant: String,
-        reportTempDir: Path
+        reportTempDir: Path,
+        campaignReferenceToName: Map<String, String>
     ): ByteArray {
         reportTaskRepository.update(
             reportTask.copy(
@@ -99,7 +110,8 @@ class ThymeleafReportServiceImpl(
                 updateTimestamp = Instant.now()
             )
         )
-        val html = renderTemplate(campaignReportDetail, dataSeries, reportTempDir)
+        val html = renderTemplate(campaignReportDetail, dataSeries, reportTempDir, campaignReferenceToName)
+
         return generatePdfFromHtml(html)
     }
 
@@ -114,7 +126,8 @@ class ThymeleafReportServiceImpl(
     private suspend fun renderTemplate(
         campaignReportDetail: CampaignReportDetail,
         dataSeries: Collection<DataSeriesEntity>,
-        reportTempDir: Path
+        reportTempDir: Path,
+        campaignReferenceToName: Map<String, String>
     ): String {
         val templateEngine = templateBeanFactory.templateEngine()
         val chartImages = mutableListOf<String>()
@@ -127,7 +140,8 @@ class ThymeleafReportServiceImpl(
                                 chartData,
                                 dataSeries,
                                 index,
-                                reportTempDir
+                                reportTempDir,
+                                campaignReferenceToName
                             )
                         ).toBase64()
                     )
@@ -159,8 +173,10 @@ class ThymeleafReportServiceImpl(
             setVariable("css", cssContent)
             // Configure the report title.
             setVariable("title", campaignReportDetail.reportName)
+            // Configure the report generation time.
+            setVariable("generatedTime", Instant.now())
             // Configure data to populate the campaign summary section.
-            setVariable("campaigns", campaignReportDetail.campaignData)
+            setVariable("campaigns", campaignReportDetail.campaignReportData)
             val eventTableData = mutableListOf<Collection<TimeSeriesRecord>>()
             val meterTableData = mutableListOf<Collection<TimeSeriesRecord>>()
             campaignReportDetail.tableData.forEach { timeSeriesRecords ->
@@ -177,16 +193,13 @@ class ThymeleafReportServiceImpl(
             setVariable("chartImages", chartImages)
             // Configure the path to read the font family.
             setVariable("fontUrl", fontUrl)
-            // Configure the path for the time svg icon.
-            setVariable("timeImage", assets["timeImage"])
-            // Configure the path for the user svg icon.
-            setVariable("userImage", assets["userImage"])
-            // Configure the path for the css styles.
-            setVariable("stylePath", assets["stylePath"])
-            // Configure the path for the logo image.
-            setVariable("logoImage", assets["logoImage"])
+            // Configure the data for the svg icons.
+            reportIcons.forEach { (key, _) ->
+                setVariable(key, assets[key])
+            }
         }
     }
+
 
     /**
      * Generates a pdf template from HTML string.
@@ -210,7 +223,7 @@ class ThymeleafReportServiceImpl(
                 setDocumentFromString(document.html())
                 layout()
             }
-            outputStream.use(iTextRenderer::createPDF)
+            outputStream.use { iTextRenderer.createPDF(it) }
             val fileContent = outputStream.toByteArray()
             assert(fileContent.isNotEmpty()) { "File content could not be read" }
 
@@ -244,12 +257,10 @@ class ThymeleafReportServiceImpl(
         val resourceMap = mutableMapOf<String, String>()
         try {
             //Load the image icons.
-            val userBytes = resourceLoader.getResourceAsStream("classpath:$USER_PATH")?.get()?.readBytes()
-            val timeBytes = resourceLoader.getResourceAsStream("classpath:$TIME_PATH").get().readBytes()
-            val logoBytes = resourceLoader.getResourceAsStream("classpath:$LOGO_PATH").get().readBytes()
-            resourceMap["timeImage"] = Base64.getEncoder().encodeToString(timeBytes)
-            resourceMap["userImage"] = Base64.getEncoder().encodeToString(userBytes)
-            resourceMap["logoImage"] = Base64.getEncoder().encodeToString(logoBytes)
+            reportIcons.forEach { (key, path) ->
+                val bytes = resourceLoader.getResourceAsStream("classpath:$BASE_IMAGE_PATH/$path").get().readBytes()
+                resourceMap[key] = Base64.getEncoder().encodeToString(bytes)
+            }
         } catch (ex: Exception) {
             logger.debug { "Not able to load resource: $ex" }
         }
@@ -262,8 +273,6 @@ class ThymeleafReportServiceImpl(
      *
      * @property logger custom logger instance
      * @property CHARACTER_ENCODING specifies the character encoding system to be used
-     * @property TIME_PATH path to the location of the time icon
-     * @property USER_PATH path to the location of the user icon
      * @property CSS_STYLE_PATH path to the location of the css styles
      */
     private companion object {
@@ -272,11 +281,7 @@ class ThymeleafReportServiceImpl(
 
         const val CHARACTER_ENCODING = "UTF-8"
 
-        const val TIME_PATH = "public/images/time.svg"
-
-        const val USER_PATH = "public/images/user.svg"
-
-        const val LOGO_PATH = "public/images/logo.svg"
+        const val BASE_IMAGE_PATH = "public/images"
 
         const val CSS_STYLE_PATH = "public/style.css"
     }

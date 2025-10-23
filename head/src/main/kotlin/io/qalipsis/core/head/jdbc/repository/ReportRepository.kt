@@ -56,8 +56,9 @@ interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long> {
      * The details of the [io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity] should be
      * fetched separately using [ReportDataComponentRepository.findByIdInOrderById].
      */
+
     @Query(
-        """SELECT 
+        """SELECT
             report_entity_."id",
             report_entity_."version",
             report_entity_."reference",
@@ -72,15 +73,37 @@ interface ReportRepository : CoroutineCrudRepository<ReportEntity, Long> {
             report_entity_."query",
             report_entity_data_components_."id" AS data_components_id,
             report_entity_data_components_."type" AS data_components_type,
-            report_entity_data_components_."report_id" AS data_components_report_id 
-        FROM "report" report_entity_ 
-        LEFT JOIN "data_component" report_entity_data_components_ 
+            report_entity_data_components_."report_id" AS data_components_report_id,
+            data_series_."id" AS data_components_data_series_id,
+            data_series_."reference" AS data_components_data_series_reference,
+            data_series_."version" AS data_components_data_series_version,
+            data_series_."tenant_id" AS data_components_data_series_tenant_id,
+            data_series_."creator_id" AS data_components_data_series_creator_id,
+            data_series_."display_name" AS data_components_data_series_display_name,
+            data_series_."sharing_mode" AS data_components_data_series_sharing_mode,
+            data_series_."data_type" AS data_components_data_series_data_type,
+            data_series_."value_name" AS data_components_data_series_value_name,
+            data_series_."color" AS data_components_data_series_color,
+            data_series_."filters" AS data_components_data_series_filters,
+            data_series_."field_name" AS data_components_data_series_field_name,
+            data_series_."aggregation_operation" AS data_components_data_series_aggregation_operation,
+            data_series_."timeframe_unit_ms" AS data_components_data_series_timeframe_unit_ms,
+            data_series_."display_format" AS data_components_data_series_display_format,
+            data_series_."query" AS data_components_data_series_query,
+            data_series_."color_opacity" AS data_components_data_series_color_opacity
+        FROM "report" report_entity_
+        LEFT JOIN "data_component" report_entity_data_components_
             ON report_entity_."id" = report_entity_data_components_."report_id"
-        WHERE EXISTS (SELECT 1 FROM tenant WHERE report_entity_.tenant_id = tenant.id AND tenant.reference = :tenant) 
+        LEFT JOIN "data_component_data_series" report_entity_data_component_data_series_
+            ON report_entity_data_components_."id" = report_entity_data_component_data_series_."data_component_id"
+        LEFT JOIN "data_series" data_series_
+            ON report_entity_data_component_data_series_."data_series_id" = data_series_."id"
+        WHERE EXISTS (SELECT 1 FROM tenant WHERE report_entity_.tenant_id = tenant.id AND tenant.reference = :tenant)
             AND report_entity_."reference" = :reference
         ORDER BY report_entity_data_components_."id""""
     )
     @Join(value = "dataComponents", type = Join.Type.LEFT_FETCH)
+    @Join(value = "dataComponents.dataSeries", type = Join.Type.LEFT_FETCH)
     suspend fun findByTenantAndReference(tenant: String, reference: String): ReportEntity
 
     @Query(
