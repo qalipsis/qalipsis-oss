@@ -89,7 +89,7 @@ internal class MediaReplacedElementFactory(private val superFactory: ReplacedEle
     private fun svgToPng(imageSrc: String): ByteArray {
         val base64ByteArray = Base64.getDecoder().decode(imageSrc)
         // Set the input source as the SVG data.
-        val transcoderInput = ByteArrayInputStream(base64ByteArray).use { TranscoderInput(it) }
+        val transcoderInput = TranscoderInput(ByteArrayInputStream(base64ByteArray))
         // Create an output stream for the converted image.
         return ByteArrayOutputStream().use { outputStream ->
             // Perform the SVG to PNG conversion.

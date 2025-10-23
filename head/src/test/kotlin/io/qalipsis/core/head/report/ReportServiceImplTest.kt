@@ -1967,8 +1967,17 @@ internal class ReportServiceImplTest {
                     any()
                 )
             } returns reportEntityProptotype2
+            val dataSeriesEntity = DataSeriesEntity(
+                reference = "series-ref-8",
+                tenantId = 123L,
+                creatorId = 456L,
+                displayName = "series-name-8",
+                dataType = DataType.EVENTS,
+                valueName = "my-event"
+            )
             coEvery { idGenerator.short() } returns "report-task-1"
             coEvery { reportTaskRepository.save(any<ReportTaskEntity>()) } returns reportTaskEntity
+            coEvery { dataSeriesRepository.findByTenantOrDefaultTenantAndReference(any(), any()) } returns dataSeriesEntity
             val latch = Latch(true)
             coEvery {
                 reportGenerator.processTaskGeneration(
@@ -1991,9 +2000,10 @@ internal class ReportServiceImplTest {
                     "my-tenant",
                     "user",
                     "qoi78wizened",
-                    refEq(reportEntityProptotype2),
+                    eq(reportEntityProptotype2),
                     refEq(reportTaskEntity)
                 )
+                dataSeriesRepository.findByTenantOrDefaultTenantAndReference("my-tenant", "minions.count")
             }
             confirmVerified(reportGenerator)
         }

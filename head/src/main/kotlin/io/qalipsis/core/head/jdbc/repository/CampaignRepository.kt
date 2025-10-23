@@ -264,12 +264,14 @@ interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, Long> {
                 campaign_entity_.name as name,
                 campaign_entity_.zones as zones,
                 campaign_entity_.result as result, 
+                campaign_entity_.start as "start", 
+                campaign_entity_.key as "campaign_key", 
                 EXTRACT(epoch FROM campaign_entity_.end::timestamp -  campaign_entity_.start::timestamp):: BIGINT as "execution_time", 
+                cr.id as "campaign_report_id",
                 cr.started_minions as "started_minions", 
                 cr.completed_minions as "completed_minions", 
                 cr.successful_executions as "successful_executions", 
-                cr.failed_executions as "failed_executions", 
-                NULL as resolved_zones
+                cr.failed_executions as "failed_executions"
             FROM campaign campaign_entity_
                 INNER JOIN campaign_report cr 
                     ON campaign_entity_.id = cr.campaign_id
@@ -285,7 +287,7 @@ interface CampaignRepository : CoroutineCrudRepository<CampaignEntity, Long> {
         """,
         nativeQuery = true
     )
-    fun retrieveCampaignDetailByTenantIdAndKeyIn(
+    suspend fun retrieveCampaignDetailByTenantIdAndKeyIn(
         tenantId: Long,
         campaignKeys: Collection<String>,
         campaignNamePatterns: Collection<String>,

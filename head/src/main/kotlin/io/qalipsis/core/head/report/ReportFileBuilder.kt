@@ -47,14 +47,14 @@ class ReportFileBuilder(
      *
      * @param report instance of the [ReportEntity] from which to populate report file
      * @param tenant reference of the tenant owning the report
-     * @param campaignData data class which contains all report data
+     * @param campaignReportData data class which contains all report data
      */
     suspend fun populateCampaignReportDetail(
         report: ReportEntity,
         tenant: String,
-        campaignData: Collection<CampaignData>,
+        campaignReportData: Collection<CampaignReportData>,
     ): CampaignReportDetail {
-        campaignData.forEach { campaign ->
+        campaignReportData.forEach { campaign ->
             val zones = mutableSetOf<Zone>()
             campaign.resolvedZones =
                 zoneRepository.findZonesByTenant(tenant).filter { zone -> zone.key in campaign.zones }.map { it.toModel() }.toSet()
@@ -66,7 +66,7 @@ class ReportFileBuilder(
 
         return CampaignReportDetail(
             reportName = report.displayName,
-            campaignData = campaignData,
+            campaignReportData = campaignReportData,
             tableData = tableData,
             chartData = chartData
         )

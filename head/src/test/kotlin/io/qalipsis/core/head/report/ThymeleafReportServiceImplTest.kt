@@ -114,7 +114,7 @@ internal class ThymeleafReportServiceImplTest {
     @Test
     internal fun `should build the thymeleaf context`() {
         //given
-        val campaignData = CampaignData(
+        val campaignReportData = CampaignReportData(
             name = "campaign-1",
             result = ExecutionStatus.ABORTED,
             startedMinions = 6,
@@ -122,9 +122,17 @@ internal class ThymeleafReportServiceImplTest {
             successfulExecutions = 5,
             failedExecutions = 1,
             zones = setOf("GER", "DM"),
-            executionTime = 15
+            executionTime = 15,
+            start = null,
+            campaignReportId = 123L,
+            total = 4,
+            error = 2,
+            warning = 1,
+            info = 1,
+            campaignKey = "campaign-key-1",
+            scenarios = emptyList()
         )
-        val campaignData2 = campaignData.copy(
+        val campaignReportData2 = campaignReportData.copy(
             name = "campaign-2",
             result = ExecutionStatus.SUCCESSFUL,
             startedMinions = 46,
@@ -156,7 +164,7 @@ internal class ThymeleafReportServiceImplTest {
         )
         val campaignReportDetail = CampaignReportDetail(
             "Test title",
-            listOf(campaignData, campaignData2),
+            listOf(campaignReportData, campaignReportData2),
             listOf(tableDataResult),
             relaxedMockk()
         )
@@ -173,7 +181,7 @@ internal class ThymeleafReportServiceImplTest {
         assertThat(context.getVariable("title")).isEqualTo("Test title")
         assertThat(context.getVariable("fontUrl")).isEqualTo("valid-font-url")
         assertThat(context.getVariable("chartImages")).isEqualTo(chartImages)
-        assertThat(context.getVariable("campaigns")).isEqualTo(listOf(campaignData, campaignData2))
+        assertThat(context.getVariable("campaigns")).isEqualTo(listOf(campaignReportData, campaignReportData2))
         assertThat(context.getVariable("eventTableData")).isEqualTo(null)
         assertThat(context.getVariable("meterTableData")).isEqualTo(listOf(tableDataResult))
     }
@@ -228,7 +236,8 @@ internal class ThymeleafReportServiceImplTest {
             "user",
             listOf(),
             "tenant-1",
-            path
+            path,
+            emptyMap()
         )
 
         //then
@@ -246,7 +255,7 @@ internal class ThymeleafReportServiceImplTest {
                     prop(ReportTaskEntity::creator).isEqualTo("user")
                 }
             })
-            templateReportService.renderTemplate(campaignReportDetail, emptyList(), path)
+            templateReportService.renderTemplate(campaignReportDetail, emptyList(), path, mapOf())
             templateReportService.generatePdfFromHtml(any<String>())
         }
     }
@@ -274,7 +283,7 @@ internal class ThymeleafReportServiceImplTest {
         coEvery { templateReportService.buildContext(any(), any(), any()) } returns context
 
         //when
-        templateReportService.renderTemplate(campaignReportDetail, listOf(dataSeriesEntity), path)
+        templateReportService.renderTemplate(campaignReportDetail, listOf(dataSeriesEntity), path, mapOf())
 
         //then
         coVerifyOnce {

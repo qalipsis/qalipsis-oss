@@ -20,12 +20,16 @@
 package io.qalipsis.core.head.report
 
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.entity.ReportFileEntity
 import io.qalipsis.core.head.jdbc.entity.ReportTaskEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.ReportFileRepository
 import io.qalipsis.core.head.jdbc.repository.ReportTaskRepository
+import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
+import io.qalipsis.core.head.jdbc.repository.ScenarioReportRepository
 import io.qalipsis.core.head.model.ReportTaskStatus
 import jakarta.inject.Singleton
 import java.io.File
@@ -41,17 +45,21 @@ import java.time.temporal.ChronoUnit
 @Singleton
 class ReportGenerator(
     val campaignRepository: CampaignRepository,
+    val scenarioReportRepository: ScenarioReportRepository,
+    val scenarioReportMessageRepository: ScenarioReportMessageRepository,
     val reportFileBuilder: ReportFileBuilder,
     val templateReportService: TemplateReportService,
     val reportFileRepository: ReportFileRepository,
     val reportTaskRepository: ReportTaskRepository
 ) {
+    private val campaignReferenceToName = mutableMapOf<String, String>()
+
     suspend fun processTaskGeneration(
         tenant: String,
         creator: String,
         reference: String,
         report: ReportEntity,
-        reportTask: ReportTaskEntity
+        reportTask: ReportTaskEntity,
     ) {
         logger.debug { "Report generation with tenant: $tenant, creator: $creator and reference: $reference, State: Processing" }
         val currentReportTempDir =
@@ -63,9 +71,49 @@ class ReportGenerator(
                     report.campaignKeys,
                     report.campaignNamesPatterns,
                     report.scenarioNamesPatterns
-                )
-            require(campaignData.isNotEmpty()) { "No matching campaign for specified campaign keys, campaign name patterns and scenario name patterns" }
-            val campaignReportDetail = reportFileBuilder.populateCampaignReportDetail(report, tenant, campaignData)
+                ).map { it.toCampaignReportData() }
+            //Fetch associated scenario reports.
+            val scenarioReports = scenarioReportRepository.findByCampaignReportIdIn(
+                campaignData.map { it.campaignReportId }
+            )
+            //Fetch associated scenario reports messages.
+            val scenarioReportMessages = scenarioReportMessageRepository.findByScenarioReportIdInOrderById(
+                scenarioReports.map { it.id }
+            )
+            val campaignReportData = campaignData.map { campaign ->
+                campaignReferenceToName[campaign.campaignKey] = campaign.name
+                val associatedScenarioReports =
+                    scenarioReports.filter { it.campaignReportId == campaign.campaignReportId }
+                val messagesByScenarioReportId = scenarioReportMessages.groupBy { it.scenarioReportId }
+                val scenarioReport = associatedScenarioReports.map { scenarioReport ->
+                    val messages =
+                        (messagesByScenarioReportId[scenarioReport.id] ?: emptyList()).groupBy { it.severity }
+                            .mapValues { it.value.size }
+
+                    ScenarioReportData(
+                        name = scenarioReport.name,
+                        campaignReportId = scenarioReport.campaignReportId,
+                        status = scenarioReport.status,
+                        start = scenarioReport.start,
+                        end = scenarioReport.end,
+                        startedMinions = scenarioReport.startedMinions,
+                        completedMinions = scenarioReport.completedMinions,
+                        successfulExecutions = scenarioReport.successfulExecutions,
+                        failedExecutions = scenarioReport.failedExecutions,
+                        info = messages[ReportMessageSeverity.INFO] ?: 0,
+                        warning = messages[ReportMessageSeverity.WARN] ?: 0,
+                        error = (messages[ReportMessageSeverity.ERROR] ?: 0) + (messages[ReportMessageSeverity.ABORT] ?: 0)
+                    )
+                }
+                campaign.scenarios = scenarioReport
+                campaign.info = scenarioReport.sumOf { it.info }
+                campaign.error = scenarioReport.sumOf { it.error }
+                campaign.warning = scenarioReport.sumOf { it.warning }
+                campaign.total = campaign.info + campaign.error + campaign.warning
+                return@map campaign
+            }
+            require(campaignReportData.isNotEmpty()) { "No matching campaign for specified campaign keys, campaign name patterns and scenario name patterns" }
+            val campaignReportDetail = reportFileBuilder.populateCampaignReportDetail(report, tenant, campaignReportData)
             val dataSeries = report.dataComponents.flatMap { it.dataSeries }
             val reportFile = templateReportService.generatePdf(
                 report,
@@ -74,7 +122,8 @@ class ReportGenerator(
                 creator,
                 dataSeries,
                 tenant,
-                currentReportTempDir
+                currentReportTempDir,
+                campaignReferenceToName
             )
             reportFileRepository.save(
                 ReportFileEntity(

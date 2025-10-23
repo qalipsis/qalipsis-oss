@@ -34,16 +34,21 @@ import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.entity.ReportFileEntity
 import io.qalipsis.core.head.jdbc.entity.ReportTaskEntity
+import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
+import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.ReportFileRepository
 import io.qalipsis.core.head.jdbc.repository.ReportRepository
 import io.qalipsis.core.head.jdbc.repository.ReportTaskRepository
+import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
+import io.qalipsis.core.head.jdbc.repository.ScenarioReportRepository
 import io.qalipsis.core.head.model.DataComponentType
 import io.qalipsis.core.head.model.ReportTaskStatus
 import io.qalipsis.core.head.report.thymeleaf.ThymeleafReportServiceImpl
@@ -55,6 +60,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.io.File
 import java.nio.file.Files
+import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -75,6 +81,12 @@ internal class ReportGeneratorTest {
 
     @MockK
     private lateinit var reportFileRepository: ReportFileRepository
+
+    @MockK
+    private lateinit var scenarioReportRepository: ScenarioReportRepository
+
+    @MockK
+    private lateinit var scenarioReportMessageRepository: ScenarioReportMessageRepository
 
     @MockK
     private lateinit var idGenerator: IdGenerator
@@ -183,18 +195,38 @@ internal class ReportGeneratorTest {
                 successfulExecutions = 5,
                 failedExecutions = 1,
                 zones = setOf("GER", "DM"),
-                executionTime = 15
+                executionTime = 15,
+                start = null,
+                campaignReportId = 1,
+                campaignKey = "campaign-key-1"
             )
-            val campaignData2 = campaignData.copy(
-                name = "campaign-2",
-                result = ExecutionStatus.SUCCESSFUL,
-                startedMinions = 46,
-                completedMinions = 46,
-                successfulExecutions = 25,
-                failedExecutions = 21,
-            )
+
+            val scenarioReportEntity = relaxedMockk<ScenarioReportEntity> {
+                coEvery { id } returns 123L
+                coEvery { name } returns "my-scenario"
+                coEvery { campaignReportId } returns 1L
+                coEvery { status } returns ExecutionStatus.SUCCESSFUL
+                coEvery { start } returns now
+                coEvery { end } returns now.plusSeconds(120)
+                coEvery { startedMinions } returns 10
+                coEvery { completedMinions } returns 10
+                coEvery { successfulExecutions } returns 8
+                coEvery { failedExecutions } returns 2
+            }
+            val scenarioReportMessageEntity = relaxedMockk<ScenarioReportMessageEntity> {
+                coEvery { id } returns 123L
+                coEvery { stepName } returns "my-scenario"
+                coEvery { scenarioReportId } returns 1L
+                coEvery { messageId } returns 1L.toString()
+                coEvery { severity } returns ReportMessageSeverity.WARN
+                coEvery { message } returns "This is a warning message"
+            }
             coEvery { reportTaskRepository.update(any()) } returns reportTaskEntity2
             coEvery { reportRepository.findByTenantAndReference(any(), any()) } returns reportEntity
+            coEvery { scenarioReportRepository.findByCampaignReportIdIn(any()) } returns listOf(scenarioReportEntity)
+            coEvery { scenarioReportMessageRepository.findByScenarioReportIdInOrderById(any()) } returns listOf(
+                scenarioReportMessageEntity
+            )
             coEvery { idGenerator.short() } returns reportTaskEntity.reference
             coEvery {
                 campaignRepository.retrieveCampaignDetailByTenantIdAndKeyIn(
@@ -203,9 +235,10 @@ internal class ReportGeneratorTest {
                     any(),
                     any()
                 )
-            } returns listOf(campaignData, campaignData2)
+            } returns listOf(campaignData)
             coEvery {
                 mockTemplateReportService.generatePdf(
+                    any(),
                     any(),
                     any(),
                     any(),
@@ -220,7 +253,7 @@ internal class ReportGeneratorTest {
                 mockReportFileBuilder.populateCampaignReportDetail(
                     any(),
                     any(),
-                    any()
+                    any<List<CampaignReportData>>()
                 )
             } returns campaignReportDetail
             coEvery { reportFileRepository.save(any<ReportFileEntity>()) } returns reportFileEntity
@@ -242,8 +275,46 @@ internal class ReportGeneratorTest {
                 mockReportFileBuilder.populateCampaignReportDetail(
                     reportEntity,
                     "my-tenant",
-                    listOf(campaignData, campaignData2)
+                    listOf(
+                        CampaignReportData(
+                            name = "campaign-1",
+                            campaignReportId = 1,
+                            zones = setOf("GER", "DM"),
+                            result = ExecutionStatus.ABORTED,
+                            start = null,
+                            executionTime = 15,
+                            startedMinions = 6,
+                            completedMinions = 5,
+                            successfulExecutions = 5,
+                            failedExecutions = 1,
+                            resolvedZones = emptySet(),
+                            total = 0,
+                            info = 0,
+                            warning = 0,
+                            error = 0,
+                            campaignKey = "campaign-key-1",
+                            scenarios = listOf(
+                                ScenarioReportData(
+                                    name = "my-scenario",
+                                    campaignReportId = 1,
+                                    status = ExecutionStatus.SUCCESSFUL,
+                                    start = now,
+                                    end = now.plusSeconds(120),
+                                    startedMinions = 10,
+                                    completedMinions = 10,
+                                    successfulExecutions = 8,
+                                    failedExecutions = 2,
+                                    info = 0,
+                                    warning = 0,
+                                    error = 0,
+                                    duration = Duration.parse("PT2M").toReadableString()
+                                )
+                            )
+                        )
+                    )
                 )
+
+
                 mockTemplateReportService.generatePdf(
                     reportEntity,
                     campaignReportDetail,
@@ -251,7 +322,8 @@ internal class ReportGeneratorTest {
                     "user",
                     dataSeries,
                     "my-tenant",
-                    tempPath
+                    tempPath,
+                    any<Map<String, String>>()
                 )
                 reportFileRepository.save(withArg {
                     assertThat(it).all {
@@ -293,8 +365,32 @@ internal class ReportGeneratorTest {
                 reportTaskEntity.copy(status = ReportTaskStatus.PROCESSING, updateTimestamp = now.plusSeconds(28))
             val reportTaskEntity3 =
                 reportTaskEntity.copy(status = ReportTaskStatus.FAILED, updateTimestamp = now.plusSeconds(52))
+            val scenarioReportEntity = relaxedMockk<ScenarioReportEntity> {
+                coEvery { id } returns 123L
+                coEvery { name } returns "my-scenario"
+                coEvery { campaignReportId } returns 1L
+                coEvery { status } returns ExecutionStatus.SUCCESSFUL
+                coEvery { start } returns now
+                coEvery { end } returns now.plusSeconds(120)
+                coEvery { startedMinions } returns 10
+                coEvery { completedMinions } returns 10
+                coEvery { successfulExecutions } returns 8
+                coEvery { failedExecutions } returns 2
+            }
+            val scenarioReportMessageEntity = relaxedMockk<ScenarioReportMessageEntity> {
+                coEvery { id } returns 123L
+                coEvery { stepName } returns "my-scenario"
+                coEvery { scenarioReportId } returns 1L
+                coEvery { messageId } returns 1L.toString()
+                coEvery { severity } returns ReportMessageSeverity.WARN
+                coEvery { message } returns "This is a warning message"
+            }
             coEvery { reportTaskRepository.update(any()) } returns reportTaskEntity2 andThen reportTaskEntity3
             coEvery { reportRepository.findByTenantAndReference(any(), any()) } returns reportEntity
+            coEvery { scenarioReportRepository.findByCampaignReportIdIn(any()) } returns listOf(scenarioReportEntity)
+            coEvery { scenarioReportMessageRepository.findByScenarioReportIdInOrderById(any()) } returns listOf(
+                scenarioReportMessageEntity
+            )
             coEvery { idGenerator.short() } returns reportTaskEntity.reference
             coEvery {
                 campaignRepository.retrieveCampaignDetailByTenantIdAndKeyIn(

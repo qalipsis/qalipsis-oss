@@ -351,6 +351,83 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
     }
 
     @Test
+    fun `should fetch minionscount series by its tenant or the default tenant`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val saved = dataSeriesRepository.save(dataSeriesPrototype.copy(tenantId = tenant.id, creatorId = creator.id, reference = "minions.count"))
+
+        // when
+        var fetched = dataSeriesRepository.findByTenantOrDefaultTenantAndReference(tenant.reference, "minions.count")
+
+        // then
+        assertThat(fetched).isNotNull().all {
+            prop(DataSeriesEntity::id).isEqualTo(saved.id)
+            prop(DataSeriesEntity::reference).isEqualTo("minions.count")
+            prop(DataSeriesEntity::tenantId).isEqualTo(tenant.id)
+            prop(DataSeriesEntity::creatorId).isEqualTo(creator.id)
+            prop(DataSeriesEntity::displayName).isEqualTo("my-name")
+            prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
+            prop(DataSeriesEntity::filters).containsOnly(
+                DataSeriesFilterEntity(
+                    "minionsCount",
+                    QueryClauseOperator.IS,
+                    "1000"
+                )
+            )
+            prop(DataSeriesEntity::color).isEqualTo("#FFFFFF")
+            prop(DataSeriesEntity::fieldName).isEqualTo("my-field")
+            prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.AVERAGE)
+            prop(DataSeriesEntity::timeframeUnitMs).isEqualTo(10_000L)
+            prop(DataSeriesEntity::displayFormat).isEqualTo("#000.000")
+            prop(DataSeriesEntity::query).isEqualTo("This is the query")
+            prop(DataSeriesEntity::colorOpacity).isEqualTo(50)
+        }
+
+        // when
+        val updated = fetched.copy(
+            displayName = "my other name",
+            color = "#000000",
+            filters = setOf(DataSeriesFilterEntity("campaign", QueryClauseOperator.IS_NOT, "AAA")),
+            timeframeUnitMs = Duration.ofMinutes(4).toMillis(),
+            fieldName = "my-other-field",
+            aggregationOperation = QueryAggregationOperator.MAX,
+            displayFormat = "##0.0",
+            query = "This is the other query",
+            colorOpacity = 75,
+            tenantId = defaultTenant.id
+        )
+        val beforeUpdate = Instant.now()
+        dataSeriesRepository.update(updated)
+
+        fetched = dataSeriesRepository.findByTenantOrDefaultTenantAndReference(tenant = "my-tenant", reference = "minions.count")
+
+        // then
+        assertThat(fetched).isNotNull().all {
+            prop(DataSeriesEntity::reference).isEqualTo("minions.count")
+            prop(DataSeriesEntity::version).isGreaterThanOrEqualTo(beforeUpdate)
+            prop(DataSeriesEntity::tenantId).isEqualTo(defaultTenant.id)
+            prop(DataSeriesEntity::creatorId).isEqualTo(creator.id)
+            prop(DataSeriesEntity::displayName).isEqualTo("my other name")
+            prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
+            prop(DataSeriesEntity::filters).containsOnly(
+                DataSeriesFilterEntity(
+                    "campaign",
+                    QueryClauseOperator.IS_NOT,
+                    "AAA"
+                )
+            )
+            prop(DataSeriesEntity::color).isEqualTo("#000000")
+            prop(DataSeriesEntity::fieldName).isEqualTo("my-other-field")
+            prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.MAX)
+            prop(DataSeriesEntity::timeframeUnitMs).isEqualTo(240_000L)
+            prop(DataSeriesEntity::displayFormat).isEqualTo("##0.0")
+            prop(DataSeriesEntity::query).isEqualTo("This is the other query")
+            prop(DataSeriesEntity::colorOpacity).isEqualTo(75)
+        }
+    }
+
+    @Test
     fun `should delete data series when the tenant is deleted`() = testDispatcherProvider.run {
         // given
         val tenant = tenantRepository.save(tenantPrototype.copy())

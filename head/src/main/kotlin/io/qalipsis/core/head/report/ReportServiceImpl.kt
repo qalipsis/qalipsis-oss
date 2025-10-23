@@ -263,7 +263,14 @@ class ReportServiceImpl(
 
     @LogInput
     override suspend fun render(tenant: String, creator: String, reference: String): ReportTask {
-        val report = reportRepository.findByTenantAndReference(tenant, reference)
+        val reportEntity = reportRepository.findByTenantAndReference(tenant, reference)
+        val minionsCountSeries = dataSeriesRepository.findByTenantOrDefaultTenantAndReference(tenant, MINION_COUNT_DATA_SERIES_REFERENCE)
+        val updatedComponents = reportEntity.dataComponents.map { component ->
+            val updatedSeries = (component.dataSeries + minionsCountSeries)
+            component.copy(dataSeries = updatedSeries)
+        }
+        val report = reportEntity.copy(dataComponents = updatedComponents)
+
         val reportTask = reportTaskRepository.save(
             ReportTaskEntity(
                 reportId = report.id,
@@ -406,6 +413,8 @@ class ReportServiceImpl(
         const val REPORT_DATA_SERIES_NOT_ALLOWED =
             "Some selected data series of your data components cannot be found in your tenant. You can only add data series of your tenant in this report"
         const val REPORT_CAMPAIGN_KEYS_NOT_ALLOWED = "Not all specified campaign keys belong to the tenant"
+
+        const val MINION_COUNT_DATA_SERIES_REFERENCE = "minions.count"
 
         val logger = logger()
     }
