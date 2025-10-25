@@ -29,7 +29,6 @@ export const useCampaignDetailsStore = defineStore("CampaignDetails", {
         }
     },
     getters: {
-        selectedScenarioReports: state => ScenarioHelper.getSelectedScenarioReports(state.selectedScenarioNames, state.campaignDetails!),
         selectedDataSeriesReferences: state => state.selectedDataSeries.map(dataSeries => dataSeries.reference)
     },
     actions: {
