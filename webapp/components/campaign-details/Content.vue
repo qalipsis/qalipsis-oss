@@ -4,9 +4,10 @@
       <div class="flex justify-between">
         <ScenarioDetails :scenarioReports="scenarioReports" />
         <template v-if="campaignDetails.status === 'IN_PROGRESS'">
-          <BasePermission :permissions="[PermissionConstant.WRITE_CAMPAIGN]">
+          <BasePermission :permissions="[writeCampaignPermission]">
             <BaseButton
               text="Stop all"
+              theme="error"
               @click="campaignStopModalOpen = true"
             />
           </BasePermission>
@@ -44,11 +45,13 @@
       <div class="flex items-center justify-around">
         <BaseButton
           btn-style="outlined"
-          text="Soft"
+          theme="error"
+          text="Cancel"
           @click="campaignStopModalOpen = false"
         />
         <BaseButton
-          text="Abort"
+          text="Proceed"
+          theme="error"
           @click="handleAbortButtonClick"
         />
       </div>
@@ -60,6 +63,8 @@
 defineProps<{
   campaignDetails: CampaignExecutionDetails
 }>()
+
+const writeCampaignPermission = PermissionConstant.WRITE_CAMPAIGN
 
 const route = useRoute()
 const router = useRouter()
