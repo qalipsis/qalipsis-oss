@@ -21,7 +21,7 @@ package io.qalipsis.core.head.report
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.containsAll
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isSameInstanceAs
@@ -200,6 +200,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
+            zones = setOf("zone-1", "zone-2"),
             from = start,
             until = end,
             aggregationTimeframe = timeFrame
@@ -214,8 +215,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
         // then
         assertThat(result).all {
             prop(AggregationQueryExecutionContext::tenant).isEqualTo("my-tenant")
-            prop(AggregationQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
-            prop(AggregationQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
+            prop(AggregationQueryExecutionContext::campaignsReferences).containsExactlyInAnyOrder("camp-1", "camp-2")
+            prop(AggregationQueryExecutionContext::scenariosNames).containsExactlyInAnyOrder("scen-1", "scen-2")
+            prop(AggregationQueryExecutionContext::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(AggregationQueryExecutionContext::from).isEqualTo(start.plusMillis(1))
             prop(AggregationQueryExecutionContext::until).isEqualTo(end)
             prop(AggregationQueryExecutionContext::aggregationTimeframe).isEqualTo(timeFrame)
@@ -232,6 +234,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
+            zones = setOf("zone-1", "zone-2"),
             from = start,
             until = end,
             aggregationTimeframe = timeFrame
@@ -246,8 +249,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
         // then
         assertThat(result).all {
             prop(AggregationQueryExecutionContext::tenant).isEqualTo("my-tenant")
-            prop(AggregationQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
-            prop(AggregationQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
+            prop(AggregationQueryExecutionContext::campaignsReferences).containsExactlyInAnyOrder("camp-1", "camp-2")
+            prop(AggregationQueryExecutionContext::scenariosNames).containsExactlyInAnyOrder("scen-1", "scen-2")
+            prop(AggregationQueryExecutionContext::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(AggregationQueryExecutionContext::from).isEqualTo(start)
             prop(AggregationQueryExecutionContext::until).isEqualTo(end.minusMillis(1))
             prop(AggregationQueryExecutionContext::aggregationTimeframe).isEqualTo(timeFrame)
@@ -264,6 +268,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
+            zones = setOf("zone-1", "zone-2"),
             from = start,
             until = end,
             aggregationTimeframe = timeFrame
@@ -278,8 +283,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
         // then
         assertThat(result).all {
             prop(AggregationQueryExecutionContext::tenant).isEqualTo("my-tenant")
-            prop(AggregationQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
-            prop(AggregationQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
+            prop(AggregationQueryExecutionContext::campaignsReferences).containsExactlyInAnyOrder("camp-1", "camp-2")
+            prop(AggregationQueryExecutionContext::scenariosNames).containsExactlyInAnyOrder("scen-1", "scen-2")
+            prop(AggregationQueryExecutionContext::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(AggregationQueryExecutionContext::from).isEqualTo(start)
             prop(AggregationQueryExecutionContext::until).isEqualTo(end)
             prop(AggregationQueryExecutionContext::aggregationTimeframe).isEqualTo(Duration.ofSeconds(1))
@@ -295,6 +301,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
+            zones = setOf("zone-1", "zone-2"),
             from = null,
             until = null,
             aggregationTimeframe = null
@@ -309,8 +316,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
         // then
         assertThat(result).all {
             prop(AggregationQueryExecutionContext::tenant).isEqualTo("my-tenant")
-            prop(AggregationQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
-            prop(AggregationQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
+            prop(AggregationQueryExecutionContext::campaignsReferences).containsExactlyInAnyOrder("camp-1", "camp-2")
+            prop(AggregationQueryExecutionContext::scenariosNames).containsExactlyInAnyOrder("scen-1", "scen-2")
+            prop(AggregationQueryExecutionContext::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(AggregationQueryExecutionContext::from).isEqualTo(start)
             prop(AggregationQueryExecutionContext::until).isEqualTo(end)
             prop(AggregationQueryExecutionContext::aggregationTimeframe).isEqualTo(Duration.ofSeconds(1))
@@ -327,6 +335,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
+            zones = setOf("zone-1", "zone-2"),
             from = start,
             until = end,
             aggregationTimeframe = timeFrame
@@ -341,8 +350,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
         // then
         assertThat(result).all {
             prop(AggregationQueryExecutionContext::tenant).isEqualTo("my-tenant")
-            prop(AggregationQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
-            prop(AggregationQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
+            prop(AggregationQueryExecutionContext::campaignsReferences).containsExactlyInAnyOrder("camp-1", "camp-2")
+            prop(AggregationQueryExecutionContext::scenariosNames).containsExactlyInAnyOrder("scen-1", "scen-2")
+            prop(AggregationQueryExecutionContext::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(AggregationQueryExecutionContext::from).isEqualTo(start)
             prop(AggregationQueryExecutionContext::until).isEqualTo(end)
             prop(AggregationQueryExecutionContext::aggregationTimeframe).isEqualTo(timeFrame)
@@ -474,6 +484,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
+            zones = setOf("zone-1", "zone-2"),
             from = start,
             until = end,
             aggregationTimeframe = timeFrame,
@@ -490,8 +501,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
         // then
         assertThat(result).all {
             prop(DataRetrievalQueryExecutionContext::tenant).isEqualTo("my-tenant")
-            prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
-            prop(DataRetrievalQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
+            prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsExactlyInAnyOrder("camp-1", "camp-2")
+            prop(DataRetrievalQueryExecutionContext::scenariosNames).containsExactlyInAnyOrder("scen-1", "scen-2")
+            prop(DataRetrievalQueryExecutionContext::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(DataRetrievalQueryExecutionContext::from).isEqualTo(start.plusMillis(1))
             prop(DataRetrievalQueryExecutionContext::until).isEqualTo(end)
             prop(DataRetrievalQueryExecutionContext::aggregationTimeframe).isEqualTo(timeFrame)
@@ -510,6 +522,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
+            zones = setOf("zone-1", "zone-2"),
             from = start,
             until = end,
             aggregationTimeframe = timeFrame,
@@ -526,8 +539,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
         // then
         assertThat(result).all {
             prop(DataRetrievalQueryExecutionContext::tenant).isEqualTo("my-tenant")
-            prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
-            prop(DataRetrievalQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
+            prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsExactlyInAnyOrder("camp-1", "camp-2")
+            prop(DataRetrievalQueryExecutionContext::scenariosNames).containsExactlyInAnyOrder("scen-1", "scen-2")
+            prop(DataRetrievalQueryExecutionContext::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(DataRetrievalQueryExecutionContext::from).isEqualTo(start)
             prop(DataRetrievalQueryExecutionContext::until).isEqualTo(end.minusMillis(1))
             prop(DataRetrievalQueryExecutionContext::aggregationTimeframe).isEqualTo(timeFrame)
@@ -546,6 +560,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
+            zones = setOf("zone-1", "zone-2"),
             from = start,
             until = end,
             aggregationTimeframe = timeFrame,
@@ -562,8 +577,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
         // then
         assertThat(result).all {
             prop(DataRetrievalQueryExecutionContext::tenant).isEqualTo("my-tenant")
-            prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
-            prop(DataRetrievalQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
+            prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsExactlyInAnyOrder("camp-1", "camp-2")
+            prop(DataRetrievalQueryExecutionContext::scenariosNames).containsExactlyInAnyOrder("scen-1", "scen-2")
+            prop(DataRetrievalQueryExecutionContext::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(DataRetrievalQueryExecutionContext::from).isEqualTo(start)
             prop(DataRetrievalQueryExecutionContext::until).isEqualTo(end)
             prop(DataRetrievalQueryExecutionContext::aggregationTimeframe).isEqualTo(Duration.ofSeconds(1))
@@ -581,6 +597,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
+            zones = setOf("zone-1", "zone-2"),
             from = start,
             until = end,
             aggregationTimeframe = null,
@@ -597,8 +614,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
         // then
         assertThat(result).all {
             prop(DataRetrievalQueryExecutionContext::tenant).isEqualTo("my-tenant")
-            prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
-            prop(DataRetrievalQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
+            prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsExactlyInAnyOrder("camp-1", "camp-2")
+            prop(DataRetrievalQueryExecutionContext::scenariosNames).containsExactlyInAnyOrder("scen-1", "scen-2")
+            prop(DataRetrievalQueryExecutionContext::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(DataRetrievalQueryExecutionContext::from).isEqualTo(start)
             prop(DataRetrievalQueryExecutionContext::until).isEqualTo(end)
             prop(DataRetrievalQueryExecutionContext::aggregationTimeframe).isEqualTo(Duration.ofSeconds(1))
@@ -617,6 +635,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
             tenant = "my-tenant",
             campaignsReferences = setOf("camp-1", "camp-2"),
             scenariosNames = setOf("scen-1", "scen-2"),
+            zones = setOf("zone-1", "zone-2"),
             from = start,
             until = end,
             aggregationTimeframe = timeFrame,
@@ -633,8 +652,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
         // then
         assertThat(result).all {
             prop(DataRetrievalQueryExecutionContext::tenant).isEqualTo("my-tenant")
-            prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsAll("camp-1", "camp-2")
-            prop(DataRetrievalQueryExecutionContext::scenariosNames).containsAll("scen-1", "scen-2")
+            prop(DataRetrievalQueryExecutionContext::campaignsReferences).containsExactlyInAnyOrder("camp-1", "camp-2")
+            prop(DataRetrievalQueryExecutionContext::scenariosNames).containsExactlyInAnyOrder("scen-1", "scen-2")
+            prop(DataRetrievalQueryExecutionContext::zones).containsExactlyInAnyOrder("zone-1", "zone-2")
             prop(DataRetrievalQueryExecutionContext::from).isEqualTo(start)
             prop(DataRetrievalQueryExecutionContext::until).isEqualTo(end)
             prop(DataRetrievalQueryExecutionContext::aggregationTimeframe).isEqualTo(timeFrame)
