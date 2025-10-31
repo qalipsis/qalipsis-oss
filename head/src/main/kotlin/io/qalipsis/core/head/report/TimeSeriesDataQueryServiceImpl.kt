@@ -92,6 +92,7 @@ class TimeSeriesDataQueryServiceImpl(
             tenant = queryExecutionRequest.tenant,
             campaignsReferences = queryExecutionRequest.campaignsReferences,
             scenariosNames = queryExecutionRequest.scenariosNames,
+            zones = queryExecutionRequest.zones,
             from = queryExecutionRequest.from?.coerceAtLeast(campaignsInstantsAndDuration.minStart!!)
                 ?: campaignsInstantsAndDuration.minStart!!,
             until = queryExecutionRequest.until?.coerceAtMost(campaignsInstantsAndDuration.maxEnd!!)
@@ -144,6 +145,7 @@ class TimeSeriesDataQueryServiceImpl(
             tenant = queryExecutionRequest.tenant,
             campaignsReferences = queryExecutionRequest.campaignsReferences,
             scenariosNames = queryExecutionRequest.scenariosNames,
+            zones = queryExecutionRequest.zones,
             from = queryExecutionRequest.from.coerceAtLeast(campaignsInstantsAndDuration.minStart!!),
             until = queryExecutionRequest.until.coerceAtMost(campaignsInstantsAndDuration.maxEnd!!),
             aggregationTimeframe = queryExecutionRequest.aggregationTimeframe

@@ -29,6 +29,7 @@ import java.time.Instant
  * @property tenant the reference of the tenant owning the data
  * @property campaignsReferences references of all the campaigns that generated the data
  * @property scenariosNames names of all the scenarios that generated the data, defaults to empty for all the scenarios of the selected campaigns
+ * @property zones zones where the data was generated, defaults to empty for all the zones of the selected campaigns
  * @property from start of the data to retrieve, defaults to null for all the data of the selected campaigns until [until]
  * @property until end of the data to retrieve, defaults to null for all the data of the selected campaigns since [from]
  * @property aggregationTimeframe duration of the time-buckets to perform the corresponding aggregations, in order to select rounded ranges that match the aggregation buckets
@@ -43,6 +44,7 @@ data class DataRetrievalQueryExecutionContext(
     val tenant: String,
     val campaignsReferences: Set<String>,
     val scenariosNames: Set<String> = emptySet(),
+    val zones: Set<String> = emptySet(),
     val from: Instant,
     val until: Instant,
     val aggregationTimeframe: Duration,

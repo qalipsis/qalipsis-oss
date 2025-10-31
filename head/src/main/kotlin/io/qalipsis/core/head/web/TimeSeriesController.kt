@@ -107,6 +107,12 @@ class TimeSeriesController(
         )
         @Nullable @QueryValue("scenarios") scenarios: Set<@NotBlank String>?,
         @Parameter(
+            description = "Zones to aggregate on; defaults to all zones of the specified campaigns.",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("zones") zones: Set<@NotBlank String>?,
+        @Parameter(
             description = "Start of the aggregation window.",
             required = false,
             `in` = ParameterIn.QUERY
@@ -131,6 +137,7 @@ class TimeSeriesController(
                 tenant = tenant,
                 campaignsReferences = campaigns,
                 scenariosNames = scenarios.orEmpty(),
+                zones = zones.orEmpty(),
                 from = from,
                 until = until,
                 aggregationTimeframe = timeframe
@@ -182,6 +189,12 @@ class TimeSeriesController(
         )
         @Nullable @QueryValue("scenarios") scenarios: Set<@NotBlank String>?,
         @Parameter(
+            description = "Zones to aggregate on; defaults to all zones of the specified campaigns.",
+            required = false,
+            `in` = ParameterIn.QUERY
+        )
+        @Nullable @QueryValue("zones") zones: Set<@NotBlank String>?,
+        @Parameter(
             description = "Start of the search window frame.",
             required = true,
             `in` = ParameterIn.QUERY
@@ -218,6 +231,7 @@ class TimeSeriesController(
                 tenant = tenant,
                 campaignsReferences = campaigns,
                 scenariosNames = scenarios.orEmpty(),
+                zones = zones.orEmpty(),
                 from = from,
                 until = until,
                 aggregationTimeframe = timeframe,
