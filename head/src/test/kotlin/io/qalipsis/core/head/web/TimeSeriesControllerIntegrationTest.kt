@@ -132,7 +132,7 @@ internal class TimeSeriesControllerIntegrationTest {
 
         val request =
             HttpRequest.GET<Unit>(
-                "/time-series/aggregate?series=ser-1,ser-2&campaigns=camp-1,camp2&scenarios=scen-1,scen-2&from=$start&until=$end&timeframe=PT10S"
+                "/time-series/aggregate?series=ser-1,ser-2&campaigns=camp-1,camp2&scenarios=scen-1,scen-2&zones=zone-1,zone-2&from=$start&until=$end&timeframe=PT10S"
             )
 
         // when
@@ -155,6 +155,7 @@ internal class TimeSeriesControllerIntegrationTest {
                     tenant = "_qalipsis_ten_",
                     campaignsReferences = setOf("camp-1", "camp2"),
                     scenariosNames = setOf("scen-1", "scen-2"),
+                    zones = setOf("zone-1", "zone-2"),
                     from = start,
                     until = end,
                     aggregationTimeframe = Duration.ofSeconds(10)
@@ -372,7 +373,7 @@ internal class TimeSeriesControllerIntegrationTest {
 
         val request =
             HttpRequest.GET<Unit>(
-                "/time-series/search?series=ser-1,ser-2&campaigns=camp-1,camp2&scenarios=scen-1,scen-2&from=$start&until=$end&timeframe=PT10S&page=3&size=256"
+                "/time-series/search?series=ser-1,ser-2&campaigns=camp-1,camp2&scenarios=scen-1,scen-2&zones=zone-1,zone-2&from=$start&until=$end&timeframe=PT10S&page=3&size=256"
             )
 
         // when
@@ -395,6 +396,7 @@ internal class TimeSeriesControllerIntegrationTest {
                     tenant = "_qalipsis_ten_",
                     campaignsReferences = setOf("camp-1", "camp2"),
                     scenariosNames = setOf("scen-1", "scen-2"),
+                    zones = setOf("zone-1", "zone-2"),
                     from = start,
                     until = start.plusSeconds(15),
                     aggregationTimeframe = Duration.ofSeconds(10),

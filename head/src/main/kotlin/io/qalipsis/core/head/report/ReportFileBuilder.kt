@@ -130,6 +130,7 @@ class ReportFileBuilder(
             tenant,
             campaignReferences.toSet(),
             report.scenarioNamesPatterns.toSet(),
+            emptySet(),
             campaignRange.minStart!!,
             campaignRange.maxEnd!!
         )
