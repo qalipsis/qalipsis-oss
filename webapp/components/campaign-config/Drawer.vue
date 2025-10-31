@@ -111,7 +111,7 @@
               </div>
             </div>
             <div class="col-span-12">
-              <label>Repeats:</label>
+              <label>Schedule:</label>
               <span>{{ repeatText }}</span>
             </div>
           </template>
@@ -159,15 +159,18 @@ const fieldValidationSchema = {
     zod.coerce
       .number({ invalid_type_error: 'You must specify a number' })
       .nullable()
-      .refine((value: number | null) => {
-        if (values.timeoutType === TimeoutTypeConstant.NONE) return true
+      .refine(
+        (value: number | null) => {
+          if (values.timeoutType === TimeoutTypeConstant.NONE) return true
 
-        if (value) return true
+          if (value) return true
 
-        return false
-      }, {
-        message: 'The duration cannot be empty'
-      })
+          return false
+        },
+        {
+          message: 'The duration cannot be empty',
+        }
+      )
   ),
   durationUnit: toTypedSchema(zod.string().nullable()),
   scheduledTime: toTypedSchema(
@@ -255,11 +258,9 @@ const repeatText = computed(() => {
       if (shouldOnlyDisplayTime) {
         return `occurs every day at ${time}`
       } else if (shouldOnlyDisplayRelativeValues) {
-        return `occurs every month ${[...values.relativeRepeatValues]
-          .sort()
-          .reverse()
-          .map((num) => `${-num} days`)
-          .join(', ')} before the end of the month and on the last day of the month, at ${time}`
+        return `occurs every month ${_concatenatedRelativeRepeatValues(
+          values.relativeRepeatValues
+        )} before the end of the month, at ${time}`
       } else if (shouldOnlyDisplaySelectedDays) {
         return `occurs every month on ${[...values.repeatValues]
           .sort()
@@ -270,13 +271,30 @@ const repeatText = computed(() => {
       return `occurs every month on ${[...values.repeatValues]
         .sort()
         .map((day) => `${day}${TimeframeHelper.getOrdinalNumberSuffix(+day)}`)
-        .join(', ')}, and ${values.relativeRepeatValues
-        .map((num) => `${-num} days`)
-        .join(', ')} before the end of the month and on the last day of the month at ${time}`
+        .join(', ')}, and ${_concatenatedRelativeRepeatValues(
+        values.relativeRepeatValues
+      )} before the end of the month, at ${time}`
     default:
       return ''
   }
 })
+
+const _concatenatedRelativeRepeatValues = (relativeValues: string[]) => {
+  // Convert numbers to strings with "days" or "last day"
+  const formatted = [...relativeValues]
+    .sort()
+    .reverse()
+    .map((day) => (day === '-1' ? 'last day' : `${-day} days`))
+
+  if (formatted.length === 1) {
+    return formatted[0]
+  } else if (formatted.length === 2) {
+    return `${formatted[0]} and ${formatted[1]}`
+  } else {
+    const last = formatted.pop()
+    return `${formatted.join(', ')}, and ${last}`
+  }
+}
 
 const handleRepeatTimeRangeOptionChange = () => {
   setFieldValue('repeatValues', [])
