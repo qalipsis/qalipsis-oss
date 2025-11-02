@@ -18,7 +18,7 @@
         :disabled="inputDisabled"
         @input="handleInputChange(($event.target as HTMLInputElement).value)"
     />
-    <Listbox v-model="selectValue">
+    <Listbox v-model="selectValue" :disabled="selectDisabled">
       <div :class="TailwindClassHelper.formDropdownClass">
         <ListboxButton>
           <div

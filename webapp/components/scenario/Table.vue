@@ -1,18 +1,18 @@
 <template>
   <BaseTable
-      :data-source="dataSource"
-      :table-column-configs="SCENARIO_TABLE_COLUMNS"
-      :total-elements="totalElements"
-      :page-size="pageSize"
-      :current-page-index="currentPageIndex"
-      :disable-row="disableRow"
-      :row-selection-enabled="true"
-      :selected-row-keys="selectedRowKeys"
-      :all-data-source-included="true"
-      rowKey="name"
-      @page-change="handlePaginationChange"
-      @selection-change="handleSelectionChange"
-      @refresh="handleRefreshBtnClick"
+    :data-source="dataSource"
+    :table-column-configs="SCENARIO_TABLE_COLUMNS"
+    :total-elements="totalElements"
+    :page-size="pageSize"
+    :current-page-index="currentPageIndex"
+    :disable-row="disableRow"
+    :row-selection-enabled="rowSelectionEnabled"
+    :selected-row-keys="selectedRowKeys"
+    :all-data-source-included="true"
+    rowKey="name"
+    @page-change="handlePaginationChange"
+    @selection-change="handleSelectionChange"
+    @refresh="handleRefreshBtnClick"
   >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'description'">
@@ -21,16 +21,19 @@
     </template>
     <template #actionCell="{ record }">
       <div
-          class="flex items-center cursor-pointer h-8 relative"
-          @click="handleConfigureBtnClick(record as ScenarioSummary)"
+        class="flex items-center cursor-pointer h-8 relative"
+        @click="handleConfigureBtnClick(record as ScenarioSummary)"
       >
         <BaseTooltip text="Configure">
           <BaseIcon
-              icon="qls-icon-setting"
-              class="text-2xl text-gray-600 dark:text-gray-100 hover:text-primary-500"
+            icon="qls-icon-setting"
+            class="text-2xl text-gray-600 dark:text-gray-100 hover:text-primary-500"
           />
         </BaseTooltip>
-        <div v-if="selectedRowKeys.includes(record.name)"  class="absolute top-0 left-4">
+        <div
+          v-if="selectedRowKeys.includes(record.name)"
+          class="absolute top-0 left-4"
+        >
           <div v-if="!scenarioConfig[record.name]">
             <BaseIcon
               icon="qls-icon-error-fill"
@@ -48,97 +51,101 @@
     </template>
   </BaseTable>
   <ScenarioConfigDrawer
-      v-if="configDrawerOpen"
-      v-model:open="configDrawerOpen"
-      :scenario="selectedScenarioSummary"
-      :configuration="campaignConfiguration"
-      :scenario-form="selectedScenarioConfigForm"
-      @submit="handleScenarioConfigFormSubmit($event)"
+    v-if="configDrawerOpen"
+    v-model:open="configDrawerOpen"
+    :scenario="selectedScenarioSummary"
+    :configuration="campaignConfiguration"
+    :scenario-form="selectedScenarioConfigForm"
+    :disabled="!rowSelectionEnabled"
+    @submit="handleScenarioConfigFormSubmit($event)"
   />
 </template>
 
 <script setup lang="ts">
-
 const props = defineProps<{
-  campaignConfiguration: DefaultCampaignConfiguration;
-}>();
+  campaignConfiguration: DefaultCampaignConfiguration
+}>()
 
-const {fetchScenarios} = useScenarioApi();
+const { fetchScenarios } = useScenarioApi()
 
-const toastStore = useToastStore();
-const scenarioTableStore = useScenarioTableStore();
+const toastStore = useToastStore()
+const scenarioTableStore = useScenarioTableStore()
 
-const {selectedRowKeys, dataSource, totalElements, pageSize, currentPageIndex, scenarioConfig} = storeToRefs(scenarioTableStore);
+const { selectedRowKeys, selectedRows, dataSource, totalElements, pageSize, currentPageIndex, scenarioConfig, rowSelectionEnabled } =
+  storeToRefs(scenarioTableStore)
 
-let selectedScenarioSummary: ScenarioSummary;
+let selectedScenarioSummary: ScenarioSummary
 
-const selectedScenarioConfigForm = ref<ScenarioConfigurationForm>();
+const selectedScenarioConfigForm = ref<ScenarioConfigurationForm>()
 
-const configDrawerOpen = ref(false);
+const configDrawerOpen = ref(false)
 
 onMounted(async () => {
   try {
-    // Fetches all scenarios and sets to the scenario table store.
-    const scenarios = await fetchScenarios();
-    scenarioTableStore.$patch({
-      dataSource: scenarios,
-      allScenarios: scenarios,
-      totalElements: scenarios.length,
-    });
+    if (rowSelectionEnabled.value) {
+      // Fetches all scenarios and sets to the scenario table store.
+      const scenarios = await fetchScenarios()
+      scenarioTableStore.$patch({
+        dataSource: scenarios,
+        allScenarios: scenarios,
+        totalElements: scenarios.length,
+      })
+    } else {
+      scenarioTableStore.$patch({
+        dataSource: selectedRows.value,
+        allScenarios: selectedRows.value,
+        totalElements: selectedRows.value.length,
+      })
+    }
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-});
+})
 
 onBeforeUnmount(() => {
-  scenarioTableStore.$reset();
-});
+  scenarioTableStore.$reset()
+})
 
 const handleRefreshBtnClick = async () => {
-  await scenarioTableStore.refreshScenarios();
+  await scenarioTableStore.refreshScenarios()
 }
 
 const disableRow = (record: ScenarioSummary) => {
-  if (!props.campaignConfiguration) return false;
+  if (!props.campaignConfiguration) return false
 
-  return !selectedRowKeys.value.includes(record.name)
-      && selectedRowKeys.value.length >= props.campaignConfiguration.validation.maxScenariosCount;
+  return (
+    !selectedRowKeys.value.includes(record.name) &&
+    selectedRowKeys.value.length >= props.campaignConfiguration.validation.maxScenariosCount
+  )
 }
 
 const handlePaginationChange = (pageIndex: number) => {
   scenarioTableStore.$patch({
-    currentPageIndex: pageIndex
-  });
+    currentPageIndex: pageIndex,
+  })
 }
 
 const handleSelectionChange = (tableSelection: TableSelection) => {
   scenarioTableStore.$patch({
     selectedRows: tableSelection.selectedRows,
-    selectedRowKeys: tableSelection.selectedRowKeys
-  });
+    selectedRowKeys: tableSelection.selectedRowKeys,
+  })
 }
 
 const handleConfigureBtnClick = (scenarioSummary: ScenarioSummary) => {
-  selectedScenarioSummary = scenarioSummary;
+  selectedScenarioSummary = scenarioSummary
   selectedScenarioConfigForm.value = scenarioTableStore.scenarioConfig[scenarioSummary.name]
-  configDrawerOpen.value = true;
-};
-
-const handleScenarioConfigFormSubmit = (form: ScenarioConfigurationForm) => {
-  scenarioTableStore.scenarioConfig[selectedScenarioSummary!.name] = form;
-  if (!scenarioTableStore.selectedRows.some(r => r.name === selectedScenarioSummary!.name)) {
-    scenarioTableStore.selectedRows = [
-      ...scenarioTableStore.selectedRows,
-      selectedScenarioSummary
-    ]
-  }
-
-  if (!scenarioTableStore.selectedRowKeys.some(rowKey => rowKey === selectedScenarioSummary!.name)) {
-    scenarioTableStore.selectedRowKeys = [
-      ...scenarioTableStore.selectedRowKeys,
-      selectedScenarioSummary.name
-    ]
-  }
+  configDrawerOpen.value = true
 }
 
+const handleScenarioConfigFormSubmit = (form: ScenarioConfigurationForm) => {
+  scenarioTableStore.scenarioConfig[selectedScenarioSummary!.name] = form
+  if (!scenarioTableStore.selectedRows.some((r) => r.name === selectedScenarioSummary!.name)) {
+    scenarioTableStore.selectedRows = [...scenarioTableStore.selectedRows, selectedScenarioSummary]
+  }
+
+  if (!scenarioTableStore.selectedRowKeys.some((rowKey) => rowKey === selectedScenarioSummary!.name)) {
+    scenarioTableStore.selectedRowKeys = [...scenarioTableStore.selectedRowKeys, selectedScenarioSummary.name]
+  }
+}
 </script>
