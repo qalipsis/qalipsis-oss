@@ -16,6 +16,7 @@
         :clearable="false"
         @update:model-value="handleDate"
         :alt-position="customPosition"
+        :disabled="disabled"
         time-picker-inline
     />
     <FormErrorMessage :errorMessage="errorMessage"/>
@@ -33,6 +34,7 @@ const props = defineProps<{
   label: string
   formControlName: string
   format: string
+  disabled?: boolean
   fieldValidationSchema?: TypedSchema
   minDate?: Date
 }>()

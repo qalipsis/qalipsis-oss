@@ -14,6 +14,7 @@
       </div>
       <div class="flex items-center">
         <BaseSwitch
+          v-if="!campaignKey"
           @checkedChange="handleCheckedChange"
           :numberOfSelectedItems="selectedRowKeys.length"
         />
@@ -29,6 +30,7 @@
           </div>
         </BaseTooltip>
         <BaseSearch
+          v-if="!campaignKey"
           class="ml-2"
           placeholder="Search scenario..."
           size="large"
@@ -36,6 +38,15 @@
         />
         <BaseButton
           class="ml-2"
+          v-if="campaignKey"
+          theme="error"
+          text="Unschedule"
+          @click="handleUnscheduleBtnClick"
+          :disabled="executionButtonDisabled"
+        />
+        <BaseButton
+          class="ml-2"
+          v-if="!campaignKey"
           :text="executionText"
           @click="handleRunBtnClick"
           :disabled="executionButtonDisabled"
@@ -46,6 +57,7 @@
   <CampaignConfigDrawer
     v-if="open"
     :campaignConfigurationForm="campaignConfigForm"
+    :disabled="campaignKey !== undefined"
     v-model:open="open"
     @submit="handleCampaignConfigFormSubmit($event)"
   />
@@ -61,6 +73,13 @@
       <span>You haven’t set a custom name for the new campaign. Do you want to run it anyway?</span>
     </section>
   </BaseModal>
+  <CampaignsAbortModal
+    v-if="campaignKey && campaignName"
+    v-model:open="campaignAbortModalOpen"
+    :campaign-key="campaignKey"
+    :campaign-name="campaignName"
+    @aborted="handleCampaignAborted()"
+  ></CampaignsAbortModal>
 </template>
 
 <script setup lang="ts">
@@ -78,6 +97,7 @@ const props = defineProps<{
 
 const { createCampaign, scheduleCampaign, updateCampaignConfig } = useCampaignApi()
 
+const campaignAbortModalOpen = ref(false)
 const campaignConfigForm = ref<CampaignConfigurationForm>({
   timeoutType: props.campaignConfigForm?.timeoutType ?? TimeoutTypeConstant.NONE,
   durationValue: props.campaignConfigForm?.durationValue ?? '',
@@ -102,8 +122,19 @@ const executionText = computed(() => {
 })
 
 const executionButtonDisabled = computed(() => {
-  return selectedRowKeys.value.length === 0 || selectedRowKeys.value.some(selectedRowKey => !scenarioConfig.value[selectedRowKey])
+  return (
+    selectedRowKeys.value.length === 0 ||
+    selectedRowKeys.value.some((selectedRowKey) => !scenarioConfig.value[selectedRowKey])
+  )
 })
+
+const handleUnscheduleBtnClick = () => {
+  campaignAbortModalOpen.value = true
+}
+
+const handleCampaignAborted = () => {
+  navigateTo('/campaigns')
+}
 
 const handleBackBtnClick = () => {
   navigateTo('/campaigns')

@@ -86,15 +86,12 @@
         </div>
       </template>
     </BaseTable>
-    <BaseModal
-        title="Abort campaign"
-        confirmBtnText="Abort"
-        v-model:open="campaignAbortModalOpen"
-        :closable="true"
-        @confirmBtnClick="handleConfirmAbortBtnClick"
-    >
-      <span>Are you sure you want to cancel this scheduled campaign? This will cancel all future executions.</span>
-    </BaseModal>
+    <CampaignsAbortModal
+      v-model:open="campaignAbortModalOpen"
+      :campaign-key="selectedCampaignTableData?.key"
+      :campaign-name="selectedCampaignTableData?.name"
+      @aborted="handleCampaignAborted()"
+    ></CampaignsAbortModal>
   </div>
 </template>
 
@@ -108,7 +105,6 @@ const props = defineProps<{
   extraQueryParams?: { [key: string]: string }
 }>()
 
-const userStore = useUserStore()
 const campaignsTableStore = useCampaignsTableStore()
 const toastStore = useToastStore()
 
@@ -181,18 +177,22 @@ const handleAbortBtnClick = (campaignTableData: CampaignTableData) => {
   campaignAbortModalOpen.value = true
 }
 
-const handleConfirmAbortBtnClick = async () => {
-  try {
-    await abortCampaign(selectedCampaignTableData.key, true)
-    await _fetchTableData()
-    campaignAbortModalOpen.value = false
-    toastStore.success({
-      text: `The scheduled campaign "${selectedCampaignTableData.name}" has been successfully aborted`,
-    })
-  } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
-  }
+const handleCampaignAborted = async () => {
+  await _fetchTableData()
 }
+
+// const handleConfirmAbortBtnClick = async () => {
+//   try {
+//     await abortCampaign(selectedCampaignTableData.key, true)
+//     await _fetchTableData()
+//     campaignAbortModalOpen.value = false
+//     toastStore.success({
+//       text: `The scheduled campaign "${selectedCampaignTableData.name}" has been successfully aborted`,
+//     })
+//   } catch (error) {
+//     toastStore.error({text: ErrorHelper.getErrorMessage(error)})
+//   }
+// }
 
 const handleRunNowBtnClick = async (campaignTableData: CampaignTableData) => {
   try {
