@@ -2,6 +2,7 @@
   <BaseDrawer
     title="Configuration of campaign"
     :open="open"
+    :footer-hidden="disabled"
     @close="emit('update:open', false)"
     @confirm-btn-click="handleConfirmBtnClick"
   >
@@ -12,6 +13,7 @@
             label="Timeout Campaign"
             form-control-name="timeoutType"
             :options="timeoutOptions"
+            :disabled="disabled"
           />
         </div>
         <div
@@ -25,12 +27,15 @@
             :input-field-validation-schema="fieldValidationSchema.durationValue"
             :select-field-validation-schema="fieldValidationSchema.durationUnit"
             :options="durationUnitOptions"
+            :input-disabled="disabled"
+            :select-disabled="disabled"
           />
         </div>
         <div class="col-span-12">
           <FormCheckbox
             label="Schedule"
             form-control-name="scheduled"
+            :disabled="disabled"
           />
         </div>
         <template v-if="values.scheduled">
@@ -40,6 +45,7 @@
               form-control-name="scheduledTime"
               format="MM/dd/yyyy HH:mm"
               :min-date="new Date()"
+              :disabled="disabled"
               :field-validation-schema="fieldValidationSchema.scheduledTime"
             />
           </div>
@@ -49,6 +55,7 @@
               form-control-name="timezone"
               :options="timezoneOptions"
               :field-validation-schema="fieldValidationSchema.timezone"
+              :disabled="disabled"
             >
             </FormAutoComplete>
           </div>
@@ -59,6 +66,7 @@
             <FormCheckbox
               label="Repeat"
               form-control-name="repeatEnabled"
+              :disabled="disabled"
             />
           </div>
           <template v-if="values.repeatEnabled">
@@ -67,6 +75,7 @@
                 label="Repeat every"
                 form-control-name="repeatTimeRange"
                 :options="repeatTimeRangeOptions"
+                :disabled="disabled"
                 @change="handleRepeatTimeRangeOptionChange"
               />
             </div>
@@ -78,6 +87,7 @@
                 <FormMultiCircleCheck
                   form-control-name="repeatValues"
                   :options="hourlyOptions"
+                  :disabled="disabled"
                 />
               </div>
             </div>
@@ -89,6 +99,7 @@
                 <FormMultiCircleCheck
                   form-control-name="repeatValues"
                   :options="dailyOptions"
+                  :disabled="disabled"
                 />
               </div>
             </div>
@@ -100,6 +111,7 @@
                 <FormMultiCircleCheck
                   form-control-name="repeatValues"
                   :options="monthlyOptions"
+                  :disabled="disabled"
                 />
               </div>
               <div class="w-80">
@@ -107,6 +119,7 @@
                 <FormMultiCircleCheck
                   form-control-name="relativeRepeatValues"
                   :options="relativeDayOfMonthOptions"
+                  :disabled="disabled"
                 />
               </div>
             </div>
@@ -129,6 +142,7 @@ import * as zod from 'zod'
 const props = defineProps<{
   open: boolean
   campaignConfigurationForm: CampaignConfigurationForm
+  disabled?: boolean
 }>()
 const emit = defineEmits<{
   (e: 'submit', v: CampaignConfigurationForm): void

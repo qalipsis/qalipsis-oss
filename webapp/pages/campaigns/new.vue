@@ -1,12 +1,12 @@
 <template>
   <div v-if="campaignConfiguration">
-    <CampaignConfigHeader :campaignConfiguration="campaignConfiguration"/>
-    <CampaignConfigContent :campaignConfiguration="campaignConfiguration"/>
+    <CampaignConfigHeader :campaignConfiguration="campaignConfiguration" />
+    <CampaignConfigContent :campaignConfiguration="campaignConfiguration" />
   </div>
 </template>
 
 <script setup lang="ts">
-const {fetchCampaignConfiguration} = useConfigurationApi()
+const { fetchCampaignConfiguration } = useConfigurationApi()
 
 const campaignConfiguration = ref<DefaultCampaignConfiguration>()
 
