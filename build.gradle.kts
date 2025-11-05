@@ -29,15 +29,15 @@ import org.jreleaser.model.api.deploy.maven.MavenCentralMavenDeployer
 
 plugins {
     idea
-    kotlin("jvm") version "1.9.25"
-    kotlin("kapt") version "1.9.25"
-    kotlin("plugin.allopen") version "1.9.25"
-    kotlin("plugin.serialization") version "1.9.25"
-    kotlin("plugin.noarg") version "1.9.25"
+    kotlin("jvm")
+    kotlin("kapt")
+    kotlin("plugin.allopen")
+    kotlin("plugin.serialization")
+    kotlin("plugin.noarg")
     `maven-publish`
-    id("org.jreleaser") version "1.18.0"
-    id("com.github.jk1.dependency-license-report") version "2.9"
-    id("com.palantir.git-version") version "3.0.0"
+    id("org.jreleaser")
+    id("com.github.jk1.dependency-license-report")
+    id("com.palantir.git-version")
 }
 
 description = "QALIPSIS OSS"
