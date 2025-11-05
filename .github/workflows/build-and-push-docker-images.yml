@@ -1,0 +1,106 @@
+#
+name: Create and publish Docker images
+
+on:
+  push:
+    branches:
+      - 'develop/*'
+      - 'main'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  BASE_IMAGE: qalipsis/base
+  JAVA_VERSION: 21
+
+jobs:
+  build-and-push-images:
+    runs-on: ubuntu-latest
+    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract current version
+        run: |
+          echo "PROJECT_VERSION=$(cat project.version | sed 's/^[[:space:]]*//g' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - name: Extract metadata for Docker base image - Debian
+        id: metabase
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE }}
+          tags: |
+            type=raw,value=${{ env.PROJECT_VERSION }}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=snapshot,enable=${{ github.ref != format('refs/heads/{0}', 'main') }}
+
+      - name: Build and push Docker base image - Debian
+        id: pushbase
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/base
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.metabase.outputs.tags }}
+          labels: ${{ steps.metabase.outputs.labels }}
+          annotations: ${{ steps.metabase.outputs.annotations }}
+          build-args: |
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
+
+      - name: Extract metadata for Docker base image - Alpine
+        id: metabasealpine
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE }}
+          tags: |
+            type=raw,value=${{ env.PROJECT_VERSION }}-alpine
+            type=raw,value=latest-alpine,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=snapshot-alpine,enable=${{ github.ref != format('refs/heads/{0}', 'main') }}
+
+      - name: Build and push Docker base image - Alpine
+        id: pushbasealpine
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/base-alpine
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.metabasealpine.outputs.tags }}
+          labels: ${{ steps.metabasealpine.outputs.labels }}
+          annotations: ${{ steps.metabase.outputs.annotations }}
+          build-args: |
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
+
+      # This step generates an artifact attestation for the image, which is an unforgeable statement about where and how it was built. It increases supply chain security for people who consume the image. For more information, see [Using artifact attestations to establish provenance for builds](/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds).
+      - name: Generate artifact attestation - Debian
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE}}
+          subject-digest: ${{ steps.pushbase.outputs.digest }}
+          push-to-registry: true
+
+      # This step generates an artifact attestation for the image, which is an unforgeable statement about where and how it was built. It increases supply chain security for people who consume the image. For more information, see [Using artifact attestations to establish provenance for builds](/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds).
+      - name: Generate artifact attestation - Alpine
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE}}
+          subject-digest: ${{ steps.pushbasealpine.outputs.digest }}
+          push-to-registry: true
