@@ -19,7 +19,7 @@
 
 plugins {
     `java-library`
-    id("com.github.node-gradle.node") version "7.0.2"
+    id("com.github.node-gradle.node")
 }
 
 description = "QALIPSIS Web OSS"
