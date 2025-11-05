@@ -16,6 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+pluginManagement {
+    plugins {
+        kotlin("jvm") version "1.9.25"
+        kotlin("kapt") version "1.9.25"
+        kotlin("plugin.allopen") version "1.9.25"
+        kotlin("plugin.serialization") version "1.9.25"
+        kotlin("plugin.noarg") version "1.9.25"
+
+        id("org.jreleaser") version "1.18.0"
+        id("com.github.jk1.dependency-license-report") version "2.9"
+        id("com.palantir.git-version") version "3.0.0"
+
+        id("com.github.node-gradle.node") version "7.0.2"
+    }
+}
 
 rootProject.name = "qalipsis-oss"
 
@@ -34,10 +49,12 @@ include(
     ":qalipsis-runtime",
     ":qalipsis-plugin-platform",
 
-    ":qalipsis-webapp"
+    ":qalipsis-webapp",
 )
 
 val apiRootDir = rootDir.resolve("api")
+val dockerRootDir = rootDir.resolve("docker")
+
 project(":qalipsis-dev-platform").projectDir = apiRootDir.resolve("dev-platform")
 project(":qalipsis-api-dev").projectDir = apiRootDir.resolve("api-dev")
 project(":qalipsis-api-common").projectDir = apiRootDir.resolve("api-common")
