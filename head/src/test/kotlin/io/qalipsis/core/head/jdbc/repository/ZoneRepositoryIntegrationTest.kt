@@ -73,7 +73,7 @@ internal class ZoneRepositoryIntegrationTest : AbstractPostgreSQLTest() {
     fun `should list all the saved zones when they are not tied to a specific tenant`() = testDispatcherProvider.run {
         // given
         val zoneEntity = zoneRepository.save(zone)
-        val zoneEntity2 = zoneRepository.save(zone.copy(key = "CH"))
+        val zoneEntity2 = zoneRepository.save(zone.copy(key = "CH", enabled = false))
         val zoneEntity3 = zoneRepository.save(zone.copy(key = "AS", description = null, imagePath = null))
 
         // when
@@ -96,7 +96,7 @@ internal class ZoneRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             val tenant1 = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-1"))
             val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "my-tenant-2"))
             val zoneEntity = zoneRepository.save(zone)
-            val zoneEntity2 = zoneRepository.save(zone.copy(key = "CH"))
+            val zoneEntity2 = zoneRepository.save(zone.copy(key = "CH", enabled = false))
             val zoneEntity3 = zoneRepository.save(zone.copy(key = "AS", description = null, imagePath = null))
             zoneTenantRepository.save(ZoneTenantEntity(ZoneTenantId(zoneId = zoneEntity.id, tenantId = tenant1.id)))
             zoneTenantRepository.save(ZoneTenantEntity(ZoneTenantId(zoneId = zoneEntity3.id, tenantId = tenant2.id)))
