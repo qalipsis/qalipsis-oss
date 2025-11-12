@@ -39,12 +39,9 @@ interface ZoneRepository : CoroutineCrudRepository<ZoneEntity, Long> {
     @Query(
         value = """SELECT * 
             FROM zone z
-            WHERE z.enabled = true 
-                AND (
-                    EXISTS (SELECT 1 from zone_tenant zt where z.id = zt.zone_id 
-                        AND EXISTS (SELECT 1 FROM tenant t WHERE t.id = zt.tenant_id AND t.reference = :tenant))
-                    OR NOT EXISTS (SELECT 1 from zone_tenant zt where z.id = zt.zone_id)
-                )
+            WHERE EXISTS (SELECT 1 from zone_tenant zt where z.id = zt.zone_id 
+                    AND EXISTS (SELECT 1 FROM tenant t WHERE t.id = zt.tenant_id AND t.reference = :tenant))
+                OR NOT EXISTS (SELECT 1 from zone_tenant zt where z.id = zt.zone_id)
         """,
         nativeQuery = true
     )
