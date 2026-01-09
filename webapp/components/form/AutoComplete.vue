@@ -66,16 +66,12 @@
                   name="optionContent"
                   :option="filteredOption"
                 >
-                  <div
-                    class="flex items-center mb-1 cursor-pointer"
-                    :class="[
-                      active ? 'bg-primary-50' : '',
-                      selected ? TailwindClassHelper.formDropdownOptionActiveClass : '',
-                      TailwindClassHelper.formDropdownOptionClass,
-                    ]"
-                  >
-                    {{ filteredOption[optionLabelKey] }}
-                  </div>
+                  <FormSelectOption
+                    :label="filteredOption[optionLabelKey]"
+                    :active="active"
+                    :disabled="filteredOption.disabled"
+                    :selected="selected"
+                  />
                 </slot>
               </div>
             </ComboboxOption>
@@ -88,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { CampaignsPatternInput } from '#components';
+import { CampaignsPatternInput } from '#components'
 import { Combobox, ComboboxButton, ComboboxOption, ComboboxOptions } from '@headlessui/vue'
 import { type TypedSchema, useField } from 'vee-validate'
 

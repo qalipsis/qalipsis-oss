@@ -7,6 +7,10 @@ export interface FormMenuOption {
      * The value of the option
      */
     value: string;
+    /**
+     * A flag to indicate if the option is disabled
+     */
+    disabled?: boolean;
 }
 
 export type FormInputType =

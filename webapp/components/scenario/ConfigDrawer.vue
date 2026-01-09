@@ -158,6 +158,7 @@ const {push: pushExecutionProfile, fields: executionProfileFields} =
 const {push: pushZones, fields: zoneFields} = useFieldArray<ZoneForm>('zones')
 
 onMounted(() => {
+  console.log(props.scenario)
   _initZoneOptions()
   const initialExecutionProfiles: ExecutionProfileStage[] = props.scenarioForm?.executionProfileStages ?? [
     {
@@ -189,10 +190,10 @@ const _initZoneOptions = async () => {
   // Prepares the available zone options for configuring the scenario.
   const zones = await fetchZones()
   zoneOptions.value = zones
-      .filter((zone) => zone.enabled)
       .map((zone) => ({
         label: zone.title,
         value: zone.key,
+        disabled: !zone.enabled
       }))
 }
 
