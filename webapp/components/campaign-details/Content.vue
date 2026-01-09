@@ -3,6 +3,45 @@
     <BaseCard>
       <div class="flex justify-between">
         <ScenarioDetails :scenarioReports="scenarioReports" />
+        <template v-if="campaignDetails.zones && campaignDetails.zones.length > 0">
+          <div
+            v-if="zoneKeyToZoneModel?.[campaignDetails.zones[0]]"
+            class="flex items-center gap-x-2"
+          >
+            <img
+              v-if="zoneKeyToZoneModel[campaignDetails.zones[0]]?.imagePath"
+              :src="zoneKeyToZoneModel[campaignDetails.zones[0]].imagePath"
+              class="rounded-full bg-cover w-5 h-5"
+            />
+            <span class="text-gray-600">
+              {{ zoneKeyToZoneModel[campaignDetails.zones[0]].title }}
+            </span>
+            <BaseTooltip v-if="campaignDetails.zones.length > 0">
+              <template #tooltipContent>
+                <div
+                  v-for="(zoneKey, _) in campaignDetails.zones"
+                  :key="zoneKey"
+                  class="flex items-center gap-x-2"
+                >
+                  <img
+                    v-if="zoneKeyToZoneModel[zoneKey]?.imagePath"
+                    :src="zoneKeyToZoneModel[zoneKey].imagePath"
+                    class="rounded-full bg-cover w-5 h-5"
+                  />
+                  <div>
+                    <div class="text-white">
+                      {{ zoneKeyToZoneModel[zoneKey]?.title }}
+                    </div>
+                    <div v-if="zoneKeyToZoneModel[zoneKey]?.description" class="text-gray-200">
+                      {{ zoneKeyToZoneModel[zoneKey]?.description }}
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <span class="px-2 bg-gray-50 rounded-lg"> +&nbsp;{{ campaignDetails.zones.length - 1 }} </span>
+            </BaseTooltip>
+          </div>
+        </template>
         <template v-if="campaignDetails.status === 'IN_PROGRESS'">
           <BasePermission :permissions="[writeCampaignPermission]">
             <BaseButton
@@ -71,9 +110,12 @@ const router = useRouter()
 const campaignDetailsStore = useCampaignDetailsStore()
 const toastStore = useToastStore()
 
+const { fetchZones } = useZonesApi()
 const { chartOptions, chartDataSeries } = storeToRefs(campaignDetailsStore)
 
 const campaignStopModalOpen = ref(false)
+const zoneKeyToZoneModel = ref<{ [key: string]: Zone }>()
+
 const scenarioReports = computed(() =>
   ScenarioHelper.getSelectedScenarioReports(
     campaignDetailsStore.selectedScenarioNames,
@@ -88,7 +130,18 @@ const isUpdatingChart = ref(false)
 
 onMounted(() => {
   _updateChart()
+  _setZoneKeyToModel()
 })
+
+const _setZoneKeyToModel = async () => {
+  const zones = await fetchZones()
+  zoneKeyToZoneModel.value = zones.reduce<{ [key: string]: Zone }>((acc, cur) => {
+    acc[cur.key] = cur
+
+    return acc
+  }, {})
+  console.log(zoneKeyToZoneModel.value)
+}
 
 const _updateChart = async () => {
   try {

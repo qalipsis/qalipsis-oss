@@ -130,4 +130,4 @@ export type {TimeframeUnit, FormattedTimeframe} from "./types/timeframe";
 export type {User} from "./types/user";
 export type {Toast, ToastPayload, ToastStatus} from './types/toast';
 
-export {TailwindClassHelper} from "./helpers/tailwind-class.helper";
+export { TailwindClassHelper } from "./helpers/tailwind-class.helper";
