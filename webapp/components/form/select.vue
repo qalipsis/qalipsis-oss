@@ -108,16 +108,12 @@
                   name="optionContent"
                   :option="option"
                 >
-                  <div
-                    class="flex items-center mb-1 cursor-pointer"
-                    :class="[
-                      active ? 'bg-primary-50' : '',
-                      selected ? TailwindClassHelper.formDropdownOptionActiveClass : '',
-                      TailwindClassHelper.formDropdownOptionClass,
-                    ]"
-                  >
-                    {{ option[optionLabelKey] }}
-                  </div>
+                  <FormSelectOption
+                    :label="option[optionLabelKey]"
+                    :active="active"
+                    :disabled="option.disabled"
+                    :selected="selected"
+                  />
                 </slot>
               </div>
             </ListboxOption>
