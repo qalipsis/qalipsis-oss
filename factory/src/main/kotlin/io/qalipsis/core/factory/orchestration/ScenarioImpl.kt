@@ -56,6 +56,7 @@ internal class ScenarioImpl(
     override val defaultRetryPolicy: RetryPolicy = NoRetryPolicy(),
     override val minionsCount: Int = 1,
     private val factoryChannel: FactoryChannel,
+    private val localAssignmentStore: LocalAssignmentStore
 ) : Scenario {
 
     private val steps = ConcurrentHashMap<StepName, Slot<Pair<Step<*, *>, DirectedAcyclicGraph>>>()
@@ -127,7 +128,11 @@ internal class ScenarioImpl(
                         campaignKey = campaignKey,
                         scenarioName = scenarioName,
                         dagId = dag.name,
-                        stepName = step.name
+                        stepName = step.name,
+                        scheduledMinionCount = localAssignmentStore.getLocalMinionCount(
+                            scenarioName,
+                            dag.name
+                        )
                     )
                 )
 
@@ -179,7 +184,11 @@ internal class ScenarioImpl(
                     campaignKey = campaignKey,
                     scenarioName = scenarioName,
                     dagId = dagName,
-                    stepName = step.name
+                    stepName = step.name,
+                    scheduledMinionCount = localAssignmentStore.getLocalMinionCount(
+                        scenarioName,
+                        dagName
+                    )
                 )
             )
         }
