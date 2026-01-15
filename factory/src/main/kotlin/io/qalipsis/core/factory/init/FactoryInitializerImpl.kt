@@ -50,6 +50,7 @@ import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
+import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.ScenarioImpl
@@ -101,6 +102,7 @@ class FactoryInitializerImpl(
     private val conversionTimeout: Duration,
     @Property(name = "scenario.allow-empty", defaultValue = "false")
     private val allowEmptyScenario: Boolean = false,
+    private val localAssignmentStore: LocalAssignmentStore
 ) : ScenariosInitializer, FactoryStartupComponent {
 
     init {
@@ -206,7 +208,8 @@ class FactoryInitializerImpl(
             executionProfile = executionProfile,
             defaultRetryPolicy = defaultRetryPolicy,
             minionsCount = scenarioSpecification.minionsCount,
-            factoryChannel = factoryChannel
+            factoryChannel = factoryChannel,
+            localAssignmentStore = localAssignmentStore
         )
         scenarioRegistry.add(scenario)
 

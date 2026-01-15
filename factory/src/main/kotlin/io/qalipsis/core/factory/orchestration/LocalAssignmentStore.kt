@@ -77,4 +77,9 @@ interface LocalAssignmentStore {
      * Clears all the local assignments.
      */
     fun reset()
+
+    /**
+     * Returns the number of minions assigned to a given DAG in the local factory.
+     */
+    fun getLocalMinionCount(scenarioName: ScenarioName, dagId: DirectedAcyclicGraphName) : Int
 }
