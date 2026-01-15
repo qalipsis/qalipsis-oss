@@ -31,6 +31,7 @@ import io.qalipsis.core.collections.Table
 import io.qalipsis.core.collections.concurrentTableOf
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import jakarta.inject.Singleton
+import java.util.concurrent.atomic.AtomicInteger
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
@@ -43,6 +44,12 @@ class LocalAssignmentStoreImpl(
      */
     private val actualAssignments =
         concurrentTableOf<ScenarioName, MinionId, MutableCollection<DirectedAcyclicGraphName>>()
+
+    /**
+     * Table to track the number of local minions per scenario and DAG.
+     */
+    private val localMinionCountsByScenarioAndDag =
+        concurrentTableOf<ScenarioName, DirectedAcyclicGraphName, AtomicInteger>()
 
     /**
      * Map of root DAGs under load keyed by their scenarios ID.
@@ -71,6 +78,12 @@ class LocalAssignmentStoreImpl(
             log.trace { "Marking the DAGs $dagsIds of scenario $scenarioName as executed locally for the minion $minionId" }
             actualAssignments.computeIfAbsent(scenarioName, minionId) { concurrentSet() } += dagsIds
         }
+        assignments.values.flatten().groupingBy { dagId -> dagId }.eachCount().forEach { (dagId, count) ->
+            localMinionCountsByScenarioAndDag
+                .computeIfAbsent(scenarioName, dagId) { AtomicInteger(0) }
+                .addAndGet(count)
+        }
+
     }
 
     @LogInputAndOutput
@@ -97,8 +110,16 @@ class LocalAssignmentStoreImpl(
     override fun reset() {
         log.trace { "Resetting the local assignments" }
         actualAssignments.clear()
+        localMinionCountsByScenarioAndDag.clear()
         rootDagsUnderLoad = scenarioRegistry.all()
             .associate { scenario -> scenario.name to scenario.dags.first { it.isRoot && it.isUnderLoad && !it.isSingleton }.name }
+    }
+
+    override fun getLocalMinionCount(scenarioName: ScenarioName, dagId: DirectedAcyclicGraphName): Int {
+        val count = localMinionCountsByScenarioAndDag[scenarioName, dagId] ?: 0
+        log.trace { "Found $count local minion(s) for DAG $dagId in scenario $scenarioName" }
+
+        return count.toInt()
     }
 
     private companion object {

@@ -23,6 +23,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
@@ -173,5 +174,34 @@ internal class LocalAssignmentStoreImplTest {
         assertThat(store.hasRootUnderLoadLocally("scenario-1", "my-minion-1")).isFalse()
     }
 
+    @Test
+    internal fun `should fetch the local minion count`() {
+        // given
+        val store = LocalAssignmentStoreImpl(scenarioRegistry)
+        store.reset()
+
+        // when
+        store.save(
+            "scenario-1", mapOf(
+                "my-minion-1" to setOf("root-underload-1", "non-root-underload-1"),
+                "my-minion-2" to setOf("non-root-underload-1"),
+                "my-minion-3" to setOf("root-noload-1")
+            )
+        )
+
+        store.save(
+            "scenario-2", mapOf(
+                "my-minion-4" to setOf("root-underload-2", "non-root-underload-2"),
+                "my-minion-5" to setOf("non-root-underload-2"),
+                "my-minion-6" to setOf("root-noload-2"),
+                "my-minion-7" to setOf("non-root-underload-2")
+            )
+        )
+
+        // then
+        assertThat(store.getLocalMinionCount("scenario-1", "non-root-underload-1")).isEqualTo(2)
+        assertThat(store.getLocalMinionCount("scenario-2", "non-root-underload-2")).isEqualTo(3)
+
+    }
 
 }

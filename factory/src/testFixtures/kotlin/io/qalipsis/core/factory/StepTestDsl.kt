@@ -97,7 +97,8 @@ fun testScenario(
         builtAt = Instant.now(),
         executionProfile = executionProfile,
         minionsCount = minionsCount,
-        factoryChannel = relaxedMockk()
+        factoryChannel = relaxedMockk(),
+        localAssignmentStore = relaxedMockk()
     )
     runBlocking {
         scenario.configure()

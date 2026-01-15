@@ -64,6 +64,7 @@ import io.qalipsis.core.factory.init.catadioptre.addMissingStepName
 import io.qalipsis.core.factory.init.catadioptre.convertScenario
 import io.qalipsis.core.factory.init.catadioptre.decorateStep
 import io.qalipsis.core.factory.init.catadioptre.injectDependencies
+import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
@@ -145,6 +146,9 @@ internal class FactoryInitializerImplTest {
     @RelaxedMockK
     private lateinit var factoryConfiguration: FactoryConfiguration
 
+    @RelaxedMockK
+    private lateinit var localAssignmentStore: LocalAssignmentStore
+
     private val conversionTimeout: Duration = Duration.ofSeconds(2)
 
     private val factoryInitializer: FactoryInitializerImpl by lazy(LazyThreadSafetyMode.NONE) {
@@ -163,7 +167,8 @@ internal class FactoryInitializerImplTest {
                 factoryChannel,
                 factoryConfiguration,
                 handshakeBlocker,
-                conversionTimeout
+                conversionTimeout,
+                localAssignmentStore = localAssignmentStore
             ), recordPrivateCalls = true
         )
     }
