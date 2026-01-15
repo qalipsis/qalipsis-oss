@@ -123,7 +123,8 @@ internal class ScenarioImplTest {
                 campaignKey = "camp-1",
                 scenarioName = "my-scenario",
                 dagId = step.dagName,
-                stepName = step.name
+                stepName = step.name,
+                scheduledMinionCount = 0
             )
             coVerifyOnce {
                 step.start(eq(context))
@@ -166,7 +167,8 @@ internal class ScenarioImplTest {
                 campaignKey = "camp-1",
                 scenarioName = "my-scenario",
                 dagId = step.dagName,
-                stepName = step.name
+                stepName = step.name,
+                scheduledMinionCount = 0
             )
             coVerifyOnce {
                 step.start(eq(context))
@@ -177,7 +179,8 @@ internal class ScenarioImplTest {
                 campaignKey = "camp-1",
                 scenarioName = "my-scenario",
                 dagId = step.dagName,
-                stepName = step.name
+                stepName = step.name,
+                scheduledMinionCount = 0
             )
             coVerifyOnce {
                 step.stop(eq(context))
@@ -211,7 +214,8 @@ internal class ScenarioImplTest {
                 campaignKey = "camp-1",
                 scenarioName = "my-scenario",
                 dagId = step.dagName,
-                stepName = step.name
+                stepName = step.name,
+                scheduledMinionCount = 0
             )
             coVerifyOnce {
                 step.stop(eq(context))
@@ -228,7 +232,8 @@ internal class ScenarioImplTest {
             version = "0.1",
             builtAt = Instant.now(),
             executionProfile = relaxedMockk(),
-            factoryChannel = factoryChannel
+            factoryChannel = factoryChannel,
+            localAssignmentStore = relaxedMockk()
         )
 
         scenarioImpl.createIfAbsent("dag-1") {

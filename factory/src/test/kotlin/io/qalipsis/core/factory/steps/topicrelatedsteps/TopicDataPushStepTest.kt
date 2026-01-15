@@ -84,7 +84,7 @@ internal class TopicDataPushStepTest {
         coEvery { runner.runMinion(any(), any(), any()) } coAnswers { countDownLatch.decrement() }
 
         // when
-        step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag", "my-next-step"))
+        step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag", "my-next-step", 88))
         dataTransferTopic.produceValue("value-1")
         dataTransferTopic.produceValue("value-2")
         dataTransferTopic.produceValue("value-3")
@@ -143,7 +143,7 @@ internal class TopicDataPushStepTest {
         }
 
         // when
-        step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag", "my-next-step"))
+        step.start(StepStartStopContext("my-campaign", "my-scenario", "my-dag", "my-next-step", 247))
 
         // then
         countDownLatch.await()
