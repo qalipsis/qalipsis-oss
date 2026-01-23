@@ -32,7 +32,7 @@ import io.mockk.mockk
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.Rate
 import io.qalipsis.api.meters.steps.RateMeterStepSpecificationImpl
-import io.qalipsis.api.meters.steps.TrackedThresholdRatio
+import io.qalipsis.api.meters.steps.RateIncrement
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factory.steps.meter.RateMeterStep
@@ -69,8 +69,8 @@ internal class RateMeterStepSpecificationConverterTest :
     @Test
     internal fun `should convert spec with name to step`() = runBlocking {
         // given
-        val block: (context: StepContext<Unit, Unit>, input: Unit) -> TrackedThresholdRatio =
-            { _, _ -> TrackedThresholdRatio(2.0, 17.9) }
+        val block: (context: StepContext<Unit, Unit>, input: Unit) -> RateIncrement =
+            { _, _ -> RateIncrement(2.0, 17.9) }
         val spec = RateMeterStepSpecificationImpl("test-rate", block)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
@@ -90,8 +90,8 @@ internal class RateMeterStepSpecificationConverterTest :
     @Test
     internal fun `should convert spec without name to step`() = runBlocking {
         // given
-        val block: (context: StepContext<Unit, Unit>, input: Unit) -> TrackedThresholdRatio =
-            { _, _ -> TrackedThresholdRatio(2.0, 17.9) }
+        val block: (context: StepContext<Unit, Unit>, input: Unit) -> RateIncrement =
+            { _, _ -> RateIncrement(2.0, 17.9) }
         val spec = RateMeterStepSpecificationImpl("test-rate", block)
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
@@ -110,8 +110,8 @@ internal class RateMeterStepSpecificationConverterTest :
     @Test
     internal fun `should convert spec with failure conditions`() = runBlocking {
         // given
-        val block: (context: StepContext<Unit, Unit>, input: Unit) -> TrackedThresholdRatio =
-            { _, _ -> TrackedThresholdRatio(2.0, 17.9) }
+        val block: (context: StepContext<Unit, Unit>, input: Unit) -> RateIncrement =
+            { _, _ -> RateIncrement(2.0, 17.9) }
         val spec = RateMeterStepSpecificationImpl("test-rate", block).shouldSatisfy {
             current.isLessThan(19.0)
         }
