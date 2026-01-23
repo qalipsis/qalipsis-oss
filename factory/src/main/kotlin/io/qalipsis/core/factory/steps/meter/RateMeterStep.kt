@@ -26,7 +26,7 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.Rate
-import io.qalipsis.api.meters.steps.TrackedThresholdRatio
+import io.qalipsis.api.meters.steps.RateIncrement
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.retry.RetryPolicy
@@ -55,7 +55,7 @@ class RateMeterStep<I>(
     private val coroutineScope: CoroutineScope,
     private val campaignReportLiveStateRegistry: CampaignReportLiveStateRegistry,
     private val meterName: String,
-    val block: (stepContext: StepContext<I, I>, input: I) -> TrackedThresholdRatio,
+    val block: (stepContext: StepContext<I, I>, input: I) -> RateIncrement,
     private val checkers: List<Pair<Rate.() -> Double, ValueChecker<Double>>>,
     private val campaignMeterRegistry: CampaignMeterRegistry,
     private val checkPeriod: Duration = Duration.ofMillis(100),
@@ -123,8 +123,8 @@ class RateMeterStep<I>(
         try {
             val input = context.receive()
             val valueToRecord = block(context, input)
-            meter.incrementTotal(valueToRecord.total)
-            meter.incrementBenchmark(valueToRecord.benchmark)
+            meter.incrementTotal(valueToRecord.totalDelta)
+            meter.incrementBenchmark(valueToRecord.observedDelta)
             recordedValues.set(true)
             context.send(input)
         } catch (e: Exception) {

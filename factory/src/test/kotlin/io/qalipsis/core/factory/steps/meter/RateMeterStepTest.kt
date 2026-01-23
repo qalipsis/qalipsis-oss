@@ -36,7 +36,7 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.Rate
-import io.qalipsis.api.meters.steps.TrackedThresholdRatio
+import io.qalipsis.api.meters.steps.RateIncrement
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -106,8 +106,8 @@ internal class RateMeterStepTest {
     @Test
     fun `should execute the step and forward the output without errors`() = testDispatcherProvider.run {
         // given
-        val block: (context: StepContext<Int, Int>, input: Int) -> TrackedThresholdRatio =
-            { _, _ -> TrackedThresholdRatio(2.0, 17.9) }
+        val block: (context: StepContext<Int, Int>, input: Int) -> RateIncrement =
+            { _, _ -> RateIncrement(2.0, 17.9) }
         val checkers =
             listOf<Pair<Rate.() -> Double, ValueChecker<Double>>>(
                 Pair({ 12.60 }, BetweenChecker("current rate", 12.0, 18.0)),
@@ -177,8 +177,8 @@ internal class RateMeterStepTest {
     fun `should not start the job to evaluate meter conditions when there are no checkers`() =
         testDispatcherProvider.run {
             // given
-            val block: (context: StepContext<Int, Int>, input: Int) -> TrackedThresholdRatio =
-                { _, _ -> TrackedThresholdRatio(2.0, 17.9) }
+            val block: (context: StepContext<Int, Int>, input: Int) -> RateIncrement =
+                { _, _ -> RateIncrement(2.0, 17.9) }
             val checkers = emptyList<Pair<Rate.() -> Double, ValueChecker<Double>>>()
             val rateMeterStep = spyk(
                 RateMeterStep(
@@ -231,8 +231,8 @@ internal class RateMeterStepTest {
     fun `should report errors to the campaignReportLiveStateRegistry`() =
         testDispatcherProvider.run {
             // given
-            val block: (context: StepContext<Int, Int>, input: Int) -> TrackedThresholdRatio =
-                { _, _ -> TrackedThresholdRatio(2.0, 17.9) }
+            val block: (context: StepContext<Int, Int>, input: Int) -> RateIncrement =
+                { _, _ -> RateIncrement(2.0, 17.9) }
             val checkers =
                 listOf<Pair<Rate.() -> Double, ValueChecker<Double>>>(
                     Pair({ 13.60 }, NotBetweenChecker("current rate", 12.0, 18.0)),
@@ -309,8 +309,8 @@ internal class RateMeterStepTest {
     fun `should delete pre-recorded errors to the campaignReportLiveStateRegistry when checkers return no violations`() =
         testDispatcherProvider.run {
             // given
-            val block: (context: StepContext<Int, Int>, input: Int) -> TrackedThresholdRatio =
-                { _, _ -> TrackedThresholdRatio(2.0, 17.9) }
+            val block: (context: StepContext<Int, Int>, input: Int) -> RateIncrement =
+                { _, _ -> RateIncrement(2.0, 17.9) }
             val checkers =
                 listOf<Pair<Rate.() -> Double, ValueChecker<Double>>>(
                     Pair({ 21.60 }, GreaterThanChecker("current rate", 18.0))

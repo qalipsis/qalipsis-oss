@@ -50,7 +50,7 @@ interface RateMeterStepSpecification<INPUT> : StepSpecification<INPUT, INPUT, Ra
 @Spec
 data class RateMeterStepSpecificationImpl<INPUT>(
     val meterName: String,
-    val block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> TrackedThresholdRatio,
+    val block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> RateIncrement,
 ) : RateMeterStepSpecification<INPUT>,
     AbstractStepSpecification<INPUT, INPUT, RateMeterStepSpecification<INPUT>>() {
 
@@ -75,7 +75,7 @@ data class RateMeterStepSpecificationImpl<INPUT>(
  */
 fun <INPUT> StepSpecification<*, INPUT, *>.rate(
     name: String,
-    block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> TrackedThresholdRatio
+    block: (stepContext: StepContext<INPUT, INPUT>, input: INPUT) -> RateIncrement
 ): RateMeterStepSpecification<INPUT> {
     val step = RateMeterStepSpecificationImpl(name, block)
     step.name = name
@@ -84,11 +84,13 @@ fun <INPUT> StepSpecification<*, INPUT, *>.rate(
 }
 
 /**
- * Represents a tracked ratio measurement between a benchmark value and a cumulative total value.
+ * Represents incremental updates applied to a Rate meter.
+ * Each execution contributes deltas to the observedDelta and totalDelta counters.
+ * Delta represents the amount by which an internal counter is increased or decreased as a result of a single step execution.
  *
- * @property benchmark the target value to compare against the total.
- * @property total the actual measured value to be compared with.
+ * @property observedDelta the measured or observed quantity of interest
+ * @property totalDelta the reference or cumulative quantity that provides context for the observedDelta value
  *
  * @author Francisca Eze
  */
-data class TrackedThresholdRatio(val benchmark: Double, val total: Double)
+data class RateIncrement(val observedDelta: Double, val totalDelta: Double)
