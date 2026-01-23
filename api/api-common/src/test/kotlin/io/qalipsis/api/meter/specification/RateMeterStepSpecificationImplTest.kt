@@ -23,7 +23,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.steps.RateMeterStepSpecificationImpl
-import io.qalipsis.api.meters.steps.TrackedThresholdRatio
+import io.qalipsis.api.meters.steps.RateIncrement
 import io.qalipsis.api.meters.steps.rate
 import org.junit.jupiter.api.Test
 
@@ -35,8 +35,8 @@ internal class RateMeterStepSpecificationImplTest {
     @Test
     internal fun `should add rate step without failure specification as next`() {
         val previousStep = DummyStepSpecification()
-        val specification: (context: StepContext<Unit, Unit>, input: Unit) -> TrackedThresholdRatio =
-            { _, _ -> TrackedThresholdRatio(12.0, 15.0) }
+        val specification: (context: StepContext<Unit, Unit>, input: Unit) -> RateIncrement =
+            { _, _ -> RateIncrement(12.0, 15.0) }
         previousStep.rate(name = "test-rate", specification)
 
         assertThat(
@@ -51,8 +51,8 @@ internal class RateMeterStepSpecificationImplTest {
     @Test
     internal fun `should add rate step with failure specification as next`() {
         val previousStep = DummyStepSpecification()
-        val specification: (context: StepContext<Unit, Unit>, input: Unit) -> TrackedThresholdRatio =
-            { _, _ -> TrackedThresholdRatio(12.0, 15.0) }
+        val specification: (context: StepContext<Unit, Unit>, input: Unit) -> RateIncrement =
+            { _, _ -> RateIncrement(12.0, 15.0) }
         previousStep.rate(name = "test-rate", specification)
             .shouldSatisfy {
                 current.isLessThan(7.0)
