@@ -25,7 +25,7 @@ plugins {
 description = "QALIPSIS Web OSS"
 
 node {
-    version = "20.11.0"
+    version = "22.22.0"
     yarnVersion = "1.22.19"
     download = true
 }
