@@ -6,6 +6,7 @@
         suffix="qty"
         :form-control-name="`executionProfileStages[${index}].minionsCount`"
         :field-validation-schema="executionProfileSchema.minionsCount"
+        :disabled="disabled"
         @input="emit('executionProfileChange', fields[index].value)"
       />
     </div>
@@ -15,6 +16,7 @@
         suffix="ms"
         :form-control-name="`executionProfileStages[${index}].duration`"
         :field-validation-schema="executionProfileSchema.duration"
+        :disabled="disabled"
         @input="emit('executionProfileChange', fields[index].value)"
       />
     </div>
@@ -26,11 +28,12 @@
             suffix="ms"
             :form-control-name="`executionProfileStages[${index}].startDuration`"
             :field-validation-schema="executionProfileSchema.startDuration"
+            :disabled="disabled"
             @input="emit('executionProfileChange', fields[index].value)"
           />
         </div>
         <div
-          v-if="!deleteHidden"
+          v-if="!deleteHidden && !disabled"
           class="flex-shrink-0 flex items-center pt-8 px-2 cursor-pointer hover:text-primary-500 text-gray-600"
           @click="handleDeleteBtnClick"
         >
@@ -53,6 +56,7 @@ const props = defineProps<{
   index: number
   configuration: DefaultCampaignConfiguration
   deleteHidden?: boolean
+  disabled?: boolean
 }>()
 const emit = defineEmits<{
   (e: 'executionProfileChange', v: ExecutionProfileStage | null): void

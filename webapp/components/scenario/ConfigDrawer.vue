@@ -3,6 +3,7 @@
       :open="open"
       @close="emit('update:open', false)"
       :title="title"
+      :footer-hidden="disabled"
       confirm-btn-text="Apply"
       @confirm-btn-click="handleConfirmBtnClick"
   >
@@ -17,6 +18,7 @@
                 :index="index"
                 :configuration="configuration"
                 :deleteHidden="index === 0"
+                :disabled="disabled"
                 @executionProfileChange="handleExecutionProfileChange($event, index)"
             />
             <span
@@ -43,7 +45,7 @@
             </span>
           </template>
         </div>
-        <div class="col-span-12">
+        <div v-if="!disabled" class="col-span-12">
           <BaseButton
               icon="qls-icon-plus"
               btn-style="outlined"
@@ -63,6 +65,7 @@
               v-for="(_, index) in zoneFields"
               :index="index"
               :zone-options="zoneOptions"
+              :disabled="disabled"
               @zoneSharedInputChange="handleZoneSharedInputChange()"
           />
           <template v-if="isConfirmBtnClicked">
@@ -74,7 +77,7 @@
             </span>
           </template>
         </div>
-        <div class="col-span-12">
+        <div class="col-span-12" v-if="!disabled">
           <BaseButton
               icon="qls-icon-plus"
               btn-style="outlined"
@@ -89,7 +92,7 @@
       </div>
     </form>
     <div
-        class="pr-3 py-2"
+        class="pr-3 py-2 chart-container"
         v-if="canChartBeRendered"
     >
       <apexchart
@@ -112,6 +115,7 @@ const props = defineProps<{
   scenario: ScenarioSummary
   configuration: DefaultCampaignConfiguration
   scenarioForm?: ScenarioConfigurationForm
+  disabled?: boolean
 }>()
 const emit = defineEmits<{
   (e: 'update:open', v: boolean): void
@@ -154,6 +158,7 @@ const {push: pushExecutionProfile, fields: executionProfileFields} =
 const {push: pushZones, fields: zoneFields} = useFieldArray<ZoneForm>('zones')
 
 onMounted(() => {
+  console.log(props.scenario)
   _initZoneOptions()
   const initialExecutionProfiles: ExecutionProfileStage[] = props.scenarioForm?.executionProfileStages ?? [
     {
@@ -185,10 +190,10 @@ const _initZoneOptions = async () => {
   // Prepares the available zone options for configuring the scenario.
   const zones = await fetchZones()
   zoneOptions.value = zones
-      .filter((zone) => zone.enabled)
       .map((zone) => ({
         label: zone.title,
         value: zone.key,
+        disabled: !zone.enabled
       }))
 }
 
@@ -288,7 +293,7 @@ const _setScenarioConfigChartDataSeries = (executionProfileStages: ExecutionProf
 
 <style lang="scss" scoped>
   // Workaround to hide the export csv button.
-  ::v-deep .apexcharts-menu-item.exportCSV {
+  .chart-container :deep(.apexcharts-menu-item.exportCSV) {
     display: none;
   }
 </style>

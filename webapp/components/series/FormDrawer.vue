@@ -54,6 +54,7 @@
             v-if="hasFieldNameFetched"
             label="Field"
             form-control-name="fieldName"
+            :clear-enabled="true"
             :options="fieldNameOptions"
             :disabled="dataSeries?.disabled"
             :field-validation-schema="fieldValidationSchema.fieldName"
@@ -316,7 +317,6 @@ onBeforeUnmount(() => {
 })
 
 const handleFieldNameSearch = async (query: string) => {
-  console.log(query)
    try {
     const valueNames = await fetchValueNames(values.dataType, query)
     valueNameOptions.value = valueNames.map((valueName) => ({
@@ -417,7 +417,7 @@ const _createDataSeries = async (formValues: DataSeriesForm) => {
 
 const _shouldAggregationOperationFieldDisabled = (fieldName: string) => {
   const selectedFieldOption = dataFields.find((f) => f.name === fieldName)
-  if (selectedFieldOption?.type !== DataFieldTypeConstant.NUMBER) {
+  if (!fieldName || selectedFieldOption?.type !== DataFieldTypeConstant.NUMBER) {
     setFieldValue('aggregationOperation', QueryAggregationOperatorConstant.COUNT)
   }
   aggregationOperationFieldDisabled.value = selectedFieldOption?.type !== DataFieldTypeConstant.NUMBER ? true : false

@@ -42,11 +42,12 @@
                 @click="handleSummaryOptionClick()"
                 class="flex items-center cursor-pointer"
                 :class="[
-                isScenarioSummarySelected
-                  ? TailwindClassHelper.formDropdownOptionActiveClass
-                  : '',
-                TailwindClassHelper.formDropdownOptionClass,
-              ]"
+                  isScenarioSummarySelected
+                    ? TailwindClassHelper.formDropdownOptionActiveClass
+                    : '',
+                  TailwindClassHelper.formDropdownOptionClass,
+                  TailwindClassHelper.formDropdownOptionHoverClass
+                ]"
             >
               {{ ScenarioDetailsConfig.SCENARIO_SUMMARY_NAME }}
             </div>
@@ -61,14 +62,15 @@
               as="template"
           >
             <div
-                class="flex items-center mb-1 cursor-pointer"
-                :class="[
+              class="flex items-center mb-1 cursor-pointer"
+              :class="[
                 scenario.isActive
                   ? TailwindClassHelper.formDropdownOptionActiveClass
                   : '',
                 TailwindClassHelper.formDropdownOptionClass,
+                TailwindClassHelper.formDropdownOptionHoverClass
               ]"
-                @click="handleScenarioOptionClick(scenario)"
+              @click="handleScenarioOptionClick(scenario)"
             >
               {{ scenario.label }}
             </div>

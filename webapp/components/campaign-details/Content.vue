@@ -2,13 +2,52 @@
   <BaseContentWrapper>
     <BaseCard>
       <div class="flex justify-between">
-        <ScenarioDetails :scenarioReports="scenarioReports"/>
+        <ScenarioDetails :scenarioReports="scenarioReports" />
+        <template v-if="campaignDetails.zones && campaignDetails.zones.length > 0">
+          <div
+            v-if="zoneKeyToZoneModel?.[campaignDetails.zones[0]]"
+            class="flex items-center gap-x-2"
+          >
+            <img
+              v-if="zoneKeyToZoneModel[campaignDetails.zones[0]]?.imagePath"
+              :src="zoneKeyToZoneModel[campaignDetails.zones[0]].imagePath"
+              class="rounded-full bg-cover w-5 h-5"
+            />
+            <span class="text-gray-600">
+              {{ zoneKeyToZoneModel[campaignDetails.zones[0]].title }}
+            </span>
+            <BaseTooltip v-if="campaignDetails.zones.length > 0">
+              <template #tooltipContent>
+                <div
+                  v-for="(zoneKey, _) in campaignDetails.zones"
+                  :key="zoneKey"
+                  class="flex items-center gap-x-2"
+                >
+                  <img
+                    v-if="zoneKeyToZoneModel[zoneKey]?.imagePath"
+                    :src="zoneKeyToZoneModel[zoneKey].imagePath"
+                    class="rounded-full bg-cover w-5 h-5"
+                  />
+                  <div>
+                    <div class="text-white">
+                      {{ zoneKeyToZoneModel[zoneKey]?.title }}
+                    </div>
+                    <div v-if="zoneKeyToZoneModel[zoneKey]?.description" class="text-gray-200">
+                      {{ zoneKeyToZoneModel[zoneKey]?.description }}
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <span class="px-2 bg-gray-50 rounded-lg"> +&nbsp;{{ campaignDetails.zones.length - 1 }} </span>
+            </BaseTooltip>
+          </div>
+        </template>
         <template v-if="campaignDetails.status === 'IN_PROGRESS'">
-          <BasePermission
-              :permissions="[PermissionConstant.WRITE_CAMPAIGN]">
+          <BasePermission :permissions="[writeCampaignPermission]">
             <BaseButton
-                text="Stop all"
-                @click="campaignStopModalOpen = true"
+              text="Stop all"
+              theme="error"
+              @click="campaignStopModalOpen = true"
             />
           </BasePermission>
         </template>
@@ -16,38 +55,43 @@
     </BaseCard>
     <div class="shadow-md pt-2 pb-2 pr-4 pl-4 mb-2">
       <SeriesMenu
-          :preselectedDataSeriesReferences="preselectedDataSeriesReferences"
-          @selectedDataSeriesChange="handleSelectedDataSeriesChange($event)"
+        :preselectedDataSeriesReferences="preselectedDataSeriesReferences"
+        @selectedDataSeriesChange="handleSelectedDataSeriesChange($event)"
       />
       <div class="mt-10">
         <apexchart
-            v-if="!isUpdatingChart"
-            :options="chartOptions"
-            :series="chartDataSeries"
-            :height="460"
-            @zoomed="handleZoom"
+          v-if="!isUpdatingChart"
+          :options="chartOptions"
+          :series="chartDataSeries"
+          :height="460"
+          @zoomed="handleZoom"
         />
-        <div v-if="isUpdatingChart" class="h-[460px] bg-white dark:bg-primary-900">
-        </div>
+        <div
+          v-if="isUpdatingChart"
+          class="h-[460px] bg-white dark:bg-primary-900"
+        ></div>
       </div>
     </div>
   </BaseContentWrapper>
   <BaseModal
-      title="Stop campaign"
-      :open="campaignStopModalOpen"
-      :closable="true"
-      @close="campaignStopModalOpen = false">
+    title="Stop campaign"
+    :open="campaignStopModalOpen"
+    :closable="true"
+    @close="campaignStopModalOpen = false"
+  >
     <span>Do you really want to abort this campaign? This will cause all running scenarios to fail.</span>
     <template #customFooter>
       <div class="flex items-center justify-around">
         <BaseButton
-            btn-style="outlined"
-            text="Soft"
-            @click="campaignStopModalOpen = false"
+          btn-style="outlined"
+          theme="error"
+          text="Cancel"
+          @click="campaignStopModalOpen = false"
         />
         <BaseButton
-            text="Abort"
-            @click="handleAbortButtonClick"
+          text="Proceed"
+          theme="error"
+          @click="handleAbortButtonClick"
         />
       </div>
     </template>
@@ -55,85 +99,94 @@
 </template>
 
 <script setup lang="ts">
-
 defineProps<{
   campaignDetails: CampaignExecutionDetails
-}>();
+}>()
 
-const route = useRoute();
-const router = useRouter();
-const campaignDetailsStore = useCampaignDetailsStore();
-const toastStore = useToastStore();
+const writeCampaignPermission = PermissionConstant.WRITE_CAMPAIGN
 
-const {chartOptions, chartDataSeries} = storeToRefs(campaignDetailsStore);
+const route = useRoute()
+const router = useRouter()
+const campaignDetailsStore = useCampaignDetailsStore()
+const toastStore = useToastStore()
 
-const campaignStopModalOpen = ref(false);
-const scenarioReports = computed(() => campaignDetailsStore.selectedScenarioReports);
+const { fetchZones } = useZonesApi()
+const { chartOptions, chartDataSeries } = storeToRefs(campaignDetailsStore)
+
+const campaignStopModalOpen = ref(false)
+const zoneKeyToZoneModel = ref<{ [key: string]: Zone }>()
+
+const scenarioReports = computed(() =>
+  ScenarioHelper.getSelectedScenarioReports(
+    campaignDetailsStore.selectedScenarioNames,
+    campaignDetailsStore.campaignDetails!
+  )
+)
 const campaignDetailStatus = computed(() => campaignDetailsStore.campaignDetails!.status)
-const preselectedDataSeriesReferences = computed(() => campaignDetailsStore.selectedDataSeriesReferences);
-const {abortCampaign, fetchCampaignDetails} = useCampaignApi();
+const preselectedDataSeriesReferences = computed(() => campaignDetailsStore.selectedDataSeriesReferences)
+const { abortCampaign, fetchCampaignDetails } = useCampaignApi()
 
-const isUpdatingChart = ref(false);
+const isUpdatingChart = ref(false)
 
-/**
- * The polling for keep updating the details of the campaign when the status is in progress.
- */
-const polling = ref();
+onMounted(() => {
+  _updateChart()
+  _setZoneKeyToModel()
+})
 
-onMounted(async () => {
+const _setZoneKeyToModel = async () => {
+  const zones = await fetchZones()
+  zoneKeyToZoneModel.value = zones.reduce<{ [key: string]: Zone }>((acc, cur) => {
+    acc[cur.key] = cur
+
+    return acc
+  }, {})
+  console.log(zoneKeyToZoneModel.value)
+}
+
+const _updateChart = async () => {
   try {
-    isUpdatingChart.value = true;
-    await campaignDetailsStore.updateChart();
-    isUpdatingChart.value = false;
-  } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
-    isUpdatingChart.value = false;
-  }
-})
+    isUpdatingChart.value = true
+    await campaignDetailsStore.updateChart()
+    isUpdatingChart.value = false
 
-watch(campaignDetailStatus, async () => {
-  // Rerenders the line chart when the status is changed.
-  isUpdatingChart.value = true;
-  await campaignDetailsStore.updateChart();
-  isUpdatingChart.value = false;
-})
+    if (campaignDetailStatus.value === 'IN_PROGRESS') {
+      setTimeout(_updateChart, 5000)
+    }
+  } catch (error) {
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
+    isUpdatingChart.value = false
+  }
+}
 
 const handleSelectedDataSeriesChange = async (selectedDataSeriesOptions: DataSeriesOption[]) => {
   // Updates url param
   if (selectedDataSeriesOptions.length === 0) {
     // Removes series query params from the url.
-    const query = Object.assign({}, route.query);
-    delete query.series;
+    const query = Object.assign({}, route.query)
+    delete query.series
     router.replace({
-      query: query
-    });
+      query: query,
+    })
   } else {
     // Sets the selected series option id list to the url query params.
-    const seriesReferences = selectedDataSeriesOptions.map(dataSeries => dataSeries.reference).join(',');
-    const currentQueryParams = route.query;
+    const seriesReferences = selectedDataSeriesOptions.map((dataSeries) => dataSeries.reference).join(',')
+    const currentQueryParams = route.query
     const newQueryParams = {
       ...currentQueryParams,
-      series: seriesReferences
+      series: seriesReferences,
     }
     router.push({
-      query: newQueryParams
-    });
+      query: newQueryParams,
+    })
   }
 
   // Updates the store
   campaignDetailsStore.$patch({
-    selectedDataSeries: selectedDataSeriesOptions
+    selectedDataSeries: selectedDataSeriesOptions,
   })
 
   // Updates the chart
-  try {
-    isUpdatingChart.value = true;
-    await campaignDetailsStore.updateChart();
-    isUpdatingChart.value = false;
-  } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
-    isUpdatingChart.value = false;
-  }
+  _updateChart()
 }
 
 /**
@@ -144,28 +197,28 @@ const handleSelectedDataSeriesChange = async (selectedDataSeriesOptions: DataSer
  *
  * @see https://apexcharts.com/docs/options/chart/events/#zoomed
  */
-const handleZoom = (_: any, {xaxis}: any) => {
-  const currentQueryParams = route.query;
+const handleZoom = (_: any, { xaxis }: any) => {
+  const currentQueryParams = route.query
   const newQueryParams = {
     ...currentQueryParams,
     min: xaxis.min,
-    max: xaxis.max
-  };
+    max: xaxis.max,
+  }
   // Updates the url query params
   router.push({
-    query: newQueryParams
-  });
+    query: newQueryParams,
+  })
   // Updates the store
   campaignDetailsStore.$patch({
     timeRange: {
       min: xaxis.min,
-      max: xaxis.max
-    }
+      max: xaxis.max,
+    },
   })
 }
 
 const handleAbortButtonClick = () => {
-  _stopCampaign(true);
+  _stopCampaign(true)
 }
 
 /**
@@ -173,14 +226,14 @@ const handleAbortButtonClick = () => {
  */
 const _stopCampaign = async (isForceAbort: boolean) => {
   try {
-    await abortCampaign(campaignDetailsStore.campaignDetails!.key, isForceAbort);
-    const campaignDetails = await fetchCampaignDetails(campaignDetailsStore.campaignDetails!.key);
+    await abortCampaign(campaignDetailsStore.campaignDetails!.key, isForceAbort)
+    const campaignDetails = await fetchCampaignDetails(campaignDetailsStore.campaignDetails!.key)
     campaignDetailsStore.$patch({
-      campaignDetails: campaignDetails
+      campaignDetails: campaignDetails,
     })
-    campaignStopModalOpen.value = false;
+    campaignStopModalOpen.value = false
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
 </script>

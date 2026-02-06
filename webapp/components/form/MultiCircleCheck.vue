@@ -7,6 +7,7 @@
         :class="{
         'bg-white dark:bg-transparent dark:text-gray-200': !selectedValues?.includes(option.value),
         'bg-primary-500 text-white': selectedValues?.includes(option.value),
+        'cursor-not-allowed pointer-events-none': disabled,
       }"
         @click="handleBtnClick(option.value)"
     >

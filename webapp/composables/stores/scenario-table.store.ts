@@ -7,6 +7,7 @@ interface ScenarioTableState {
     allScenarios: ScenarioSummary[],
     selectedRowKeys: string[],
     query: string,
+    rowSelectionEnabled: boolean,
     scenarioConfig: { [key: string]: ScenarioConfigurationForm }
 }
 
@@ -21,7 +22,8 @@ export const useScenarioTableStore = defineStore("ScenarioTable", {
             selectedRowKeys: [],
             scenarioConfig: {},
             allScenarios: [],
-            query: ''
+            query: '',
+            rowSelectionEnabled: true,
         }
     },
     getters: {

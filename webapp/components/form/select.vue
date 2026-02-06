@@ -1,25 +1,25 @@
 <template>
   <div>
     <FormLabel
-        :text="label"
-        :hasError="hasError"
+      :text="label"
+      :hasError="hasError"
     />
     <Listbox
-        v-model="selectedFormControlValue"
-        @update:model-value="handleValueUpdate"
-        :multiple="multipleEnabled"
+      v-model="selectedFormControlValue"
+      @update:model-value="handleValueUpdate"
+      :multiple="multipleEnabled"
     >
       <div
-          class="w-full"
-          :class="TailwindClassHelper.formDropdownClass"
+        class="w-full"
+        :class="TailwindClassHelper.formDropdownClass"
       >
         <ListboxButton
-            :disabled="disabled"
-            class="outline-none w-full"
+          :disabled="disabled"
+          class="outline-none w-full"
         >
           <template v-if="multipleEnabled">
             <div
-                :class="[
+              :class="[
                 TailwindClassHelper.formInputWrapperClass,
                 hasError
                   ? TailwindClassHelper.formInputWrapperErrorClass
@@ -28,16 +28,16 @@
             >
               <div class="flex items-center">
                 <div
-                    v-for="selectedOption in selectedOptions"
-                    :key="selectedOption[optionValueKey]"
-                    :value="selectedOption[optionValueKey]"
-                    class="flex items-center px-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 mr-2 last:mr-0"
+                  v-for="selectedOption in selectedOptions"
+                  :key="selectedOption[optionValueKey]"
+                  :value="selectedOption[optionValueKey]"
+                  class="flex items-center px-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 mr-2 last:mr-0"
                 >
                   <span class="pr-2">{{ selectedOption[optionLabelKey] }}</span>
                   <div @click="handleDeleteButtonClick(selectedOption)">
                     <BaseIcon
-                        class="text-xl hover:text-primary-500"
-                        icon="qls-icon-close"
+                      class="text-xl hover:text-primary-500"
+                      icon="qls-icon-close"
                     ></BaseIcon>
                   </div>
                 </div>
@@ -46,7 +46,7 @@
           </template>
           <template v-else>
             <div
-                :class="[
+              :class="[
                 TailwindClassHelper.formInputWrapperClass,
                 hasError
                   ? TailwindClassHelper.formInputWrapperErrorClass
@@ -54,59 +54,66 @@
               ]"
             >
               <input
-                  readonly
-                  type="text"
-                  class="cursor-pointer"
-                  autocomplete="off" 
-                  :class="TailwindClassHelper.formInputClass"
-                  :value="selectedOptionLabel"
-                  :placeholder="placeholder"
-                  :disabled="disabled"
+                readonly
+                type="text"
+                class="cursor-pointer"
+                autocomplete="off"
+                :class="TailwindClassHelper.formInputClass"
+                :value="selectedOptionLabel"
+                :placeholder="placeholder"
+                :disabled="disabled"
               />
-              <BaseIcon
+              <div class="flex items-center">
+                <BaseIcon
+                  v-if="clearEnabled && selectedFormControlValue"
+                  icon="qls-icon-close"
+                  class="hover:text-primary-500"
+                  :class="disabled ? 'text-gray-500' : ''"
+                  :width="20"
+                  :height="20"
+                  @click="handleClearButtonClick($event)"
+                />
+                <BaseIcon
                   icon="qls-icon-arrow-down"
                   :class="disabled ? 'text-gray-500' : ''"
                   :width="20"
                   :height="20"
-              />
+                />
+              </div>
             </div>
           </template>
         </ListboxButton>
         <transition
-            :enter-active-class="TailwindClassHelper.formDropdownTransitionEnterActiveClass"
-            :enter-from-class="TailwindClassHelper.formDropdownTransitionEnterFromClass"
-            :enter-to-class="TailwindClassHelper.formDropdownTransitionEnterToClass"
-            :leave-active-class="TailwindClassHelper.formDropdownTransitionLeaveActiveClass"
-            :leave-from-class="TailwindClassHelper.formDropdownTransitionLeaveFromClass"
-            :leave-to-class="TailwindClassHelper.formDropdownTransitionLeaveToClass"
+          :enter-active-class="TailwindClassHelper.formDropdownTransitionEnterActiveClass"
+          :enter-from-class="TailwindClassHelper.formDropdownTransitionEnterFromClass"
+          :enter-to-class="TailwindClassHelper.formDropdownTransitionEnterToClass"
+          :leave-active-class="TailwindClassHelper.formDropdownTransitionLeaveActiveClass"
+          :leave-from-class="TailwindClassHelper.formDropdownTransitionLeaveFromClass"
+          :leave-to-class="TailwindClassHelper.formDropdownTransitionLeaveToClass"
         >
           <ListboxOptions
-              class="w-full"
-              :class="[TailwindClassHelper.formDropdownPanelClass, !options.length ? 'invisible' : 'visible']"
+            class="w-full"
+            :class="[TailwindClassHelper.formDropdownPanelClass, !options.length ? 'invisible' : 'visible']"
           >
             <ListboxOption
-                v-for="option in options"
-                :key="option[optionValueKey]"
-                :value="option[optionValueKey]"
-                :disabled="option.disabled"
-                v-slot="{ active, selected }"
-                as="template"
+              v-for="option in options"
+              :key="option[optionValueKey]"
+              :value="option[optionValueKey]"
+              :disabled="option.disabled"
+              v-slot="{ active, selected }"
+              as="template"
             >
               <div @click="emit('change', option[optionValueKey])">
                 <slot
-                    name="optionContent"
-                    :option="option"
+                  name="optionContent"
+                  :option="option"
                 >
-                  <div
-                      class="flex items-center mb-1 cursor-pointer"
-                      :class="[
-                      active ? 'bg-primary-50' : '',
-                      selected ? TailwindClassHelper.formDropdownOptionActiveClass : '',
-                      TailwindClassHelper.formDropdownOptionClass,
-                    ]"
-                  >
-                    {{ option[optionLabelKey] }}
-                  </div>
+                  <FormSelectOption
+                    :label="option[optionLabelKey]"
+                    :active="active"
+                    :disabled="option.disabled"
+                    :selected="selected"
+                  />
                 </slot>
               </div>
             </ListboxOption>
@@ -114,13 +121,13 @@
         </transition>
       </div>
     </Listbox>
-    <FormErrorMessage :errorMessage="errorMessage"/>
+    <FormErrorMessage :errorMessage="errorMessage" />
   </div>
 </template>
 
 <script setup lang="ts">
-import {type TypedSchema, useField} from 'vee-validate'
-import {Listbox, ListboxButton, ListboxOption, ListboxOptions} from '@headlessui/vue'
+import { type TypedSchema, useField } from 'vee-validate'
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue'
 
 const props = defineProps<{
   label: string
@@ -130,6 +137,7 @@ const props = defineProps<{
    */
   options: FormMenuOption[] | any[]
   multipleEnabled?: boolean
+  clearEnabled?: boolean
   modelValue?: string
   labelKey?: string
   valueKey?: string
@@ -142,12 +150,12 @@ const emit = defineEmits<{
   (e: 'update:modelValue', v: string | string[]): void
 }>()
 
-const {value: selectedFormControlValue, errorMessage} = useField<string | string[]>(
-    () => props.formControlName,
-    props.fieldValidationSchema,
-    {
-      initialValue: props.modelValue,
-    }
+const { value: selectedFormControlValue, errorMessage } = useField<string | string[]>(
+  () => props.formControlName,
+  props.fieldValidationSchema,
+  {
+    initialValue: props.modelValue,
+  }
 )
 
 const optionLabelKey = computed(() => props.labelKey ?? 'label')
@@ -156,19 +164,26 @@ const optionValueKey = computed(() => props.valueKey ?? 'value')
 const hasError = computed(() => (errorMessage.value ? true : false))
 
 const selectedOptions = computed(() =>
-    props.options.filter((option) => (selectedFormControlValue.value as string[])?.includes(option[optionValueKey.value]))
+  props.options.filter((option) => (selectedFormControlValue.value as string[])?.includes(option[optionValueKey.value]))
 )
 
 const selectedOptionLabel = computed(() => {
   return props.options.find((option) => option[optionValueKey.value] === selectedFormControlValue.value)?.[
-      optionLabelKey.value
-      ]
+    optionLabelKey.value
+  ]
 })
 
 const handleDeleteButtonClick = (option: any | FormMenuOption) => {
   selectedFormControlValue.value = (selectedFormControlValue.value as string[]).filter(
-      (value) => value !== option[optionValueKey.value]
+    (value) => value !== option[optionValueKey.value]
   )
+}
+
+const handleClearButtonClick = (event: MouseEvent) => {
+  event.preventDefault()
+  selectedFormControlValue.value = ''
+  emit('change', '')
+  emit('update:modelValue', '')
 }
 
 const handleValueUpdate = () => {
