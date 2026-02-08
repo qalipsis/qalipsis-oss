@@ -1,0 +1,35 @@
+name: Verify the branch webapp-dev
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'webapp-dev'
+
+env:
+  GITHUB_ACTIONS: true
+
+jobs:
+  pull-request-check:
+    timeout-minutes: 10
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ 'ubuntu-latest' ]
+        java: [ '11' ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Report
+        if: always()
+        run: ./gradlew clean assemble
