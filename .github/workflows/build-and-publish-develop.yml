@@ -1,10 +1,10 @@
 name: Build the develop branch and publish artifacts
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - 'develop/*'
-  workflow_dispatch:
+      - 'webapp-dev'
 
 env:
   GITHUB_ACTIONS: true
