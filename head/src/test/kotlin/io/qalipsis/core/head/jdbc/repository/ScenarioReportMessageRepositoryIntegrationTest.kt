@@ -39,12 +39,12 @@ import io.qalipsis.core.postgres.AbstractPostgreSQLTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.count
+import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils
 import java.time.Duration
 import java.time.Instant
 

@@ -19,6 +19,8 @@
 
 package io.qalipsis.api.sync
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeout
 import java.time.Duration
 import java.util.concurrent.CompletionStage
 
@@ -45,23 +47,21 @@ fun <V> CompletionStage<V>.asSuspended(): SuspendedFuture<V> = SuspendedFutureFo
 internal class SuspendedFutureForCompletionStage<V>(completionStage: CompletionStage<V>) :
     SuspendedFuture<V> {
 
-    private var result = ImmutableSlot<Result<V>>()
+    private val deferred = CompletableDeferred<V>()
 
     init {
         completionStage.whenComplete { v: V, t: Throwable? ->
             if (t != null) {
-                result.offer(Result.failure(t))
+                deferred.completeExceptionally(t)
             } else {
-                result.offer(Result.success(v))
+                deferred.complete(v)
             }
         }
     }
 
-    override suspend fun get(): V {
-        return result.get().getOrThrow()
-    }
+    override suspend fun get(): V = deferred.await()
 
-    override suspend fun get(timeout: Duration): V {
-        return result.get(timeout).getOrThrow()
+    override suspend fun get(timeout: Duration): V = withTimeout(timeout.toMillis()) {
+        deferred.await()
     }
 }

@@ -22,10 +22,18 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm")
     kotlin("kapt")
+    kotlin("plugin.allopen")
     `java-test-fixtures`
+    id("me.champeau.jmh") version "0.7.2"
 }
 
 description = "Components to support QALIPSIS API development"
+
+allOpen {
+    annotations(
+        "org.openjdk.jmh.annotations.State"
+    )
+}
 
 kapt {
     useBuildCache = false
@@ -41,6 +49,18 @@ tasks.withType<KotlinCompile> {
 
 kotlin.sourceSets["test"].kotlin.srcDir(layout.buildDirectory.dir("generated/source/kaptKotlin/catadioptre"))
 kapt.useBuildCache = false
+
+jmh {
+    includeTests.set(false)
+    jvmArgsAppend.set(listOf("-Duser.language=en"))
+
+    operationsPerInvocation.set(4)
+    timeOnIteration.set("1s")
+    threads.set(2)
+
+    benchmarkMode.set(listOf("thrpt", "avgt"))
+    timeUnit.set("us")
+}
 
 dependencies {
     api(platform(project(":qalipsis-dev-platform")))

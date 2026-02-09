@@ -19,6 +19,7 @@
 
 package io.qalipsis.api.sync
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -36,7 +37,8 @@ import java.time.Duration
  */
 class Slot<T>(private var value: T? = null) {
 
-    private val latch = Latch(value == null)
+    private var deferred: CompletableDeferred<Unit>? =
+        if (value == null) CompletableDeferred() else null
 
     private val writeLock = Mutex()
 
@@ -61,7 +63,8 @@ class Slot<T>(private var value: T? = null) {
     suspend fun set(value: T) {
         writeLock.withLock {
             this.value = value
-            latch.release()
+            deferred?.complete(Unit)
+            deferred = null
         }
     }
 
@@ -70,8 +73,8 @@ class Slot<T>(private var value: T? = null) {
      */
     suspend fun clear() {
         writeLock.withLock {
-            latch.lock()
-            this.value = null
+            value = null
+            deferred = CompletableDeferred()
         }
     }
 
@@ -89,7 +92,7 @@ class Slot<T>(private var value: T? = null) {
      * Returns the value if it exists or suspend the call otherwise.
      */
     suspend fun get(): T {
-        await()
+        deferred?.await()
         return value!!
     }
 
@@ -107,7 +110,7 @@ class Slot<T>(private var value: T? = null) {
      */
     suspend fun get(timeout: Duration): T {
         withTimeout(timeout.toMillis()) {
-            await()
+            deferred?.await()
         }
         return value!!
     }
@@ -116,11 +119,11 @@ class Slot<T>(private var value: T? = null) {
      * Returns and removes the value if it exists or suspend the call otherwise.
      */
     suspend fun remove(): T {
-        await()
+        deferred?.await()
         val result = value!!
         writeLock.withLock {
-            latch.lock()
             value = null
+            deferred = CompletableDeferred()
         }
         return result
     }
@@ -132,15 +135,6 @@ class Slot<T>(private var value: T? = null) {
     suspend fun remove(timeout: Duration): T {
         return withTimeout(timeout.toMillis()) {
             remove()
-        }
-    }
-
-    /**
-     * If not value is currently, suspend the call until the latch is released.
-     */
-    private suspend fun await() {
-        if (isEmpty()) {
-            latch.await()
         }
     }
 

@@ -41,7 +41,7 @@ val netty = "4.2.1.Final"
 val bouncycastle = "1.70"
 val postgresqlDriver = "42.3.1"
 
-val testContainers = "1.21.1"
+val testContainers = "2.0.3"
 val mockk = "1.14.2"
 val catadioptre = "0.6.3"
 val awaitility = "4.2.2"

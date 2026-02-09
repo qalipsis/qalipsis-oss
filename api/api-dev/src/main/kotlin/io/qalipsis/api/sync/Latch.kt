@@ -19,9 +19,7 @@
 
 package io.qalipsis.api.sync
 
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CompletableDeferred
 import mu.KotlinLogging
 
 /**
@@ -39,34 +37,17 @@ import mu.KotlinLogging
  */
 class Latch(var isLocked: Boolean = false, val name: String = "") {
 
-    /**
-     * Flag used to suspend the calls to [await] between a [lock] and a [release].
-     */
-    private var syncFlag: Channel<Unit>? = null
-
-    /**
-     * Flag used to suspend the calls to [await] while [releaseAwaiting] is operating.
-     */
-    private var releaseAwaitingFlag: Channel<Unit>? = null
-
-    private val mutex = Mutex()
+    @Volatile
+    private var deferred: CompletableDeferred<Unit>? = null
 
     init {
         if (isLocked) {
-            syncFlag = Channel(Channel.RENDEZVOUS)
+            deferred = CompletableDeferred()
         }
     }
 
-
     suspend fun await() {
-        if (isLocked) {
-            log.trace { "The latch $this is locked, suspending the coroutine." }
-            // If a coroutine makes this call while the previously suspended calls are released,
-            // it should not be immediately released.
-            releaseAwaitingFlag?.receiveCatching()?.getOrNull()
-            syncFlag?.receiveCatching()?.getOrNull()
-            log.trace { "The latch $this is no longer locked, resuming the coroutine." }
-        }
+        deferred?.await()
     }
 
     /**
@@ -74,11 +55,9 @@ class Latch(var isLocked: Boolean = false, val name: String = "") {
      */
     suspend fun release() {
         if (isLocked) {
-            mutex.withLock(this) {
-                isLocked = false
-                syncFlag?.close()
-                syncFlag = null
-            }
+            isLocked = false
+            deferred?.complete(Unit)
+            deferred = null
             log.trace { "Latch $this is now unlocked" }
         }
     }
@@ -88,11 +67,8 @@ class Latch(var isLocked: Boolean = false, val name: String = "") {
      */
     suspend fun lock() {
         if (!isLocked) {
-            mutex.withLock(this) {
-                syncFlag?.close()
-                syncFlag = Channel(Channel.RENDEZVOUS)
-                isLocked = true
-            }
+            deferred = CompletableDeferred()
+            isLocked = true
             log.trace { "Latch $this is now locked" }
         }
     }
@@ -101,19 +77,10 @@ class Latch(var isLocked: Boolean = false, val name: String = "") {
      * Releases all the awaiting calls to [await] and suspends the concurrent and future ones.
      */
     suspend fun releaseAwaiting() {
-        // Forces the concurrent calls to unlock.
+        val oldDeferred = deferred
+        deferred = CompletableDeferred()
         isLocked = true
-        releaseAwaitingFlag = Channel(Channel.RENDEZVOUS)
-
-        mutex.withLock(this) {
-            // Releases the awaiting ones.
-            syncFlag?.close()
-            syncFlag = null
-            // Suspends the new and futures calls.
-            syncFlag = Channel(Channel.RENDEZVOUS)
-        }
-        // Let the concurrent calls to [await] now wait for [syncFlag] to be released.
-        releaseAwaitingFlag?.close()
+        oldDeferred?.complete(Unit)
     }
 
     /**
@@ -121,7 +88,8 @@ class Latch(var isLocked: Boolean = false, val name: String = "") {
      */
     fun cancel() {
         isLocked = false
-        syncFlag?.close()
+        deferred?.complete(Unit)
+        deferred = null
     }
 
     override fun toString(): String {
