@@ -20,5 +20,5 @@
 #
 
 # Add default JVM options here. You can also use JAVA_OPTS to pass JVM options to this script.
-DEFAULT_JVM_OPTS="-Xmx${QALIPSIS_MAX_HEAP:-2g} -Xms${QALIPSIS_MIN_HEAP:-512m} -XX:+Use${QALIPSIS_GC_TYPE:-G1}GC -XX:MaxGCPauseMillis=${QALIPSIS_MAX_GC_PAUSE:-200}"
-java $DEFAULT_JVM_OPTS $JAVA_OPTS -cp ".:/app/libs/*" io.qalipsis.runtime.Qalipsis head $*
+DEFAULT_JVM_OPTS="-Xss${QALIPSIS_THREAD_STACK:-256k} -Xmx${QALIPSIS_MAX_HEAP:-2g} -Xms${QALIPSIS_MIN_HEAP:-512m} -XX:+Use${QALIPSIS_GC_TYPE:-G1}GC -XX:MaxGCPauseMillis=${QALIPSIS_MAX_GC_PAUSE:-200}"
+java $DEFAULT_JVM_OPTS $JAVA_OPTS -cp ".:/app/libs/*" io.qalipsis.runtime.Qalipsis $*
