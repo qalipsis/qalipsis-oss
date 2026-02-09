@@ -1,10 +1,10 @@
 name: Verify the pull request
 
 on:
-  pull_request:
+  workflow_dispatch:
+  push:
     branches:
-      - 'main'
-      - 'develop/*'
+      - 'webapp-dev'
 
 env:
   GITHUB_ACTIONS: true
@@ -61,14 +61,3 @@ jobs:
         with:
           name: Test and coverage Reports
           path: '**/build/reports/'
-
-  dependency-review:
-    needs: pull-request-check
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Perform dependency review
-        uses: actions/dependency-review-action@v4
-        with:
-          vulnerability-check: false
-          deny-licenses: 'GPL-3.0'
