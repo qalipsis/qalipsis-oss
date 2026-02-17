@@ -19,7 +19,6 @@
 
 package io.qalipsis.api.pool
 
-import io.qalipsis.api.coroutines.contextualLaunch
 import io.qalipsis.api.io.Closeable
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.sync.SuspendedCountLatch
@@ -141,10 +140,8 @@ class FixedPool<T : Closeable>(
         return if (checkOnAcquire && !isHealthy(item)) {
             log.trace { "The object $item is not healthy and has to be replaced by a new one for the caller" }
             withContext(coroutineContext) {
-                contextualLaunch {
-                    items.remove(item)
-                    kotlin.runCatching { item.close() }
-                }
+                items.remove(item)
+                kotlin.runCatching { item.close() }
             }
             createItem()
         } else {
@@ -155,21 +152,19 @@ class FixedPool<T : Closeable>(
     override suspend fun release(item: T) {
         if (open) {
             log.trace { "Returning the object to the pool" }
-            withContext(coroutineContext) {
-                contextualLaunch {
-                    val reusableItem = try {
-                        cleaner(item)
-                        require(!checkOnRelease || isHealthy(item)) { "object is unhealthy" }
-                        item
-                    } catch (e: Exception) {
-                        log.trace(e) { "The object $item cannot be released to the pool: ${e.message}" }
-                        items.remove(item)
-                        kotlin.runCatching { item.close() }
-                        createItem()
-                    }
-                    itemPool.send(reusableItem)
+            val reusableItem = try {
+                cleaner(item)
+                require(!checkOnRelease || isHealthy(item)) { "object is unhealthy" }
+                item
+            } catch (e: Exception) {
+                log.trace(e) { "The object $item cannot be released to the pool: ${e.message}" }
+                withContext(coroutineContext) {
+                    items.remove(item)
+                    kotlin.runCatching { item.close() }
+                    createItem()
                 }
             }
+            itemPool.send(reusableItem)
         }
     }
 

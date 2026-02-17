@@ -187,6 +187,36 @@ internal class BroadcastTopicTest {
     }
 
     @Test
+    fun `should prevent producing records on closed topic`() = testCoroutineDispatcher.run {
+        // given
+        val topic = BroadcastTopic<Int>(100, Duration.ofSeconds(1))
+        topic.close()
+
+        // then
+        assertThrows<ClosedTopicException> {
+            topic.produce(Record(value = 42))
+        }
+    }
+
+    @Test
+    @Timeout(10)
+    fun `should not cancel subscription when actively polling`() = testCoroutineDispatcher.run {
+        // given
+        val topic = BroadcastTopic<Int>(100, Duration.ofMillis(50))
+        val subscription = topic.subscribe("any-1")
+
+        // when - keep polling faster than the idle timeout
+        repeat(10) {
+            topic.produceValue(it)
+            Assertions.assertEquals(it, subscription.pollValue())
+            delay(10) // well within the 50ms timeout
+        }
+
+        // then - subscription should still be active
+        Assertions.assertTrue(subscription.isActive())
+    }
+
+    @Test
     fun `should only keep the maximum number of values`() = testCoroutineDispatcher.run {
         // given
         val topic = BroadcastTopic<Int>(10, Duration.ofSeconds(1))

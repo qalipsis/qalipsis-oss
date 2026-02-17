@@ -558,14 +558,20 @@ internal class FactoryInitializerImplTest {
                         hasSize(1)
                         index(0).isInstanceOf(BlackHoleStep::class).prop(Step<*, *>::next).all {
                             hasSize(2)
-                            index(0).prop(Step<*, *>::next).all {
+                            // The order of children is non-deterministic due to concurrent processing.
+                            // Find each child by type instead of relying on index.
+                            transform("same-dag step") { children ->
+                                children.first { it !is PipeStep }
+                            }.prop(Step<*, *>::next).all {
                                 hasSize(1)
                                 index(0).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
                                     hasSize(1)
                                     index(0).isSameInstanceAs(deadEndStep2)
                                 }
                             }
-                            index(1).isInstanceOf(PipeStep::class).prop(Step<*, *>::next).all {
+                            transform("dag-transition step") { children ->
+                                children.filterIsInstance<PipeStep<*>>().single()
+                            }.prop(Step<*, *>::next).all {
                                 hasSize(1)
                                 index(0).isSameInstanceAs(dagTransitionStep)
                             }

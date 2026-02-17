@@ -42,8 +42,19 @@ internal open class LoopTopic<T>(
 
     override suspend fun updateSubscriptionSlot(lastSetSlot: ImmutableSlot<LinkedRecord<T>>) {
         // If the topic was tried to be completed but failed because it was empty, it is done now.
+        // Called from produce() which already holds writeMutex, so use the lock-free variant.
         if (shouldComplete != complete) {
-            complete()
+            completeUnderLock()
+        }
+    }
+
+    /**
+     * Completes the loop assuming [writeMutex] is already held by the caller.
+     */
+    private suspend fun completeUnderLock() {
+        if (writeSlot !== subscriptionSlot) {
+            writeSlot.set(subscriptionSlot.get())
+            complete = true
         }
     }
 
@@ -51,11 +62,8 @@ internal open class LoopTopic<T>(
         if (!complete) {
             shouldComplete = true
             writeMutex.withLock {
-                // If there is at least on item, the chain is closed to form the loop.
-                if (writeSlot !== subscriptionSlot) {
-                    writeSlot.set(subscriptionSlot.get())
-                    complete = true
-                }
+                // If there is at least one item, the chain is closed to form the loop.
+                completeUnderLock()
             }
         }
     }

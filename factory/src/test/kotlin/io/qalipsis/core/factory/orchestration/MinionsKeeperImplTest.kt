@@ -687,6 +687,9 @@ internal class MinionsKeeperImplTest {
         val rootDagsOfMinions =
             minionsKeeper.getProperty<MutableMap<MinionId, DirectedAcyclicGraphName>>("rootDagsOfMinions")
         rootDagsOfMinions["my-minion"] = "my-dag"
+        val runningMinionsGauges =
+            minionsKeeper.getProperty<MutableMap<ScenarioName, Gauge>>("runningMinionsGauges")
+        runningMinionsGauges["my-scenario"] = runningMinionsGauge
 
         // when
         minionsKeeper.shutdownMinion("my-minion")
@@ -708,6 +711,7 @@ internal class MinionsKeeperImplTest {
             )
             minion.isSingleton
             reportLiveStateRegistry.recordCompletedMinion("my-campaign", "my-scenario", 1)
+            runningMinionsGauge.decrement()
             minion.stop(false)
             eventsLogger.debug(
                 "minion.completion.failed",
@@ -794,8 +798,8 @@ internal class MinionsKeeperImplTest {
             minionsKeeper.getProperty<MutableMap<ScenarioName, AtomicInteger>>("idleMinionsGauges")
         idleMinionsGauges["my-scenario"] = AtomicInteger(123)
         val runningMinionsGauges =
-            minionsKeeper.getProperty<MutableMap<ScenarioName, AtomicInteger>>("runningMinionsGauges")
-        runningMinionsGauges["my-scenario"] = AtomicInteger(76543)
+            minionsKeeper.getProperty<MutableMap<ScenarioName, Gauge>>("runningMinionsGauges")
+        runningMinionsGauges["my-scenario"] = runningMinionsGauge
 
         // when
         minionsKeeper.shutdownAll()
@@ -803,6 +807,9 @@ internal class MinionsKeeperImplTest {
         // then
         coVerifyExactly(2) {
             reportLiveStateRegistry.recordCompletedMinion("my-campaign", "my-scenario")
+        }
+        coVerifyExactly(2) {
+            runningMinionsGauge.decrement()
         }
         coVerifyOnce {
             minion1.id

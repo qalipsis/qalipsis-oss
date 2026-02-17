@@ -22,6 +22,7 @@ package io.qalipsis.core.factory.orchestration
 import io.mockk.coEvery
 import io.mockk.slot
 import io.qalipsis.api.context.StepContext
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factory.generate
@@ -52,6 +53,8 @@ internal class RunnerImplTest {
     @field:RegisterExtension
     val testCoroutineDispatcher = TestDispatcherProvider()
 
+    private val meterRegistry = relaxedMockk<CampaignMeterRegistry>()
+
     @Test
     @Timeout(10)
     internal fun `should execute the full dag asynchronously`() = testCoroutineDispatcher.runTest {
@@ -65,7 +68,7 @@ internal class RunnerImplTest {
                 }
             }
         }
-        val runner = RunnerImpl(this)
+        val runner = RunnerImpl(this, meterRegistry)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
 
         // when
@@ -119,7 +122,7 @@ internal class RunnerImplTest {
             noOutput<Int>("step-1", generateException = true).forward("step-2").processError("step-3").forward("step-4")
                 .decoratedProcessError("step-5")
         }
-        val runner = RunnerImpl(this)
+        val runner = RunnerImpl(this, meterRegistry)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
 
         // when
@@ -158,7 +161,7 @@ internal class RunnerImplTest {
             noOutput<Int>("step-1", generateException = true)
                 .forward("step-2").recoverError("step-3", 2).forward("step-4")
         }
-        val runner = RunnerImpl(this)
+        val runner = RunnerImpl(this, meterRegistry)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
 
         // when
@@ -197,7 +200,7 @@ internal class RunnerImplTest {
                     forward("step-5")
                 }
             }
-            val runner = RunnerImpl(this)
+            val runner = RunnerImpl(this, meterRegistry)
             val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
 
             // when
@@ -240,7 +243,7 @@ internal class RunnerImplTest {
             generate("step-1", output = 12, retryPolicy = retryPolicy)
                 .forward("step-2")
         }
-        val runner = RunnerImpl(this)
+        val runner = RunnerImpl(this, meterRegistry)
         val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", false, false)
 
         // when
@@ -274,7 +277,7 @@ internal class RunnerImplTest {
                     }
                 }
             }
-            val runner = RunnerImpl(this)
+            val runner = RunnerImpl(this, meterRegistry)
             val minion1 = MinionImpl("my-minion-1", "my-campaign", "my-scenario", false, false)
             val minion2 = MinionImpl("my-minion-2", "my-campaign", "my-scenario", false, false)
 
@@ -321,7 +324,7 @@ internal class RunnerImplTest {
                     }
                 }
             }
-            val runner = RunnerImpl(this)
+            val runner = RunnerImpl(this, meterRegistry)
             val minion1 = MinionImpl("my-minion-1", "my-campaign", "my-scenario", false, false)
             val minion2 = MinionImpl("my-minion-2", "my-campaign", "my-scenario", false, false)
 

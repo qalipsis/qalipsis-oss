@@ -22,7 +22,7 @@ package io.qalipsis.runtime.inmemory
 import io.micronaut.context.BeanProvider
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
-import io.qalipsis.api.logging.LoggerHelper.logger
+
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.Directive
@@ -73,7 +73,7 @@ class StandaloneChannel(
         } else {
             directive
         }
-        listeners.get().directiveListeners.stream().filter { it.accept(verifiedDirective) }.forEach { listener ->
+        listeners.get().directiveListeners.filter { it.accept(verifiedDirective) }.forEach { listener ->
             @Suppress("UNCHECKED_CAST")
             orchestrationCoroutineScope.launch { (listener as DirectiveListener<Directive>).notify(directive) }
         }
@@ -84,7 +84,7 @@ class StandaloneChannel(
         channelName: DispatcherChannel,
         handshakeResponse: HandshakeResponse
     ) {
-        listeners.get().handshakeResponseListeners.stream().forEach { listener ->
+        listeners.get().handshakeResponseListeners.forEach { listener ->
             orchestrationCoroutineScope.launch { listener.notify(handshakeResponse) }
         }
     }
@@ -105,7 +105,7 @@ class StandaloneChannel(
         if (feedback is CampaignManagementFeedback) {
             feedback.nodeId = STANDALONE_FACTORY_NAME
         }
-        listeners.get().feedbackListeners.stream().filter { it.accept(feedback) }.forEach { listener ->
+        listeners.get().feedbackListeners.filter { it.accept(feedback) }.forEach { listener ->
             @Suppress("UNCHECKED_CAST")
             orchestrationCoroutineScope.launch { (listener as FeedbackListener<Feedback>).notify(feedback) }
         }
@@ -121,21 +121,19 @@ class StandaloneChannel(
 
     @LogInput(level = Level.DEBUG)
     override suspend fun publishHandshakeRequest(handshakeRequest: HandshakeRequest) {
-        listeners.get().handshakeRequestListeners.stream().forEach { listener ->
+        listeners.get().handshakeRequestListeners.forEach { listener ->
             orchestrationCoroutineScope.launch { listener.notify(handshakeRequest) }
         }
     }
 
     @LogInput(level = Level.DEBUG)
     override suspend fun publishHeartbeat(channel: DispatcherChannel, heartbeat: Heartbeat) {
-        listeners.get().heartbeatListeners.stream().forEach { listener ->
+        listeners.get().heartbeatListeners.forEach { listener ->
             orchestrationCoroutineScope.launch { listener.notify(heartbeat) }
         }
     }
 
     private companion object {
         const val STANDALONE_FACTORY_NAME = "_embedded_"
-
-        val log = logger()
     }
 }

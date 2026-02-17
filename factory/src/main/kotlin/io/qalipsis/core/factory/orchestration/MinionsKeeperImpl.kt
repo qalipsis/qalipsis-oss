@@ -228,12 +228,16 @@ class MinionsKeeperImpl(
 
     @LogInput
     override suspend fun shutdownAll() {
-        minions.values.forEach { minion ->
+        // Drain the minions map atomically to prevent double-shutdown from
+        // concurrent calls to shutdownMinion().
+        val iterator = minions.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            iterator.remove()
             kotlin.runCatching {
-                shutdownMinion(minion, true)
+                shutdownMinion(entry.value, true)
             }
         }
-        minions.clear()
         idleSingletonsMinions.clear()
         singletonMinionsByDagId.clear()
         dagIdsBySingletonMinionId.clear()
@@ -258,6 +262,7 @@ class MinionsKeeperImpl(
         eventsLogger.debug("minion.completion.in-progress", tags = eventsTags)
         if (!minion.isSingleton) {
             reportLiveStateRegistry.recordCompletedMinion(campaign, scenario)
+            runningMinionsGauges[scenario]?.decrement()
         }
 
         dagIdsBySingletonMinionId.remove(minionId)

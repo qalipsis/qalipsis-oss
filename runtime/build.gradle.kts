@@ -95,7 +95,7 @@ dependencies {
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("jakarta.annotation:jakarta.annotation-api")
     testImplementation("io.micronaut:micronaut-runtime")
-    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.awaitility:awaitility-kotlin") {
         exclude(group = "org.jetbrains.kotlin")
     }

@@ -42,6 +42,7 @@ abstract class AbstractChannelBasedTopic<T>(
 
 ) : Topic<T> {
 
+    @Volatile
     private var open = true
 
     protected abstract val channel: SendChannel<Record<T>>
@@ -108,8 +109,9 @@ abstract class AbstractChannelBasedTopic<T>(
     override fun close() {
         open = false
         channel.close()
-        subscriptions.values.forEach { it.cancel() }
+        val subs = subscriptions.values.toList()
         subscriptions.clear()
+        subs.forEach { it.cancel() }
     }
 
     override suspend fun complete() {
@@ -117,12 +119,9 @@ abstract class AbstractChannelBasedTopic<T>(
     }
 
     private fun verifyState() {
-        log.trace { "Verifying topic state" }
         if (!open) {
-            log.trace { "Topic is closed" }
             throw ClosedTopicException()
         }
-        log.trace { "Topic is open" }
     }
 
     companion object {

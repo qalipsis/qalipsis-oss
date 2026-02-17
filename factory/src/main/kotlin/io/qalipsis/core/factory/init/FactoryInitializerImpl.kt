@@ -238,7 +238,6 @@ class FactoryInitializerImpl(
         decorateStepForDagEndIfRequired(parentDag, stepsSpecifications, parentStep)
         coroutineScope {
             stepsSpecifications.map { stepSpecification ->
-
                 launch {
                     convertStepRecursively(
                         scenarioSpecification = scenarioSpecification,
