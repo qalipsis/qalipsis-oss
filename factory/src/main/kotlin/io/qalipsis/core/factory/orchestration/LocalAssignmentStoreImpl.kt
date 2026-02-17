@@ -54,7 +54,7 @@ class LocalAssignmentStoreImpl(
     /**
      * Map of root DAGs under load keyed by their scenarios ID.
      */
-    private lateinit var rootDagsUnderLoad: Map<ScenarioName, DirectedAcyclicGraphName>
+    private var rootDagsUnderLoad: Map<ScenarioName, DirectedAcyclicGraphName> = emptyMap()
 
     override val assignments: Table<ScenarioName, MinionId, out Collection<DirectedAcyclicGraphName>>
         get() = actualAssignments
@@ -78,7 +78,13 @@ class LocalAssignmentStoreImpl(
             log.trace { "Marking the DAGs $dagsIds of scenario $scenarioName as executed locally for the minion $minionId" }
             actualAssignments.computeIfAbsent(scenarioName, minionId) { concurrentSet() } += dagsIds
         }
-        assignments.values.flatten().groupingBy { dagId -> dagId }.eachCount().forEach { (dagId, count) ->
+        val dagCounts = mutableMapOf<DirectedAcyclicGraphName, Int>()
+        assignments.values.forEach { dagIds ->
+            dagIds.forEach { dagId ->
+                dagCounts.merge(dagId, 1, Int::plus)
+            }
+        }
+        dagCounts.forEach { (dagId, count) ->
             localMinionCountsByScenarioAndDag
                 .computeIfAbsent(scenarioName, dagId) { AtomicInteger(0) }
                 .addAndGet(count)

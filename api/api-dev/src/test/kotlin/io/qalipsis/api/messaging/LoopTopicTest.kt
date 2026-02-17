@@ -186,6 +186,35 @@ internal class LoopTopicTest {
     }
 
     @Test
+    @Timeout(10)
+    internal fun `should complete after producing on initially empty topic`() = testCoroutineDispatcher.run {
+        // given - complete is called before any values are produced (empty topic)
+        val topic = LoopTopic<Int>(Duration.ofSeconds(1))
+        topic.complete()
+
+        // when - a single value is produced, which triggers the deferred loop closure
+        topic.produceValue(42)
+
+        // then - the loop should be closed and the single value repeats infinitely
+        val subscription = topic.subscribe("any-1")
+        repeat(5) {
+            Assertions.assertEquals(42, subscription.pollValue())
+        }
+    }
+
+    @Test
+    internal fun `should prevent producing records on closed topic`() = testCoroutineDispatcher.run {
+        // given
+        val topic = LoopTopic<Int>(Duration.ofSeconds(1))
+        topic.close()
+
+        // then
+        assertThrows<ClosedTopicException> {
+            topic.produce(Record(value = 42))
+        }
+    }
+
+    @Test
     internal fun `should provide infinite data once completed`() = testCoroutineDispatcher.run {
         // given
         val topic = LoopTopic<Int>(Duration.ofSeconds(1))

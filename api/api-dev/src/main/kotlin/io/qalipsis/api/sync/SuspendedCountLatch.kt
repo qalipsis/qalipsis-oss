@@ -20,8 +20,8 @@
 package io.qalipsis.api.sync
 
 import io.qalipsis.api.logging.LoggerHelper.logger
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -55,21 +55,21 @@ class SuspendedCountLatch(
     private val onReleaseAction: suspend (SuspendedCountLatch.() -> Unit) = {}
 ) {
 
-    private var activityFlag = Channel<Unit>(1)
+    private var activityDeferred = CompletableDeferred<Unit>()
 
-    private var syncFlag = Channel<Unit>(1)
+    private var syncDeferred = CompletableDeferred<Unit>()
 
     private val mutex = Mutex()
 
     private var count = AtomicLong(initialCount)
 
     val onRelease
-        get() = syncFlag.onReceiveCatching
+        get() = syncDeferred.onAwait
 
     init {
         // If the count is already 0, the sync flag is released.
         if (initialCount == 0L) {
-            syncFlag.close()
+            syncDeferred.complete(Unit)
         }
     }
 
@@ -77,7 +77,7 @@ class SuspendedCountLatch(
      * Awaits for [increment] or [decrement] to be called at least once.
      */
     suspend fun awaitActivity(): SuspendedCountLatch {
-        activityFlag.receiveCatching()
+        activityDeferred.await()
         return this
     }
 
@@ -85,7 +85,7 @@ class SuspendedCountLatch(
      * Awaits for the counter to be 0.
      */
     suspend fun await() {
-        syncFlag.receiveCatching()
+        syncDeferred.await()
     }
 
     /**
@@ -114,15 +114,15 @@ class SuspendedCountLatch(
      */
     fun cancel() {
         count.set(0)
-        activityFlag.close()
-        syncFlag.close()
+        activityDeferred.complete(Unit)
+        syncDeferred.complete(Unit)
     }
 
     /**
      * Releases all current and future calls to [await], executes [onReleaseAction] and sets the counter back to 0.
      */
     suspend fun release() {
-        releaseSyncFlag()
+        releaseSyncDeferred()
         count.set(0)
     }
 
@@ -134,7 +134,7 @@ class SuspendedCountLatch(
     suspend fun reset(): Long = mutex.withLock {
         log.trace { "Resetting..." }
         count.set(initialCount)
-        resetFlag()
+        resetDeferred()
         count.get()
     }
 
@@ -144,11 +144,11 @@ class SuspendedCountLatch(
     fun blockingReset(): Long = runBlocking { reset() }
 
     suspend fun increment(value: Long = 1): Long = mutex.withLock {
-        closeActivityFlag()
+        completeActivityDeferred()
         val result = count.addAndGet(value)
-        // When the count gets from 0 to 1, the sync flag is recreated.
+        // When the count gets from 0 to 1, the sync deferred is recreated.
         if (value == 1L && result == 1L) {
-            resetFlag()
+            resetDeferred()
         }
         result
     }
@@ -158,18 +158,18 @@ class SuspendedCountLatch(
     suspend fun decrement(value: Long = 1): Long {
         return mutex.withLock {
             require(allowsNegative || value <= count.get()) { "value > ${count.get()}" }
-            closeActivityFlag()
+            completeActivityDeferred()
             val result = count.addAndGet(-value)
             if (result == 0L) {
-                releaseSyncFlag()
+                releaseSyncDeferred()
             }
             result
         }
     }
 
-    private suspend fun releaseSyncFlag() {
+    private suspend fun releaseSyncDeferred() {
         onReleaseAction()
-        syncFlag.close()
+        syncDeferred.complete(Unit)
     }
 
     fun blockingDecrement(value: Long = 1): Long = runBlocking {
@@ -182,16 +182,14 @@ class SuspendedCountLatch(
         return count.get() != 0L
     }
 
-    private fun resetFlag() {
-        if (syncFlag.isClosedForReceive) {
-            syncFlag = Channel(1)
+    private fun resetDeferred() {
+        if (syncDeferred.isCompleted) {
+            syncDeferred = CompletableDeferred()
         }
     }
 
-    private fun closeActivityFlag() {
-        if (!activityFlag.isClosedForReceive) {
-            activityFlag.close()
-        }
+    private fun completeActivityDeferred() {
+        activityDeferred.complete(Unit)
     }
 
     companion object {

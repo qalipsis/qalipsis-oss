@@ -38,6 +38,7 @@ import io.mockk.mockk
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepStartStopContext
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.steps.Step
 import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factory.coreStepContext
@@ -127,7 +128,7 @@ internal class StageStepTest {
         val step = StageStep<Double, String>("", null, mockk())
         step.addNext(headStep)
 
-        val runner = RunnerImpl(this)
+        val runner = RunnerImpl(this, relaxedMockk<CampaignMeterRegistry>())
         step.runner = runner
         val ctx = coreStepContext<Double, String>(input = 3.0)
         val results = mutableListOf<String>()
@@ -170,7 +171,7 @@ internal class StageStepTest {
         val step = StageStep<Int, String>("", null, mockk())
         step.addNext(headStep)
 
-        val runner = RunnerImpl(this)
+        val runner = RunnerImpl(this, relaxedMockk<CampaignMeterRegistry>())
         step.runner = runner
 
         val ctx = coreStepContext<Int, String>(input = 3)
@@ -218,7 +219,7 @@ internal class StageStepTest {
             val step = StageStep<Int, String>("", null, mockk())
             step.addNext(headStep)
 
-            val runner = RunnerImpl(this)
+            val runner = RunnerImpl(this, relaxedMockk<CampaignMeterRegistry>())
             step.runner = runner
 
             val ctx = coreStepContext<Int, String>(input = 3)

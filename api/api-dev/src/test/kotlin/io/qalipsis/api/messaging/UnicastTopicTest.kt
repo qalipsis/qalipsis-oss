@@ -174,6 +174,24 @@ internal class UnicastTopicTest {
 
     @Test
     @Timeout(10)
+    internal fun `should not cancel subscription when actively polling`() = testCoroutineDispatcher.run {
+        // given
+        val topic = UnicastTopic<Int>(100, Duration.ofMillis(50))
+        val subscription = topic.subscribe("any-1")
+
+        // when - keep polling faster than the idle timeout
+        repeat(10) {
+            topic.produceValue(it)
+            Assertions.assertEquals(it, subscription.pollValue())
+            delay(10) // well within the 50ms timeout
+        }
+
+        // then - subscription should still be active
+        Assertions.assertTrue(subscription.isActive())
+    }
+
+    @Test
+    @Timeout(10)
     internal fun `should provide two different subscriptions from beginning`() = testCoroutineDispatcher.run {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofSeconds(1))

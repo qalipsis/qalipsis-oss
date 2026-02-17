@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'webapp-dev'
+      - 'develop/*'
 
 env:
   GITHUB_ACTIONS: true

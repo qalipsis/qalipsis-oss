@@ -98,6 +98,8 @@ class InMemoryMinionAssignmentKeeper(
     ) {
         scheduledDagsCountByMinions.clear()
         remainingDagsCountByMinions.clear()
+        scheduledStartOffsets.clear()
+        singletonMinions.clear()
         minionsByScenarios.clear()
         localAssignmentStore.reset()
     }
@@ -159,19 +161,18 @@ class InMemoryMinionAssignmentKeeper(
         scenarioName: ScenarioName,
         startingLines: Collection<MinionsStartingLine>
     ) {
-        val minionsUnderLoad = getIdsOfMinionsUnderLoad(campaignKey, scenarioName).toMutableList()
+        val minionsUnderLoad = getIdsOfMinionsUnderLoad(campaignKey, scenarioName).toList()
         val scenarioSchedule = mutableMapOf<Long, MutableCollection<MinionId>>()
+        var minionIndex = 0
         startingLines.forEach { startingLine ->
             repeat(startingLine.count) {
-                if (minionsUnderLoad.isNotEmpty()) {
-                    scenarioSchedule.computeIfAbsent(startingLine.offsetMs) { mutableSetOf() } += minionsUnderLoad.removeAt(
-                        0
-                    )
+                if (minionIndex < minionsUnderLoad.size) {
+                    scenarioSchedule.computeIfAbsent(startingLine.offsetMs) { mutableSetOf() } += minionsUnderLoad[minionIndex++]
                 }
             }
         }
 
-        assert(minionsUnderLoad.isEmpty()) { "${minionsUnderLoad.size} minions could not be scheduled" }
+        assert(minionIndex == minionsUnderLoad.size) { "${minionsUnderLoad.size - minionIndex} minions could not be scheduled" }
         scheduledStartOffsets[scenarioName] = scenarioSchedule
     }
 

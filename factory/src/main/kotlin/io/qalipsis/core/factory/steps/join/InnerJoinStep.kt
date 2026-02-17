@@ -29,17 +29,14 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.AbstractStep
-import io.qalipsis.api.sync.Latch
-import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.exceptions.NotInitializedStepException
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import org.slf4j.MDC
 import java.time.Duration
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 
 /**
@@ -87,9 +84,10 @@ class InnerJoinStep<I, O>(
         if (!cacheTimeout.isNegative && !cacheTimeout.isZero) {
             cacheBuilder = cacheBuilder.expireAfterWrite(cacheTimeout)
         }
-        cache = cacheBuilder.buildAsync { entryKey -> CacheEntry(entryKey, rightCorrelations.size) }
+        cache = cacheBuilder.buildAsync { _ -> CacheEntry(rightCorrelations.size) }
     }
 
+    @Volatile
     private var running = false
 
     override suspend fun start(context: StepStartStopContext) {
@@ -100,22 +98,23 @@ class InnerJoinStep<I, O>(
             val keyExtractor = (corr.keyExtractor as (CorrelationRecord<out Any>) -> Any?)
             consumptionJobs.add(
                 coroutineScope.launch {
-                    MDC.put("campaign", context.campaignKey)
-                    MDC.put("scenario", context.scenarioName)
-                    MDC.put("step", context.stepName)
                     log.debug { "Starting the coroutine buffering right records from step ${corr.sourceStepName}" }
                     val subscription = corr.topic.subscribe(stepName)
                     while (subscription.isActive()) {
-                        val record = subscription.pollValue()
-                        keyExtractor(record)?.let { key ->
-                            log.trace { "Adding right record to cache with key '$key' as ${key::class.qualifiedName}" }
-                            cache.get(key).thenAccept { entry ->
-                                coroutineScope.launch { entry.addValue(record.stepName, record.value) }
+                        try {
+                            val record = subscription.pollValue()
+                            keyExtractor(record)?.let { key ->
+                                log.trace { "Adding right record to cache with key '$key' as ${key::class.qualifiedName}" }
+                                val entry = cache.synchronous().get(key)
+                                entry.addValue(record.stepName, record.value)
                             }
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            log.warn(e) { "Error processing right record from step ${corr.sourceStepName}" }
                         }
                     }
                     log.debug { "Leaving the coroutine buffering right records" }
-                    MDC.clear()
                 }
             )
         }
@@ -125,6 +124,7 @@ class InnerJoinStep<I, O>(
     override suspend fun stop(context: StepStartStopContext) {
         running = false
         consumptionJobs.forEach { it.cancel() }
+        consumptionJobs.clear()
         rightCorrelations.forEach { it.topic.close() }
     }
 
@@ -137,29 +137,10 @@ class InnerJoinStep<I, O>(
             ?.let { key ->
                 try {
                     log.trace { "Searching correlation values for key '$key' as ${key::class}" }
-                    val waitingRightLatch = Latch(true, "inner-join-step-${name}-$key")
-                    cache[key].thenAccept { entry ->
-                        runCatching {
-                            coroutineScope.launch {
-                                MDC.put("campaign", context.campaignKey)
-                                MDC.put("scenario", context.scenarioName)
-                                MDC.put("step", context.stepName)
-                                minion.completeMdcContext()
-                                minion.launch(this) {
-                                    val secondaryValues = entry.get()
-                                    log.trace { "Forwarding a correlated set of values to context $context" }
-                                    kotlin.runCatching {
-                                        // It might be that the arrival of the right record
-                                        // is concurrent to the timeout, which might lead to errors.
-                                        context.send(outputSupplier(input, secondaryValues))
-                                    }
-                                    waitingRightLatch.cancel()
-                                }
-                                MDC.clear()
-                            }
-                        }
-                    }
-                    waitingRightLatch.await()
+                    val entry = cache.synchronous().get(key)
+                    val secondaryValues = entry.get()
+                    log.trace { "Forwarding a correlated set of values to context $context" }
+                    context.send(outputSupplier(input, secondaryValues))
                 } finally {
                     log.trace { "Invalidating cache with key $key as ${key::class}" }
                     cache.synchronous().invalidate(key)
@@ -183,27 +164,26 @@ class InnerJoinStep<I, O>(
         private val log = logger()
     }
 
-    private data class CacheEntry(
-        /**
-         * Common correlation key for all the values.
-         */
-        val correlationKey: Any,
+    private class CacheEntry(
         /**
          * Number of expected values from secondary steps.
          */
         val secondaryValuesCount: Int
     ) {
         /**
-         * Mutex to suspend the calls to received() until all the values are received.
+         * Atomic counter tracking the remaining number of values to receive.
          */
-        private val countLatch = SuspendedCountLatch(secondaryValuesCount.toLong())
+        private val remaining = AtomicInteger(secondaryValuesCount)
 
-        private val mutex = Mutex()
+        /**
+         * Deferred completed when all secondary values have been received.
+         */
+        private val completed = CompletableDeferred<Unit>()
 
         /**
          * Values received from the secondary [io.qalipsis.api.steps.Step]s so far, indexed by the source [StepName].
          */
-        private val secondaryValues: MutableMap<StepName, Any?> = ConcurrentHashMap()
+        private val secondaryValues = HashMap<StepName, Any?>()
 
         /**
          * Adds a value coming from a secondary [io.qalipsis.api.steps.Step].
@@ -211,11 +191,12 @@ class InnerJoinStep<I, O>(
          * @param stepName ID of the [io.qalipsis.api.steps.Step] that generated the value.
          * @param value Actual value to provide for the correlation.
          */
-        suspend fun addValue(stepName: StepName, value: Any?) {
-            mutex.withLock {
-                if (!secondaryValues.keys.contains(stepName)) {
-                    secondaryValues[stepName] = value
-                    countLatch.decrement()
+        @Synchronized
+        fun addValue(stepName: StepName, value: Any?) {
+            if (!secondaryValues.containsKey(stepName)) {
+                secondaryValues[stepName] = value
+                if (remaining.decrementAndGet() == 0) {
+                    completed.complete(Unit)
                 }
             }
         }
@@ -226,9 +207,7 @@ class InnerJoinStep<I, O>(
          * This method suspends the call until all the values are received.
          */
         suspend fun get(): Map<StepName, Any?> {
-            if (secondaryValues.size < secondaryValuesCount) {
-                countLatch.await()
-            }
+            completed.await()
             return secondaryValues
         }
     }

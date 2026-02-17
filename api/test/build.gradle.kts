@@ -37,9 +37,9 @@ dependencies {
     api("org.skyscreamer:jsonassert:1.5.0")
     api("com.willowtreeapps.assertk:assertk")
     api("com.willowtreeapps.assertk:assertk-jvm")
-    api("org.testcontainers:testcontainers")
     api("io.aeris-consulting:catadioptre-kotlin")
-    api("org.testcontainers:junit-jupiter") {
+    api("org.testcontainers:testcontainers")
+    api("org.testcontainers:testcontainers-junit-jupiter") {
         exclude("junit", "junit")
     }
     api("ch.qos.logback:logback-classic")

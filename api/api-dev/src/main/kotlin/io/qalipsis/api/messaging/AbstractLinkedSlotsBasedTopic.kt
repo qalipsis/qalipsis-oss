@@ -26,6 +26,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import java.time.Duration
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * [AbstractLinkedSlotsBasedTopic] is a special implementation of [Topic] providing the data as an infinite loop: once the consumer polled
@@ -39,6 +40,7 @@ abstract class AbstractLinkedSlotsBasedTopic<T>(
     protected val idleTimeout: Duration
 ) : Topic<T> {
 
+    @Volatile
     protected var open = true
 
     /**
@@ -55,7 +57,7 @@ abstract class AbstractLinkedSlotsBasedTopic<T>(
 
     protected val writeMutex = Mutex(false)
 
-    protected val subscriptions = mutableMapOf<String, SlotBasedSubscription<T>>()
+    protected val subscriptions = ConcurrentHashMap<String, SlotBasedSubscription<T>>()
 
     override suspend fun subscribe(subscriberId: String): TopicSubscription<T> {
         verifyState()
@@ -86,12 +88,13 @@ abstract class AbstractLinkedSlotsBasedTopic<T>(
     }
 
     override suspend fun produce(record: Record<T>) {
+        verifyState()
         log.trace { "Adding the record $record to the topic" }
         val linkedRecord = LinkedRecordWithValue(record)
         writeMutex.withLock {
             writeSlot.set(linkedRecord)
-            updateSubscriptionSlot(writeSlot)
             writeSlot = linkedRecord.next
+            updateSubscriptionSlot(writeSlot)
         }
         log.trace { "The record $record was added to the topic" }
     }
@@ -123,8 +126,9 @@ abstract class AbstractLinkedSlotsBasedTopic<T>(
     override fun close() {
         log.trace { "Closing topic" }
         open = false
-        subscriptions.values.forEach { it.cancel() }
+        val subs = subscriptions.values.toList()
         subscriptions.clear()
+        subs.forEach { it.cancel() }
     }
 
     override suspend fun complete() {

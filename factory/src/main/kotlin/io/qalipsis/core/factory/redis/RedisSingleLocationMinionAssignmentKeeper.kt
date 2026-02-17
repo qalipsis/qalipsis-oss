@@ -133,7 +133,7 @@ class RedisSingleLocationMinionAssignmentKeeper(
      * Maximal counts of minions that can be assigned to each scenario.
      */
     @KTestable
-    protected val maxMinionsCountsByScenario = mutableMapOf<ScenarioName, Int>()
+    protected val maxMinionsCountsByScenario = ConcurrentHashMap<ScenarioName, Int>()
 
     /**
      * Cache of the scenario schedules in the current company.
@@ -143,7 +143,7 @@ class RedisSingleLocationMinionAssignmentKeeper(
     /**
      * Mutex to avoid concurrent loading of scripts into Redis.
      */
-    private val scriptLoaderMutex = Mutex()
+    protected val scriptLoaderMutex = Mutex()
 
     init {
         log.debug { "Using the RedisSingleLocationMinionAssignmentKeeper to assign the minions" }
@@ -223,18 +223,22 @@ class RedisSingleLocationMinionAssignmentKeeper(
         val countersHashKey = campaignRelatedKeyPrefix + CAMPAIGN_COUNTERS
         val singletonsHashKey = campaignRelatedKeyPrefix + SINGLETON_REGISTRY
         val singletonMinionsHash = scenarioRelatedKeyPrefix + SINGLETON_MINIONS
-        executeRegistration(
-            minionsToRegisterSet,
-            unassignedMinionsSetKey,
-            underLoadMinionsSetKey,
-            keyPrefixForUnassignedDags,
-            countersHashKey,
-            singletonsHashKey,
-            singletonMinionsHash,
-            scenarioName,
-            dagIds,
-            underLoad
-        )
+        try {
+            executeRegistration(
+                minionsToRegisterSet,
+                unassignedMinionsSetKey,
+                underLoadMinionsSetKey,
+                keyPrefixForUnassignedDags,
+                countersHashKey,
+                singletonsHashKey,
+                singletonMinionsHash,
+                scenarioName,
+                dagIds,
+                underLoad
+            )
+        } finally {
+            redisKeyCommands.unlink(minionsToRegisterSet)
+        }
     }
 
     /**
@@ -584,7 +588,7 @@ class RedisSingleLocationMinionAssignmentKeeper(
         minionIds: Collection<MinionId>,
         dagsIds: Collection<DirectedAcyclicGraphName>
     ): Table<MinionId, DirectedAcyclicGraphName, String> {
-        val result = HashBasedTable.create<MinionId, DirectedAcyclicGraphName, String>()
+        val result = HashBasedTable.create<MinionId, DirectedAcyclicGraphName, String>(minionIds.size, dagsIds.size)
         minionIds.forEach { minionId ->
             dagsIds.forEach { dag ->
                 result.put(minionId, dag, communicationChannelConfiguration.unicastChannel)

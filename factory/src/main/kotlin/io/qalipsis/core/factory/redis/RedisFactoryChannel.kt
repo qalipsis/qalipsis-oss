@@ -72,36 +72,40 @@ class RedisFactoryChannel(
 
     @LogInput(Level.DEBUG)
     override fun subscribeHandshakeResponse(vararg channelNames: DispatcherChannel) {
-        val relevantChannels = channelNames.toSet() - subscriber.get().subscribedHandshakeResponseChannels
+        val sub = subscriber.get()
+        val relevantChannels = channelNames.toSet() - sub.subscribedHandshakeResponseChannels
         if (relevantChannels.isNotEmpty()) {
-            subscriber.get().subscribedHandshakeResponseChannels += relevantChannels
+            sub.subscribedHandshakeResponseChannels += relevantChannels
             subscriberCommands.subscribe(*relevantChannels.toTypedArray()).toFuture().get()
         }
     }
 
     @LogInput(Level.DEBUG)
     override fun unsubscribeHandshakeResponse(vararg channelNames: DispatcherChannel) {
-        val relevantChannels = channelNames.toSet().intersect(subscriber.get().subscribedHandshakeResponseChannels)
+        val sub = subscriber.get()
+        val relevantChannels = channelNames.toSet().intersect(sub.subscribedHandshakeResponseChannels)
         if (relevantChannels.isNotEmpty()) {
-            subscriber.get().subscribedHandshakeResponseChannels -= relevantChannels
+            sub.subscribedHandshakeResponseChannels -= relevantChannels
             subscriberCommands.unsubscribe(*relevantChannels.toTypedArray()).toFuture().get()
         }
     }
 
     @LogInput(Level.DEBUG)
     override fun subscribeDirective(vararg channelNames: DispatcherChannel) {
-        val relevantChannels = channelNames.toSet() - subscriber.get().subscribedDirectiveChannels
+        val sub = subscriber.get()
+        val relevantChannels = channelNames.toSet() - sub.subscribedDirectiveChannels
         if (relevantChannels.isNotEmpty()) {
-            subscriber.get().subscribedDirectiveChannels += relevantChannels
+            sub.subscribedDirectiveChannels += relevantChannels
             subscriberCommands.subscribe(*relevantChannels.toTypedArray()).toFuture().get()
         }
     }
 
     @LogInput(Level.DEBUG)
     override fun unsubscribeDirective(vararg channelNames: DispatcherChannel) {
-        val relevantChannels = channelNames.toSet().intersect(subscriber.get().subscribedDirectiveChannels)
+        val sub = subscriber.get()
+        val relevantChannels = channelNames.toSet().intersect(sub.subscribedDirectiveChannels)
         if (relevantChannels.isNotEmpty()) {
-            subscriber.get().subscribedDirectiveChannels -= relevantChannels
+            sub.subscribedDirectiveChannels -= relevantChannels
             subscriberCommands.unsubscribe(*relevantChannels.toTypedArray()).toFuture().get()
         }
     }

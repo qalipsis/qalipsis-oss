@@ -44,12 +44,11 @@ class SlotBasedSubscription<T> private constructor(
 
     override suspend fun poll(): Record<T> {
         verifyState()
-        // Wait for or get the value from the slot and changes the read slot to the next one.
-        log.trace { "Subscription ${subscriberId}: Polling the next record of slot $latestReadSlot" }
+        log.trace { "Subscription $subscriberId: Polling the next record of slot $latestReadSlot" }
         val linkedRecord = latestReadSlot.get()
-        log.trace { "Subscription ${subscriberId}: The record $linkedRecord was read, moving the cursor to the next slot" }
         latestReadSlot = linkedRecord.next
-        log.trace { "Subscription ${subscriberId}: Returning the record and moving the cursor to the next slot" }
+        resetIdleDeadline()
+        log.trace { "Subscription $subscriberId: Returning the record and moving the cursor to the next slot" }
         return linkedRecord.record
     }
 
@@ -79,4 +78,3 @@ class SlotBasedSubscription<T> private constructor(
 
     }
 }
-

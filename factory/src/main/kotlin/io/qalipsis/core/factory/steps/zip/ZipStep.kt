@@ -25,6 +25,7 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.core.exceptions.NotInitializedStepException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -34,7 +35,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Step to join flows from several [Step]s into a single one - attach values from the left and the right side using
- * a “fair” mode: the first coming on the left side is paired the first value from the right side. While this steps
+ * a "fair" mode: the first coming on the left side is paired the first value from the right side. While this steps
  * technically has several parents, only one is considered at the primary, from which will the current one will
  * inherit the context.
  *
@@ -59,6 +60,7 @@ class ZipStep<I, O>(
 
     private val rightValues = Channel<Any?>(UNLIMITED)
 
+    @Volatile
     private var running = false
 
     override suspend fun start(context: StepStartStopContext) {
@@ -70,9 +72,15 @@ class ZipStep<I, O>(
                     log.debug { "Starting the coroutine buffering right records from step ${source.sourceStepName}" }
                     val subscription = source.topic.subscribe(stepName)
                     while (subscription.isActive()) {
-                        val record = subscription.pollValue()
-                        log.trace { "Adding right record to channel" }
-                        rightValues.send(record.value)
+                        try {
+                            val record = subscription.pollValue()
+                            log.trace { "Adding right record to channel" }
+                            rightValues.send(record.value)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            log.warn(e) { "Error processing right record from step ${source.sourceStepName}" }
+                        }
                     }
                     log.debug { "Leaving the coroutine buffering right records" }
                 }
@@ -84,6 +92,7 @@ class ZipStep<I, O>(
     override suspend fun stop(context: StepStartStopContext) {
         running = false
         consumptionJobs.forEach { it.cancel() }
+        consumptionJobs.clear()
         rightSources.forEach { it.topic.close() }
         rightValues.cancel()
     }
