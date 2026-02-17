@@ -43,9 +43,11 @@ object RedisUtils {
         val resource =
             requireNotNull(this::class.java.getResourceAsStream(name)) { "Redis script $name cannot be found" }
 
-        val scriptLines = resource.bufferedReader(Charsets.UTF_8).readLines()
-            .filterNot { it.isBlank() || it.trimStart().startsWith("--") }
-            .joinToString("\n")
+        val scriptLines = resource.bufferedReader(Charsets.UTF_8).use { reader ->
+            reader.readLines()
+                .filterNot { it.isBlank() || it.trimStart().startsWith("--") }
+                .joinToString("\n")
+        }
 
         log.trace { "Loading the LUA script with following content:\n$scriptLines" }
 

@@ -382,7 +382,7 @@ class ContextInitializer(
         val CONFIGURATION_EXTENSIONS = listOf("properties", "json", "yml", "yaml")
 
         val BUILD_PROPERTIES = Properties().apply {
-            load(ContextInitializer::class.java.getResourceAsStream("/build.properties"))
+            ContextInitializer::class.java.getResourceAsStream("/build.properties")?.use { load(it) }
         }
 
         val log = logger()

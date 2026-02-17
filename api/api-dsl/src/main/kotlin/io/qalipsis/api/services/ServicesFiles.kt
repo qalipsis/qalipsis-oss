@@ -19,11 +19,9 @@
 
 package io.qalipsis.api.services
 
-import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.IOException
 import java.io.InputStream
-import java.io.InputStreamReader
 import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
@@ -45,18 +43,20 @@ object ServicesFiles {
      */
     @Throws(IOException::class)
     fun readFile(input: InputStream): Set<String> {
-        return BufferedReader(InputStreamReader(input, StandardCharsets.UTF_8)).readLines()
-            .map { line ->
-                line.trim()
-            }.map { line ->
-                val commentStart = line.indexOf('#')
-                if (commentStart >= 0) {
-                    line.substring(0, commentStart)
-                } else {
-                    line
-                }
-            }.filterNot { line -> line.isBlank() }
-            .toSet()
+        return input.bufferedReader(StandardCharsets.UTF_8).use { reader ->
+            reader.readLines()
+                .map { line ->
+                    line.trim()
+                }.map { line ->
+                    val commentStart = line.indexOf('#')
+                    if (commentStart >= 0) {
+                        line.substring(0, commentStart)
+                    } else {
+                        line
+                    }
+                }.filterNot { line -> line.isBlank() }
+                .toSet()
+        }
     }
 
     /**
