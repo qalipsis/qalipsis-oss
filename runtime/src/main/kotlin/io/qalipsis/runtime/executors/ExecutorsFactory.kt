@@ -31,7 +31,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.ceil
@@ -119,8 +119,13 @@ class ExecutorsFactory {
                 log.trace { "Created the coroutine context $name with $threadsCount threads: $it" }
             }
         } else {
-            log.trace { "Creating the coroutine context $name with the GlobalScope" }
-            NamedCoroutineScope(name, Dispatchers.Default, Dispatchers.Default, GlobalScope)
+            log.trace { "Creating the coroutine context $name with the default dispatcher" }
+            NamedCoroutineScope(
+                name,
+                Dispatchers.Default,
+                Dispatchers.Default,
+                CoroutineScope(Dispatchers.Default + SupervisorJob())
+            )
         }
     }
 

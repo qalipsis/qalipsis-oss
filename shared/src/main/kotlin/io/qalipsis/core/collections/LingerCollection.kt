@@ -56,6 +56,7 @@ class LingerCollection<T> private constructor(
 
     private lateinit var publicationJob: Job
 
+    @Volatile
     private var active = false
 
     constructor(

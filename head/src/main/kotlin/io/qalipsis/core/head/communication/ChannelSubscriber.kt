@@ -23,6 +23,7 @@ import io.qalipsis.api.Executors.ORCHESTRATION_EXECUTOR_NAME
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.directives.DispatcherChannel
+import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.head.configuration.HeadConfiguration
@@ -31,6 +32,7 @@ import io.qalipsis.core.serialization.DistributionSerializer
 import jakarta.inject.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.slf4j.MDCContext
 
 /**
  * Abstract class to subscribe to channel.
@@ -70,11 +72,14 @@ abstract class ChannelSubscriber(
     @Suppress("UNCHECKED_CAST")
     private fun dispatch(feedback: Feedback) {
         log.trace { "Dispatching the feedback of type ${feedback::class}" }
+        val mdcContextMap = (feedback as? CampaignManagementFeedback)?.let {
+            mapOf("tenant" to it.tenant, "campaign" to it.campaignKey)
+        } ?: emptyMap()
         val eligibleListeners = feedbackListeners.filter { it.accept(feedback) }
         if (eligibleListeners.isNotEmpty()) {
             eligibleListeners.forEach { listener ->
                 log.trace { "Dispatching the directive of type ${feedback::class} to the listener of type ${listener::class}" }
-                orchestrationCoroutineScope.launch {
+                orchestrationCoroutineScope.launch(MDCContext(mdcContextMap)) {
                     (listener as FeedbackListener<Feedback>).notify(feedback)
                 }
             }
@@ -86,7 +91,7 @@ abstract class ChannelSubscriber(
      */
     private fun dispatch(request: HandshakeRequest) {
         log.trace { "Dispatching the handshake request ${request::class}" }
-        handshakeRequestListeners.stream().forEach { listener ->
+        handshakeRequestListeners.forEach { listener ->
             orchestrationCoroutineScope.launch { listener.notify(request) }
         }
     }
@@ -96,7 +101,7 @@ abstract class ChannelSubscriber(
      */
     private fun dispatch(heartbeat: Heartbeat) {
         log.trace { "Dispatching the heartbeat $heartbeat" }
-        heartbeatListeners.stream().forEach { listener ->
+        heartbeatListeners.forEach { listener ->
             orchestrationCoroutineScope.launch { listener.notify(heartbeat) }
         }
     }

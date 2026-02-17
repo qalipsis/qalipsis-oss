@@ -30,6 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Process blocker to ensure that the execution of Qalipsis lets enough time for concurrent init to run
@@ -44,16 +45,17 @@ class MinimalExecutionTime(
     @Property(name = "runtime.minimal-duration", defaultValue = "1s") private val minimalDuration: Duration
 ) : ProcessBlocker {
 
-    private var joined = false
+    private val joined = AtomicBoolean(false)
 
     private val latch = Latch(true)
 
+    @Volatile
     private var releasingJob: Job? = null
 
     override fun getOrder() = Int.MIN_VALUE
 
     override suspend fun join() {
-        if (!joined) {
+        if (joined.compareAndSet(false, true)) {
             log.debug { "Waiting for $minimalDuration..." }
             releasingJob = withContext(Dispatchers.Default) {
                 launch {
@@ -61,7 +63,6 @@ class MinimalExecutionTime(
                     latch.cancel()
                 }
             }
-            joined = true
         }
         latch.await()
     }
