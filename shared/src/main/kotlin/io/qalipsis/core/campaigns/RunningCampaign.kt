@@ -25,6 +25,7 @@ import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import kotlinx.serialization.Serializable
+import java.util.concurrent.ConcurrentHashMap
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotEmpty
 
@@ -58,7 +59,7 @@ data class RunningCampaign(
 
     var softTimeoutSec: Long = -1
 
-    val factories: MutableMap<NodeId, FactoryConfiguration> = mutableMapOf()
+    val factories: MutableMap<NodeId, FactoryConfiguration> = ConcurrentHashMap()
 
     lateinit var broadcastChannel: String
 
@@ -104,7 +105,7 @@ data class ScenarioConfiguration(
 @Serializable
 data class FactoryConfiguration(
     val unicastChannel: String,
-    val assignment: MutableMap<ScenarioName, FactoryScenarioAssignment> = mutableMapOf()
+    val assignment: MutableMap<ScenarioName, FactoryScenarioAssignment> = ConcurrentHashMap()
 )
 
 /**

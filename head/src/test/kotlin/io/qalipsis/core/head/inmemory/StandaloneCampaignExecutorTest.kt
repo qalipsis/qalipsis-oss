@@ -663,8 +663,8 @@ internal class StandaloneCampaignExecutorTest {
                 campaignExecutor.notify(timeoutFeedback)
                 campaignExecutor.get("my-tenant", "first_campaign")
                 campaignService.abort("my-tenant", null, "first_campaign")
-                campaignExecutor.set(capture(newState))
                 campaignReportStateKeeper.abort("first_campaign")
+                campaignExecutor.set(capture(newState))
                 headChannel.publishDirective(capture(sentDirectives))
             }
             confirmVerified(campaignService, campaignReportStateKeeper, headChannel)

@@ -59,36 +59,40 @@ class RedisHeadChannel(
 
     @LogInput(Level.DEBUG)
     override fun subscribeHandshakeRequest(vararg channelNames: DispatcherChannel) {
-        val relevantChannels = channelNames.toSet() - subscriber.get().subscribedHandshakeRequestsChannels.toSet()
+        val sub = subscriber.get()
+        val relevantChannels = channelNames.toSet() - sub.subscribedHandshakeRequestsChannels.toSet()
         if (relevantChannels.isNotEmpty()) {
-            subscriber.get().subscribedHandshakeRequestsChannels += relevantChannels
+            sub.subscribedHandshakeRequestsChannels += relevantChannels
             subscriberCommands.subscribe(*relevantChannels.toTypedArray()).toFuture().get()
         }
     }
 
     @LogInput(Level.DEBUG)
     override fun unsubscribeHandshakeRequest(vararg channelNames: DispatcherChannel) {
-        val relevantChannels = channelNames.toSet().intersect(subscriber.get().subscribedHandshakeRequestsChannels)
+        val sub = subscriber.get()
+        val relevantChannels = channelNames.toSet().intersect(sub.subscribedHandshakeRequestsChannels)
         if (relevantChannels.isNotEmpty()) {
-            subscriber.get().subscribedHandshakeRequestsChannels -= relevantChannels
+            sub.subscribedHandshakeRequestsChannels -= relevantChannels
             subscriberCommands.unsubscribe(*relevantChannels.toTypedArray()).toFuture().get()
         }
     }
 
     @LogInput(Level.DEBUG)
     override fun subscribeFeedback(vararg channelNames: DispatcherChannel) {
-        val relevantChannels = channelNames.toSet() - subscriber.get().subscribedFeedbackChannels
+        val sub = subscriber.get()
+        val relevantChannels = channelNames.toSet() - sub.subscribedFeedbackChannels
         if (relevantChannels.isNotEmpty()) {
-            subscriber.get().subscribedFeedbackChannels += relevantChannels
+            sub.subscribedFeedbackChannels += relevantChannels
             subscriberCommands.subscribe(*relevantChannels.toTypedArray()).toFuture().get()
         }
     }
 
     @LogInput(Level.DEBUG)
     override fun unsubscribeFeedback(vararg channelNames: DispatcherChannel) {
-        val relevantChannels = channelNames.toSet().intersect(subscriber.get().subscribedFeedbackChannels)
+        val sub = subscriber.get()
+        val relevantChannels = channelNames.toSet().intersect(sub.subscribedFeedbackChannels)
         if (relevantChannels.isNotEmpty()) {
-            subscriber.get().subscribedFeedbackChannels -= relevantChannels
+            sub.subscribedFeedbackChannels -= relevantChannels
             subscriberCommands.unsubscribe(*relevantChannels.toTypedArray()).toFuture().get()
         }
     }

@@ -89,7 +89,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertDoesNotThrow
@@ -1122,7 +1121,6 @@ internal class FactoryCampaignManagerImplTest {
 
     @Test
     @Timeout(5)
-    @Disabled("FIXME")
     internal fun `should shutdown the scenario and throw the timeout exception`() = testCoroutineDispatcher.runTest {
         // given
         val scenario = relaxedMockk<Scenario> { coEvery { stop(any()) } coAnswers { delay(2000) } }

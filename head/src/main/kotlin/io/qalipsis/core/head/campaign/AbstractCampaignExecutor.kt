@@ -80,7 +80,7 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
                 val sourceCampaignState = get(feedback.tenant, feedback.campaignKey)
                 log.trace { "Processing $feedback on $sourceCampaignState" }
                 if (feedback is CampaignTimeoutFeedback) {
-                    timeoutAbort(feedback.tenant, campaignKey = feedback.campaignKey, hard = feedback.hard)
+                    timeoutAbort(feedback.tenant, feedback.campaignKey, feedback.hard, sourceCampaignState)
                 } else {
                     val campaignState = sourceCampaignState.process(feedback)
                     log.trace { "New campaign state $campaignState" }
@@ -194,6 +194,7 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
                 if (!campaignState.isCompleted) {
                     set(campaignState)
                     directives.forEach {
+                        (it as? CampaignManagementDirective)?.tenant = tenant
                         headChannel.publishDirective(it)
                     }
                 }
@@ -227,20 +228,27 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
      * @param campaignKey reference of the running campaign
      * @param hard specifies if the abort is a soft or hard one
      */
-    private suspend fun timeoutAbort(tenant: String, campaignKey: String, hard: Boolean) {
+    private suspend fun timeoutAbort(
+        tenant: String,
+        campaignKey: String,
+        hard: Boolean,
+        sourceCampaignState: CampaignExecutionState<C>
+    ) {
         tryAndLog(log) {
-            val sourceCampaignState = get(tenant, campaignKey)
             val campaignState = sourceCampaignState.abort(AbortRunningCampaign(hard))
             log.trace { "Campaign state $campaignState" }
             campaignState.inject(campaignExecutionContext)
             val directives = campaignState.init()
             campaignService.abort(tenant, null, campaignKey)
-            set(campaignState)
             if (hard) {
                 campaignReportStateKeeper.abort(campaignKey)
             }
-            directives.forEach {
-                headChannel.publishDirective(it)
+            if (!campaignState.isCompleted) {
+                set(campaignState)
+                directives.forEach {
+                    (it as? CampaignManagementDirective)?.tenant = tenant
+                    headChannel.publishDirective(it)
+                }
             }
         }
     }
