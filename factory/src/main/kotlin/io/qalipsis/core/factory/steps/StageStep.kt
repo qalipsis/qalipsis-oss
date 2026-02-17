@@ -33,7 +33,7 @@ import io.qalipsis.core.factory.context.StepContextImpl
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
 import io.qalipsis.core.factory.orchestration.Runner
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Step grouping several steps, providing a convenient way of iterating a complete sub-graph, waiting for the last step
@@ -109,27 +109,33 @@ class StageStep<I, O>(
         val innerContext = context.duplicate(inputChannel = input, outputChannel = output)
         input.send(context.receive())
 
-        var failure = false
+        val failure = AtomicBoolean(false)
 
-        // The first step of the group is executed.
-        runner.execute(minion, head!!, innerContext) { ctx ->
-            log.trace { "Consuming the tail context $ctx" }
-            if (!context.isExhausted && !ctx.isExhausted && ctx.generatedOutput) {
-                // When the latest step of the group is executed, its output is forwarded to the overall context.
-                @Suppress("UNCHECKED_CAST")
-                for (outputRecord in (ctx as StepContextImpl).output as ReceiveChannel<StepContext.StepOutputRecord<*>>) {
-                    context.send(outputRecord.value as O)
+        try {
+            // The first step of the group is executed.
+            runner.execute(minion, head!!, innerContext) { ctx ->
+                log.trace { "Consuming the tail context $ctx" }
+                if (!context.isExhausted && !ctx.isExhausted && ctx.generatedOutput) {
+                    // When the latest step of the group is executed, its output is forwarded to the overall context.
+                    @Suppress("UNCHECKED_CAST")
+                    (ctx as? StepContextImpl<*, *>)?.consume { outputRecord ->
+                        context.send(outputRecord.value as O)
+                    }
+                } else if (ctx.isExhausted) {
+                    failure.set(true)
+                    log.trace { "The stage '${this.name}' finished with error(s): ${ctx.errors.joinToString { it.message }}" }
+                    // Errors have to be forwarded.
+                    ctx.errors.forEach(context::addError)
                 }
-            } else if (ctx.isExhausted) {
-                failure = true
-                log.trace { "The stage '${this.name}' finished with error(s): ${ctx.errors.joinToString { it.message }}" }
-                // Errors have to be forwarded.
-                ctx.errors.forEach(context::addError)
-            }
-        }?.join()
+            }?.join()
+        } finally {
+            input.cancel()
+            output.close()
+        }
 
-        if (failure) {
-            throw StepExecutionException(RuntimeException(context.errors.last().message))
+        if (failure.get()) {
+            val lastError = context.errors.lastOrNull()
+            throw StepExecutionException(RuntimeException(lastError?.message ?: "Stage '${this.name}' failed"))
         }
     }
 

@@ -45,7 +45,6 @@ import io.qalipsis.core.factory.orchestration.ScenarioRegistry
 import io.qalipsis.core.redis.RedisUtils
 import jakarta.annotation.PostConstruct
 import jakarta.inject.Singleton
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 
@@ -102,11 +101,6 @@ class RedisDistributedMinionAssignmentKeeper(
      * SHA key of the script to fetch the factories channels to forward the execution contexts.
      */
     private var minionFetchFactoryChannelScriptSha: String = "1842437f4e1b3a2942b3fcdc1100f44a86b29c83"
-
-    /**
-     * Mutex to avoid concurrent loading of scripts into Redis.
-     */
-    private val scriptLoaderMutex = Mutex()
 
     init {
         log.debug { "Using the RedisDistributedMinionAssignmentKeeper to assign the minions" }

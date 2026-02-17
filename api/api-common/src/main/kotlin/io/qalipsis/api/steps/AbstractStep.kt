@@ -20,6 +20,7 @@
 package io.qalipsis.api.steps
 
 import io.qalipsis.api.context.StepName
+import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.retry.RetryPolicy
 
 /**
@@ -29,7 +30,7 @@ import io.qalipsis.api.retry.RetryPolicy
  */
 abstract class AbstractStep<I, O>(override val name: StepName, override var retryPolicy: RetryPolicy?) : Step<I, O> {
 
-    override val next: MutableList<Step<O, *>> = mutableListOf()
+    override val next: MutableList<Step<O, *>> = concurrentList()
 
     override fun addNext(nextStep: Step<*, *>) {
         @Suppress("UNCHECKED_CAST")

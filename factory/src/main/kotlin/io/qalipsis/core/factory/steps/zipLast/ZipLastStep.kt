@@ -27,6 +27,7 @@ import io.qalipsis.api.steps.AbstractStep
 import io.qalipsis.api.sync.Slot
 import io.qalipsis.core.exceptions.NotInitializedStepException
 import io.qalipsis.core.factory.steps.zip.RightSource
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -59,6 +60,7 @@ class ZipLastStep<I, O>(
 
     private val rightValues = Slot<Any?>()
 
+    @Volatile
     private var running = false
 
     override suspend fun start(context: StepStartStopContext) {
@@ -70,9 +72,15 @@ class ZipLastStep<I, O>(
                     log.debug { "Starting the coroutine buffering right records from step ${source.sourceStepName}" }
                     val subscription = source.topic.subscribe(stepName)
                     while (subscription.isActive()) {
-                        val record = subscription.pollValue()
-                        log.trace { "Adding right record to slot" }
-                        rightValues.set(record.value)
+                        try {
+                            val record = subscription.pollValue()
+                            log.trace { "Adding right record to slot" }
+                            rightValues.set(record.value)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            log.warn(e) { "Error processing right record from step ${source.sourceStepName}" }
+                        }
                     }
                     log.debug { "Leaving the coroutine buffering right records" }
                 }
@@ -84,6 +92,7 @@ class ZipLastStep<I, O>(
     override suspend fun stop(context: StepStartStopContext) {
         running = false
         consumptionJobs.forEach { it.cancel() }
+        consumptionJobs.clear()
         rightSources.forEach { it.topic.close() }
         rightValues.clear()
     }

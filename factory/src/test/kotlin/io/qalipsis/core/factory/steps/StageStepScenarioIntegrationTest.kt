@@ -39,13 +39,10 @@ import io.qalipsis.api.steps.stage
 import io.qalipsis.api.steps.verify
 import io.qalipsis.runtime.test.QalipsisTestRunner
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.atomic.AtomicInteger
 
-@Disabled("Fix the stages operations, failing due to concurrency race")
-// FIXME
 internal class StageStepScenarioIntegrationTest {
 
     @AfterEach

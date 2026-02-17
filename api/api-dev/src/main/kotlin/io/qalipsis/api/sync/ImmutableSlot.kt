@@ -19,9 +19,7 @@
 
 package io.qalipsis.api.sync
 
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeout
 import java.time.Duration
 
@@ -34,16 +32,18 @@ import java.time.Duration
  *
  * @author Eric Jessé
  */
-class ImmutableSlot<T>(private var value: T? = null) {
+class ImmutableSlot<T>(value: T? = null) {
 
-    private var latch: Latch? = Latch(value == null, "immutable-slot")
+    private val deferred = CompletableDeferred<T>()
 
-    private val writeLock = Mutex()
+    init {
+        if (value != null) deferred.complete(value)
+    }
 
     /**
      *  If a value is present, returns `true`, otherwise `false`.
      */
-    fun isPresent() = value != null
+    fun isPresent() = deferred.isCompleted
 
     /**
      *  If a value is not present, returns `true`, otherwise `false`.
@@ -54,13 +54,8 @@ class ImmutableSlot<T>(private var value: T? = null) {
      * Sets the value into the slot and release all the current caller to [get].
      */
     suspend fun set(value: T) {
-        if (isPresent()) {
+        if (!deferred.complete(value)) {
             error("A value is already present")
-        }
-        writeLock.withLock {
-            this.value = value
-            latch?.release()
-            latch = null
         }
     }
 
@@ -68,41 +63,26 @@ class ImmutableSlot<T>(private var value: T? = null) {
      * Blocking implementation of [set].
      */
     fun offer(value: T) {
-        runBlocking {
-            set(value)
+        if (!deferred.complete(value)) {
+            error("A value is already present")
         }
     }
 
     /**
      * Returns the value if it exists or suspend the call otherwise.
      */
-    suspend fun get(): T {
-        await()
-        return value!!
-    }
+    suspend fun get(): T = deferred.await()
 
     /**
      * Returns the value if it exists or suspends until the timeout is reached otherwise.
      * If the timeout is reached before a value is set, a [kotlinx.coroutines.TimeoutCancellationException] is thrown.
      */
-    suspend fun get(timeout: Duration): T {
-        withTimeout(timeout.toMillis()) {
-            await()
-        }
-        return value!!
-    }
-
-    /**
-     * If not value is currently, suspend the call until the latch is released.
-     */
-    private suspend fun await() {
-        if (isEmpty()) {
-            latch?.await()
-        }
+    suspend fun get(timeout: Duration): T = withTimeout(timeout.toMillis()) {
+        deferred.await()
     }
 
     override fun toString(): String {
-        return "ImmutableSlot(value=$value)"
+        return "ImmutableSlot(value=${if (isPresent()) deferred.getCompleted() else null})"
     }
 
 }

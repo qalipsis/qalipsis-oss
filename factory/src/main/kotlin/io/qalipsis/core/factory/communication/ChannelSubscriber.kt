@@ -33,7 +33,7 @@ import io.qalipsis.core.serialization.DistributionSerializer
 import jakarta.inject.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.slf4j.MDC
+import kotlinx.coroutines.slf4j.MDCContext
 
 /**
  * Abstract class to subscribe to channel.
@@ -71,26 +71,21 @@ abstract class ChannelSubscriber(
      */
     @Suppress("UNCHECKED_CAST")
     private fun dispatch(directive: Directive) {
-        orchestrationCoroutineScope.launch {
-            (directive as? CampaignManagementDirective)?.let {
-                MDC.put("tenant", it.tenant)
-                MDC.put("campaign", it.campaignKey)
-            }
-            try {
-                log.trace { "Dispatching the directive of type ${directive::class}" }
-                val eligibleListeners = directiveListeners.filter { it.accept(directive) }
-                if (eligibleListeners.isNotEmpty()) {
-                    directiveRegistry.prepareAfterReceived(directive)?.let { preparedDirective ->
-                        eligibleListeners.forEach { listener ->
-                            log.trace { "Providing the directive of type ${directive::class} to ${listener::class}" }
-                            orchestrationCoroutineScope.contextualLaunch {
-                                (listener as DirectiveListener<Directive>).notify(preparedDirective)
-                            }
+        val mdcContextMap = (directive as? CampaignManagementDirective)?.let {
+            mapOf("tenant" to it.tenant, "campaign" to it.campaignKey)
+        } ?: emptyMap()
+        orchestrationCoroutineScope.launch(MDCContext(mdcContextMap)) {
+            log.trace { "Dispatching the directive of type ${directive::class}" }
+            val eligibleListeners = directiveListeners.filter { it.accept(directive) }
+            if (eligibleListeners.isNotEmpty()) {
+                directiveRegistry.prepareAfterReceived(directive)?.let { preparedDirective ->
+                    eligibleListeners.forEach { listener ->
+                        log.trace { "Providing the directive of type ${directive::class} to ${listener::class}" }
+                        orchestrationCoroutineScope.contextualLaunch {
+                            (listener as DirectiveListener<Directive>).notify(preparedDirective)
                         }
                     }
                 }
-            } finally {
-                MDC.clear()
             }
         }
     }
@@ -101,7 +96,7 @@ abstract class ChannelSubscriber(
     private fun dispatch(response: HandshakeResponse) {
         if (response.handshakeNodeId == factoryConfiguration.nodeId) {
             log.trace { "Dispatching the handshake response" }
-            handshakeResponseListeners.stream().forEach { listener ->
+            handshakeResponseListeners.forEach { listener ->
                 orchestrationCoroutineScope.launch { listener.notify(response) }
             }
         }

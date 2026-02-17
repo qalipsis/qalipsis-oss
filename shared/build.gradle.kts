@@ -113,11 +113,11 @@ dependencies {
 
     testFixturesApi(platform(project(":qalipsis-dev-platform")))
     testFixturesApi("org.testcontainers:testcontainers")
-    testFixturesApi("org.testcontainers:postgresql")
+    testFixturesApi("org.testcontainers:testcontainers-postgresql")
     testFixturesApi(project(":qalipsis-api-common"))
     testFixturesImplementation("io.micronaut.test:micronaut-test-junit5")
     testFixturesImplementation("io.micronaut:micronaut-runtime")
-    testFixturesImplementation("org.testcontainers:junit-jupiter")
+    testFixturesImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
     testFixturesImplementation("org.postgresql:postgresql")
 

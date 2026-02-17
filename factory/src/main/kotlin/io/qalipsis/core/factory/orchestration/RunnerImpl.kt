@@ -27,6 +27,7 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.Counter
 import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.runtime.DirectedAcyclicGraph
@@ -48,7 +49,6 @@ import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import org.slf4j.MDC
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -65,7 +65,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
 class RunnerImpl(
-    @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope
+    @Named(Executors.CAMPAIGN_EXECUTOR_NAME) private val coroutineScope: CoroutineScope,
+    private val meterRegistry: CampaignMeterRegistry
 ) : StepExecutor, Runner, CampaignLifeCycleAware {
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
@@ -100,19 +101,13 @@ class RunnerImpl(
         minion: Minion, rootStep: Step<*, *>, stepContext: StepContext<*, *>,
         completionConsumer: (suspend (stepContext: StepContext<*, *>) -> Unit)?
     ) {
-        minion.completeMdcContext()
-        MDC.put("step", rootStep.name)
         minion.start()
 
         log.trace { "Running minion" }
-        try {
-            minion.launch(coroutineScope) {
-                log.trace { "Starting the execution of a subtree of tasks for the minion" }
-                propagateStepExecution(this, minion, rootStep, stepContext, completionConsumer)
-                log.trace { "Execution of the subtree of tasks is completed for the minion" }
-            }
-        } finally {
-            MDC.clear()
+        minion.launch(coroutineScope) {
+            log.trace { "Starting the execution of a subtree of tasks for the minion" }
+            propagateStepExecution(this, minion, rootStep, stepContext, completionConsumer)
+            log.trace { "Execution of the subtree of tasks is completed for the minion" }
         }
     }
 
@@ -121,26 +116,14 @@ class RunnerImpl(
         minion: Minion, rootStep: Step<*, *>, stepContext: StepContext<*, *>,
         completionConsumer: (suspend (stepContext: StepContext<*, *>) -> Unit)?
     ): Job? {
-        minion.completeMdcContext()
-        return try {
-            MDC.put("step", rootStep.name)
-            minion.launch(coroutineScope) {
-                propagateStepExecution(this, minion, rootStep, stepContext, completionConsumer)
-            }
-        } finally {
-            MDC.clear()
+        return minion.launch(coroutineScope) {
+            propagateStepExecution(this, minion, rootStep, stepContext, completionConsumer)
         }
     }
 
     override suspend fun complete(minion: Minion, rootStep: Step<*, *>, completionContext: CompletionContext): Job? {
-        minion.completeMdcContext()
-        MDC.put("step", rootStep.name)
-        return try {
-            minion.launch(coroutineScope) {
-                propagatePrematureCompletion(this, completionContext, listOf(rootStep), minion)
-            }
-        } finally {
-            MDC.clear()
+        return minion.launch(coroutineScope) {
+            propagatePrematureCompletion(this, completionContext, listOf(rootStep), minion)
         }
     }
 
@@ -153,10 +136,8 @@ class RunnerImpl(
         nextSteps: Collection<Step<*, *>>,
         minion: Minion
     ) {
-        minion.completeMdcContext()
         nextSteps.forEach { step ->
             log.trace { "Propagating the minion's completion on step ${step.name} with context $completionContext" }
-            MDC.put("step", step.name)
             minion.launch(minionScope) {
                 tryAndLogOrNull(log) {
                     step.complete(completionContext)
@@ -164,7 +145,6 @@ class RunnerImpl(
                 propagatePrematureCompletion(minionScope, completionContext, step.next, minion)
             }
         }
-        minion.cleanMdcContext()
     }
 
     /**
@@ -190,7 +170,6 @@ class RunnerImpl(
             // is provided to completion operation.
             log.trace { "Launching the completionConsumer for the latest step of the graph ${step.name}" }
             latchForExternalCompletion = Latch(true, "step-execution-propagation")
-            MDC.put("step", "_completion")
             minion.launch(minionScope) {
                 latchForExternalCompletion.await() // Blocks the execution of the completion block until the step is really executed.
                 completionConsumer(stepContext)
@@ -245,7 +224,6 @@ class RunnerImpl(
                     nextStep.name
                 )
                 nextContext.isTail = outputRecord.isTail
-                MDC.put("step", nextStep.name)
                 minion.launch(minionScope) {
                     log.trace { "Launching the coroutine for the next step ${nextStep.name}" }
                     propagateStepExecution(minionScope, minion, nextStep, nextContext, completionConsumer)
@@ -257,7 +235,6 @@ class RunnerImpl(
             log.trace { "The context is exhausted" }
             nextSteps.forEach { nextStep ->
                 val nextContext = StepContextBuilder.next(stepContext, nextStep.name)
-                MDC.put("step", nextStep.name)
                 minion.launch(minionScope) {
                     log.trace { "Launching the coroutine for the next error processing step ${nextStep.name}" }
                     propagateStepExecution(minionScope, minion, nextStep, nextContext, completionConsumer)
@@ -269,7 +246,6 @@ class RunnerImpl(
             // is executed.
             if (completionConsumer != null) {
                 log.trace { "Executing the completion consumer" }
-                MDC.put("step", "_completion")
                 minion.launch(minionScope) {
                     completionConsumer(stepContext)
                 }
@@ -288,7 +264,6 @@ class RunnerImpl(
             log.trace { "Propagating completion for minion ${stepContext.minionId} from context $stepContext" }
             val tailContext = TailStepContext(stepContext)
             nextSteps.forEach { nextStep ->
-                MDC.put("step", nextStep.name)
                 minion.launch(minionScope) {
                     log.trace { "Launching the coroutine for the next step ${nextStep.name}" }
                     propagateStepExecution(
@@ -313,8 +288,18 @@ class RunnerImpl(
     ) {
         if (stepContext !is TailStepContext) {
             if (!stepContext.isExhausted || isErrorProcessingStep(step)) {
-                log.trace { "Performing the execution of the step..." }
+                val scenarioName = stepContext.scenarioName
+                val gauge = runningStepsGauges.computeIfAbsent(scenarioName) { scenario ->
+                    meterRegistry.gauge(
+                        scenarioName = scenario,
+                        stepName = "",
+                        name = "running-steps",
+                        tags = mapOf("scenario" to scenario),
+                    )
+                }
+                gauge.increment()
                 try {
+                    log.trace { "Performing the execution of the step..." }
                     executeStep(minion, step as Step<Any?, Any?>, stepContext as StepContext<Any?, Any?>)
                 } catch (t: Throwable) {
                     stepContext.addError(StepError(t))
@@ -324,6 +309,16 @@ class RunnerImpl(
                     } else {
                         log.debug { "Step completed with an exception, the context is marked as exhausted: ${t.message}" }
                     }
+                } finally {
+                    gauge.decrement()
+                    executedStepCounters.computeIfAbsent(scenarioName) { scenario ->
+                        meterRegistry.counter(
+                            scenarioName = scenario,
+                            stepName = "",
+                            name = "executed-steps",
+                            tags = mapOf("scenario" to scenario),
+                        )
+                    }.increment()
                 }
             } else {
                 log.trace { "The step will not be executed on minion because the context is exhausted and the step cannot process it" }
