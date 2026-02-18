@@ -30,7 +30,9 @@ import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.steps.AbstractStep
+import io.qalipsis.api.steps.Step
 import io.qalipsis.core.factory.communication.FactoryChannel
+import io.qalipsis.core.factory.steps.DagTransitionStep
 import io.qalipsis.core.factory.testDag
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
@@ -236,6 +238,8 @@ internal class ScenarioImplTest {
             localAssignmentStore = relaxedMockk()
         )
 
+        val dag2Root = spyk(StartableStoppableStep("dag-2", "step-2-1"))
+
         scenarioImpl.createIfAbsent("dag-1") {
             testDag(id = "dag-1") {
                 addStep(spyk(StartableStoppableStep("dag-1", "step-1-1")).also {
@@ -248,15 +252,19 @@ internal class ScenarioImplTest {
                         it.new("step-1-4").also {
                             mockedSteps.add(it)
                         }
+                        // Add a DagTransitionStep linking dag-1 to dag-2, simulating a split block.
+                        val dagTransition = relaxedMockk<DagTransitionStep<Any?>> {
+                            every { next } returns mutableListOf(dag2Root as Step<Any?, *>)
+                        }
+                        it.addNext(dagTransition)
                     }
                 })
             }
         }
+        mockedSteps.add(dag2Root)
         scenarioImpl.createIfAbsent("dag-2") {
             testDag(id = "dag-2") {
-                addStep(spyk(StartableStoppableStep("dag-2", "step-2-1")).also {
-                    mockedSteps.add(it)
-                })
+                addStep(dag2Root)
             }
         }
         return scenarioImpl
