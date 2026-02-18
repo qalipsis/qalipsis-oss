@@ -473,6 +473,29 @@ internal class StandaloneCampaignExecutorTest {
     }
 
     @Test
+    internal fun `should not abort a completed campaign`() = testDispatcherProvider.run {
+        //given
+        val campaignExecutor = standaloneCampaignExecutor(this)
+        campaignExecutor.setProperty(
+            "currentCampaignState",
+            relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                every { isCompleted } returns true
+            })
+
+        // when
+        campaignExecutor.abort("my-tenant", "my-user", "first_campaign", true)
+
+        // then
+        coExcludeRecords {
+            campaignExecutor.abort(any(), any(), any(), any())
+        }
+        coVerifyOrder {
+            campaignExecutor.get("my-tenant", "first_campaign")
+        }
+        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+    }
+
+    @Test
     internal fun `should replay a campaign `() = testDispatcherProvider.run {
         // given
         val campaignExecutor = standaloneCampaignExecutor(this)
@@ -508,6 +531,37 @@ internal class StandaloneCampaignExecutorTest {
             campaignConstraintsProvider,
             campaignExecutionContext
         )
+    }
+
+    @Test
+    internal fun `should not abort a completed campaign on timeout`() = testDispatcherProvider.run {
+        //given
+        val campaignExecutor = standaloneCampaignExecutor(this)
+        campaignExecutor.setProperty(
+            "currentCampaignState",
+            relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                every { isCompleted } returns true
+            })
+        val timeoutFeedback = CampaignTimeoutFeedback(
+            campaignKey = "first_campaign",
+            hard = true,
+            status = FeedbackStatus.FAILED,
+            errorMessage = "Running campaign timed out",
+        ).apply {
+            tenant = "my-tenant"
+        }
+
+        // when
+        campaignExecutor.notify(timeoutFeedback)
+
+        // then
+        coExcludeRecords {
+            campaignExecutor.notify(any())
+        }
+        coVerifyOrder {
+            campaignExecutor.get("my-tenant", "first_campaign")
+        }
+        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
     }
 
     @Test

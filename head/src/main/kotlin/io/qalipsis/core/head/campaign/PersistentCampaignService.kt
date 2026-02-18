@@ -130,8 +130,10 @@ class PersistentCampaignService(
         failureReason: String?,
     ): Campaign {
         campaignRepository.complete(tenant, campaignKey, result, failureReason)
-        campaignReportStateKeeper.complete(campaignKey, result, failureReason)
-        return retrieve(tenant, campaignKey)
+        val campaign = retrieve(tenant, campaignKey)
+        // Use the actual persisted status, which may differ if the campaign was already closed.
+        campaignReportStateKeeper.complete(campaignKey, campaign.status, campaign.failureReason ?: failureReason)
+        return campaign
     }
 
     @LogInput
