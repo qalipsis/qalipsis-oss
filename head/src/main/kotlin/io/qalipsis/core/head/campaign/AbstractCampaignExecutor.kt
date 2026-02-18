@@ -183,19 +183,21 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         tryAndLog(log) {
             lockProvider.withLock(campaignKey) {
                 val sourceCampaignState = get(tenant, campaignKey)
-                val campaignState = sourceCampaignState.abort(AbortRunningCampaign(hard))
-                log.trace { "Campaign state $campaignState" }
-                campaignState.inject(campaignExecutionContext)
-                campaignService.abort(tenant, aborter, campaignKey)
-                if (hard) {
-                    campaignReportStateKeeper.abort(campaignKey)
-                }
-                val directives = campaignState.init()
-                if (!campaignState.isCompleted) {
-                    set(campaignState)
-                    directives.forEach {
-                        (it as? CampaignManagementDirective)?.tenant = tenant
-                        headChannel.publishDirective(it)
+                if (!sourceCampaignState.isCompleted) {
+                    val campaignState = sourceCampaignState.abort(AbortRunningCampaign(hard))
+                    log.trace { "Campaign state $campaignState" }
+                    campaignState.inject(campaignExecutionContext)
+                    campaignService.abort(tenant, aborter, campaignKey)
+                    if (hard) {
+                        campaignReportStateKeeper.abort(campaignKey)
+                    }
+                    val directives = campaignState.init()
+                    if (!campaignState.isCompleted) {
+                        set(campaignState)
+                        directives.forEach {
+                            (it as? CampaignManagementDirective)?.tenant = tenant
+                            headChannel.publishDirective(it)
+                        }
                     }
                 }
             }
@@ -235,6 +237,9 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         sourceCampaignState: CampaignExecutionState<C>
     ) {
         tryAndLog(log) {
+            if (sourceCampaignState.isCompleted) {
+                return@tryAndLog
+            }
             val campaignState = sourceCampaignState.abort(AbortRunningCampaign(hard))
             log.trace { "Campaign state $campaignState" }
             campaignState.inject(campaignExecutionContext)

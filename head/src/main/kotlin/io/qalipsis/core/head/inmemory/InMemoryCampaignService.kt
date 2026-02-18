@@ -139,12 +139,14 @@ class InMemoryCampaignService(
         failureReason: String?
     ): Campaign {
         return updateLock.withLock {
-            val currentFailureReason = currentCampaign?.failureReason
-            currentCampaign = currentCampaign!!.copy(
-                end = Instant.now(),
-                status = result,
-                failureReason = currentFailureReason ?: failureReason
-            )
+            if (currentCampaign?.end == null) {
+                val currentFailureReason = currentCampaign?.failureReason
+                currentCampaign = currentCampaign!!.copy(
+                    end = Instant.now(),
+                    status = result,
+                    failureReason = currentFailureReason ?: failureReason
+                )
+            }
             currentCampaign!!
         }
     }
@@ -157,7 +159,7 @@ class InMemoryCampaignService(
     }
 
     override suspend fun abort(tenant: String, aborter: String?, campaignKey: String) {
-        currentCampaign = currentCampaign!!.copy(end = Instant.now(), status = ExecutionStatus.ABORTED)
+        currentCampaign = currentCampaign!!.copy(status = ExecutionStatus.ABORTED)
     }
 
     override suspend fun enrich(runningCampaign: RunningCampaign) {

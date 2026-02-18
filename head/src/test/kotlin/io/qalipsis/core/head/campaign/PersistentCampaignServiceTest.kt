@@ -203,7 +203,10 @@ internal class PersistentCampaignServiceTest {
     internal fun `should close the running campaign`() = testDispatcherProvider.run {
         // given
         val campaignEntity = relaxedMockk<CampaignEntity>()
-        val convertedCampaign = relaxedMockk<Campaign>()
+        val convertedCampaign = relaxedMockk<Campaign> {
+            every { status } returns ExecutionStatus.FAILED
+            every { failureReason } returns "This is the failure"
+        }
         coEvery { campaignConverter.convertToModel(refEq(campaignEntity)) } returns convertedCampaign
         coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaignEntity
 
@@ -215,9 +218,48 @@ internal class PersistentCampaignServiceTest {
         assertThat(result).isSameInstanceAs(convertedCampaign)
         coVerifyOnce {
             campaignRepository.complete("my-tenant", "my-campaign", ExecutionStatus.FAILED, "This is the failure")
-            campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "This is the failure")
             campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
             campaignConverter.convertToModel(refEq(campaignEntity))
+            campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "This is the failure")
+        }
+
+        confirmVerified(
+            userProvider,
+            campaignRepository,
+            campaignScenarioRepository,
+            campaignReportStateKeeper,
+            campaignConverter,
+            factoryRepository,
+            campaignPreparator
+        )
+    }
+
+    @Test
+    internal fun `should use persisted status for report state keeper when close is a no-op`() =
+        testDispatcherProvider.run {
+            // given
+            // Simulate a campaign that was already closed as ABORTED in the DB.
+            // A second close(FAILED) should propagate ABORTED to the report state keeper.
+            val campaignEntity = relaxedMockk<CampaignEntity>()
+            val convertedCampaign = relaxedMockk<Campaign> {
+                every { status } returns ExecutionStatus.ABORTED
+                every { failureReason } returns null
+            }
+            coEvery { campaignConverter.convertToModel(refEq(campaignEntity)) } returns convertedCampaign
+            coEvery { campaignRepository.findByTenantAndKey("my-tenant", "my-campaign") } returns campaignEntity
+
+            // when
+            val result =
+                persistentCampaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "Some failure")
+
+            // then
+            assertThat(result).isSameInstanceAs(convertedCampaign)
+            coVerifyOnce {
+                campaignRepository.complete("my-tenant", "my-campaign", ExecutionStatus.FAILED, "Some failure")
+            campaignRepository.findByTenantAndKey("my-tenant", "my-campaign")
+            campaignConverter.convertToModel(refEq(campaignEntity))
+                // The report state keeper receives ABORTED (from DB), not FAILED (from caller).
+                campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.ABORTED, "Some failure")
         }
 
         confirmVerified(

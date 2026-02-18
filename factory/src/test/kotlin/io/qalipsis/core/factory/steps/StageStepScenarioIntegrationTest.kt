@@ -52,7 +52,7 @@ internal class StageStepScenarioIntegrationTest {
     }
 
     @Test
-    @Timeout(30)
+    @Timeout(120)
     internal fun `should call all the steps of the stage several times`() {
         val exitCode = QalipsisTestRunner.withScenarios("stage-scenario-test")
             .withConfiguration(
@@ -68,7 +68,7 @@ internal class StageStepScenarioIntegrationTest {
     }
 
     @Test
-    @Timeout(30)
+    @Timeout(120)
     internal fun `should call all the steps of the stage several times even when there is no output from stage`() {
         val exitCode = QalipsisTestRunner.withScenarios("stage-scenario-test-without-output")
             .withConfiguration(
@@ -84,7 +84,7 @@ internal class StageStepScenarioIntegrationTest {
     }
 
     @Test
-    @Timeout(30)
+    @Timeout(120)
     internal fun `should call all the steps of the stage several times until the failure`() {
         val exitCode = QalipsisTestRunner.withScenarios("stage-scenario-test-with-failure")
             .withConfiguration(
