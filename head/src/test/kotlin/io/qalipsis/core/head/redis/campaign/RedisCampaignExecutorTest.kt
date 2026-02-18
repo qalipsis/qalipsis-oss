@@ -681,6 +681,25 @@ internal class RedisCampaignExecutorTest {
         }
 
     @Test
+    internal fun `should not abort a completed campaign`() = testDispatcherProvider.run {
+        //given
+        val campaignExecutor = redisCampaignExecutor(this)
+        val completedState = mockk<CampaignExecutionState<CampaignExecutionContext>> {
+            every { isCompleted } returns true
+        }
+        coEvery { campaignExecutor.get("my-tenant", "first_campaign") } returns completedState
+
+        // when
+        campaignExecutor.abort("my-tenant", "my-user", "first_campaign", true)
+
+        // then
+        coVerifyOrder {
+            campaignExecutor.get("my-tenant", "first_campaign")
+        }
+        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+    }
+
+    @Test
     internal fun `should abort hard a campaign`() = testDispatcherProvider.run {
         //given
         val campaignExecutor = redisCampaignExecutor(this)
@@ -694,6 +713,7 @@ internal class RedisCampaignExecutorTest {
         } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
         val initialCampaignState = mockk<RedisRunningState> {
             every { campaignKey } returns "first_campaign"
+            every { isCompleted } returns false
         }
         coJustRun { campaignService.abort("my-tenant", "my-user", "first_campaign") }
         val abortedCampaignState = mockk<RedisRunningState> {
@@ -774,6 +794,7 @@ internal class RedisCampaignExecutorTest {
         val initialCampaignState = mockk<RedisRunningState> {
             every { campaignKey } returns "first_campaign"
             every { initialized } returns true
+            every { isCompleted } returns false
         }
         coJustRun { campaignService.abort("my-tenant", "my-user", "first_campaign") }
         val abortedCampaignState = mockk<RedisRunningState> {
@@ -879,6 +900,36 @@ internal class RedisCampaignExecutorTest {
     }
 
     @Test
+    internal fun `should not abort a completed campaign on timeout`() = testDispatcherProvider.run {
+        //given
+        val campaignExecutor = redisCampaignExecutor(this)
+        val completedState = mockk<CampaignExecutionState<CampaignExecutionContext>> {
+            every { isCompleted } returns true
+        }
+        coEvery { campaignExecutor.get("my-tenant", "first_campaign") } returns completedState
+        val timeoutFeedback = CampaignTimeoutFeedback(
+            campaignKey = "first_campaign",
+            hard = true,
+            status = FeedbackStatus.FAILED,
+            errorMessage = "Running campaign timed out",
+        ).apply {
+            tenant = "my-tenant"
+        }
+
+        // when
+        campaignExecutor.notify(timeoutFeedback)
+
+        // then
+        coExcludeRecords {
+            campaignExecutor.notify(any())
+        }
+        coVerifyOrder {
+            campaignExecutor.get("my-tenant", "first_campaign")
+        }
+        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+    }
+
+    @Test
     internal fun `should abort the campaign softly when a CampaignTimeoutFeedback with hard equals false is received`() =
         testDispatcherProvider.runTest {
             //given
@@ -898,6 +949,7 @@ internal class RedisCampaignExecutorTest {
             } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
             val initialCampaignState = mockk<RedisRunningState> {
                 every { campaignKey } returns "first_campaign"
+                every { isCompleted } returns false
             }
             coEvery { campaignExecutor.get("my-tenant", "first_campaign") } returns initialCampaignState
             val abortedCampaignState = mockk<RedisRunningState> {
@@ -987,6 +1039,7 @@ internal class RedisCampaignExecutorTest {
             } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
             val initialCampaignState = mockk<RedisRunningState> {
                 every { campaignKey } returns "first_campaign"
+                every { isCompleted } returns false
             }
             coEvery { campaignExecutor.get("my-tenant", "first_campaign") } returns initialCampaignState
             val abortedCampaignState = mockk<RedisRunningState> {

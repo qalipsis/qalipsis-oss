@@ -24,15 +24,20 @@ import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import assertk.assertions.isSameInstanceAs
+import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.head.hook.CampaignHook
+import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.model.converter.CampaignConfigurationConverter
@@ -288,4 +293,101 @@ internal class InMemoryCampaignServiceTest {
                 hook2
             )
         }
+
+    @Test
+    internal fun `should not set end on abort`() = testDispatcherProvider.run {
+        // given
+        val configuration = CampaignConfiguration(
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            timeout = Duration.ofSeconds(715),
+            scenarios = mapOf("scenario-1" to ScenarioRequest(1))
+        )
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns "my-campaign"
+            every { scenarios } returns mapOf(
+                "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 }
+            )
+        }
+        coEvery {
+            campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(configuration))
+        } returns runningCampaign
+        inMemoryCampaignService.create("my-tenant", "my-user", configuration)
+
+        // when
+        inMemoryCampaignService.abort("my-tenant", "my-user", "my-campaign")
+
+        // then
+        val campaign = inMemoryCampaignService.retrieve("my-tenant", "my-campaign")
+        assertThat(campaign).all {
+            prop(Campaign::status).isEqualTo(ExecutionStatus.ABORTED)
+            prop(Campaign::end).isNull()
+        }
+    }
+
+    @Test
+    internal fun `should not overwrite campaign on second close`() = testDispatcherProvider.run {
+        // given
+        val configuration = CampaignConfiguration(
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            timeout = Duration.ofSeconds(715),
+            scenarios = mapOf("scenario-1" to ScenarioRequest(1))
+        )
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns "my-campaign"
+            every { scenarios } returns mapOf(
+                "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 }
+            )
+        }
+        coEvery {
+            campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(configuration))
+        } returns runningCampaign
+        inMemoryCampaignService.create("my-tenant", "my-user", configuration)
+
+        // when - first close sets ABORTED
+        inMemoryCampaignService.close("my-tenant", "my-campaign", ExecutionStatus.ABORTED, null)
+        // second close attempts FAILED but should be a no-op
+        inMemoryCampaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "Some failure")
+
+        // then
+        val campaign = inMemoryCampaignService.retrieve("my-tenant", "my-campaign")
+        assertThat(campaign).all {
+            prop(Campaign::status).isEqualTo(ExecutionStatus.ABORTED)
+            prop(Campaign::end).isNotNull()
+        }
+    }
+
+    @Test
+    internal fun `should allow close after abort since abort does not set end`() = testDispatcherProvider.run {
+        // given
+        val configuration = CampaignConfiguration(
+            name = "This is a campaign",
+            speedFactor = 123.2,
+            timeout = Duration.ofSeconds(715),
+            scenarios = mapOf("scenario-1" to ScenarioRequest(1))
+        )
+        val runningCampaign = relaxedMockk<RunningCampaign> {
+            every { key } returns "my-campaign"
+            every { scenarios } returns mapOf(
+                "scenario-1" to relaxedMockk { every { minionsCount } returns 6272 }
+            )
+        }
+        coEvery {
+            campaignConfigurationConverter.convertConfiguration("my-tenant", refEq(configuration))
+        } returns runningCampaign
+        inMemoryCampaignService.create("my-tenant", "my-user", configuration)
+
+        // when - soft abort marks ABORTED but doesn't set end
+        inMemoryCampaignService.abort("my-tenant", "my-user", "my-campaign")
+        // close with SUCCESSFUL should work since end is still null
+        inMemoryCampaignService.close("my-tenant", "my-campaign", ExecutionStatus.SUCCESSFUL, null)
+
+        // then
+        val campaign = inMemoryCampaignService.retrieve("my-tenant", "my-campaign")
+        assertThat(campaign).all {
+            prop(Campaign::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
+            prop(Campaign::end).isNotNull()
+        }
+    }
 }
