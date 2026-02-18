@@ -166,6 +166,7 @@ internal class ScenarioImpl(
         context: StepStartStopContext
     ) {
         step.start(context.copy(stepName = step.name))
+        // Skip DagTransitionSteps to avoid crossing into other DAGs, which are traversed independently.
         step.next.filterNot { it is DagTransitionStep<*> }.forEach { nextStep ->
             startStepRecursively(nextStep, context)
         }
@@ -199,7 +200,8 @@ internal class ScenarioImpl(
         tryAndLogOrNull(log) {
             step.stop(context.copy(stepName = step.name))
         }
-        step.next.forEach {
+        // Skip DagTransitionSteps to avoid crossing into other DAGs, which are traversed independently.
+        step.next.filterNot { it is DagTransitionStep<*> }.forEach {
             stopStepRecursively(it, context)
         }
     }
@@ -216,7 +218,8 @@ internal class ScenarioImpl(
         tryAndLogOrNull(log) {
             step.destroy()
         }
-        step.next.forEach {
+        // Skip DagTransitionSteps to avoid crossing into other DAGs, which are traversed independently.
+        step.next.filterNot { it is DagTransitionStep<*> }.forEach {
             destroyStepRecursively(it)
         }
     }
