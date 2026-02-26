@@ -22,24 +22,19 @@ package io.qalipsis.core.collections
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.lang.pollFirst
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.sync.Latch
-import io.qalipsis.api.sync.SuspendedCountLatch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 
 /**
- * List of elements able to fairly release them on a regular basis, using the first event reached from [releaseDuration]
- * and [releaseSize].
- *
- * The released elements are removed from this list.
+ * A batching collection that accumulates items and releases them when either a size threshold [releaseSize] or a time duration [releaseDuration] is reached.
  *
  * @author Eric Jessé
  */
@@ -50,14 +45,11 @@ class LingerCollection<T> private constructor(
     private val releaseAction: suspend (List<T>) -> Unit
 ) : List<T> by delegated {
 
-    private lateinit var countLatch: SuspendedCountLatch
+    private val started = AtomicBoolean(false)
 
-    private val additionLatch = Latch(false)
+    private val mutex = Mutex()
 
     private lateinit var publicationJob: Job
-
-    @Volatile
-    private var active = false
 
     constructor(
         releaseSize: Int,
@@ -66,78 +58,64 @@ class LingerCollection<T> private constructor(
     ) : this(releaseSize, releaseDuration, concurrentList(), releaseAction)
 
     suspend fun start() {
-        if (!active) {
-            active = true
-            countLatch = SuspendedCountLatch(releaseSize.toLong(), true)
-            countLatch.reset()
+        if (started.compareAndSet(false, true)) {
             publicationJob = with(CoroutineScope(coroutineContext)) {
                 launch {
                     try {
-                        while (active) {
-                            select<Unit> {
-                                countLatch.onRelease {
-                                    log.trace { "Counter released" }
-                                    release()
-                                }
-                                timer(releaseDuration).onReceive {
-                                    log.trace { "Timer released" }
-                                    release()
-                                }
-                            }
-                            coroutineContext.cancelChildren()
+                        while (started.get()) {
+                            delay(releaseDuration.toMillis())
+                            log.trace { "Timer released" }
+                            release(drainAll = true)
                         }
                     } catch (e: CancellationException) {
                         // Ignore.
-                    } finally {
-                        coroutineContext.cancelChildren()
                     }
                 }
             }
         }
     }
 
-    private suspend fun release() {
-        log.trace { "Releasing values" }
-        additionLatch.lock()
-        val valuesBatches = mutableListOf<List<T>>()
-        do {
-            valuesBatches += delegated.pollFirst(releaseSize)
-        } while (delegated.size > releaseSize)
-        countLatch.reset()
-        countLatch.decrement(delegated.size.toLong())
-
-        additionLatch.release()
-
-        valuesBatches.asSequence().filterNot { it.isEmpty() }.forEach { values ->
+    private suspend fun release(drainAll: Boolean = false) {
+        val valuesBatches = mutex.withLock {
+            log.trace { "Releasing values" }
+            val batches = mutableListOf<List<T>>()
+            if (drainAll) {
+                while (delegated.isNotEmpty()) {
+                    batches += delegated.pollFirst(releaseSize)
+                }
+            } else {
+                while (delegated.size >= releaseSize) {
+                    batches += delegated.pollFirst(releaseSize)
+                }
+            }
+            batches
+        }
+        valuesBatches.forEach { values ->
             releaseAction(values)
         }
     }
 
-    fun stop() {
-        active = false
-        publicationJob.cancel()
+    suspend fun stop() {
+        if (started.compareAndSet(true, false)) {
+            publicationJob.cancel()
+            release(drainAll = true)
+        }
     }
 
     suspend fun add(element: T) {
         start()
-        additionLatch.await()
         delegated.add(element)
-        countLatch.decrement()
+        if (delegated.size >= releaseSize) {
+            release()
+        }
     }
 
     suspend fun addAll(elements: Collection<T>) {
         start()
-        additionLatch.await()
         delegated.addAll(elements)
-        countLatch.decrement(elements.size.toLong().coerceAtMost(countLatch.get()))
-    }
-
-    /**
-     * Creates a simple timer.
-     */
-    private fun CoroutineScope.timer(duration: Duration) = produce {
-        delay(duration.toMillis())
-        send(Unit)
+        if (delegated.size >= releaseSize) {
+            release()
+        }
     }
 
     private companion object {
