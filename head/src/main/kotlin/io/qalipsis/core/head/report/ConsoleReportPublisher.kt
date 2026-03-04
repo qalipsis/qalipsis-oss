@@ -46,7 +46,7 @@ class ConsoleReportPublisher(
     @Nullable private val consoleCampaignProgressionReporter: ConsoleCampaignProgressionReporter?
 ) : CampaignReportPublisher {
 
-    override suspend fun publish(campaignKey: CampaignKey, report: CampaignReport) {
+    override suspend fun publish(tenant: String, campaignKey: CampaignKey, report: CampaignReport) {
         consoleCampaignProgressionReporter?.report() ?: run {
             val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }
 

@@ -29,6 +29,7 @@ import io.micronaut.security.annotation.Secured
 import io.micronaut.validation.Validated
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.cluster.security.Tenant
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.factory.FactoryService
@@ -65,6 +66,7 @@ class ScenarioController(
     )
     @Secured(Permissions.READ_SCENARIO)
     @Timed("scenarios-search")
+    @LogInput
     suspend fun searchScenarios(
         @Parameter(
             name = "X-Tenant",

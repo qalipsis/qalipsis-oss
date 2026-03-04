@@ -24,7 +24,10 @@ import assertk.assertThat
 import assertk.assertions.containsAll
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
+import assertk.assertions.isSameInstanceAs
 import io.mockk.every
+import io.mockk.mockk
+import io.qalipsis.api.io.Closeable
 import io.qalipsis.api.scenario.catadioptre.registeredSteps
 import io.qalipsis.api.steps.AbstractStepSpecification
 import io.qalipsis.api.steps.SingletonConfiguration
@@ -218,6 +221,30 @@ internal class ScenarioSpecificationImplementationTest {
 
         // then
         every { next setProperty "directedAcyclicGraphName" value "my-dag" }
+    }
+
+    @Test
+    fun `should add then override and get an extension`() {
+        // given
+        val scenario = ScenarioSpecificationImplementation("my-scenario")
+        val extension1 = mockk<Closeable>()
+        val extension2 = mockk<Closeable>()
+        val extension3 = mockk<Closeable>()
+
+        // when
+        scenario.addExtension("path-1", extension1)
+
+        // then
+        assertThat(scenario.getExtension<Closeable>("path-1")).isSameInstanceAs(extension1)
+
+        // then
+        scenario.addExtension("path-2", extension2)
+        assertThat(scenario.getExtension<Closeable>("path-1")).isSameInstanceAs(extension1)
+        assertThat(scenario.getExtension<Closeable>("path-2")).isSameInstanceAs(extension2)
+
+        // when
+        scenario.addExtension("path-1", extension3)
+        assertThat(scenario.getExtension<Closeable>("path-1")).isSameInstanceAs(extension3)
     }
 
     private inner class TestStep : AbstractStepSpecification<Unit, Unit, TestStep>()

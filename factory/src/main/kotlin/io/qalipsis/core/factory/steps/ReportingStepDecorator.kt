@@ -152,25 +152,18 @@ class ReportingStepDecorator<I, O>(
             if (context.isExhausted) {
                 log.trace { "Step completed with failure" }
                 if (isDecoratedVisible) {
-                    log.trace { "Reporting the failed execution of the decorated step" }
-                    eventsLogger.warn(
-                        "step.execution.failed",
-                        context.errors.lastOrNull()?.message,
-                        tagsSupplier = { context.toEventTags() })
                     val duration = Duration.ofNanos(System.nanoTime() - start)
                     failureTimer.record(duration)
-
-                    reportLiveStateRegistry.recordFailedStepExecution(
-                        context.campaignKey,
-                        context.scenarioName,
-                        decorated.name
-                    )
-                } else {
-                    eventsLogger.warn(
-                        "minion.operation.failed",
-                        context.errors.lastOrNull()?.message,
-                        tagsSupplier = { context.toEventTags() })
                 }
+                eventsLogger.warn(
+                    "minion.operation.failed",
+                    context.errors.lastOrNull()?.message,
+                    tagsSupplier = { context.toEventTags() })
+                reportLiveStateRegistry.recordFailedStepExecution(
+                    context.campaignKey,
+                    context.scenarioName,
+                    decorated.name
+                )
             } else {
                 log.trace { "Step completed successfully" }
                 if (isDecoratedVisible) {
@@ -190,19 +183,17 @@ class ReportingStepDecorator<I, O>(
             val cause = getFailureCause(t, context, decorated)
             if (isDecoratedVisible) {
                 log.trace { "Reporting the failed execution of the decorated step" }
-                eventsLogger.warn("step.execution.failed", cause, tagsSupplier = { context.toEventTags() })
                 val duration = Duration.ofNanos(System.nanoTime() - start)
                 failureTimer.record(duration)
 
-                reportLiveStateRegistry.recordFailedStepExecution(
-                    context.campaignKey,
-                    context.scenarioName,
-                    decorated.name,
-                    cause = supplyIf(reportErrors) { t }
-                )
-            } else {
-                eventsLogger.warn("minion.operation.failed", cause, tagsSupplier = { context.toEventTags() })
             }
+            reportLiveStateRegistry.recordFailedStepExecution(
+                context.campaignKey,
+                context.scenarioName,
+                decorated.name,
+                cause = supplyIf(reportErrors) { t }
+            )
+            eventsLogger.warn("step.execution.failed", cause, tagsSupplier = { context.toEventTags() })
             throw t
         } finally {
             if (isDecoratedVisible) {

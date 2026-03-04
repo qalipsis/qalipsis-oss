@@ -50,9 +50,10 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
             operations.setState(campaign.tenant, campaign.key, CampaignRedisState.COMPLETION_STATE)
             val report = relaxedMockk<CampaignReport>()
             coEvery { campaignReportStateKeeper.generateReport(any()) } returns report
-            coEvery { reportPublisher1.publish(any(), any()) } throws RuntimeException()
+            coEvery { reportPublisher1.publish(any(), any(), any()) } throws RuntimeException()
 
             // when
+            every { campaign.tenant } returns "my-tenant"
             every { campaign.message } returns "this is a message"
             val directives = RedisDisabledState(campaign, true, operations).run {
                 inject(campaignExecutionContext)
@@ -77,8 +78,8 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.generateReport("my-campaign")
-                reportPublisher1.publish("my-campaign", refEq(report))
-                reportPublisher2.publish("my-campaign", refEq(report))
+                reportPublisher1.publish("my-tenant", "my-campaign", refEq(report))
+                reportPublisher2.publish("my-tenant", "my-campaign", refEq(report))
                 campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))
             }
             confirmVerified(factoryService, campaignReportStateKeeper, campaignAutoStarter)
@@ -95,6 +96,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
             coEvery { campaignReportStateKeeper.generateReport(any()) } returns report
             // when
             every { campaign.message } returns "this is a message"
+            every { campaign.tenant } returns "my-tenant"
             val directives = RedisDisabledState(campaign, false, operations).run {
                 inject(campaignExecutionContext)
                 init()
@@ -117,7 +119,7 @@ internal class RedisDisabledStateIntegrationTest : AbstractRedisStateIntegration
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.generateReport("my-campaign")
-                reportPublisher1.publish("my-campaign", refEq(report))
+                reportPublisher1.publish("my-tenant", "my-campaign", refEq(report))
                 campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))
             }
             assertThat(connection.sync().keys("*").count()).isEqualTo(0)

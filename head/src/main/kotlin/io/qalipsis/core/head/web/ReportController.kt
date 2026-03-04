@@ -41,6 +41,8 @@ import io.micronaut.validation.Validated
 import io.qalipsis.api.query.Page
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.cluster.security.Tenant
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.Report
 import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
@@ -90,6 +92,7 @@ class ReportController(
     )
     @Secured(value = [Permissions.WRITE_REPORT])
     @Timed("report-create")
+    @LogInputAndOutput
     suspend fun create(
         @Parameter(
             name = "X-Tenant",
@@ -123,6 +126,7 @@ class ReportController(
     )
     @Secured(Permissions.READ_REPORT)
     @Timed("report-retrieve")
+    @LogInputAndOutput
     suspend fun get(
         @Parameter(
             name = "X-Tenant",
@@ -160,6 +164,7 @@ class ReportController(
     )
     @Secured(value = [Permissions.WRITE_REPORT])
     @Timed("report-update")
+    @LogInputAndOutput
     suspend fun update(
         @Parameter(
             name = "X-Tenant",
@@ -199,6 +204,7 @@ class ReportController(
     @Secured(value = [Permissions.WRITE_REPORT])
     @Timed("report-delete")
     @Status(HttpStatus.ACCEPTED)
+    @LogInputAndOutput
     suspend fun delete(
         @Parameter(
             name = "X-Tenant",
@@ -231,6 +237,7 @@ class ReportController(
     )
     @Secured(value = [Permissions.READ_REPORT])
     @Timed("reports-search")
+    @LogInput
     suspend fun search(
         @Parameter(
             name = "X-Tenant",
@@ -288,6 +295,7 @@ class ReportController(
         ]
     )
     @Secured(value = [Permissions.READ_REPORT])
+    @LogInputAndOutput
     suspend fun render(
         @Parameter(
             name = "X-Tenant",
@@ -326,6 +334,7 @@ class ReportController(
     )
     @Secured(value = [Permissions.READ_REPORT])
     @Status(HttpStatus.OK)
+    @LogInput
     suspend fun download(
         @Parameter(
             name = "X-Tenant",

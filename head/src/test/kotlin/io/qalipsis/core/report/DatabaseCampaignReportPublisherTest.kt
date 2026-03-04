@@ -144,7 +144,7 @@ internal class DatabaseCampaignReportPublisherTest {
         )
 
         // when
-        databaseCampaignReportPublisher.publish("my-campaign", campaignReport)
+        databaseCampaignReportPublisher.publish("my-tenant", "my-campaign", campaignReport)
 
         // then
         coVerifyOrder {
