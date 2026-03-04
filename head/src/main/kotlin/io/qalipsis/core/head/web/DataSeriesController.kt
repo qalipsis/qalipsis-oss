@@ -40,6 +40,8 @@ import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.DataField
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.cluster.security.Tenant
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.DataSeries
 import io.qalipsis.core.head.model.DataSeriesCreationRequest
@@ -90,6 +92,7 @@ class DataSeriesController(
     )
     @Secured(value = [Permissions.WRITE_DATA_SERIES])
     @Timed("data-series-create")
+    @LogInputAndOutput
     suspend fun create(
         @Parameter(
             name = "X-Tenant",
@@ -123,6 +126,7 @@ class DataSeriesController(
     )
     @Secured(Permissions.READ_DATA_SERIES)
     @Timed("data-series-retrieve")
+    @LogInputAndOutput
     suspend fun get(
         @Parameter(
             name = "X-Tenant",
@@ -160,6 +164,7 @@ class DataSeriesController(
     )
     @Secured(Permissions.WRITE_DATA_SERIES)
     @Timed("data-series-update")
+    @LogInputAndOutput
     suspend fun update(
         @Parameter(
             name = "X-Tenant",
@@ -199,6 +204,7 @@ class DataSeriesController(
     @Secured(value = [Permissions.WRITE_DATA_SERIES])
     @Timed("data-series-delete")
     @Status(HttpStatus.ACCEPTED)
+    @LogInputAndOutput
     suspend fun delete(
         @Parameter(
             name = "X-Tenant",
@@ -230,6 +236,7 @@ class DataSeriesController(
         ]
     )
     @Secured(value = [Permissions.WRITE_DATA_SERIES])
+    @LogInputAndOutput
     suspend fun searchDataNames(
         @Tenant tenant: String,
         @Parameter(
@@ -269,6 +276,7 @@ class DataSeriesController(
         ]
     )
     @Secured(value = [Permissions.WRITE_DATA_SERIES])
+    @LogInputAndOutput
     suspend fun listDataFields(
         @Tenant tenant: String,
         @Parameter(
@@ -295,6 +303,7 @@ class DataSeriesController(
         ]
     )
     @Secured(value = [Permissions.WRITE_DATA_SERIES])
+    @LogInputAndOutput
     suspend fun searchDataTags(
         @Tenant tenant: String,
         @Parameter(
@@ -334,6 +343,7 @@ class DataSeriesController(
         ]
     )
     @Secured(value = [Permissions.READ_DATA_SERIES])
+    @LogInput
     suspend fun searchDataSeries(
         @Parameter(
             name = "X-Tenant",

@@ -47,7 +47,8 @@ internal class DisabledStateTest : AbstractStateTest() {
             // when
             val report = relaxedMockk<CampaignReport>()
             coEvery { campaignReportStateKeeper.generateReport(any()) } returns report
-            coEvery { reportPublisher1.publish(any(), any()) } throws RuntimeException()
+            coEvery { reportPublisher1.publish(any(), any(), any()) } throws RuntimeException()
+            every { campaign.tenant } returns "my-tenant"
             every { campaign.message } returns "this is a message"
             every { campaign.factories } returns mutableMapOf("node-1" to mockk(), "node-2" to mockk())
             val directives = DisabledState(campaign, true).run {
@@ -72,8 +73,8 @@ internal class DisabledStateTest : AbstractStateTest() {
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.generateReport("my-campaign")
-                reportPublisher1.publish("my-campaign", refEq(report))
-                reportPublisher2.publish("my-campaign", refEq(report))
+                reportPublisher1.publish("my-tenant", "my-campaign", refEq(report))
+                reportPublisher2.publish("my-tenant", "my-campaign", refEq(report))
                 campaignHook1.afterStop("my-campaign")
                 campaignHook2.afterStop("my-campaign")
                 campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))
@@ -87,6 +88,7 @@ internal class DisabledStateTest : AbstractStateTest() {
             // when
             val report = relaxedMockk<CampaignReport>()
             coEvery { campaignReportStateKeeper.generateReport(any()) } returns report
+            every { campaign.tenant } returns "my-tenant"
             every { campaign.message } returns "this is a message"
             every { campaign.factories } returns mutableMapOf("node-1" to mockk(), "node-2" to mockk())
             val directives = DisabledState(campaign, false).run {
@@ -111,8 +113,8 @@ internal class DisabledStateTest : AbstractStateTest() {
                 factoryService.releaseFactories(refEq(campaign), setOf("node-1", "node-2"))
                 headChannel.unsubscribeFeedback("my-feedback-channel")
                 campaignReportStateKeeper.generateReport("my-campaign")
-                reportPublisher1.publish("my-campaign", refEq(report))
-                reportPublisher2.publish("my-campaign", refEq(report))
+                reportPublisher1.publish("my-tenant", "my-campaign", refEq(report))
+                reportPublisher2.publish("my-tenant", "my-campaign", refEq(report))
                 campaignHook1.afterStop("my-campaign")
                 campaignHook2.afterStop("my-campaign")
                 campaignAutoStarter.completeCampaign(refEq(directives.first() as CompleteCampaignDirective))

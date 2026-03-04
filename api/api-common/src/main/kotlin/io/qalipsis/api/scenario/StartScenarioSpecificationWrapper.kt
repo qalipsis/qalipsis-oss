@@ -31,7 +31,15 @@ import io.qalipsis.api.steps.StepSpecification
 internal class StartScenarioSpecificationWrapper(
     private val delegated: StepSpecificationRegistry,
     private val dagId: DirectedAcyclicGraphName
-) : StepSpecificationRegistry by delegated {
+) : StepSpecificationRegistry by delegated, ExtensibleScenarioSpecification {
+
+    override fun addExtension(path: String, extension: Any) {
+        (delegated as ExtensibleScenarioSpecification).addExtension(path, extension)
+    }
+
+    override fun <T> getExtension(path: String): T? {
+        return (delegated as ExtensibleScenarioSpecification).getExtension(path)
+    }
 
     override fun add(step: StepSpecification<*, *, *>) {
         step.directedAcyclicGraphName = dagId

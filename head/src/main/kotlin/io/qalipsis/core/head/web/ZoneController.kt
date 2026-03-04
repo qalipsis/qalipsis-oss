@@ -28,6 +28,7 @@ import io.micronaut.security.annotation.Secured
 import io.micronaut.security.rules.SecurityRule
 import io.micronaut.validation.Validated
 import io.qalipsis.cluster.security.Tenant
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.model.Zone
 import io.qalipsis.core.head.zone.ZoneService
@@ -67,6 +68,7 @@ class ZoneController(private val zoneService: ZoneService) {
     )
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Timed("zones-list")
+    @LogInput
     suspend fun listZones(
         @Parameter(
             name = "X-Tenant",

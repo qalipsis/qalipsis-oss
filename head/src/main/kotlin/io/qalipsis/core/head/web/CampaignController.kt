@@ -38,6 +38,8 @@ import io.qalipsis.api.query.Page
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.cluster.security.Tenant
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignExecutor
 import io.qalipsis.core.head.campaign.CampaignService
@@ -72,6 +74,7 @@ import javax.validation.constraints.PositiveOrZero
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @Version("1.0")
 @Tag(name = "Campaign management")
+@Timed(percentiles = [0.5, 0.95, 0.99], histogram = true, description = "campaign controller")
 class CampaignController(
     private val campaignExecutor: CampaignExecutor,
     private val campaignService: CampaignService,
@@ -98,6 +101,7 @@ class CampaignController(
     )
     @Secured(Permissions.WRITE_CAMPAIGN)
     @Timed("campaigns-execute")
+    @LogInputAndOutput
     suspend fun execute(
         @Parameter(
             name = "X-Tenant",
@@ -131,6 +135,7 @@ class CampaignController(
     @Secured(Permissions.WRITE_CAMPAIGN)
     @Timed("campaigns-validate")
     @Status(HttpStatus.NO_CONTENT)
+    @LogInputAndOutput
     suspend fun validate(
         @Parameter(
             name = "X-Tenant",
@@ -163,6 +168,7 @@ class CampaignController(
     )
     @Secured(Permissions.READ_CAMPAIGN)
     @Timed("campaigns-search")
+    @LogInput
     suspend fun search(
         @Parameter(
             name = "X-Tenant",
@@ -218,6 +224,7 @@ class CampaignController(
     )
     @Timed("campaigns-abort")
     @Status(HttpStatus.ACCEPTED)
+    @LogInputAndOutput
     suspend fun abort(
         @Parameter(
             name = "X-Tenant",
@@ -258,6 +265,7 @@ class CampaignController(
     )
     @Secured(Permissions.READ_CAMPAIGN)
     @Timed("campaigns-retrieve")
+    @LogInputAndOutput
     suspend fun retrieve(
         @Parameter(
             name = "X-Tenant",
@@ -292,6 +300,7 @@ class CampaignController(
     )
     @Secured(Permissions.READ_CAMPAIGN)
     @Timed("campaigns-configuration-retrieve")
+    @LogInputAndOutput
     suspend fun retrieveConfiguration(
         @Parameter(
             name = "X-Tenant",
@@ -326,6 +335,7 @@ class CampaignController(
     )
     @Secured(Permissions.WRITE_CAMPAIGN)
     @Timed("campaigns-replay")
+    @LogInputAndOutput
     suspend fun replay(
         @Parameter(
             name = "X-Tenant",
@@ -362,6 +372,7 @@ class CampaignController(
     )
     @Secured(Permissions.WRITE_CAMPAIGN)
     @Timed("campaigns-schedule")
+    @LogInputAndOutput
     suspend fun schedule(
         @Parameter(
             name = "X-Tenant",
@@ -394,6 +405,7 @@ class CampaignController(
     )
     @Secured(Permissions.WRITE_CAMPAIGN)
     @Timed("campaigns-schedule-update")
+    @LogInputAndOutput
     suspend fun reschedule(
         @Parameter(
             name = "X-Tenant",
