@@ -41,7 +41,7 @@ open class DisabledState(
             context.campaignReportStateKeeper.generateReport(campaignKey)?.let { report ->
                 context.reportPublishers.forEach { publisher ->
                     tryAndLogOrNull(log) {
-                        publisher.publish(campaign.key, report)
+                        publisher.publish(campaign.tenant, campaign.key, report)
                     }
                 }
             }

@@ -442,7 +442,14 @@ internal class ReportingStepDecoratorTest {
                     stepName = "__the decorated"
                 )
                 decorated.execute(refEq(minion), refEq(context))
-                eventsLogger.warn("minion.operation.failed", refEq(error), timestamp = any(), tagsSupplier = any())
+                reportLiveStateRegistry.recordFailedStepExecution(
+                    campaignKey = "my-campaign",
+                    scenarioName = "my-scenario",
+                    stepName = "__the decorated",
+                    1,
+                    any<RuntimeException>(),
+                )
+                eventsLogger.warn("step.execution.failed", refEq(error), timestamp = any(), tagsSupplier = any())
             }
             confirmVerified(
                 eventsLogger,

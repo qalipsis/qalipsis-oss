@@ -10,6 +10,7 @@ import io.micronaut.security.annotation.Secured
 import io.micronaut.validation.Validated
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.cluster.security.Tenant
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.report.FactoryState
 import io.qalipsis.core.head.report.WidgetService
@@ -56,6 +57,7 @@ class FactoryController(
     )
     @Timed("factory-retrieve")
     @Secured(value = [Permissions.READ_CAMPAIGN])
+    @LogInputAndOutput
     suspend fun getFactoryStates(
         @Parameter(
             name = "X-Tenant",

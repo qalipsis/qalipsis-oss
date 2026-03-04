@@ -30,6 +30,7 @@ import io.micronaut.validation.Validated
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.cluster.security.SecurityConfiguration
 import io.qalipsis.cluster.security.Tenant
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignConfigurationProvider
 import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
@@ -70,6 +71,7 @@ class ConfigurationController(
     )
     @Secured(SecurityRule.IS_ANONYMOUS)
     @Timed("configuration-security")
+    @LogInputAndOutput
     suspend fun retrieveSecurity(): SecurityConfiguration {
         return securityConfiguration
     }
@@ -95,6 +97,7 @@ class ConfigurationController(
     )
     @Secured(Permissions.WRITE_CAMPAIGN)
     @Timed("configuration-campaign")
+    @LogInputAndOutput
     suspend fun campaign(
         @Parameter(
             name = "X-Tenant",

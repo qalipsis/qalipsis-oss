@@ -61,7 +61,7 @@ class DatabaseCampaignReportPublisher(
 ) : CampaignReportPublisher {
 
     @LogInput(Level.DEBUG)
-    override suspend fun publish(campaignKey: CampaignKey, report: CampaignReport) {
+    override suspend fun publish(tenant: String, campaignKey: CampaignKey, report: CampaignReport) {
         val campaignReportEntity = saveCampaignReport(report)
         val scenarioReportEntitiesToSave = report.scenariosReports.map {
             mapToScenarioReportEntity(it, campaignReportEntity.id)
