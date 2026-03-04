@@ -29,6 +29,7 @@ import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.security.rules.SecurityRule
 import io.micronaut.validation.Validated
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.model.Profile
@@ -51,6 +52,7 @@ class ProfileController {
     @Get("\${server.api-root}/users/profile")
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Timed("users-profile")
+    @LogInputAndOutput
     suspend fun profile(): Profile<*> {
         return Defaults.PROFILE
     }
@@ -58,6 +60,7 @@ class ProfileController {
     @Get("\${server.api-root}/users/permissions")
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Timed("users-permissions")
+    @LogInputAndOutput
     suspend fun permissions(authentication: Authentication): Collection<String> {
         return authentication.roles.sorted()
     }

@@ -105,7 +105,7 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(campaignKey, campaignReport)
+        junitReportPublisher.publish("my-tenant", campaignKey, campaignReport)
 
         //then
         val generatedReport =
@@ -168,7 +168,7 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(campaignKey, campaignReport)
+        junitReportPublisher.publish("my-tenant", campaignKey, campaignReport)
 
         //then
         val generatedReport =
@@ -256,7 +256,7 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish("foo", campaignReport)
+        junitReportPublisher.publish("my-tenant", "foo", campaignReport)
 
         //then
         val generatedReport =
@@ -357,7 +357,7 @@ internal class JunitReportPublisherTest {
         val time = getTimeMock()
 
         //when
-        junitReportPublisher.publish(campaignKey, campaignReport)
+        junitReportPublisher.publish("my-tenant", campaignKey, campaignReport)
 
         //then
         val generatedReport =

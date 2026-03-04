@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap
 internal class ScenarioSpecificationImplementation(
     internal val name: String
 ) : StepSpecificationRegistry, ConfigurableScenarioSpecification, ConfiguredScenarioSpecification,
-    ExecutionProfileSpecification, StartScenarioSpecification {
+    ExecutionProfileSpecification, StartScenarioSpecification, ExtensibleScenarioSpecification {
 
     override var minionsCount = 1
 
@@ -50,6 +50,8 @@ internal class ScenarioSpecificationImplementation(
 
     @KTestable
     private val registeredSteps = ConcurrentHashMap<String, ImmutableSlot<StepSpecification<*, *, *>>>()
+
+    private val extensions = ConcurrentHashMap<String, Any>()
 
     override var executionProfile: ExecutionProfile = ImmediateExecutionProfile()
 
@@ -157,6 +159,15 @@ internal class ScenarioSpecificationImplementation(
             }
         }
         return newDag
+    }
+
+    override fun addExtension(path: String, extension: Any) {
+        extensions[path] = extension
+    }
+
+    override fun <T> getExtension(path: String): T? {
+        @Suppress("UNCHECKED_CAST")
+        return extensions[path] as? T
     }
 
     override fun start(): ScenarioSpecification {

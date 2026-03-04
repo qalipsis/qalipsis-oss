@@ -17,24 +17,23 @@
  *
  */
 
-package io.qalipsis.api.report
-
-import io.qalipsis.api.context.CampaignKey
+package io.qalipsis.api.scenario
 
 /**
- * Service in charge of publishing the campaigns reports.
+ * Interface of a scenario to add extensions.
  *
- * @author Palina Bril
+ * @author Eric Jessé
  */
-interface CampaignReportPublisher {
+interface ExtensibleScenarioSpecification {
 
     /**
-     * Publishes a report for a completed campaign.
-     *
-     * @param tenant the tenant owning the campaign
-     * @param campaignKey the key identifying the campaign
-     * @param report report of the completed campaign
+     * Adds an extension to the scenario.
      */
-    suspend fun publish(tenant: String, campaignKey: CampaignKey, report: CampaignReport)
+    fun addExtension(path: String, extension: Any)
+
+    /**
+     * Retrieves an extension from the scenario, if it exists and has the expected type.
+     */
+    fun <T> getExtension(path: String): T?
 
 }

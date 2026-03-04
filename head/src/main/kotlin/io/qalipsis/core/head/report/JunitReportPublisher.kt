@@ -48,7 +48,7 @@ class JunitReportPublisher(
     @Value("\${report.export.junit.folder}") private val reportFolder: String
 ) : CampaignReportPublisher {
 
-    override suspend fun publish(campaignKey: CampaignKey, report: CampaignReport) {
+    override suspend fun publish(tenant: String, campaignKey: CampaignKey, report: CampaignReport) {
         val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }!!
         val dir = File(reportFolder, campaignKey)
         dir.mkdirs()

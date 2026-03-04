@@ -32,6 +32,7 @@ import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesRecord
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.cluster.security.Tenant
+import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.report.AggregationQueryExecutionRequest
 import io.qalipsis.core.head.report.CampaignSummaryResult
@@ -81,6 +82,7 @@ class TimeSeriesController(
         ]
     )
     @Secured(value = [Permissions.READ_TIME_SERIES])
+    @LogInput
     suspend fun aggregate(
         @Parameter(
             name = "X-Tenant",
@@ -163,6 +165,7 @@ class TimeSeriesController(
         ]
     )
     @Secured(value = [Permissions.READ_TIME_SERIES])
+    @LogInput
     suspend fun searchRecords(
         @Parameter(
             name = "X-Tenant",
@@ -258,6 +261,7 @@ class TimeSeriesController(
         ]
     )
     @Secured(value = [Permissions.READ_CAMPAIGN])
+    @LogInput
     suspend fun fetchCampaignSummary(
         @Parameter(
             name = "X-Tenant",
