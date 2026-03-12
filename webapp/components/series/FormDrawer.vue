@@ -18,7 +18,10 @@
             :disabled="dataSeries?.disabled"
           />
         </div>
-        <div class="col-span-12" v-if="config.public.projectName !== WEBAPP_OSS_PROJECT_NAME">
+        <div
+          class="col-span-12"
+          v-if="config.public.projectName !== WEBAPP_OSS_PROJECT_NAME"
+        >
           <FormSelect
             label="Sharing mode"
             form-control-name="sharingMode"
@@ -178,7 +181,7 @@ const toastStore = useToastStore()
 
 const initialFormValue: DataSeriesForm = {
   name: props.dataSeries?.displayName ?? '',
-  sharingMode: props.dataSeries?.sharingMode ?? config.public.projectName === WEBAPP_OSS_PROJECT_NAME ? 'NONE' : null,
+  sharingMode: (props.dataSeries?.sharingMode ?? config.public.projectName === WEBAPP_OSS_PROJECT_NAME) ? 'NONE' : null,
   dataType: props.dataSeries?.dataType ?? DataTypeConstant.EVENTS,
   valueName: props.dataSeries?.valueName ?? '',
   fieldName: props.dataSeries?.fieldName ?? '',
@@ -192,7 +195,8 @@ const initialFormValue: DataSeriesForm = {
 const { handleSubmit, setFieldValue, values, errors } = useForm<DataSeriesForm>({
   initialValues: {
     name: props.dataSeries?.displayName ?? '',
-    sharingMode: props.dataSeries?.sharingMode ?? config.public.projectName === WEBAPP_OSS_PROJECT_NAME ? 'NONE' : null,
+    sharingMode:
+      (props.dataSeries?.sharingMode ?? config.public.projectName === WEBAPP_OSS_PROJECT_NAME) ? 'NONE' : null,
     dataType: props.dataSeries?.dataType ?? DataTypeConstant.EVENTS,
     valueName: props.dataSeries?.valueName ?? '',
     fieldName: props.dataSeries?.fieldName ?? '',
@@ -240,8 +244,8 @@ const fieldValidationSchema = {
         },
         {
           message: 'This name has been reserved already',
-        }
-      )
+        },
+      ),
   ),
   sharingMode: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
   dataType: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
@@ -258,8 +262,8 @@ const fieldValidationSchema = {
         },
         {
           message: requiredErrorMessage,
-        }
-      )
+        },
+      ),
   ),
   aggregationOperation: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
   timeframeValue: toTypedSchema(
@@ -269,21 +273,21 @@ const fieldValidationSchema = {
       .nullable()
       .refine((value) => (value ? true : false), {
         message: 'Number is required',
-      })
+      }),
   ),
   timeframeUnit: toTypedSchema(zod.string().nullable()),
   color: toTypedSchema(
     zod
       .string()
       .nullable()
-      .refine((value) => ColorHelper.isValidHexCode(value as string))
+      .refine((value) => ColorHelper.isValidHexCode(value as string)),
   ),
   colorOpacity: toTypedSchema(
     zod.coerce
       .number({ invalid_type_error: 'You must specify a number' })
       .min(1)
       .max(100, 'Value must be between 1 and 100.')
-      .nullable()
+      .nullable(),
   ),
 }
 
@@ -317,7 +321,7 @@ onBeforeUnmount(() => {
 })
 
 const handleFieldNameSearch = async (query: string) => {
-   try {
+  try {
     const valueNames = await fetchValueNames(values.dataType, query)
     valueNameOptions.value = valueNames.map((valueName) => ({
       label: valueName,

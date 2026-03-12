@@ -1,45 +1,49 @@
 <template>
-  <div
-      class="flex items-center cursor-pointer"
-      @click="handleOptionClick"
-  >
+  <div class="flex items-center cursor-pointer gap-x-2">
     <input
-        type="radio"
-        :id="value"
-        :class="[TailwindClassHelper.radioButtonClass, TailwindClassHelper.radioButtonActiveClass]"
-        :value="value"
-        :checked="isChecked"
-        :disabled="disabled"
+      type="radio"
+      :id="value"
+      :checked="isChecked"
+      :disabled="disabled"
+      @change="handleChange"
+      class="relative appearance-none w-4 h-4 border border-gray-300 rounded-full bg-white disabled:bg-gray-50 dark:disabled:bg-gray-600 disabled:cursor-not-allowed enabled:hover:border-primary-500 cursor-pointer shrink-0 checked:border-primary-500 after:content-[''] after:w-[10px] after:h-[10px] after:mx-auto after:my-[2px] after:rounded-full after:hidden checked:after:block checked:after:bg-primary-500"
     />
     <label
-        v-if="label"
-        class="pl-2"
-        :for="value"
-        :class="disabled ? 'cursor-not-allowed' : 'cursor-pointer'"
-    >{{ label }}</label
+      v-if="label"
+      :for="value"
+      :class="disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'"
     >
+      {{ label }}
+    </label>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, inject } from 'vue'
+
 const props = defineProps<{
   value: string
-  modelValue?: string
   label?: string | number
   disabled?: boolean
 }>()
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', v: string): void
-}>()
+// Inject parent RadioButtonGroup
+const radioGroup = inject<{
+  modelValue: { value: string }
+  updateValue: (v: string) => void
+}>('radioGroup')
 
-const isChecked = computed(() => {
-  return props.modelValue === props.value
-})
+if (!radioGroup) {
+  throw new Error('RadioButton must be used inside a RadioButtonGroup')
+}
 
-const handleOptionClick = () => {
+// Computed to determine if this option is selected
+const isChecked = computed(() => radioGroup.modelValue.value === props.value)
+
+// Click handler calls parent update function
+const handleChange = () => {
   if (props.disabled) return
 
-  emit('update:modelValue', props.value)
+  radioGroup.updateValue(props.value)
 }
 </script>
