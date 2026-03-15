@@ -57,12 +57,16 @@ abstract class ChannelSubscriber(
      * Dispatches the [Directive] or the [HandshakeResponse] in isolated coroutines.
      */
     fun deserializeAndDispatch(channel: String, message: ByteArray) {
-        when (channel) {
-            in subscribedDirectiveChannels -> serializer.deserialize<Directive>(message)?.let { dispatch(it) }
-            in subscribedHandshakeResponseChannels -> serializer.deserialize<HandshakeResponse>(message)
-                ?.let { dispatch(it) }
+        try {
+            when (channel) {
+                in subscribedDirectiveChannels -> serializer.deserialize<Directive>(message)?.let { dispatch(it) }
+                in subscribedHandshakeResponseChannels -> serializer.deserialize<HandshakeResponse>(message)
+                    ?.let { dispatch(it) }
 
-            else -> log.trace { "Channel $channel is not supported" }
+                else -> log.trace { "Channel $channel is not supported" }
+            }
+        } catch (e: Exception) {
+            log.error(e) { "An error occurred while processing a message on channel $channel" }
         }
     }
 
@@ -71,22 +75,26 @@ abstract class ChannelSubscriber(
      */
     @Suppress("UNCHECKED_CAST")
     private fun dispatch(directive: Directive) {
-        val mdcContextMap = (directive as? CampaignManagementDirective)?.let {
-            mapOf("tenant" to it.tenant, "campaign" to it.campaignKey)
-        } ?: emptyMap()
-        orchestrationCoroutineScope.launch(MDCContext(mdcContextMap)) {
-            log.trace { "Dispatching the directive of type ${directive::class}" }
-            val eligibleListeners = directiveListeners.filter { it.accept(directive) }
-            if (eligibleListeners.isNotEmpty()) {
-                directiveRegistry.prepareAfterReceived(directive)?.let { preparedDirective ->
-                    eligibleListeners.forEach { listener ->
-                        log.trace { "Providing the directive of type ${directive::class} to ${listener::class}" }
-                        orchestrationCoroutineScope.contextualLaunch {
-                            (listener as DirectiveListener<Directive>).notify(preparedDirective)
+        try {
+            val mdcContextMap = (directive as? CampaignManagementDirective)?.let {
+                mapOf("tenant" to it.tenant, "campaign" to it.campaignKey)
+            } ?: emptyMap()
+            orchestrationCoroutineScope.launch(MDCContext(mdcContextMap)) {
+                log.trace { "Dispatching the directive of type ${directive::class}" }
+                val eligibleListeners = directiveListeners.filter { it.accept(directive) }
+                if (eligibleListeners.isNotEmpty()) {
+                    directiveRegistry.prepareAfterReceived(directive)?.let { preparedDirective ->
+                        eligibleListeners.forEach { listener ->
+                            log.trace { "Providing the directive of type ${directive::class} to ${listener::class}" }
+                            orchestrationCoroutineScope.contextualLaunch {
+                                (listener as DirectiveListener<Directive>).notify(preparedDirective)
+                            }
                         }
                     }
                 }
             }
+        } catch (e: Exception) {
+            log.error(e) { "An error occurred while processing a directive: $directive" }
         }
     }
 
@@ -95,9 +103,13 @@ abstract class ChannelSubscriber(
      */
     private fun dispatch(response: HandshakeResponse) {
         if (response.handshakeNodeId == factoryConfiguration.nodeId) {
-            log.trace { "Dispatching the handshake response" }
-            handshakeResponseListeners.forEach { listener ->
-                orchestrationCoroutineScope.launch { listener.notify(response) }
+            try {
+                log.trace { "Dispatching the handshake response" }
+                handshakeResponseListeners.forEach { listener ->
+                    orchestrationCoroutineScope.launch { listener.notify(response) }
+                }
+            } catch (e: Exception) {
+                log.error(e) { "An error occurred while processing a handshake response: $response" }
             }
         }
     }

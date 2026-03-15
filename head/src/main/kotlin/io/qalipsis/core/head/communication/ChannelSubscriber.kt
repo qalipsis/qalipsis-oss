@@ -56,13 +56,17 @@ abstract class ChannelSubscriber(
      * Dispatches the [Feedback], [HandshakeRequest] or the [Heartbeat] in isolated coroutines.
      */
     fun deserializeAndDispatch(channel: String, message: ByteArray) {
-        when (channel) {
-            in subscribedFeedbackChannels -> serializer.deserialize<Feedback>(message)?.let { dispatch(it) }
-            in subscribedHandshakeRequestsChannels -> serializer.deserialize<HandshakeRequest>(message)
-                ?.let { dispatch(it) }
+        try {
+            when (channel) {
+                in subscribedFeedbackChannels -> serializer.deserialize<Feedback>(message)?.let { dispatch(it) }
+                in subscribedHandshakeRequestsChannels -> serializer.deserialize<HandshakeRequest>(message)
+                    ?.let { dispatch(it) }
 
-            headConfiguration.heartbeatChannel -> serializer.deserialize<Heartbeat>(message)?.let { dispatch(it) }
-            else -> log.trace { "Channel $channel is not supported" }
+                headConfiguration.heartbeatChannel -> serializer.deserialize<Heartbeat>(message)?.let { dispatch(it) }
+                else -> log.trace { "Channel $channel is not supported" }
+            }
+        } catch (e: Exception) {
+            log.error(e) { "An error occurred while processing a message on channel $channel" }
         }
     }
 
@@ -71,18 +75,22 @@ abstract class ChannelSubscriber(
      */
     @Suppress("UNCHECKED_CAST")
     private fun dispatch(feedback: Feedback) {
-        log.trace { "Dispatching the feedback of type ${feedback::class}" }
-        val mdcContextMap = (feedback as? CampaignManagementFeedback)?.let {
-            mapOf("tenant" to it.tenant, "campaign" to it.campaignKey)
-        } ?: emptyMap()
-        val eligibleListeners = feedbackListeners.filter { it.accept(feedback) }
-        if (eligibleListeners.isNotEmpty()) {
-            eligibleListeners.forEach { listener ->
-                log.trace { "Dispatching the directive of type ${feedback::class} to the listener of type ${listener::class}" }
-                orchestrationCoroutineScope.launch(MDCContext(mdcContextMap)) {
-                    (listener as FeedbackListener<Feedback>).notify(feedback)
+        try {
+            log.trace { "Dispatching the feedback of type ${feedback::class}" }
+            val mdcContextMap = (feedback as? CampaignManagementFeedback)?.let {
+                mapOf("tenant" to it.tenant, "campaign" to it.campaignKey)
+            } ?: emptyMap()
+            val eligibleListeners = feedbackListeners.filter { it.accept(feedback) }
+            if (eligibleListeners.isNotEmpty()) {
+                eligibleListeners.forEach { listener ->
+                    log.trace { "Dispatching the directive of type ${feedback::class} to the listener of type ${listener::class}" }
+                    orchestrationCoroutineScope.launch(MDCContext(mdcContextMap)) {
+                        (listener as FeedbackListener<Feedback>).notify(feedback)
+                    }
                 }
             }
+        } catch (e: Exception) {
+            log.error(e) { "An error occurred while processing a feedback: $feedback" }
         }
     }
 
@@ -90,9 +98,13 @@ abstract class ChannelSubscriber(
      * Dispatches the [HandshakeRequest] to all the relevant [HandshakeRequestListener] in isolated coroutines.
      */
     private fun dispatch(request: HandshakeRequest) {
-        log.trace { "Dispatching the handshake request ${request::class}" }
-        handshakeRequestListeners.forEach { listener ->
-            orchestrationCoroutineScope.launch { listener.notify(request) }
+        try {
+            log.trace { "Dispatching the handshake request ${request::class}" }
+            handshakeRequestListeners.forEach { listener ->
+                orchestrationCoroutineScope.launch { listener.notify(request) }
+            }
+        } catch (e: Exception) {
+            log.error(e) { "An error occurred while processing a handshake request: $request" }
         }
     }
 
@@ -100,9 +112,13 @@ abstract class ChannelSubscriber(
      * Dispatches the [heartbeat] to all the relevant [HeartbeatListener] in isolated coroutines.
      */
     private fun dispatch(heartbeat: Heartbeat) {
-        log.trace { "Dispatching the heartbeat $heartbeat" }
-        heartbeatListeners.forEach { listener ->
-            orchestrationCoroutineScope.launch { listener.notify(heartbeat) }
+        try {
+            log.trace { "Dispatching the heartbeat $heartbeat" }
+            heartbeatListeners.forEach { listener ->
+                orchestrationCoroutineScope.launch { listener.notify(heartbeat) }
+            }
+        } catch (e: Exception) {
+            log.error(e) { "An error occurred while processing a heartbeat: $heartbeat" }
         }
     }
 
