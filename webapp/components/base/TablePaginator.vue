@@ -1,127 +1,180 @@
 <template>
-  <div class="flex items-center w-full justify-between">
+  <div class="flex items-center justify-between w-full gap-x-1 h-8">
     <div class="flex items-center">
-      <div
-          class="w-8 h-8 rounded-md flex items-center justify-center mr-2"
-          :class="{
-              'hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer': !leftArrowDisabled,
-              'cursor-not-allowed': leftArrowDisabled,
-            }"
-          @click="!leftArrowDisabled && handlePageNumberClick(currentPageIndex - 1)"
+      <BaseTablePaginatorArrow
+        type="first"
+        :disabled="isFirstPage"
+        @click="goFirst"
+      />
+      <BaseTablePaginatorArrow
+        type="prev"
+        :disabled="isFirstPage"
+        @click="goPrev"
+      />
+      <template
+        v-for="page in pages"
+        :key="page"
       >
         <div
-            class="border-r-2 border-b-2 -mr-1 border-solid p-1 rotate-[135deg]"
-            :class="{
-                'border-gray-900 dark:border-gray-400': !leftArrowDisabled,
-                'border-gray-400 dark:border-gray-800': leftArrowDisabled,
-              }"
-        ></div>
-      </div>
-      <template v-for="page in pages" :key="page">
-        <div
-            class="w-8 h-8 flex items-center justify-center border border-solid rounded-md mr-2 last:mr-0 cursor-pointer"
-            :class="{
-                'text-primary-500 border-primary-500': page === currentPageIndex,
-                'hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600': page !== currentPageIndex,
-              }"
-            @click="handlePageNumberClick(page)"
+          class="w-8 h-8 flex items-center justify-center border border-solid rounded-md mr-2 last:mr-0 cursor-pointer"
+          :class="{
+            'text-primary-500 border-primary-500': page === currentPageIndex,
+            'hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600': page !== currentPageIndex,
+          }"
+          @click="goToPage(page)"
         >
-              <span>
-                {{ 1 + page }}
-              </span>
+          <span>
+            {{ 1 + page }}
+          </span>
         </div>
       </template>
+      <BaseTablePaginatorArrow
+        type="next"
+        :disabled="isLastPage"
+        @click="goNext"
+      />
+      <BaseTablePaginatorArrow
+        type="last"
+        :disabled="isLastPage"
+        @click="goLast"
+      />
       <div
-          class="w-8 h-8 rounded-md flex items-center justify-center"
-          :class="{
-              'hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer': !rightArrowDisabled,
-              'cursor-not-allowed': rightArrowDisabled,
-            }"
-          @click="
-              !rightArrowDisabled && handlePageNumberClick(currentPageIndex + 1)
-            "
+        v-if="pages.length > 1"
+        class="flex items-center mr-2"
       >
-        <div
-            class="border-r-2 border-b-2 -ml-1 border-solid p-1 -rotate-45"
-            :class="{
-                'border-gray-900 dark:border-gray-400': !rightArrowDisabled,
-                'border-gray-400 dark:border-gray-800': rightArrowDisabled,
-              }"
-        ></div>
-      </div>
-      <div
-          v-if="pages.length > 1"
-          class="flex items-center"
-      >
-        <span class="mx-2">Go to page</span>
+        <span class="mx-1">Go to page</span>
         <div>
           <input
-              type="text"
-              class="w-14 ml-1 py-1 px-2 outline-none border border-solid border-gray-200 rounded-md dark:bg-gray-900 dark:border-gray-700"
-              v-model="targetPage"
-              @keyup.enter="handleEnterEvent"
+            type="text"
+            class="w-14 h-8 box-border px-2 outline-none border border-solid border-gray-200 rounded-md dark:bg-gray-900 dark:border-gray-700"
+            v-model="targetPage"
+            @keyup.enter="handleEnterEvent"
           />
         </div>
       </div>
     </div>
-    <div class="pr-2">
-      Showing {{ startItemNumber }} - {{ endItemNumber }}
-      of {{ totalElements }}
-    </div>
+    <div class="pr-2">Showing {{ startItemNumber }} - {{ endItemNumber }} of {{ totalElements }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 const props = defineProps<{
-  totalElements: number;
-  pageSize: number;
-  currentPageIndex: number;
-}>();
+  totalElements: number
+  pageSize: number
+  currentPageIndex: number
+}>()
 const emit = defineEmits<{
-  (e: "pageChange", v: number): void;
-}>();
+  (e: 'pageChange', v: number): void
+}>()
 
-const targetPage = ref("");
+const targetPage = ref('')
 
-const numberOfTotalPages = computed(() =>
-    Math.ceil(props.totalElements / props.pageSize)
-);
+/** Maximum visible page numbers in the paginator. */
+const maxVisiblePages = 5
 
-const startItemNumber = computed(() => props.currentPageIndex * props.pageSize + 1);
-const endItemNumber = computed(() => (props.currentPageIndex + props.pageSize) <= props.totalElements
-    ? props.currentPageIndex + props.pageSize
-    : props.totalElements
-);
+/* total pages */
+const totalPages = computed(() => Math.ceil(props.totalElements / props.pageSize))
 
-const leftArrowDisabled = computed(() => props.currentPageIndex === 0);
-const rightArrowDisabled = computed(
-    () => props.currentPageIndex === numberOfTotalPages.value - 1
-);
+/* page state */
+const isFirstPage = computed(() => props.currentPageIndex === 0)
+const isLastPage = computed(() => props.currentPageIndex === totalPages.value - 1)
 
+/* item numbers */
+const startItemNumber = computed(() => {
+  if (props.totalElements === 0) return 0
+  return props.currentPageIndex * props.pageSize + 1
+})
+const endItemNumber = computed(() => Math.min((props.currentPageIndex + 1) * props.pageSize, props.totalElements))
+
+/**
+ * Computes the list of page indices that should be visible in the paginator.
+ *
+ * The paginator shows a maximum of `maxVisiblePages` pages at a time.
+ * If the total number of pages is less than or equal to this limit,
+ * all pages will be displayed.
+ *
+ * Otherwise, a sliding window of pages is calculated around the current page:
+ *
+ * Example (maxVisiblePages = 5):
+ *
+ * totalPages = 20
+ *
+ * currentPageIndex = 0
+ * -> [0,1,2,3,4]
+ *
+ * currentPageIndex = 6
+ * -> [4,5,6,7,8]
+ *
+ * currentPageIndex = 19
+ * -> [15,16,17,18,19]
+ *
+ * The window tries to keep the current page centered. When the current page
+ * is near the beginning or end of the list, the window shifts accordingly
+ * so that the number of visible pages remains constant.
+ *
+ * @returns Array<number> List of page indices to render in the paginator
+ */
 const pages = computed(() => {
-  const numberOfPages = Math.ceil(props.totalElements / props.pageSize);
+  const total = totalPages.value
+  const current = props.currentPageIndex
 
-  return Array.from(Array(numberOfPages).keys());
-});
-
-const handleEnterEvent = () => {
-  let targetPageNumber = parseInt(targetPage.value);
-
-  if (
-      !isNaN(targetPageNumber) &&
-      Number.isInteger(targetPageNumber) &&
-      targetPageNumber >= 1
-  ) {
-    if (targetPageNumber >= numberOfTotalPages.value) {
-      targetPageNumber = numberOfTotalPages.value;
-    }
-    const targetPageIndex = targetPageNumber - 1;
-    handlePageNumberClick(targetPageIndex);
+  // Total pages is less than maximum visible pages. Show all pages.
+  if (total <= maxVisiblePages) {
+    return Array.from({ length: total }, (_, i) => i)
   }
-  targetPage.value = "";
-};
 
-const handlePageNumberClick = (pageIndex: number) => {
-  emit("pageChange", pageIndex);
-};
+  // Always try to keep the selected page on the middle.
+  const half = Math.floor(maxVisiblePages / 2)
+
+  let start = Math.max(current - half, 0)
+  let end = Math.min(start + maxVisiblePages - 1, total - 1)
+
+  /**
+   * When the current page is close to the last page.
+   * E.g.,
+   * maxVisiblePages = 5
+   * totalPages = 10
+   * currentPageIndex = 9
+   *
+   * half = Math.floor(5 / 2) = 2
+   * start = max(9 - 2, 0) = max(7, 0) = 7
+   * end = min (7 + 5 - 1, 10 - 1) = min(11, 9) = 9
+   *
+   * pages = [7, 8, 9] // only 3 pages, not enough for 5 pages.
+   *
+   * if the number of pages in the window is less than the maximum page,
+   * the start page is changed to make sure there are always 5 pages displayed.
+   */
+  if (end - start + 1 < maxVisiblePages) {
+    start = Math.max(end - maxVisiblePages + 1, 0)
+  }
+
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+})
+
+/* navigation */
+const goToPage = (page: number) => {
+  if (page < 0 || page >= totalPages.value) return
+  emit('pageChange', page)
+}
+
+const goFirst = () => goToPage(0)
+const goLast = () => goToPage(totalPages.value - 1)
+const goPrev = () => goToPage(props.currentPageIndex - 1)
+const goNext = () => goToPage(props.currentPageIndex + 1)
+
+/* go to page input */
+const handleEnterEvent = () => {
+  let page = parseInt(targetPage.value)
+
+  if (!isNaN(page) && page >= 1) {
+    if (page > totalPages.value) {
+      page = totalPages.value
+    }
+
+    goToPage(page - 1)
+  }
+
+  targetPage.value = ''
+}
 </script>
