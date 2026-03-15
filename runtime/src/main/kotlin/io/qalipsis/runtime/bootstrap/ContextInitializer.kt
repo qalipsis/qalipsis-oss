@@ -72,8 +72,8 @@ class ContextInitializer(
             else -> configureStandalone(environments, properties)
         }
         environments.add("$role".lowercase())
-
         val allEnvironments = environments.toList() + this.commandLineEnvironments
+            .flatMap { it.split(",") }.map { it.trim() }.filter { it.isNotBlank() }.distinct()
         addFileSystemConfigurationFiles(allEnvironments)
         return ApplicationContext.builder()
             .environments(*allEnvironments.toTypedArray())
@@ -162,8 +162,7 @@ class ContextInitializer(
     private fun loadExtraPropertySourcesNames(): Collection<String> {
         return this.javaClass.classLoader.getResources("META-INF/services/qalipsis/sources")
             .asSequence()
-            .flatMap { folder -> ServicesFiles.readFile(folder.openStream()) }
-            .flatMap { file -> ServicesFiles.readFile(this.javaClass.classLoader.getResourceAsStream("META-INF/services/qalipsis/sources/$file")) }
+            .flatMap { file -> ServicesFiles.readFile(file.openStream()) }
             .flatMap { line -> line.split(",") }
             .map { line -> line.trim() }
             .filter { line -> line.isNotBlank() }
