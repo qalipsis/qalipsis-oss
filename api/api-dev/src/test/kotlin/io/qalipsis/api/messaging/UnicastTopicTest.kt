@@ -27,6 +27,7 @@ import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -174,7 +175,7 @@ internal class UnicastTopicTest {
 
     @Test
     @Timeout(10)
-    internal fun `should not cancel subscription when actively polling`() = testCoroutineDispatcher.run {
+    internal fun `should not cancel subscription when actively polling`() = runBlocking {
         // given
         val topic = UnicastTopic<Int>(100, Duration.ofMillis(50))
         val subscription = topic.subscribe("any-1")

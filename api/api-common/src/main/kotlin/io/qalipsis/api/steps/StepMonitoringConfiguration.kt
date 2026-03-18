@@ -37,8 +37,18 @@ data class StepMonitoringConfiguration(
     /**
      * Enables the record of both events and meters.
      */
-    fun all() {
+    fun all(): StepMonitoringConfiguration {
         events = true
         meters = true
+        return this
+    }
+
+    /**
+     * Disables the record of both events and meters.
+     */
+    fun off(): StepMonitoringConfiguration {
+        events = false
+        meters = false
+        return this
     }
 }
