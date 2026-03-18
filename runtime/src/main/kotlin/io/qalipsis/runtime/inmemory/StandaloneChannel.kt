@@ -22,7 +22,6 @@ package io.qalipsis.runtime.inmemory
 import io.micronaut.context.BeanProvider
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
-
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.Directive
@@ -66,6 +65,13 @@ class StandaloneChannel(
 
     override fun unsubscribeFeedback(vararg channelNames: DispatcherChannel) = Unit
 
+    override fun getStartupOrder() = Int.MIN_VALUE
+
+    override fun init() {
+        super<HeadChannel>.init()
+        super<FactoryChannel>.init()
+    }
+
     @LogInput(level = Level.DEBUG)
     override suspend fun publishDirective(directive: Directive) {
         val verifiedDirective = if (directive is SingleUseDirective<*>) {
@@ -87,12 +93,6 @@ class StandaloneChannel(
         listeners.get().handshakeResponseListeners.forEach { listener ->
             orchestrationCoroutineScope.launch { listener.notify(handshakeResponse) }
         }
-    }
-
-    override fun getStartupOrder() = Int.MIN_VALUE
-
-    override fun init() {
-        super<HeadChannel>.init()
     }
 
     @LogInput(level = Level.DEBUG)

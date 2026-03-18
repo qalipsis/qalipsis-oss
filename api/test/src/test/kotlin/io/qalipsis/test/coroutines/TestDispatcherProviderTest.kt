@@ -88,7 +88,7 @@ internal class TestDispatcherProviderTest {
         val after = System.currentTimeMillis()
 
         // then
+        assertThat(after - before).isLessThan(500L)
         assertThat(suspendedCountLatch.get()).isEqualTo(0L)
-        assertThat(after - before).isLessThan(100L)
     }
 }

@@ -26,6 +26,7 @@ import io.qalipsis.core.factory.communication.HandshakeResponseListener
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.communication.HandshakeRequestListener
 import io.qalipsis.core.head.communication.HeartbeatListener
+import io.qalipsis.core.lifetime.HeadStartupComponent
 import jakarta.inject.Singleton
 
 @Singleton
@@ -36,4 +37,12 @@ class Listeners(
     val feedbackListeners: Collection<FeedbackListener<*>>,
     val handshakeRequestListeners: Collection<HandshakeRequestListener>,
     val heartbeatListeners: Collection<HeartbeatListener>
-)
+) : HeadStartupComponent {
+
+    override fun init() {
+        super.init()
+    }
+
+    override fun getStartupOrder() = Int.MIN_VALUE
+
+}

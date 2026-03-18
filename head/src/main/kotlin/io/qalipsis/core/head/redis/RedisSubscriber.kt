@@ -63,15 +63,15 @@ class RedisSubscriber(
     handshakeRequestListeners, orchestrationCoroutineScope
 ) {
 
-    private val listener = Listener()
+    private val pubSubListener = PubSubListener()
 
     override fun init() {
         factoryChannel.subscribeHandshakeRequest(subscriberRegistry.headConfiguration.handshakeRequestChannel)
         subscriberCommands.subscribe(subscriberRegistry.headConfiguration.heartbeatChannel).toFuture().get()
-        subscriberCommands.statefulConnection.addListener(listener)
+        subscriberCommands.statefulConnection.addListener(pubSubListener)
     }
 
-    private inner class Listener : RedisPubSubListener<String, ByteArray> {
+    private inner class PubSubListener : RedisPubSubListener<String, ByteArray> {
 
         override fun message(channel: String, message: ByteArray) {
             log.trace { "Received a message from channel $channel" }
@@ -100,7 +100,7 @@ class RedisSubscriber(
     }
 
     override fun close() {
-        subscriberCommands.statefulConnection.removeListener(listener)
+        subscriberCommands.statefulConnection.removeListener(pubSubListener)
         subscriberCommands.quit().subscribe()
     }
 

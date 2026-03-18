@@ -38,6 +38,8 @@ import kotlin.math.ceil
 
 /**
  * Creates the instances of [CoroutineScope] and [CoroutineContext] to be shared in the application.
+ * The creator functions for dispatchers and coroutine scopes all receive the [coroutineScopeProvider] as argument
+ * in order to force its prior creation.
  *
  * @author Eric Jessé
  */
@@ -131,63 +133,78 @@ class ExecutorsFactory {
 
     @Named(Executors.GLOBAL_EXECUTOR_NAME)
     @Bean(typed = [CoroutineDispatcher::class])
-    fun globalDispatcher() = createdScopes[Executors.GLOBAL_EXECUTOR_NAME]!!.dispatcher
+    fun globalDispatcher(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.GLOBAL_EXECUTOR_NAME]!!.dispatcher
 
     @Named(Executors.BACKGROUND_EXECUTOR_NAME)
     @Bean(typed = [CoroutineDispatcher::class])
-    fun backgroundDispatcher() = createdScopes[Executors.BACKGROUND_EXECUTOR_NAME]!!.dispatcher
+    fun backgroundDispatcher(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.BACKGROUND_EXECUTOR_NAME]!!.dispatcher
 
     @Named(Executors.IO_EXECUTOR_NAME)
     @Bean(typed = [CoroutineDispatcher::class])
-    fun ioDispatcher() = createdScopes[Executors.IO_EXECUTOR_NAME]!!.dispatcher
+    fun ioDispatcher(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.IO_EXECUTOR_NAME]!!.dispatcher
 
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME)
     @Bean(typed = [CoroutineDispatcher::class])
-    fun campaignDispatcher() = createdScopes[Executors.CAMPAIGN_EXECUTOR_NAME]!!.dispatcher
+    fun campaignDispatcher(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.CAMPAIGN_EXECUTOR_NAME]!!.dispatcher
 
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME)
     @Bean(typed = [CoroutineDispatcher::class])
-    fun orchestrationDispatcher() = createdScopes[Executors.ORCHESTRATION_EXECUTOR_NAME]!!.dispatcher
+    fun orchestrationDispatcher(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.ORCHESTRATION_EXECUTOR_NAME]!!.dispatcher
 
     @Named(Executors.GLOBAL_EXECUTOR_NAME)
     @Bean(typed = [CoroutineContext::class])
-    fun globalContext() = createdScopes[Executors.GLOBAL_EXECUTOR_NAME]!!.context
+    fun globalContext(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.GLOBAL_EXECUTOR_NAME]!!.context
 
     @Named(Executors.BACKGROUND_EXECUTOR_NAME)
     @Bean(typed = [CoroutineContext::class])
-    fun backgroundContext() = createdScopes[Executors.BACKGROUND_EXECUTOR_NAME]!!.context
+    fun backgroundContext(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.BACKGROUND_EXECUTOR_NAME]!!.context
 
     @Named(Executors.IO_EXECUTOR_NAME)
     @Bean(typed = [CoroutineContext::class])
-    fun ioContext() = createdScopes[Executors.IO_EXECUTOR_NAME]!!.context
+    fun ioContext(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.IO_EXECUTOR_NAME]!!.context
 
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME)
     @Bean(typed = [CoroutineContext::class])
-    fun campaignContext() = createdScopes[Executors.CAMPAIGN_EXECUTOR_NAME]!!.context
+    fun campaignContext(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.CAMPAIGN_EXECUTOR_NAME]!!.context
 
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME)
     @Bean(typed = [CoroutineContext::class])
-    fun orchestrationContext() = createdScopes[Executors.ORCHESTRATION_EXECUTOR_NAME]!!.context
+    fun orchestrationContext(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.ORCHESTRATION_EXECUTOR_NAME]!!.context
 
     @Named(Executors.GLOBAL_EXECUTOR_NAME)
     @Bean(typed = [CoroutineScope::class])
-    fun globalScope() = createdScopes[Executors.GLOBAL_EXECUTOR_NAME]!!
+    fun globalScope(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.GLOBAL_EXECUTOR_NAME]!!
 
     @Named(Executors.BACKGROUND_EXECUTOR_NAME)
     @Bean(typed = [CoroutineScope::class])
-    fun backgroundScope() = createdScopes[Executors.BACKGROUND_EXECUTOR_NAME]!!
+    fun backgroundScope(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.BACKGROUND_EXECUTOR_NAME]!!
 
     @Named(Executors.IO_EXECUTOR_NAME)
     @Bean(typed = [CoroutineScope::class])
-    fun ioScope() = createdScopes[Executors.IO_EXECUTOR_NAME]
+    fun ioScope(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.IO_EXECUTOR_NAME]
 
     @Named(Executors.CAMPAIGN_EXECUTOR_NAME)
     @Bean(typed = [CoroutineScope::class])
-    fun campaignScope() = createdScopes[Executors.CAMPAIGN_EXECUTOR_NAME]!!
+    fun campaignScope(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.CAMPAIGN_EXECUTOR_NAME]!!
 
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME)
     @Bean(typed = [CoroutineScope::class])
-    fun orchestrationScope() = createdScopes[Executors.ORCHESTRATION_EXECUTOR_NAME]!!
+    fun orchestrationScope(coroutineScopeProvider: CoroutineScopeProvider) =
+        createdScopes[Executors.ORCHESTRATION_EXECUTOR_NAME]!!
 
     class NamedCoroutineScope(
         val name: String,
