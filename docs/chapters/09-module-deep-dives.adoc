@@ -1,0 +1,561 @@
+= Module Deep Dives
+
+This chapter provides per-module technical details covering internal architecture, key classes, and configuration.
+
+== Head Module
+
+The head module is the orchestration hub.
+It serves the REST API, manages the campaign state machine, coordinates factories, and handles reporting.
+
+=== Internal Architecture
+
+[plantuml,head-architecture,svg]
+----
+@startuml
+
+title Head Module Internal Architecture
+
+package "Web Layer" as web #E3F2FD {
+    [CampaignController]
+    [ScenarioController]
+    [FactoryController]
+    [ZoneController]
+    [ReportController]
+    [DataSeriesController]
+    [TimeSeriesController]
+    [ProfileController]
+    [ConfigurationController]
+}
+
+package "Campaign Orchestration" as campaign #FFF9C4 {
+    [CampaignExecutor]
+    [CampaignService]
+    [CampaignScheduler]
+    [CampaignAutoStarter]
+    rectangle "State Machine" as sm {
+        [FactoryAssignmentState]
+        [MinionsAssignmentState]
+        [WarmupState]
+        [RunningState]
+        [CompletionState]
+        [FailureState]
+        [AbortingState]
+        [DisabledState]
+    }
+}
+
+package "Factory Management" as factorymgmt #E8F5E9 {
+    [FactoryService]
+    [HandshakeManager]
+    [ScenarioDetailsUpdater]
+}
+
+package "Reporting" as reporting #F3E5F5 {
+    [CampaignReportProvider]
+    [CampaignReportStateKeeper]
+    [ThymeleafReportService]
+    [CampaignReportPublishers]
+}
+
+package "Communication" as comm #FFE0B2 {
+    [RedisHeadChannel]
+    [RedisSubscriber]
+    [ChannelNameFactory]
+    [DelayedFeedbackManager]
+}
+
+package "Persistence" as persist #FFF3E0 {
+    [CampaignRepository]
+    [ScenarioRepository]
+    [FactoryRepository]
+    [ReportRepository]
+    [ZoneRepository]
+}
+
+database "PostgreSQL" as pg
+queue "Redis" as redis
+
+web --> campaign
+web --> factorymgmt
+web --> reporting
+
+campaign --> comm
+campaign --> persist
+factorymgmt --> persist
+reporting --> persist
+
+persist --> pg
+comm --> redis
+
+@enduml
+----
+
+=== Key Services
+
+[cols="2,4",options="header"]
+|===
+| Service | Responsibility
+
+| `CampaignExecutor`
+| Orchestrates campaign lifecycle; initializes state machine and publishes directives
+
+| `CampaignService` (Persistence impl)
+| CRUD operations for campaigns; persists status transitions
+
+| `FactoryService` (Cluster impl)
+| Factory registration, health checks, locking/releasing factories for campaigns
+
+| `HandshakeManager`
+| Processes factory handshake requests and sends responses
+
+| `CampaignReportProvider`
+| Aggregates campaign execution data for reports
+
+| `ThymeleafReportServiceImpl`
+| Renders HTML/PDF reports from Thymeleaf templates
+
+| `CampaignScheduler`
+| Handles scheduled and recurring campaigns
+
+| `CampaignAutoStarter`
+| Autostart mode for CI/CD pipelines
+|===
+
+=== Campaign Execution Context
+
+The `CampaignExecutionContext` is a singleton injected into all campaign states:
+
+[cols="2,3",options="header"]
+|===
+| Dependency | Purpose
+
+| `campaignService`
+| Persist campaign state transitions
+
+| `factoryService`
+| Query and manage factory assignments
+
+| `campaignReportStateKeeper`
+| Track report generation state
+
+| `headChannel`
+| Publish directives to factories
+
+| `assignmentResolver`
+| Resolve factory-scenario DAG assignments
+
+| `reportPublishers`
+| Publish reports after completion
+
+| `campaignAutoStarter`
+| Trigger auto-start behavior (if configured)
+
+| `campaignHooks`
+| Extension hooks for campaign lifecycle events
+
+| `delayedFeedbackManager`
+| Handle feedbacks that arrive before state is ready
+|===
+
+== Factory Module
+
+The factory module executes load tests by processing directives, managing minion lifecycles, and collecting metrics.
+
+=== Internal Architecture
+
+[plantuml,factory-architecture,svg]
+----
+@startuml
+
+title Factory Module Internal Architecture
+
+package "Communication" as comm #FFE0B2 {
+    [RedisFactoryChannel]
+    [RedisSubscriber]
+}
+
+package "Directive Listeners" as listeners #E3F2FD {
+    [Phase1: FactoryAssignment]
+    [Phase2: MinionsDeclaration]
+    [Phase3: MinionsAssignment]
+    [Phase4: RampUpPreparation]
+    [Phase5: ScenarioWarmUp]
+    [Phase6: MinionsStart]
+    [MinionsShutdown]
+    [CampaignAbort]
+    [CampaignShutdown]
+    [ContextDirective]
+}
+
+package "Orchestration" as orch #FFF9C4 {
+    [FactoryCampaignManager]
+    [Runner]
+    [ScenarioRegistry]
+    [MinionsKeeper]
+    [MinionAssignmentKeeper]
+    [LocalAssignmentStore]
+}
+
+package "Step Execution" as steps #E8F5E9 {
+    [Step Implementations]
+    [Step Converters]
+    [StepContext]
+}
+
+package "Metrics" as metrics #F3E5F5 {
+    [CampaignMeterRegistry]
+    [MeasurementPublishers]
+    [EventsLogger]
+}
+
+queue "Redis" as redis
+
+redis --> comm
+comm --> listeners
+listeners --> orch
+orch --> steps
+steps --> metrics
+
+@enduml
+----
+
+=== Key Services
+
+[cols="2,4",options="header"]
+|===
+| Service | Responsibility
+
+| `FactoryCampaignManager`
+| Campaign lifecycle on the factory side; execution profile calculation, scenario warm-up and shutdown
+
+| `Runner`
+| Orchestrates step execution; propagates context through DAG chains
+
+| `ScenarioRegistry`
+| Registry of available scenarios and their DAGs
+
+| `MinionsKeeper`
+| Creates, tracks, starts, and stops minions; maintains idle/running gauges
+
+| `MinionAssignmentKeeper`
+| Assigns minions to DAGs; manages scheduling and assignment state
+
+| `LocalAssignmentStore`
+| Tracks which minions execute which DAGs locally (for cross-factory routing)
+
+| `CampaignMeterRegistry`
+| Collects and publishes metrics during execution
+
+| `EventsLogger`
+| Logs events during minion and step lifecycle
+|===
+
+=== Directive Listener Pattern
+
+All directive listeners implement the `DirectiveListener<D>` interface:
+
+[source,kotlin]
+----
+interface DirectiveListener<D : Directive> : Ordered {
+    fun accept(directive: Directive): Boolean
+    suspend fun notify(directive: D)
+}
+----
+
+Listeners are invoked in priority order (`Ordered` interface).
+Each listener:
+
+1. Checks if it should handle the directive via `accept()`
+2. Publishes a `Feedback(IN_PROGRESS)` before processing
+3. Executes the directive logic
+4. Publishes `Feedback(COMPLETED)` or `Feedback(FAILED, errorMessage)`
+
+== Shared Module
+
+The shared module defines the protocol between head and factory nodes.
+
+=== Key Packages
+
+[cols="2,4",options="header"]
+|===
+| Package | Contents
+
+| `io.qalipsis.core.directives`
+| All directive types (factory assignment, minions, campaign shutdown, etc.)
+
+| `io.qalipsis.core.feedbacks`
+| All feedback types and `FeedbackStatus` enum
+
+| `io.qalipsis.core.handshake`
+| `HandshakeRequest` and `HandshakeResponse` data classes
+
+| `io.qalipsis.core.heartbeat`
+| `Heartbeat` data class with factory state
+
+| `io.qalipsis.core.campaigns`
+| `RunningCampaign`, `ScenarioSummary`, `FactoryConfiguration`, `DirectedAcyclicGraphSummary`
+
+| `io.qalipsis.core.executionprofile`
+| All `ExecutionProfileConfiguration` implementations
+
+| `io.qalipsis.core.meters`
+| Shared meter data structures
+
+| `io.qalipsis.core.redis`
+| Redis utility classes
+
+| `io.qalipsis.core.persistence`
+| Database utility classes
+|===
+
+=== Directive Hierarchy
+
+[plantuml,directive-hierarchy,svg]
+----
+@startuml
+
+title Directive Class Hierarchy
+
+abstract class Directive {
+    + campaignKey : CampaignKey
+    + channel : String
+    + tenant : String
+}
+
+abstract class DescriptiveDirective
+abstract class DirectiveReference
+abstract class "SingleUseDirective<R>" as sud
+
+Directive <|-- DescriptiveDirective
+Directive <|-- DirectiveReference
+Directive <|-- sud
+
+DescriptiveDirective <|-- FactoryAssignmentDirective
+DescriptiveDirective <|-- MinionsDeclarationDirective
+DescriptiveDirective <|-- MinionsStartDirective
+DescriptiveDirective <|-- MinionsShutdownDirective
+DescriptiveDirective <|-- ScenarioWarmUpDirective
+DescriptiveDirective <|-- CampaignShutdownDirective
+DescriptiveDirective <|-- CampaignAbortDirective
+DescriptiveDirective <|-- CompleteCampaignDirective
+DescriptiveDirective <|-- FactoryShutdownDirective
+
+sud <|-- MinionsAssignmentDirective
+sud <|-- MinionsRampUpPreparationDirective
+
+note right of DescriptiveDirective
+  Contains all data inline.
+  Can be large.
+end note
+
+note right of sud
+  Data stored in DirectiveRegistry.
+  Only reference transmitted.
+  More efficient for large payloads.
+end note
+
+@enduml
+----
+
+== Runtime Module
+
+The runtime module provides the bootstrap and execution environment.
+
+=== Deployment Roles
+
+[cols="2,4",options="header"]
+|===
+| Role | Description
+
+| `AUTO`
+| Auto-detect based on classpath and configuration
+
+| `STANDALONE`
+| Both head and factory in a single JVM
+
+| `HEAD`
+| Only head components loaded
+
+| `FACTORY`
+| Only factory components loaded
+|===
+
+=== Bootstrap Flow
+
+[plantuml,bootstrap-flow,svg]
+----
+@startuml
+
+title Runtime Bootstrap Flow
+
+start
+
+:Qalipsis.main(args);
+
+:Parse command-line arguments\n(deployment role, autostart, etc.);
+
+if (Role?) then (STANDALONE)
+    :Load Head + Factory components;
+    :Initialize in-memory channels;
+elseif (Role?) then (HEAD)
+    :Load Head components only;
+    :Initialize Redis channels;
+elseif (Role?) then (FACTORY)
+    :Load Factory components only;
+    :Initialize Redis channels;
+    :Initiate handshake with Head;
+else (AUTO)
+    :Detect from classpath;
+endif
+
+:Start Micronaut application context;
+
+if (--autostart?) then (yes)
+    :CampaignAutoStarter\nruns campaign immediately;
+    :Wait for completion;
+    :Exit with status code;
+else (no)
+    :Server ready\n(waiting for REST/Redis commands);
+endif
+
+stop
+
+@enduml
+----
+
+=== In-Memory vs. Redis Execution
+
+[cols="2,3,3",options="header"]
+|===
+| Concern | In-Memory (Standalone) | Redis (Cluster)
+
+| Directives
+| Direct method calls
+| Redis Pub/Sub channels
+
+| Feedbacks
+| Direct method calls
+| Redis Pub/Sub channels
+
+| State persistence
+| JVM heap
+| Redis keys
+
+| Handshake
+| Implicit (same JVM)
+| Redis handshake protocol
+
+| Heartbeat
+| Not needed
+| Periodic Redis messages
+|===
+
+== Cluster Module
+
+The cluster module provides multi-tenancy and security.
+
+=== Permissions
+
+[cols="2,3",options="header"]
+|===
+| Permission | Scope
+
+| `read:campaign`
+| View campaigns
+
+| `write:campaign`
+| Create/update campaigns
+
+| `abort:campaign`
+| Abort running campaigns
+
+| `read:scenario`
+| View scenarios
+
+| `read:report`
+| View reports
+
+| `write:report`
+| Create/update reports
+
+| `read:series`
+| View data series
+
+| `write:series`
+| Create/update data series
+
+| `read:time-series`
+| Query time-series data
+
+| `write:series-prepared-queries`
+| Refresh prepared queries
+|===
+
+== API Common Module
+
+Defines the core interfaces used by scenario developers and plugin authors.
+
+=== Key Interfaces
+
+[cols="2,4",options="header"]
+|===
+| Interface | Purpose
+
+| `Step<I, O>`
+| Atomic unit of work with lifecycle hooks (init, start, execute, stop, complete, destroy)
+
+| `StepContext<IN, OUT>`
+| Execution context carrying data between steps
+
+| `Meter<SELF>`
+| Base meter interface with snapshot and summary methods
+
+| `Counter`, `Timer`, `Gauge`, `DistributionSummary`
+| Concrete meter types
+
+| `EventsLogger`
+| Interface for logging events during execution
+
+| `Scenario`
+| Runtime representation of a scenario with DAGs and steps
+
+| `DirectedAcyclicGraph`
+| Container for a chain of steps
+
+| `Minion`
+| Virtual actor executing step chains
+|===
+
+== API DSL Module
+
+Provides the Kotlin DSL for writing scenarios.
+
+=== Type Aliases
+
+All type aliases are defined in `io.qalipsis.api.context.Types`:
+
+[cols="2,3",options="header"]
+|===
+| Alias | Base Type
+
+| `MinionId`
+| `String`
+
+| `ScenarioName`
+| `String`
+
+| `StepName`
+| `String`
+
+| `DirectedAcyclicGraphName`
+| `String`
+
+| `CampaignKey`
+| `String`
+
+| `NodeId`
+| `String`
+
+| `SharedStateName`
+| `String`
+|===

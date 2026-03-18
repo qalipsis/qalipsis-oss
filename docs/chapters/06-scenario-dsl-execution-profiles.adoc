@@ -1,0 +1,384 @@
+= Scenario DSL & Execution Profiles
+
+This chapter covers how load test scenarios are written using the Kotlin DSL and how execution profiles control the rate of minion injection.
+
+== Scenario DSL
+
+Scenarios are defined as Kotlin classes annotated with `@Scenario`.
+The DSL provides a fluent API for building step chains.
+
+[source,kotlin]
+----
+@Scenario("http-load-test")
+class HttpLoadTestScenario {
+
+    lateinit var scenario: ScenarioSpecification
+
+    fun configure() {
+        scenario.apply {
+            minionsCount = 1000
+
+            profile {
+                stages {
+                    stage(minionsCount = 100, rampUpDurationMs = 5000, totalDurationMs = 30000)
+                    stage(minionsCount = 500, rampUpDurationMs = 10000, totalDurationMs = 60000)
+                    stage(minionsCount = 1000, rampUpDurationMs = 15000, totalDurationMs = 120000)
+                }
+            }
+
+            start()
+                .execute { context ->
+                    // Step logic here
+                    context.send(context.receive())
+                }
+        }
+    }
+}
+----
+
+=== DSL Building Blocks
+
+[plantuml,dsl-building-blocks,svg]
+----
+@startuml
+
+title Scenario DSL Class Hierarchy
+
+interface ScenarioSpecification {
+    + size : Long
+    + description : String?
+    + version : String
+    + builtAt : Instant
+}
+
+interface StartScenarioSpecification {
+    + start() : StepSpecification
+}
+
+interface ConfigurableScenarioSpecification {
+    + profile(spec) : void
+    + minionsCount : Int
+}
+
+interface RetrySpecification {
+    + retry(policy) : void
+}
+
+interface StepSpecification<INPUT, OUTPUT, SELF> {
+    + name : StepName
+    + timeout : Duration?
+    + retryPolicy : RetryPolicy?
+}
+
+ScenarioSpecification <|-- StartScenarioSpecification
+ScenarioSpecification <|-- ConfigurableScenarioSpecification
+ConfigurableScenarioSpecification <|-- RetrySpecification
+
+@enduml
+----
+
+=== Step Functions
+
+The DSL provides several factory functions for creating steps:
+
+[cols="3,4",options="header"]
+|===
+| Function | Description
+
+| `start()`
+| Define the origin of the scenario graph (must be called once)
+
+| `execute { context -> ... }`
+| Execute arbitrary code with access to the step context
+
+| `returns(value)`
+| Forward a constant value to the next step
+
+| `returns { value }`
+| Generate and forward a value
+
+| `map { input -> output }`
+| Transform input to output
+
+| `flatMap { input -> list }`
+| Transform input to multiple outputs (fan-out)
+
+| `filter { input -> boolean }`
+| Pass only matching records
+
+| `delay(duration)`
+| Pause execution for a duration
+
+| `pace(duration)`
+| Ensure minimum duration between minion executions
+
+| `verify { input -> assertions }`
+| Run assertions on input data
+
+| `shelve { key, value }`
+| Store data in shared cache
+
+| `unshelve(key)`
+| Retrieve data from shared cache
+
+| `collect { records }`
+| Batch records before forwarding
+
+| `split { record -> list }`
+| Fan-out to multiple records
+
+| `join(...)`
+| Fan-in from multiple upstream steps
+
+| `catchErrors { context -> ... }`
+| Handle errors from preceding steps
+
+| `catchExhaustedContext { context -> ... }`
+| Handle exhausted contexts (no more input)
+|===
+
+== Execution Profiles
+
+Execution profiles control how minions are injected over time.
+They determine the load curve shape.
+
+[plantuml,execution-profiles,svg]
+----
+@startuml
+
+title Execution Profile Types
+
+rectangle "**Immediate**\nAll minions launched at once.\nNo ramp-up." as imm #C8E6C9
+
+rectangle "**Regular**\nFixed count at fixed intervals.\ne.g., 200 minions every 10ms" as reg #E3F2FD
+
+rectangle "**Accelerating**\nIntervals shrink by multiplier.\ne.g., 100ms -> 50ms -> 25ms\nuntil minimum reached." as acc #FFF9C4
+
+rectangle "**Progressive Volume**\nMinion count per batch grows.\ne.g., 10 -> 20 -> 40\nuntil maximum reached." as pv #FFE0B2
+
+rectangle "**Time Frame**\nDistribute all minions\nevenly over a time window." as tf #F3E5F5
+
+rectangle "**Stages**\nMulti-stage ramp-up.\nEach stage has count, ramp-up,\nand total duration." as stg #FFCDD2
+
+rectangle "**Percentage Stages**\nStages defined as percentage\nof total minion count." as pstg #E8F5E9
+
+imm -[hidden]right- reg
+reg -[hidden]right- acc
+acc -[hidden]right- pv
+pv -[hidden]down- tf
+tf -[hidden]left- stg
+stg -[hidden]left- pstg
+
+@enduml
+----
+
+=== Profile Configurations
+
+==== ImmediateExecutionProfileConfiguration
+
+All minions are launched simultaneously.
+No parameters needed.
+
+==== RegularExecutionProfileConfiguration
+
+[cols="2,2,3",options="header"]
+|===
+| Field | Type | Description
+
+| `periodInMs`
+| Long
+| Time between each launch batch
+
+| `minionsCountProLaunch`
+| Int
+| Number of minions per batch
+|===
+
+==== AcceleratingExecutionProfileConfiguration
+
+[cols="2,2,3",options="header"]
+|===
+| Field | Type | Description
+
+| `startPeriodMs`
+| Long
+| Initial period between batches
+
+| `accelerator`
+| Double
+| Multiplier applied to the period each iteration (e.g., 0.5 halves the period)
+
+| `minPeriodMs`
+| Long
+| Minimum period (floor)
+
+| `minionsCountProLaunch`
+| Int
+| Number of minions per batch
+|===
+
+==== ProgressiveVolumeExecutionProfileConfiguration
+
+[cols="2,2,3",options="header"]
+|===
+| Field | Type | Description
+
+| `periodMs`
+| Long
+| Fixed period between batches
+
+| `minionsCountProLaunchAtStart`
+| Int
+| Initial batch size
+
+| `multiplier`
+| Double
+| Growth factor applied to batch size each iteration
+
+| `maxMinionsCountProLaunch`
+| Int
+| Maximum batch size (ceiling)
+|===
+
+==== TimeFrameExecutionProfileConfiguration
+
+[cols="2,2,3",options="header"]
+|===
+| Field | Type | Description
+
+| `periodInMs`
+| Long
+| Time between batches
+
+| `timeFrameInMs`
+| Long
+| Total time window to distribute minions across
+|===
+
+==== StageExecutionProfileConfiguration
+
+[cols="2,2,3",options="header"]
+|===
+| Field | Type | Description
+
+| `completion`
+| CompletionMode
+| How stage completion is determined
+
+| `stages`
+| List<Stage>
+| Ordered list of execution stages
+|===
+
+Each `Stage` contains:
+
+[cols="2,2,3",options="header"]
+|===
+| Field | Type | Description
+
+| `minionsCount`
+| Int
+| Total minions in this stage
+
+| `rampUpDurationMs`
+| Long
+| Duration of the ramp-up phase (must be >= resolutionMs)
+
+| `totalDurationMs`
+| Long
+| Total stage duration (must be >= rampUpDurationMs)
+
+| `resolutionMs`
+| Long
+| Minimum time between launches (default 500ms)
+|===
+
+==== PercentageStageExecutionProfileConfiguration
+
+Same as `StageExecutionProfileConfiguration` but stages are defined as percentages of total minion count:
+
+[cols="2,2,3",options="header"]
+|===
+| Field | Type | Description
+
+| `minionsPercentage`
+| Double
+| Percentage of total minions (0.0 to 100.0)
+
+| `rampUpDurationMs`
+| Long
+| Ramp-up duration
+
+| `totalDurationMs`
+| Long
+| Total stage duration
+
+| `resolutionMs`
+| Long
+| Minimum launch interval (default 500ms)
+|===
+
+== Execution Profile Processing
+
+[plantuml,execution-profile-processing,svg]
+----
+@startuml
+
+title Execution Profile Processing (Phase 4)
+
+participant "Head" as head
+participant "Factory\n(FactoryCampaignManager)" as fcm
+participant "ExecutionProfile" as ep
+
+head -> fcm : MinionsRampUpPreparationDirective
+activate fcm
+
+fcm -> fcm : Get minion count under load
+fcm -> fcm : Get execution profile for scenario
+
+fcm -> ep : notifyStart(speedFactor)
+activate ep
+ep -> ep : Apply speed factor to timings
+ep --> fcm
+deactivate ep
+
+fcm -> ep : iterator(totalMinionsCount, speedFactor)
+activate ep
+
+loop For each batch
+    ep --> fcm : MinionsStartingLine(offsetMs, count)
+end
+
+deactivate ep
+
+fcm -> fcm : Validate monotonic time\nprogression
+fcm -> fcm : Store schedule via\nminionAssignmentKeeper
+
+fcm --> head : MinionsRampUpPreparationFeedback\n(COMPLETED)
+deactivate fcm
+
+@enduml
+----
+
+The `MinionsStartingLine` data class contains:
+
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `offsetMs`
+| Milliseconds from campaign start when this batch should launch
+
+| `count`
+| Number of minions to launch in this batch
+|===
+
+== Speed Factor
+
+The `speedFactor` property on `RunningCampaign` accelerates or decelerates the entire execution:
+
+* `speedFactor = 1.0` -- Normal speed
+* `speedFactor = 2.0` -- Twice as fast (halves all delays and ramp-up times)
+* `speedFactor = 0.5` -- Half speed (doubles all delays)
+
+The speed factor is applied during execution profile calculation, affecting all timing-related parameters.

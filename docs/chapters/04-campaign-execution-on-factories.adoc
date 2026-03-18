@@ -1,0 +1,379 @@
+= Campaign Execution on Factories
+
+When the head orchestrates a campaign, it sends a sequence of directives to factory nodes.
+Each factory processes these directives through specialized listeners, executing the campaign in six ordered phases followed by shutdown phases.
+
+== Directive-Feedback Protocol
+
+[plantuml,directive-feedback-protocol,svg]
+----
+@startuml
+
+title Directive-Feedback Protocol
+
+participant "Head\n(Campaign Executor)" as head
+collections "Redis\nPub/Sub" as redis
+participant "Factory\n(Directive Listeners)" as factory
+
+head -> redis : **Directive**\n(broadcast or unicast)
+redis -> factory
+
+activate factory
+factory -> redis : Feedback(IN_PROGRESS)
+redis -> head
+
+factory -> factory : Process directive
+
+alt Success
+    factory -> redis : Feedback(COMPLETED)
+    redis -> head
+else Failure
+    factory -> redis : Feedback(FAILED, errorMessage)
+    redis -> head
+else Not applicable
+    factory -> redis : Feedback(IGNORED)
+    redis -> head
+end
+
+deactivate factory
+
+@enduml
+----
+
+== Six-Phase Campaign Launch Sequence
+
+[plantuml,six-phase-launch,svg]
+----
+@startuml
+
+title Campaign Launch Sequence (6 Phases)
+
+participant "Head" as head
+collections "Redis" as redis
+participant "Factory" as factory
+
+== Phase 1: Factory Assignment ==
+
+head -> redis : **FactoryAssignmentDirective**\n(DAG assignments, campaign config)
+redis -> factory : Initialize campaign\nStore DAG assignments
+
+factory -> redis : FactoryAssignmentFeedback(COMPLETED)
+redis -> head
+
+== Phase 2: Minions Declaration ==
+
+head -> redis : **MinionsDeclarationDirective**\n(minion count per scenario)
+redis -> factory : Generate unique minion IDs\nRegister minions for assignment
+
+factory -> redis : MinionsDeclarationFeedback(COMPLETED)
+redis -> head
+
+note right of factory
+  Automatically triggers
+  MinionsAssignmentDirective
+end note
+
+== Phase 3: Minions Assignment ==
+
+head -> redis : **MinionsAssignmentDirective**
+redis -> factory : Assign minions to DAGs\nCreate Minion objects\n(paused at start)
+
+factory -> redis : MinionsAssignmentFeedback(COMPLETED)
+redis -> head
+
+== Phase 4: Ramp-Up Preparation ==
+
+head -> redis : **MinionsRampUpPreparationDirective**
+redis -> factory : Calculate execution profile\nSchedule minion start times
+
+factory -> redis : MinionsRampUpPreparationFeedback(COMPLETED)
+redis -> head
+
+== Phase 5: Scenario Warm-Up ==
+
+head -> redis : **ScenarioWarmUpDirective**
+redis -> factory : Start scenario components\nLoad schedule plan\nStart singleton minions
+
+factory -> redis : ScenarioWarmUpFeedback(COMPLETED)
+redis -> head
+
+== Phase 6: Minions Start ==
+
+head -> redis : **MinionsStartDirective**\n(startTimestamp)
+redis -> factory : Start singleton minions\nSchedule regular minions\nwith calculated offsets
+
+factory -> redis : MinionsStartFeedback(COMPLETED)
+redis -> head
+
+@enduml
+----
+
+=== Phase 1: Factory Assignment
+
+`CampaignLaunch1FactoryAssignmentDirectiveListener` processes `FactoryAssignmentDirective`.
+
+.What happens:
+1. Creates a `Campaign` object with metadata (speed factor, timeouts, channels)
+2. Calls `campaignLifeCycleAwares.forEach { it.init(campaign) }` to notify all lifecycle-aware components
+3. Stores DAG assignments via `minionAssignmentKeeper.assignFactoryDags()`
+4. Sends `FactoryAssignmentFeedback`
+
+.Directive fields:
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `campaignKey`
+| Unique campaign identifier
+
+| `assignments`
+| Map of scenario names to DAG assignments for this factory
+
+| `runningCampaign`
+| Full campaign configuration (speed factor, timeouts, channels)
+
+| `channel`
+| Redis channel for this factory
+
+| `tenant`
+| Tenant identifier
+|===
+
+=== Phase 2: Minions Declaration
+
+`CampaignLaunch2MinionsDeclarationDirectiveListener` processes `MinionsDeclarationDirective`.
+
+.What happens:
+1. Generates unique minion IDs for each scenario's DAGs
+2. Creates separate IDs for singleton and non-load minions
+3. Registers minions via `minionAssignmentKeeper.registerMinionsToAssign()`
+4. Auto-publishes `MinionsAssignmentDirective` to trigger the next phase
+
+=== Phase 3: Minions Assignment
+
+`CampaignLaunch3MinionsAssignmentDirectiveListener` processes `MinionsAssignmentDirective`.
+
+.What happens:
+1. Assigns minions to DAGs via `minionAssignmentKeeper.assign()`
+2. Creates `Minion` objects: `minionsKeeper.create(campaignKey, scenarioName, dagIds, minionId)`
+3. Each minion is paused at start (unless it is a singleton)
+
+=== Phase 4: Ramp-Up Preparation
+
+`CampaignLaunch4MinionsRampUpPreparationDirectiveListener` processes `MinionsRampUpPreparationDirective`.
+
+.What happens:
+1. Converts `ExecutionProfileConfiguration` into an `ExecutionProfile` (e.g., `AcceleratingExecutionProfile`, `ImmediateExecutionProfile`)
+2. Calculates the ramp-up schedule via `factoryCampaignManager.prepareMinionsExecutionProfile()`
+3. Returns `List<MinionsStartingLine>` with `(offsetMs, count)` pairs
+4. Validates monotonic time progression
+5. Stores the schedule via `minionAssignmentKeeper.schedule()`
+
+=== Phase 5: Scenario Warm-Up
+
+`CampaignLaunch5ScenarioWarmUpDirectiveListener` processes `ScenarioWarmUpDirective`.
+
+.What happens:
+1. Loads the schedule plan into memory via `minionAssignmentKeeper.readSchedulePlan()`
+2. Starts the scenario via `scenarioRegistry[scenarioName].start()` with campaign context
+3. Initializes scenario components (data sources, connections, etc.)
+
+=== Phase 6: Minions Start
+
+`CampaignLaunch6MinionsStartDirectiveListener` processes `MinionsStartDirective`.
+
+.What happens:
+1. Starts singleton minions: `minionsKeeper.startSingletons()`
+2. Schedules regular minions with calculated time offsets from the ramp-up schedule
+3. Only starts minions with root DAG locally (non-root DAGs are triggered by step propagation)
+
+== Campaign Shutdown
+
+[plantuml,campaign-shutdown,svg]
+----
+@startuml
+
+title Campaign Shutdown Sequence
+
+participant "Head" as head
+collections "Redis" as redis
+participant "Factory" as factory
+
+== Minion Completion ==
+
+factory -> redis : CompleteMinionFeedback\n(minionId completed)
+redis -> head
+head -> redis : MinionsShutdownDirective\n(for completed minion)
+redis -> factory
+factory -> factory : Stop minion\nCancel running jobs
+
+== Scenario Completion ==
+
+factory -> redis : EndOfCampaignScenarioFeedback\n(all minions in scenario done)
+redis -> head
+head -> redis : CampaignScenarioShutdownDirective
+redis -> factory
+factory -> factory : Stop scenario components
+factory -> redis : CampaignScenarioShutdownFeedback
+redis -> head
+
+== Campaign Completion ==
+
+head -> redis : CampaignShutdownDirective\n(broadcast to all factories)
+redis -> factory
+factory -> factory : Final cleanup\nRelease all resources
+factory -> redis : CampaignShutdownFeedback
+redis -> head
+
+@enduml
+----
+
+== Campaign Abort
+
+[plantuml,campaign-abort,svg]
+----
+@startuml
+
+title Campaign Abort Flow
+
+actor "User" as user
+participant "Head\n(CampaignController)" as controller
+participant "CampaignExecutor" as executor
+collections "Redis" as redis
+participant "Factory A" as fa
+participant "Factory B" as fb
+
+user -> controller : POST /campaigns/{key}/abort\n(soft or hard)
+controller -> executor : abort(campaignKey, abortConfig)
+executor -> executor : Current state -> AbortingState
+
+executor -> redis : **CampaignAbortDirective**\n(scenarioNames to abort)
+redis -> fa
+redis -> fb
+
+fa -> fa : Stop minions for scenarios\nCleanup resources
+fa -> redis : CampaignAbortFeedback(COMPLETED)
+
+fb -> fb : Stop minions for scenarios\nCleanup resources
+fb -> redis : CampaignAbortFeedback(COMPLETED)
+
+redis -> executor
+
+executor -> executor : All factories confirmed\nTransition to DisabledState(ABORTED)
+
+@enduml
+----
+
+== Directive Types Summary
+
+[cols="3,3,3",options="header"]
+|===
+| Directive | Listener | Purpose
+
+| `FactoryAssignmentDirective`
+| `CampaignLaunch1FactoryAssignmentDirectiveListener`
+| Initialize campaign on factory, store DAG assignments
+
+| `MinionsDeclarationDirective`
+| `CampaignLaunch2MinionsDeclarationDirectiveListener`
+| Generate minion IDs, register for assignment
+
+| `MinionsAssignmentDirective`
+| `CampaignLaunch3MinionsAssignmentDirectiveListener`
+| Create Minion objects, assign to DAGs
+
+| `MinionsRampUpPreparationDirective`
+| `CampaignLaunch4MinionsRampUpPreparationDirectiveListener`
+| Calculate ramp-up schedule from execution profile
+
+| `ScenarioWarmUpDirective`
+| `CampaignLaunch5ScenarioWarmUpDirectiveListener`
+| Start scenario components, load schedule
+
+| `MinionsStartDirective`
+| `CampaignLaunch6MinionsStartDirectiveListener`
+| Start singletons, schedule regular minion launches
+
+| `MinionsShutdownDirective`
+| `MinionsShutdownDirectiveListener`
+| Stop specific minions
+
+| `CampaignScenarioShutdownDirective`
+| (scenario shutdown listener)
+| Stop a scenario within a campaign
+
+| `CampaignShutdownDirective`
+| `CampaignShutdownDirectiveListener`
+| Final campaign cleanup
+
+| `CampaignAbortDirective`
+| `CampaignAbortDirectiveListener`
+| Abort specified scenarios
+
+| `TransportableStepContext`
+| `ContextDirectiveListener`
+| Propagate step execution across factories
+|===
+
+== Feedback Types Summary
+
+[cols="3,2,3",options="header"]
+|===
+| Feedback | Status Values | Context
+
+| `FactoryAssignmentFeedback`
+| IN_PROGRESS, COMPLETED, FAILED
+| Phase 1 completion
+
+| `MinionsDeclarationFeedback`
+| IN_PROGRESS, COMPLETED, FAILED
+| Phase 2 completion
+
+| `MinionsAssignmentFeedback`
+| IN_PROGRESS, COMPLETED, FAILED
+| Phase 3 completion
+
+| `MinionsRampUpPreparationFeedback`
+| IN_PROGRESS, COMPLETED, FAILED
+| Phase 4 completion
+
+| `ScenarioWarmUpFeedback`
+| IN_PROGRESS, COMPLETED, FAILED
+| Phase 5 completion
+
+| `MinionsStartFeedback`
+| IN_PROGRESS, COMPLETED, FAILED
+| Phase 6 completion
+
+| `CompleteMinionFeedback`
+| COMPLETED
+| Individual minion finished
+
+| `EndOfCampaignScenarioFeedback`
+| COMPLETED, FAILED
+| All minions in scenario finished
+
+| `CampaignScenarioShutdownFeedback`
+| COMPLETED, FAILED
+| Scenario cleanup done
+
+| `CampaignShutdownFeedback`
+| COMPLETED, FAILED
+| Campaign cleanup done
+
+| `CampaignAbortFeedback`
+| COMPLETED, FAILED
+| Abort acknowledged
+
+| `CampaignTimeoutFeedback`
+| (soft or hard)
+| Timeout occurred
+
+| `FailedCampaignFeedback`
+| FAILED
+| Unrecoverable campaign error
+
+| `NodeExecutionFeedback`
+| FAILED
+| Factory-level execution failure
+|===

@@ -1,0 +1,343 @@
+= Metrics & Events
+
+This chapter covers the observability infrastructure: how metrics are collected on factory nodes, how events are logged, and how both are made available for reporting.
+
+== Meter System
+
+Each factory maintains a `CampaignMeterRegistry` that collects performance metrics during campaign execution.
+
+[plantuml,meter-system,svg]
+----
+@startuml
+
+title Meter System Architecture
+
+rectangle "Factory Node" as factory {
+    rectangle "Step Execution" as steps {
+        component "HTTP Request Step" as httpstep
+        component "DB Query Step" as dbstep
+        component "Custom Step" as customstep
+    }
+
+    rectangle "CampaignMeterRegistry" as registry #E3F2FD {
+        component "Counter" as counter
+        component "Timer" as timer
+        component "Gauge" as gauge
+        component "DistributionSummary" as dist
+        component "Rate" as rate
+        component "Throughput" as throughput
+    }
+
+    rectangle "Measurement Publishers" as publishers #FFF9C4 {
+        component "Publisher A" as puba
+        component "Publisher B" as pubb
+    }
+}
+
+rectangle "External Systems" as external {
+    database "Time-Series DB" as tsdb #FFF3E0
+    component "Head\n(CampaignReport\nStateKeeper)" as head #E3F2FD
+}
+
+steps --> registry : Record measurements
+registry --> publishers : Every step duration\n(default 5s)
+publishers --> tsdb : Publish snapshots
+publishers --> head : Report metrics
+
+@enduml
+----
+
+=== Meter Types
+
+[cols="2,4",options="header"]
+|===
+| Type | Description
+
+| `Counter`
+| Monotonically increasing count. Methods: `increment()`, `increment(amount)`, `count()`. Example: total requests sent.
+
+| `Timer`
+| Measures duration of operations. Records latency distributions. Example: HTTP response time.
+
+| `Gauge`
+| Current value at a point in time. Can go up and down. Example: active connections.
+
+| `DistributionSummary`
+| Distribution statistics without time dimension. Methods: `record(amount)`, `count()`, `totalAmount()`, `mean()`, `max()`, `percentile(p)`. Example: response body sizes.
+
+| `Rate`
+| Measures frequency of events per unit of time. Example: requests per second.
+
+| `Throughput`
+| Measures data throughput over time. Example: bytes transferred per second.
+|===
+
+=== Meter Identity
+
+Every meter has a unique `Meter.Id`:
+
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `meterName`
+| Human-readable name (e.g., `http.requests.count`)
+
+| `type`
+| MeterType enum value
+
+| `tags`
+| Map of key-value labels for filtering and grouping
+|===
+
+=== Measurement Snapshots
+
+Meters produce snapshots at regular intervals (default: every 5 seconds):
+
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `meterId`
+| The meter's identity
+
+| `timestamp`
+| When the snapshot was taken
+
+| `measurements`
+| Collection of `Measurement` (statistic + value)
+|===
+
+=== Statistic Types
+
+[cols="2,3",options="header"]
+|===
+| Statistic | Description
+
+| `TOTAL`
+| Sum of all recorded amounts
+
+| `TOTAL_TIME`
+| Sum of all recorded durations
+
+| `COUNT`
+| Rate of events per second
+
+| `MAX`
+| Maximum recorded value
+
+| `VALUE`
+| Instantaneous value (for gauges)
+
+| `MEAN`
+| Average value
+
+| `PERCENTILE`
+| Percentile point value
+|===
+
+=== Meter Publication Lifecycle
+
+[plantuml,meter-publication-lifecycle,svg]
+----
+@startuml
+
+title Meter Publication Lifecycle
+
+participant "Campaign Init" as init
+participant "CampaignMeterRegistry" as registry
+participant "MeasurementPublisher" as publisher
+participant "External System" as external
+
+== Campaign Start ==
+
+init -> registry : init(campaign)
+registry -> registry : Store campaignKey\nSet up additional tags
+
+registry -> publisher : create(campaign)
+activate publisher
+
+loop Every 5 seconds (step duration)
+    registry -> registry : snapshot(timestamp)\nfor all meters
+    registry -> publisher : publish(snapshots)
+    publisher -> external : Export measurements
+end
+
+== Campaign End ==
+
+init -> registry : close(campaign)
+registry -> publisher : final snapshot + publish
+registry -> publisher : close()
+deactivate publisher
+
+@enduml
+----
+
+=== Built-In Metrics
+
+The runner and minion keeper track these metrics automatically:
+
+[cols="3,2,3",options="header"]
+|===
+| Metric Name | Type | Description
+
+| `running-steps`
+| Gauge (per scenario)
+| Steps currently executing
+
+| `executed-steps`
+| Counter (per scenario)
+| Total step executions completed
+
+| `idle-minions`
+| Gauge (per scenario)
+| Minions created but not yet started
+
+| `running-minions`
+| Gauge (per scenario)
+| Minions actively executing steps
+|===
+
+== Event System
+
+Events are discrete, timestamped observations logged during scenario execution.
+They provide a detailed trace of what happened during a campaign.
+
+=== Event Model
+
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `name`
+| Dot-separated, kebab-cased identifier (e.g., `runner.step-started`, `minion.created`)
+
+| `level`
+| Severity: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`
+
+| `tags`
+| Collection of `EventTag(key, value)` for filtering
+
+| `value`
+| Optional payload value
+
+| `timestamp`
+| When the event occurred
+|===
+
+=== Event Levels
+
+[cols="2,3",options="header"]
+|===
+| Level | Usage
+
+| `TRACE`
+| Detailed execution flow (step entry/exit, context propagation)
+
+| `DEBUG`
+| Diagnostic information (minion assignment, DAG selection)
+
+| `INFO`
+| Normal operations (campaign started, scenario completed)
+
+| `WARN`
+| Unexpected but recoverable situations (soft timeout, retry)
+
+| `ERROR`
+| Failures (step exception, minion crash, campaign failure)
+
+| `OFF`
+| Disabled
+|===
+
+=== Event Tags
+
+Events carry contextual tags for filtering and grouping:
+
+[cols="2,3",options="header"]
+|===
+| Tag | Description
+
+| `campaign`
+| Campaign key
+
+| `scenario`
+| Scenario name
+
+| `minion`
+| Minion identifier
+
+| `step`
+| Step name
+
+| `dag`
+| DAG name
+
+| `factory`
+| Factory node ID
+|===
+
+=== EventsLogger
+
+The `EventsLoggerImpl` in the factory module logs events throughout the minion lifecycle:
+
+[plantuml,event-logging,svg]
+----
+@startuml
+
+title Event Logging During Minion Lifecycle
+
+participant "MinionsKeeper" as mk
+participant "EventsLogger" as logger
+participant "Runner" as runner
+
+mk -> logger : Event: minion.created\n(campaign, scenario, minionId)
+
+mk -> logger : Event: minion.started\n(campaign, scenario, minionId)
+
+runner -> logger : Event: runner.step-started\n(campaign, scenario, step)
+
+runner -> logger : Event: runner.step-completed\n(campaign, scenario, step, duration)
+
+alt Step Error
+    runner -> logger : Event: runner.step-failed\n(campaign, scenario, step, error)\n**level: ERROR**
+end
+
+mk -> logger : Event: minion.completed\n(campaign, scenario, minionId)
+
+@enduml
+----
+
+=== Monitoring Tags
+
+Steps implement the `MonitoringTags` interface for consistent tag generation:
+
+[cols="2,3",options="header"]
+|===
+| Method | Description
+
+| `toEventTags()`
+| Returns a Map suitable for event tag creation
+
+| `toMetersTags()`
+| Returns a Map suitable for meter tag creation
+|===
+
+This ensures that events and meters from the same step execution share consistent tagging for correlation.
+
+== Event and Geo Primitives
+
+The event system includes specialized types:
+
+[cols="2,3",options="header"]
+|===
+| Type | Description
+
+| `EventGeoPoint`
+| Geographic coordinates: `latitude` (-90 to 90), `longitude` (-180 to 180), `altitude` (optional)
+
+| `EventRange<T>`
+| Numeric range with bounds: `lowerBound`, `upperBound`, `includeLower`, `includeUpper`
+|===
+
+These allow recording location-aware and range-based measurements within events.

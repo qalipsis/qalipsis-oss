@@ -1,0 +1,256 @@
+= Factory Handshake & Health Monitoring
+
+This chapter covers how factory nodes register with the head node and how their health is monitored throughout the platform's lifecycle.
+
+== Handshake Protocol
+
+When a factory node starts, it initiates a handshake with the head to register its capabilities, supported scenarios, and communication channels.
+
+[plantuml,handshake-protocol,svg]
+----
+@startuml
+
+title Factory Handshake Protocol
+
+participant "Factory" as factory
+collections "Redis" as redis
+participant "Head\n(HandshakeManager)" as head
+database "PostgreSQL" as pg
+
+== Registration ==
+
+factory -> redis : **HandshakeRequest**\n(replyTo channel)
+redis -> head : HandshakeRequest
+
+activate head
+head -> head : Validate/generate nodeId
+head -> pg : Save/update FactoryEntity
+head -> pg : Save factory tags
+head -> pg : Save/update ScenarioEntities\n(via ScenarioDetailsUpdater)
+head -> redis : **HandshakeResponse**\n(on replyTo channel)
+deactivate head
+
+redis -> factory : HandshakeResponse
+
+factory -> factory : Store nodeId,\nunicastChannel,\nheartbeatChannel
+
+factory -> redis : Subscribe to\nunicastChannel
+
+loop Every heartbeatPeriod
+    factory -> redis : **Heartbeat**\n(heartbeatChannel)
+    redis -> head : Heartbeat
+    head -> pg : Update FactoryState
+end
+
+@enduml
+----
+
+=== HandshakeRequest
+
+The factory sends the following data when registering:
+
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `nodeId`
+| Current factory identifier (auto-generated if not provided or starts with `_`)
+
+| `tags`
+| Map of key-value metadata tags describing the factory
+
+| `replyTo`
+| Redis channel where the factory listens for the response
+
+| `scenarios`
+| List of `RegistrationScenario` with scenario name, description, version, minion count, and DAG summaries
+
+| `tenant`
+| Tenant identifier for multi-tenancy isolation
+
+| `zone`
+| Optional geographic zone key (e.g., `us-east`, `eu-west`)
+|===
+
+=== HandshakeResponse
+
+The head responds with the assigned configuration:
+
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `handshakeNodeId`
+| The factory's original node ID from the request
+
+| `nodeId`
+| The definitive node ID assigned by the head (may differ from original)
+
+| `unicastChannel`
+| Factory-specific Redis channel for receiving directed messages
+
+| `heartbeatChannel`
+| Redis channel for sending periodic heartbeats
+
+| `heartbeatPeriod`
+| Duration between expected heartbeats
+|===
+
+=== Registration Processing
+
+The `HandshakeManager` in the head module processes handshake requests:
+
+1. **Node ID validation**: If the factory's `nodeId` is empty or starts with `_`, a new short ID is generated using `IdGenerator.short()`
+2. **Factory persistence**: `FactoryService.register()` saves or updates the `FactoryEntity` in PostgreSQL with the node ID, tenant, and registration timestamp
+3. **Tag storage**: Factory tags are persisted via `FactoryTagRepository`
+4. **Scenario indexing**: `ScenarioDetailsUpdater.saveOrUpdateScenarios()` persists the factory's declared scenarios, making them discoverable for campaign planning
+5. **Channel assignment**: A unique unicast channel is assigned and returned in the response
+
+== Heartbeat Monitoring
+
+Once registered, factories send periodic heartbeats to signal their availability and current state.
+
+[plantuml,heartbeat-monitoring,svg]
+----
+@startuml
+
+title Factory Health Monitoring
+
+state "REGISTERED" as registered
+state "IDLE" as idle #C8E6C9
+state "UNHEALTHY" as unhealthy #FFF9C4
+state "OFFLINE" as offline #FFCDD2
+
+[*] --> registered : Handshake completed
+
+registered --> idle : First heartbeat received
+
+idle --> idle : Heartbeat received\n(state = IDLE)
+idle --> unhealthy : No heartbeat within\nexpected period
+unhealthy --> idle : Heartbeat received
+unhealthy --> offline : Extended timeout\n(no heartbeat)
+offline --> idle : Heartbeat received\n(factory restarted)
+
+idle --> idle : Heartbeat received\n(state = campaign running)
+
+note right of idle
+  Healthy factory.
+  Available for campaign assignment.
+end note
+
+note right of unhealthy
+  Heartbeat delayed.
+  Not assigned to new campaigns.
+end note
+
+note right of offline
+  No heartbeat for extended period.
+  Forced shutdown on active campaigns.
+end note
+
+@enduml
+----
+
+=== Heartbeat Data
+
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `nodeId`
+| Factory identifier
+
+| `tenant`
+| Tenant identifier
+
+| `timestamp`
+| Instant when the heartbeat was generated
+
+| `state`
+| Current state: `REGISTERED`, `IDLE`, `UNHEALTHY`, or `OFFLINE`
+
+| `campaignKey`
+| Key of the currently running campaign (if any)
+|===
+
+=== Health Check Usage
+
+Factory health is checked at several critical points:
+
+* **Campaign planning**: `FactoryService.getAvailableFactoriesForScenarios()` filters out unhealthy or offline factories
+* **Campaign abort**: The head checks factory health to determine which factories can receive a clean `CampaignShutdownDirective` vs. which need forced shutdown
+* **Factory locking**: `FactoryService.lockFactories()` marks factories as in-use during campaign execution; `releaseFactories()` frees them
+
+== Scenario Registration
+
+Factories declare their supported scenarios as part of the handshake.
+Multiple factories can support the same scenario for horizontal scaling.
+
+[plantuml,scenario-registration,svg]
+----
+@startuml
+
+title Scenario Registration and Discovery
+
+rectangle "Factory A" as fa #E8F5E9 {
+    component "Scenario: http-load" as s1a
+    component "Scenario: db-stress" as s2a
+}
+
+rectangle "Factory B" as fb #E8F5E9 {
+    component "Scenario: http-load" as s1b
+    component "Scenario: kafka-throughput" as s3b
+}
+
+database "PostgreSQL" as pg #FFF3E0 {
+    rectangle "ScenarioEntity" as se {
+        rectangle "http-load\n(factoriesCount: 2)" as se1
+        rectangle "db-stress\n(factoriesCount: 1)" as se2
+        rectangle "kafka-throughput\n(factoriesCount: 1)" as se3
+    }
+}
+
+rectangle "Head" as head #E3F2FD {
+    component "FactoryService" as fs
+}
+
+fa --> pg : Register\nscenarios
+fb --> pg : Register\nscenarios
+head --> pg : Query\navailable scenarios
+
+note bottom of se
+  Same scenario supported by
+  multiple factories enables
+  load distribution
+end note
+
+@enduml
+----
+
+Each `ScenarioSummary` contains:
+
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `name`
+| Unique scenario identifier
+
+| `description`
+| Human-readable description
+
+| `version`
+| Scenario version string
+
+| `builtAt`
+| Compilation timestamp
+
+| `minionsCount`
+| Default number of minions
+
+| `directedAcyclicGraphs`
+| List of DAG summaries (name, isSingleton, isRoot, isUnderLoad, numberOfSteps, tags)
+
+| `executionProfileConfiguration`
+| Default execution profile for load injection
+|===

@@ -1,0 +1,29 @@
+= QALIPSIS Core (OSS) -- Technical Documentation
+:doctype: book
+:toc: left
+:toclevels: 3
+:sectnums:
+:icons: font
+:idprefix:
+:idseparator: -
+:source-highlighter: highlight.js
+
+include::chapters/01-overview.adoc[leveloffset=+1]
+
+include::chapters/02-factory-handshake-health.adoc[leveloffset=+1]
+
+include::chapters/03-campaign-lifecycle.adoc[leveloffset=+1]
+
+include::chapters/04-campaign-execution-on-factories.adoc[leveloffset=+1]
+
+include::chapters/05-minion-step-execution.adoc[leveloffset=+1]
+
+include::chapters/06-scenario-dsl-execution-profiles.adoc[leveloffset=+1]
+
+include::chapters/07-reporting-data-analytics.adoc[leveloffset=+1]
+
+include::chapters/08-metrics-events.adoc[leveloffset=+1]
+
+include::chapters/09-module-deep-dives.adoc[leveloffset=+1]
+
+include::chapters/10-infrastructure.adoc[leveloffset=+1]

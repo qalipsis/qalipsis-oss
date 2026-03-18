@@ -1,0 +1,50 @@
+' Global PlantUML configuration for consistent styling
+
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName "Segoe UI, Helvetica, Arial, sans-serif"
+skinparam defaultFontSize 12
+
+skinparam component {
+    BackgroundColor #E8F4FD
+    BorderColor #2196F3
+    FontColor #333333
+}
+
+skinparam database {
+    BackgroundColor #FFF3E0
+    BorderColor #FF9800
+}
+
+skinparam queue {
+    BackgroundColor #F3E5F5
+    BorderColor #9C27B0
+}
+
+skinparam rectangle {
+    RoundCorner 10
+}
+
+skinparam sequence {
+    ArrowColor #555555
+    LifeLineBorderColor #999999
+    ParticipantBackgroundColor #E8F4FD
+    ParticipantBorderColor #2196F3
+    ActorBorderColor #333333
+}
+
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #2196F3
+    DiamondBackgroundColor #FFF9C4
+    DiamondBorderColor #FBC02D
+}
+
+skinparam state {
+    BackgroundColor #E8F4FD
+    BorderColor #2196F3
+}
+
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}

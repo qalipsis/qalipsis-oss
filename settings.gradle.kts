@@ -29,6 +29,7 @@ pluginManagement {
         id("com.palantir.git-version") version "3.0.0"
 
         id("com.github.node-gradle.node") version "7.0.2"
+        id("org.asciidoctor.jvm.convert") version "4.0.4"
     }
 }
 

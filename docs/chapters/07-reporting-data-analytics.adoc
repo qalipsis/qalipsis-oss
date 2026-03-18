@@ -1,0 +1,348 @@
+= Reporting & Data Analytics
+
+This chapter covers the reporting system for campaign results, data series configuration, and time-series querying.
+
+== Report Management
+
+Reports are templates that define how campaign data should be visualized and analyzed.
+They can be rendered to PDF for sharing.
+
+=== REST Endpoints
+
+All report endpoints are served by `ReportController` in the head module.
+
+[cols="1,3,3",options="header"]
+|===
+| Method | Path | Description
+
+| POST
+| `/reports`
+| Create a new report template with components
+
+| GET
+| `/reports/{reference}`
+| Retrieve a report definition
+
+| PUT
+| `/reports/{reference}`
+| Update a report template
+
+| DELETE
+| `/reports?report=ref1&report=ref2`
+| Delete one or more reports
+
+| GET
+| `/reports`
+| Search reports with filters, sorting, and pagination
+
+| POST
+| `/reports/{reportReference}/render`
+| Start asynchronous PDF generation
+
+| GET
+| `/reports/file/{taskReference}`
+| Download a generated PDF
+|===
+
+=== Report Generation Flow
+
+[plantuml,report-generation-flow,svg]
+----
+@startuml
+
+title Report Generation Flow
+
+actor "User" as user
+participant "ReportController" as controller
+participant "ReportService" as service
+participant "CampaignReport\nProvider" as provider
+participant "ThymeleafReport\nService" as thymeleaf
+database "PostgreSQL" as pg
+
+== Create Report Template ==
+
+user -> controller : POST /reports\n(ReportCreationAndUpdateRequest)
+controller -> service : create(request)
+service -> pg : Save Report entity
+service --> user : Report
+
+== Render Report ==
+
+user -> controller : POST /reports/{ref}/render\n(campaignKeys)
+controller -> service : render(reportRef, campaignKeys)
+service -> pg : Create ReportTask\n(status = PENDING)
+service --> user : ReportTask
+
+service ->> service : Async processing
+
+activate service
+
+service -> provider : retrieveCampaignsReports\n(tenant, campaignKeys)
+provider -> pg : Query campaign data
+provider --> service : List<CampaignExecutionDetails>
+
+service -> service : Query time-series\nfor chart data
+
+service -> thymeleaf : renderReport(data)
+thymeleaf -> thymeleaf : Generate HTML\nfrom Thymeleaf template
+thymeleaf -> thymeleaf : Convert to PDF
+thymeleaf --> service : PDF bytes
+
+service -> pg : Update ReportTask\n(status = COMPLETED)
+
+deactivate service
+
+== Download ==
+
+user -> controller : GET /reports/file/{taskRef}
+controller -> service : getFile(taskRef)
+service -> pg : Get PDF content
+service --> user : PDF file
+
+@enduml
+----
+
+=== Campaign Execution Details
+
+The `CampaignExecutionDetails` returned by the report provider contains:
+
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| Campaign metadata
+| Name, key, dates, status, configurer
+
+| Per-scenario details
+| Minion counts, duration, execution status
+
+| Aggregated metrics
+| Throughput, response times, error rates
+
+| Failure reasons
+| Error messages and stack traces (if any)
+|===
+
+== Data Series
+
+Data series are user-defined metric or event series that pull from raw campaign data.
+They serve as the building blocks for charts and analytics.
+
+=== REST Endpoints
+
+Served by `DataSeriesController`.
+
+[cols="1,3,3",options="header"]
+|===
+| Method | Path | Description
+
+| POST
+| `/data-series`
+| Create a new data series
+
+| GET
+| `/data-series/{reference}`
+| Retrieve a series definition
+
+| PATCH
+| `/data-series/{reference}`
+| Update a series
+
+| DELETE
+| `/data-series?series=ref1&series=ref2`
+| Delete one or more series
+
+| GET
+| `/data-series`
+| Search series with filters, sorting, and pagination
+
+| GET
+| `/data-series/{data-type}/names`
+| Auto-complete event or meter names
+
+| GET
+| `/data-series/{data-type}/fields`
+| List available fields for charts
+
+| GET
+| `/data-series/{data-type}/tags`
+| Auto-complete tag values
+
+| PATCH
+| `/data-series/refresh-all`
+| Refresh all prepared queries
+|===
+
+=== Data Types
+
+[cols="2,4",options="header"]
+|===
+| Type | Description
+
+| `METERS`
+| Numeric measurements: throughput, latency, error count, etc.
+
+| `EVENTS`
+| Discrete events: errors, state changes, custom events
+|===
+
+== Time Series Queries
+
+Time series endpoints allow querying historical metric and event data with aggregation and time windowing.
+
+=== REST Endpoints
+
+Served by `TimeSeriesController`.
+
+[cols="1,3,3",options="header"]
+|===
+| Method | Path | Description
+
+| GET
+| `/time-series/aggregate`
+| Aggregate data over time windows
+
+| GET
+| `/time-series/search`
+| Retrieve raw records in a time window
+
+| GET
+| `/time-series/summary/campaign-status`
+| Campaign health summary aggregated by timeframe
+|===
+
+=== Aggregation Query
+
+[plantuml,aggregation-query,svg]
+----
+@startuml
+
+title Time Series Aggregation Query
+
+actor "User / Web UI" as user
+participant "TimeSeriesController" as controller
+participant "TimeSeriesService" as service
+database "Time-Series DB\n(PostgreSQL /\nElasticsearch /\nInfluxDB)" as tsdb
+
+user -> controller : GET /time-series/aggregate
+note right of user
+  Parameters:
+  - series[] : data series references
+  - campaigns[] : campaign keys
+  - scenarios[] : scenario names
+  - zones[] : zone keys
+  - from : start timestamp
+  - until : end timestamp
+  - timeframe : bucket size (PT1M, PT5M, ...)
+end note
+
+controller -> service : aggregate(params)
+service -> tsdb : Query with filters\nand time bucketing
+tsdb --> service : Raw aggregated data
+service -> service : Apply aggregation functions\n(avg, min, max, count,\np50, p95, p99, etc.)
+service --> controller : Map<seriesRef, List<TimeSeriesAggregationResult>>
+controller --> user : JSON response
+
+@enduml
+----
+
+=== Query Parameters
+
+[cols="2,2,3",options="header"]
+|===
+| Parameter | Type | Description
+
+| `series[]`
+| String[]
+| Data series references to query
+
+| `campaigns[]`
+| String[]
+| Filter by campaign keys
+
+| `scenarios[]`
+| String[]
+| Filter by scenario names
+
+| `zones[]`
+| String[]
+| Filter by geographic zones
+
+| `from`
+| Instant
+| Start of the time window
+
+| `until`
+| Instant
+| End of the time window
+
+| `timeframe`
+| Duration
+| Bucket size for aggregation (e.g., `PT1M`, `PT5M`, `PT1H`)
+
+| `page` / `size`
+| Int
+| Pagination for raw search queries
+|===
+
+=== Aggregation Functions
+
+[cols="2,3",options="header"]
+|===
+| Function | Description
+
+| `avg`
+| Average value within the time bucket
+
+| `min`
+| Minimum value
+
+| `max`
+| Maximum value
+
+| `count`
+| Number of data points
+
+| `sum`
+| Sum of all values
+
+| `p50`
+| 50th percentile (median)
+
+| `p95`
+| 95th percentile
+
+| `p99`
+| 99th percentile
+|===
+
+== Report Publishers
+
+After campaign completion, results can be published via different report publishers:
+
+[cols="2,3",options="header"]
+|===
+| Publisher | Output
+
+| Console
+| Human-readable summary to stdout
+
+| JUnit XML
+| XML reports compatible with CI/CD systems (e.g., Jenkins, GitHub Actions)
+
+| PDF
+| Full report with charts via Thymeleaf templates
+
+| Custom
+| Extensible via `CampaignReportPublisher` interface
+|===
+
+== Campaign Auto-Starter
+
+The `CampaignAutoStarter` supports automated campaign execution for CI/CD pipelines:
+
+* Triggered by `--autostart` command-line flag
+* Runs the configured campaign immediately on startup
+* Exits the process when the campaign completes
+* Reports results via configured publishers (console, JUnit XML)
+* Non-zero exit code on campaign failure for CI/CD integration

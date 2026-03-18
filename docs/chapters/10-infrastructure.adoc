@@ -1,0 +1,589 @@
+= Infrastructure & Cross-Cutting Concerns
+
+This chapter covers the Redis communication architecture, database schema, multi-tenancy model, zone management, and configuration reference.
+
+== Redis Communication Architecture
+
+Redis Pub/Sub is the backbone of inter-node communication in QALIPSIS cluster deployments.
+
+[plantuml,redis-architecture,svg]
+----
+@startuml
+
+title Redis Channel Architecture
+
+rectangle "Head Node" as head #E3F2FD {
+    component "RedisHeadChannel" as rhc
+    component "RedisSubscriber\n(HeartbeatListener,\nFeedbackListener,\nHandshakeRequestListener)" as rsub
+}
+
+rectangle "Redis" as redis #F3E5F5 {
+    queue "handshake-request" as hrc
+    queue "heartbeat" as hbc
+    queue "campaign-{key}-broadcast" as bcast
+    queue "factory-{nodeId}-unicast" as ucast
+    queue "campaign-{key}-feedback" as fbc
+}
+
+rectangle "Factory A" as fa #E8F5E9 {
+    component "RedisFactoryChannel" as rfc1
+    component "RedisSubscriber\n(DirectiveListener,\nHandshakeResponseListener)" as fsub1
+}
+
+rectangle "Factory B" as fb #E8F5E9 {
+    component "RedisFactoryChannel" as rfc2
+    component "RedisSubscriber\n(DirectiveListener,\nHandshakeResponseListener)" as fsub2
+}
+
+rfc1 --> hrc : HandshakeRequest
+rfc2 --> hrc : HandshakeRequest
+hrc --> rsub
+
+rhc --> ucast : HandshakeResponse\n(per factory)
+ucast --> fsub1
+ucast --> fsub2
+
+rfc1 --> hbc : Heartbeat
+rfc2 --> hbc : Heartbeat
+hbc --> rsub
+
+rhc --> bcast : Campaign directives\n(broadcast)
+bcast --> fsub1
+bcast --> fsub2
+
+rhc --> ucast : Factory-specific directives\n(unicast)
+
+rfc1 --> fbc : Feedbacks
+rfc2 --> fbc : Feedbacks
+fbc --> rsub
+
+@enduml
+----
+
+=== Channel Types
+
+[cols="3,2,3",options="header"]
+|===
+| Channel Pattern | Direction | Purpose
+
+| `handshake-request`
+| Factory -> Head
+| Factory registration requests
+
+| `factory-{nodeId}-replyTo`
+| Head -> Factory
+| Handshake response (factory-specific)
+
+| `heartbeat`
+| Factory -> Head
+| Periodic health signals
+
+| `campaign-{key}-broadcast`
+| Head -> All Factories
+| Campaign-wide directives (e.g., shutdown)
+
+| `factory-{nodeId}-unicast`
+| Head -> Specific Factory
+| Factory-specific directives (e.g., assignment)
+
+| `campaign-{key}-feedback`
+| Factory -> Head
+| Campaign feedback messages
+|===
+
+=== RedisHeadChannel
+
+Published methods:
+
+[cols="3,4",options="header"]
+|===
+| Method | Description
+
+| `publishDirective(directive)`
+| Send a directive to the appropriate channel (broadcast or unicast)
+
+| `publishHandshakeResponse(channel, response)`
+| Send handshake response to factory's replyTo channel
+
+| `subscribeHandshakeRequest(channels)`
+| Start listening for handshake requests
+
+| `subscribeFeedback(channels)`
+| Start listening for campaign feedbacks
+|===
+
+=== RedisFactoryChannel
+
+Published methods:
+
+[cols="3,4",options="header"]
+|===
+| Method | Description
+
+| `publishFeedback(feedback)`
+| Send feedback to the campaign's feedback channel
+
+| `publishHeartbeat(channel, heartbeat)`
+| Send periodic heartbeat to the heartbeat channel
+
+| `subscribeHandshakeResponse(channels)`
+| Listen for handshake responses
+
+| `subscribeDirective(channels)`
+| Listen for directives on broadcast and unicast channels
+|===
+
+=== Message Serialization
+
+All messages are serialized using Kotlin Serialization with polymorphic type support:
+
+* `DirectiveRegistry.prepareBeforeSend()` transforms directives before sending (e.g., storing `SingleUseDirective` payloads in Redis and replacing with references)
+* `DirectiveRegistry.prepareAfterReceived()` resolves references back to full directives on the receiving side
+* This reduces Redis message size for large payloads like minion assignment tables
+
+== Database Schema
+
+[plantuml,database-schema,svg]
+----
+@startuml
+
+title PostgreSQL Schema Overview
+
+package "Campaign Tables" as ct #E3F2FD {
+    entity "campaign" as camp {
+        * id : BIGINT <<PK>>
+        --
+        creation : TIMESTAMP
+        version : TIMESTAMP
+        tenant_id : BIGINT <<FK>>
+        key : VARCHAR <<UNIQUE>>
+        name : VARCHAR
+        speed_factor : DOUBLE
+        start_offset_ms : BIGINT
+        hard_timeout_sec : BIGINT
+        soft_timeout_sec : BIGINT
+        configured_at : TIMESTAMP
+        scheduled_at : TIMESTAMP
+        started_at : TIMESTAMP
+        ended_at : TIMESTAMP
+        status : VARCHAR
+        configurer_id : BIGINT
+        aborter_id : BIGINT
+        failure_reason : TEXT
+        result : JSONB
+    }
+
+    entity "campaign_scenario" as campsc {
+        * id : BIGINT <<PK>>
+        --
+        campaign_id : BIGINT <<FK>>
+        scenario_name : VARCHAR
+        minions_count : INT
+    }
+}
+
+package "Scenario Tables" as st #E8F5E9 {
+    entity "scenario" as sc {
+        * id : BIGINT <<PK>>
+        --
+        creation : TIMESTAMP
+        version : TIMESTAMP
+        tenant_id : BIGINT <<FK>>
+        name : VARCHAR
+        description : TEXT
+        default_minions_count : INT
+        enabled : BOOLEAN
+    }
+
+    entity "scenario_directed_acyclic_graph" as sdag {
+        * id : BIGINT <<PK>>
+        --
+        scenario_id : BIGINT <<FK>>
+        name : VARCHAR
+        is_root : BOOLEAN
+        is_singleton : BOOLEAN
+        is_under_load : BOOLEAN
+        number_of_steps : INT
+    }
+}
+
+package "Factory Tables" as ft #FFF9C4 {
+    entity "factory" as fac {
+        * id : BIGINT <<PK>>
+        --
+        creation : TIMESTAMP
+        version : TIMESTAMP
+        tenant_id : BIGINT <<FK>>
+        node_id : VARCHAR <<UNIQUE>>
+        unicast_channel : VARCHAR
+        registration_timestamp : TIMESTAMP
+        zone_id : BIGINT <<FK>>
+    }
+
+    entity "factory_tag" as ftag {
+        * id : BIGINT <<PK>>
+        --
+        factory_id : BIGINT <<FK>>
+        key : VARCHAR
+        value : VARCHAR
+    }
+
+    entity "factory_state" as fstate {
+        * id : BIGINT <<PK>>
+        --
+        factory_id : BIGINT <<FK>>
+        state : VARCHAR
+        timestamp : TIMESTAMP
+    }
+}
+
+package "Reporting Tables" as rt #F3E5F5 {
+    entity "report" as rep {
+        * id : BIGINT <<PK>>
+        --
+        reference : VARCHAR <<UNIQUE>>
+        tenant_id : BIGINT <<FK>>
+        creator_id : BIGINT
+        display_name : VARCHAR
+        description : TEXT
+    }
+
+    entity "data_series" as ds {
+        * id : BIGINT <<PK>>
+        --
+        reference : VARCHAR <<UNIQUE>>
+        tenant_id : BIGINT <<FK>>
+        creator_id : BIGINT
+        display_name : VARCHAR
+        data_type : VARCHAR
+        value_name : VARCHAR
+        color : VARCHAR
+        filters : JSONB
+        aggregation_operation : VARCHAR
+    }
+}
+
+package "Zone Tables" as zt #FFE0B2 {
+    entity "zone" as zone {
+        * id : BIGINT <<PK>>
+        --
+        key : VARCHAR <<UNIQUE>>
+        tenant_id : BIGINT <<FK>>
+        title : VARCHAR
+        description : TEXT
+        image : VARCHAR
+        enabled : BOOLEAN
+    }
+}
+
+camp ||--o{ campsc
+sc ||--o{ sdag
+fac ||--o{ ftag
+fac ||--|| fstate
+fac }o--|| zone
+camp }o--|| zone
+
+@enduml
+----
+
+== Multi-Tenancy Model
+
+[plantuml,multi-tenancy,svg]
+----
+@startuml
+
+title Multi-Tenancy Isolation Model
+
+rectangle "Tenant A" as ta #E3F2FD {
+    rectangle "Campaigns" as ca
+    rectangle "Scenarios" as sa
+    rectangle "Factories" as fa
+    rectangle "Reports" as ra
+    rectangle "Data Series" as dsa
+    rectangle "Zones" as za
+}
+
+rectangle "Tenant B" as tb #E8F5E9 {
+    rectangle "Campaigns" as cb
+    rectangle "Scenarios" as sb
+    rectangle "Factories" as fb
+    rectangle "Reports" as rb
+    rectangle "Data Series" as dsb
+    rectangle "Zones" as zb
+}
+
+database "PostgreSQL" as pg {
+    component "All entities have\ntenant_id FK" as tenantfk
+}
+
+rectangle "Head" as head {
+    component "@Tenant annotation\ninjects tenant from\nrequest context" as tenant
+    component "All queries filtered\nby tenant_id" as filter
+}
+
+ta --> pg
+tb --> pg
+head --> pg
+
+note bottom of ta
+  Tenant A cannot see or
+  access Tenant B's data.
+  Isolation enforced at
+  database query level.
+end note
+
+@enduml
+----
+
+=== Tenant Isolation Enforcement
+
+1. **REST Layer**: The `@Tenant` annotation on controller parameters injects the tenant reference from the request context (typically extracted from the JWT token or `X-Tenant` header)
+2. **Service Layer**: All service methods receive the tenant parameter and pass it to repository queries
+3. **Database Layer**: All entities include a `tenant_id` foreign key; all queries are filtered by tenant
+4. **Communication Layer**: Directives, feedbacks, and heartbeats all carry the `tenant` field for routing
+
+=== Permission-Based Access Control
+
+Endpoints are secured with the `@Secured` annotation specifying required permissions:
+
+[source,kotlin]
+----
+@Post("/campaigns")
+@Secured(Permissions.WRITE_CAMPAIGN)
+suspend fun start(@Tenant tenant: String, @Body configuration: CampaignConfiguration)
+----
+
+== Zone Management
+
+Zones represent geographic execution locations for distributed testing.
+
+[plantuml,zone-architecture,svg]
+----
+@startuml
+
+title Zone-Based Distributed Execution
+
+rectangle "Head" as head #E3F2FD
+
+rectangle "Zone: US-East" as z1 #E8F5E9 {
+    component "Factory 1" as f1
+    component "Factory 2" as f2
+}
+
+rectangle "Zone: EU-West" as z2 #FFF9C4 {
+    component "Factory 3" as f3
+    component "Factory 4" as f4
+}
+
+rectangle "Zone: AP-South" as z3 #F3E5F5 {
+    component "Factory 5" as f5
+}
+
+head --> z1 : 500 minions
+head --> z2 : 300 minions
+head --> z3 : 200 minions
+
+note bottom of head
+  Campaign configuration specifies
+  minion distribution across zones:
+  zones: {"US-East": 500, "EU-West": 300, "AP-South": 200}
+end note
+
+@enduml
+----
+
+.Zone Data Model
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `key`
+| Short code (e.g., `US`, `EU`)
+
+| `title`
+| Display name (e.g., `United States East`)
+
+| `description`
+| Details (e.g., `us-east-1, us-east-2`)
+
+| `imagePath`
+| URL to a logo or flag for the UI
+
+| `enabled`
+| Whether the zone can be used in campaigns
+|===
+
+Factories register with a zone during handshake.
+Campaign configurations specify how many minions should run in each zone.
+
+== Configuration Reference
+
+=== Head Configuration
+
+[cols="3,2,3",options="header"]
+|===
+| Property | Default | Description
+
+| `micronaut.server.port`
+| `8400`
+| REST API port
+
+| `endpoints.all.port`
+| `8081`
+| Management endpoints port
+
+| `head.handshake-request-channel`
+| (configured)
+| Redis channel for factory handshakes
+
+| `head.heartbeat-channel`
+| (configured)
+| Redis channel for factory heartbeats
+
+| `head.heartbeat-delay`
+| (configured)
+| Expected heartbeat period
+
+| `datasources.default.url`
+| (configured)
+| PostgreSQL connection URL
+
+| `redis.uri`
+| (configured)
+| Redis connection URI
+|===
+
+=== Factory Configuration
+
+[cols="3,2,3",options="header"]
+|===
+| Property | Default | Description
+
+| `factory.node-id`
+| auto-generated
+| Factory node identifier
+
+| `factory.tenant`
+| `DEFAULT`
+| Tenant association
+
+| `factory.zone`
+| (optional)
+| Geographic zone key
+
+| `factory.handshake.replyTo`
+| (configured)
+| Channel to receive handshake response
+
+| `factory.meters.step-duration`
+| `5s`
+| Metric publication interval
+|===
+
+=== Runtime Configuration
+
+[cols="3,2,3",options="header"]
+|===
+| Property | Default | Description
+
+| `runtime.deployment.role`
+| `AUTO`
+| Deployment role: AUTO, STANDALONE, HEAD, FACTORY
+
+| `--autostart`
+| `false`
+| Start campaign immediately and exit on completion
+
+| `--persistent`
+| `false`
+| Enable database storage for campaign results
+
+| `runtime.campaign.*`
+| varies
+| Campaign configuration for autostart mode
+|===
+
+=== Application Profiles
+
+[cols="2,4",options="header"]
+|===
+| Profile | Purpose
+
+| `head`
+| Head microservice configuration (REST server, campaign management)
+
+| `factory`
+| Factory microservice configuration (directive processing, step execution)
+
+| `redis`
+| Redis client configuration (connection, TLS, clustering)
+
+| `pgsql`
+| PostgreSQL configuration (connection pool, timeouts)
+
+| `api-documentation`
+| OpenAPI/Swagger documentation generation
+|===
+
+== Monitoring & Observability
+
+All modules expose health and management endpoints:
+
+[cols="2,3",options="header"]
+|===
+| Endpoint | Purpose
+
+| `/health`
+| Liveness and readiness probes
+
+| `/info`
+| Application information (version, git commit)
+
+| `/routes`
+| List all registered HTTP routes
+
+| `/loggers`
+| View and modify log levels at runtime
+
+| `/metrics`
+| Prometheus-compatible metrics endpoint
+|===
+
+== External Plugin Support
+
+QALIPSIS supports 17+ plugins for protocol-specific steps:
+
+[cols="2,2,3",options="header"]
+|===
+| Category | Plugins | Description
+
+| HTTP/Network
+| Netty
+| HTTP/1.1, HTTP/2, TCP, UDP, MQTT
+
+| Databases
+| Cassandra, Elasticsearch, InfluxDB, MongoDB, R2DBC-Jasync, TimescaleDB
+| Read/write operations for various databases
+
+| Messaging
+| Kafka, RabbitMQ, JMS, Jakarta EE
+| Produce/consume messages
+
+| Metrics
+| Graphite
+| Export metrics via Pickle/Plaintext
+
+| Data Formats
+| Jackson
+| JSON, XML, CSV parsing and conversion
+
+| Notifications
+| Slack, Mail
+| Send notifications during tests
+
+| Caching
+| Redis-Lettuce
+| Redis read/write operations
+|===
+
+Each plugin provides specialized `Step` implementations and `StepConverter` annotations, which are discovered at compile time via KAPT annotation processors.

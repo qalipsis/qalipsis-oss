@@ -1,0 +1,361 @@
+= Campaign Lifecycle
+
+A _campaign_ is a single execution of one or more scenarios.
+This chapter covers the full lifecycle from creation through the REST API to completion, including the distributed state machine that orchestrates execution across multiple factory nodes.
+
+== REST API Endpoints
+
+All campaign endpoints are served by `CampaignController` in the head module.
+
+[cols="1,3,3",options="header"]
+|===
+| Method | Path | Description
+
+| POST
+| `/campaigns`
+| Start a new campaign with the given configuration
+
+| POST
+| `/campaigns/validate`
+| Validate a campaign configuration without starting it
+
+| GET
+| `/campaigns`
+| Search campaigns with filtering, sorting, and pagination
+
+| GET
+| `/campaigns/{campaignKeys}`
+| Retrieve execution reports for one or more campaigns (comma-separated keys)
+
+| GET
+| `/campaigns/{campaignKey}/configuration`
+| Retrieve the original configuration of a campaign
+
+| POST
+| `/campaigns/{campaignKey}/abort`
+| Abort a running campaign (soft or hard)
+
+| POST
+| `/campaigns/{campaignKey}/replay`
+| Replay a previously executed campaign with the same configuration
+
+| POST
+| `/campaigns/schedule`
+| Schedule a campaign for future or recurring execution
+
+| PUT
+| `/campaigns/schedule/{campaignKey}`
+| Update a scheduled campaign
+|===
+
+== Campaign Configuration
+
+When starting a campaign via `POST /campaigns`, the client provides a `CampaignConfiguration`:
+
+[plantuml,campaign-configuration,svg]
+----
+@startuml
+
+title Campaign Configuration Model
+
+class CampaignConfiguration {
+    name : String
+    speedFactor : Double = 1.0
+    startOffsetMs : Long = 1000
+    hardTimeoutSec : Long = -1
+    softTimeoutSec : Long = -1
+    scenarios : Map<ScenarioName, ScenarioConfiguration>
+}
+
+class ScenarioConfiguration {
+    minionsCount : Int
+    executionProfileConfiguration : ExecutionProfileConfiguration
+    zones : Map<String, Int>
+}
+
+class RunningCampaign {
+    tenant : String
+    key : CampaignKey
+    speedFactor : Double
+    startOffsetMs : Long
+    scenarios : Map<ScenarioName, ScenarioConfiguration>
+    factories : Map<NodeId, FactoryConfiguration>
+    broadcastChannel : String
+    feedbackChannel : String
+    hardTimeoutSec : Long
+    softTimeoutSec : Long
+}
+
+class FactoryConfiguration {
+    unicastChannel : String
+    assignment : Map<ScenarioName, FactoryScenarioAssignment>
+}
+
+class FactoryScenarioAssignment {
+    scenarioName : ScenarioName
+    dags : Collection<DirectedAcyclicGraphName>
+    maximalMinionsCount : Int
+}
+
+CampaignConfiguration *-- ScenarioConfiguration
+CampaignConfiguration ..> RunningCampaign : creates
+RunningCampaign *-- FactoryConfiguration
+FactoryConfiguration *-- FactoryScenarioAssignment
+
+@enduml
+----
+
+== Campaign Creation Flow
+
+[plantuml,campaign-creation-flow,svg]
+----
+@startuml
+
+title Campaign Creation Flow
+
+actor "User" as user
+participant "CampaignController" as controller
+participant "CampaignExecutor" as executor
+participant "CampaignService" as service
+participant "FactoryService" as factory
+database "PostgreSQL" as pg
+collections "Redis" as redis
+
+user -> controller : POST /campaigns\n(CampaignConfiguration)
+activate controller
+
+controller -> executor : start(tenant, user, configuration)
+activate executor
+
+executor -> factory : getActiveScenarios(tenant, scenarioNames)
+factory -> pg : Query ScenarioEntity
+factory --> executor : List<ScenarioSummary>
+
+executor -> factory : getAvailableFactoriesForScenarios(tenant, scenarioNames)
+factory -> pg : Query healthy factories
+factory --> executor : Map<ScenarioName, List<Factory>>
+
+executor -> service : create(tenant, user, configuration)
+service -> pg : Insert CampaignEntity
+service --> executor : RunningCampaign
+
+executor -> service : prepare(campaignKey)
+service -> pg : Update status = PREPARATION
+
+executor -> redis : Create broadcast channel
+executor -> redis : Create feedback channel
+executor -> redis : Subscribe to feedback channel
+
+executor -> executor : Initialize state machine\n(FactoryAssignmentState)
+executor -> executor : state.init()\n--> publishes first directives
+
+deactivate executor
+
+controller --> user : RunningCampaign\n(key, status)
+deactivate controller
+
+@enduml
+----
+
+== Campaign State Machine
+
+The campaign execution is driven by a state machine.
+Each state processes feedbacks from factories and transitions to the next state by publishing new directives.
+
+[plantuml,campaign-state-machine,svg]
+----
+@startuml
+
+title Campaign State Machine
+
+state "FactoryAssignment\nState" as fas #E3F2FD
+state "MinionsAssignment\nState" as mas #E3F2FD
+state "MinionsSchedule\nRampUp State\n(Warmup)" as mrs #FFF9C4
+state "Running\nState" as rs #C8E6C9
+state "Completion\nState" as cs #E8F5E9
+state "Disabled\nState" as ds #EEEEEE
+state "Failure\nState" as fail #FFCDD2
+state "Aborting\nState" as abort #FFE0B2
+
+[*] --> fas : Campaign started
+
+fas --> mas : FactoryAssignmentFeedback\n(COMPLETED from all factories)
+fas --> fail : FactoryAssignmentFeedback(FAILED)\nor timeout
+
+mas --> mrs : MinionsAssignmentFeedback\n(COMPLETED from all\nfactory-scenario pairs)
+mas --> fail : MinionsAssignmentFeedback(FAILED)\nor timeout
+
+mrs --> rs : MinionsRampUpPreparationFeedback\n(COMPLETED from all)
+mrs --> fail : MinionsRampUpPreparationFeedback(FAILED)\nor timeout
+
+rs --> cs : EndOfCampaignScenarioFeedback\n(all scenarios complete)\n--> CampaignScenarioShutdownFeedback\n(all scenarios shut down)
+rs --> fail : FailedCampaignFeedback
+
+cs --> ds : CampaignShutdownFeedback\n(all factories confirm)
+
+fail --> ds : Cleanup complete
+
+abort --> ds : Abort confirmed\nby all factories
+
+fas --> abort : Abort requested
+mas --> abort : Abort requested
+mrs --> abort : Abort requested
+rs --> abort : Abort requested
+
+ds --> [*]
+
+@enduml
+----
+
+=== State Interface
+
+Every campaign execution state implements `CampaignExecutionState`:
+
+[cols="2,4",options="header"]
+|===
+| Method | Purpose
+
+| `init()`
+| Initialize the state and return directives to publish
+
+| `process(feedback)`
+| Process a feedback message and return the next state (or self)
+
+| `abort(abortConfiguration)`
+| Handle an abort request and return the aborting state
+
+| `isCompleted`
+| Whether this is a terminal state
+|===
+
+=== State Transitions Detail
+
+==== FactoryAssignmentState
+
+Publishes `FactoryAssignmentDirective` to each factory's unicast channel with its DAG assignments.
+
+* **Waits for**: `FactoryAssignmentFeedback` (COMPLETED) from every assigned factory
+* **Transitions to**: `MinionsAssignmentState` when all factories confirm
+* **On failure**: Transitions to `FailureState`
+
+==== MinionsAssignmentState
+
+Publishes `MinionsDeclarationDirective` declaring the total minion count per scenario per factory.
+
+* **Waits for**: `MinionsAssignmentFeedback` (COMPLETED) from every factory-scenario pair
+* **Transitions to**: `MinionsScheduleRampUpState` when all assignments confirmed
+* **On failure**: Transitions to `FailureState`
+
+==== MinionsScheduleRampUpState (Warmup)
+
+Publishes `MinionsRampUpPreparationDirective` for each scenario.
+Each factory calculates its ramp-up schedule based on the execution profile.
+
+* **Waits for**: `MinionsRampUpPreparationFeedback` (COMPLETED) from all factories
+* **Transitions to**: `RunningState`
+* **On failure**: Transitions to `FailureState`
+
+==== RunningState
+
+The main execution state.
+Processes ongoing feedbacks:
+
+* `MinionsStartFeedback` -- Records minion start (no transition)
+* `CompleteMinionFeedback` -- Individual minion completed; triggers `MinionsShutdownDirective` for that minion
+* `EndOfCampaignScenarioFeedback` -- All minions in a scenario finished; sends `CampaignScenarioShutdownDirective`
+* `CampaignScenarioShutdownFeedback` -- Scenario cleanup complete; when all scenarios done, transitions to `CompletionState`
+* `CampaignTimeoutFeedback` -- Soft timeout generates warnings; hard timeout triggers abort
+* `FailedCampaignFeedback` -- Transitions to `FailureState`
+
+==== CompletionState
+
+Publishes `CampaignShutdownDirective` to all factories.
+
+* **Waits for**: `CampaignShutdownFeedback` (COMPLETED) from all factories
+* **Transitions to**: `DisabledState` with `ExecutionStatus.SUCCESSFUL`
+
+==== FailureState
+
+Sends shutdown directives and cleans up resources.
+
+* **Transitions to**: `DisabledState` with `ExecutionStatus.FAILED`
+
+==== AbortingState
+
+Sends `CampaignAbortDirective` to all factories for the specified scenarios.
+
+* **Waits for**: `CampaignAbortFeedback` from all healthy factories
+* **Transitions to**: `DisabledState` with `ExecutionStatus.ABORTED`
+
+== Campaign Completion
+
+[plantuml,campaign-completion,svg]
+----
+@startuml
+
+title Campaign Completion Flow
+
+participant "RunningState" as rs
+participant "CampaignService" as cs
+participant "CampaignReport\nStateKeeper" as crsk
+participant "CampaignReport\nPublishers" as crp
+collections "Redis" as redis
+participant "Factories" as factories
+
+== All Scenarios Complete ==
+
+rs -> rs : EndOfCampaignScenarioFeedback\n(all scenarios)
+rs -> redis : CampaignScenarioShutdownDirective\n(per scenario)
+redis -> factories
+factories -> redis : CampaignScenarioShutdownFeedback
+redis -> rs
+
+rs -> rs : Transition to CompletionState
+
+rs -> redis : CampaignShutdownDirective\n(broadcast)
+redis -> factories
+factories -> redis : CampaignShutdownFeedback
+redis -> rs
+
+rs -> cs : close(campaignKey, SUCCESSFUL)
+cs -> cs : Persist final status
+
+rs -> crsk : complete(campaignKey)
+crsk -> crsk : Finalize report data
+
+rs -> crp : publishReport(campaignKey)
+crp -> crp : Export to console,\nJUnit XML, etc.
+
+rs -> rs : Transition to DisabledState
+
+@enduml
+----
+
+== Timeout Handling
+
+Campaigns support both soft and hard timeouts:
+
+[cols="2,2,3",options="header"]
+|===
+| Timeout | Effect | Behavior
+
+| Soft timeout
+| Warning
+| `CampaignTimeoutFeedback(hard=false)` is generated. Campaign continues but a warning event is logged. Useful for alerting that a campaign is running longer than expected.
+
+| Hard timeout
+| Abort
+| `CampaignTimeoutFeedback(hard=true)` is generated. Triggers transition to `AbortingState`, sending `CampaignAbortDirective` to all factories. Campaign terminates with `ABORTED` status.
+
+| No timeout
+| None
+| Set `hardTimeoutSec = -1` and `softTimeoutSec = -1`. Campaign runs until all minions complete or an error occurs.
+|===
+
+== Distributed State Persistence
+
+In Redis-based deployments, campaign state is persisted to Redis for failover:
+
+* `CampaignRedisOperations` manages state storage
+* `CampaignRedisState` enum maps to state classes: `FACTORY_DAGS_ASSIGNMENT_STATE`, `MINIONS_ASSIGNMENT_STATE`, `WARMUP_STATE`, `MINIONS_STARTUP_STATE`, `RUNNING_STATE`, `COMPLETION_STATE`, `FAILURE_STATE`, `ABORTING_STATE`
+* On head recovery, `RedisCampaignExecutor` rebuilds state machines from persisted Redis data

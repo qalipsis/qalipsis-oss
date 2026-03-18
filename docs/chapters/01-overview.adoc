@@ -1,0 +1,327 @@
+= Architecture Overview
+
+QALIPSIS is an enterprise-grade, open-source load, performance, and end-to-end testing platform for distributed systems.
+Built in Kotlin on the JVM, it simulates thousands to millions of virtual actors (called _minions_) executing user-defined _scenarios_ against a system under test.
+
+== High-Level Architecture
+
+[plantuml,high-level-architecture,svg]
+----
+@startuml
+
+title QALIPSIS High-Level Architecture
+
+rectangle "User Interfaces" as ui {
+    component "Web UI\n(Vue.js/Nuxt)" as webapp
+    component "REST API\nClients" as restclient
+    component "Gradle Plugin\n/ CLI" as cli
+}
+
+rectangle "Head Node\n(Orchestration)" as head #E3F2FD {
+    component "REST Controllers" as controllers
+    component "Campaign Executor\n& State Machine" as campaignexec
+    component "Factory Service\n& Handshake Manager" as factoryservice
+    component "Report Service" as reportservice
+    component "JDBC Repositories" as repos
+}
+
+database "PostgreSQL" as pg #FFF3E0
+
+rectangle "Redis" as redis #F3E5F5 {
+    component "Pub/Sub Channels\n(Directives, Feedbacks,\nHandshakes, Heartbeats)" as channels
+}
+
+rectangle "Factory Node A" as fa #E8F5E9 {
+    component "Directive Listeners" as dl1
+    component "Minion Orchestrator" as mo1
+    component "Step Runners" as sr1
+    component "Meter Registry" as mr1
+}
+
+rectangle "Factory Node B" as fb #E8F5E9 {
+    component "Directive Listeners" as dl2
+    component "Minion Orchestrator" as mo2
+    component "Step Runners" as sr2
+    component "Meter Registry" as mr2
+}
+
+rectangle "System Under Test" as sut #FFCDD2
+
+ui --> controllers : HTTP/REST
+controllers --> campaignexec
+controllers --> reportservice
+campaignexec --> factoryservice
+campaignexec --> repos
+reportservice --> repos
+repos --> pg
+
+campaignexec --> channels : Directives
+channels --> dl1
+channels --> dl2
+dl1 --> channels : Feedbacks
+dl2 --> channels : Feedbacks
+factoryservice <-- channels : Handshakes\n& Heartbeats
+
+mo1 --> sr1
+mo2 --> sr2
+sr1 --> sut : Load
+sr2 --> sut : Load
+
+@enduml
+----
+
+== Module Structure
+
+The QALIPSIS OSS project is organized into the following modules:
+
+[plantuml,module-structure,svg]
+----
+@startuml
+
+title QALIPSIS Module Structure
+
+package "API Modules" as api {
+    [api-common] as apicommon #E8F4FD
+    [api-dsl] as apidsl #E8F4FD
+    [api-processors] as apiproc #E8F4FD
+    [api-dev] as apidev #E8F4FD
+    [test] as apitest #E8F4FD
+}
+
+package "Core Runtime" as core {
+    [shared] as shared #FFF9C4
+    [cluster] as cluster #FFF9C4
+    [head] as head #E3F2FD
+    [factory] as factory #E8F5E9
+    [runtime] as runtime #F3E5F5
+}
+
+package "Platform BOMs" as platform {
+    [dev-platform] as devplat #FFF3E0
+    [plugin-platform] as plugplat #FFF3E0
+}
+
+[webapp] as webapp #FFCDD2
+
+head --> shared
+head --> cluster
+factory --> shared
+runtime --> head
+runtime --> factory
+shared --> apicommon
+apidsl --> apicommon
+apiproc --> apicommon
+factory --> apidsl
+
+note bottom of apicommon
+  Core interfaces: Step, Meter,
+  Event, Scenario, Context
+end note
+
+note bottom of shared
+  Directives, Feedbacks,
+  Handshake protocol,
+  Campaign data structures
+end note
+
+note bottom of head
+  REST controllers,
+  Campaign state machine,
+  Factory management,
+  Reporting
+end note
+
+note bottom of factory
+  Directive listeners,
+  Minion lifecycle,
+  Step execution,
+  Metric collection
+end note
+
+@enduml
+----
+
+.Module Descriptions
+[cols="2,4",options="header"]
+|===
+| Module | Purpose
+
+| `api-common`
+| Core interfaces and data structures: steps, meters, events, scenarios, execution context
+
+| `api-dsl`
+| Kotlin DSL for writing load test scenarios with fluent step chaining
+
+| `api-processors`
+| Compile-time annotation processors (KAPT) for generating step converters
+
+| `api-dev`
+| Development platform configuration for scenario projects
+
+| `shared`
+| Shared protocol definitions: directives, feedbacks, handshake, heartbeat, campaign structures
+
+| `cluster`
+| Multi-tenancy support, security, and permission management
+
+| `head`
+| Head microservice: REST API, campaign orchestration, factory management, reporting
+
+| `factory`
+| Factory microservice: directive processing, minion orchestration, step execution, metrics
+
+| `runtime`
+| Bootstrap and execution environment; supports standalone, head-only, and factory-only modes
+
+| `dev-platform` / `plugin-platform`
+| BOM modules defining dependency constraints for scenario and plugin developers
+
+| `webapp`
+| Vue.js/Nuxt web UI for campaign management and result visualization
+|===
+
+== Technology Stack
+
+[cols="2,3",options="header"]
+|===
+| Technology | Purpose
+
+| Kotlin 1.9.25
+| Primary language; coroutines for async execution
+
+| Micronaut 3.9.7
+| Microservice framework (DI, HTTP server, validation)
+
+| Redis (Lettuce)
+| Inter-node messaging via Pub/Sub (directives, feedbacks, heartbeats)
+
+| PostgreSQL
+| Persistent storage for campaigns, scenarios, reports, factories
+
+| Hazelcast 4.2.8
+| Distributed caching and coordination
+
+| Kotlin Serialization
+| Polymorphic message serialization for protocol messages
+
+| Kotlin Coroutines 1.8.1
+| Concurrent minion execution and async I/O
+
+| Jackson 2.18.4
+| JSON serialization for REST API
+
+| JUnit 5 / MockK / AssertK
+| Testing framework
+|===
+
+== Communication Topology
+
+[plantuml,communication-topology,svg]
+----
+@startuml
+
+title Redis Communication Topology
+
+participant "Head" as head
+collections "Redis Pub/Sub" as redis
+participant "Factory A" as fa
+participant "Factory B" as fb
+
+== Factory Registration ==
+
+fa -> redis : HandshakeRequest\n(handshake-request channel)
+redis -> head : HandshakeRequest
+head -> redis : HandshakeResponse\n(factory-specific replyTo channel)
+redis -> fa : HandshakeResponse\n(nodeId, unicastChannel,\nheartbeatChannel, heartbeatPeriod)
+
+fb -> redis : HandshakeRequest
+redis -> head : HandshakeRequest
+head -> redis : HandshakeResponse
+redis -> fb : HandshakeResponse
+
+== Health Monitoring ==
+
+fa -> redis : Heartbeat\n(heartbeat channel)
+redis -> head
+fb -> redis : Heartbeat\n(heartbeat channel)
+redis -> head
+
+== Campaign Execution ==
+
+head -> redis : Directives\n(broadcast or unicast channel)
+redis -> fa : FactoryAssignment,\nMinionsDeclaration, ...
+redis -> fb : FactoryAssignment,\nMinionsDeclaration, ...
+
+fa -> redis : Feedbacks\n(feedback channel)
+redis -> head : FactoryAssignment,\nMinionsAssignment, etc.
+fb -> redis : Feedbacks\n(feedback channel)
+redis -> head
+
+@enduml
+----
+
+== Deployment Modes
+
+[plantuml,deployment-modes,svg]
+----
+@startuml
+
+title Deployment Modes
+
+rectangle "Standalone" as standalone #E8F5E9 {
+    rectangle "Single JVM" as sjvm {
+        component "Head" as sh
+        component "Factory" as sf
+        component "Runtime" as sr
+    }
+    database "PostgreSQL\n(optional)" as spg
+    sjvm --> spg
+    note bottom of standalone
+        Head + Factory in one process.
+        Minimal resources.
+        No external Redis needed.
+    end note
+}
+
+rectangle "Cluster (Light)" as cluster #E3F2FD {
+    component "Head" as ch
+    component "Factory 1" as cf1
+    component "Factory 2" as cf2
+    component "Factory N" as cfn
+    database "PostgreSQL" as cpg
+    queue "Redis" as credis
+    ch --> cpg
+    ch <--> credis
+    cf1 <--> credis
+    cf2 <--> credis
+    cfn <--> credis
+    note bottom of cluster
+        Multiple factories scaling horizontally.
+        Redis for messaging.
+        Factories can be behind firewalls.
+    end note
+}
+
+@enduml
+----
+
+.Deployment Mode Comparison
+[cols="2,2,2,2",options="header"]
+|===
+| Mode | Head Nodes | Factory Nodes | External Dependencies
+
+| Standalone
+| 1 (in-process)
+| 1 (in-process)
+| PostgreSQL (optional)
+
+| Cluster (Light)
+| 1
+| N
+| PostgreSQL + Redis
+
+| Cluster (High-Load, Commercial)
+| N (no SPOF)
+| N
+| PostgreSQL + Redis Cluster + Kafka
+|===

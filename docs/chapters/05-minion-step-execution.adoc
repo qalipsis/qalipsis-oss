@@ -1,0 +1,466 @@
+= Minion & Step Execution
+
+This chapter covers how minions execute scenario steps within factory nodes, including the DAG execution model, step context propagation, and minion lifecycle management.
+
+== DAG Execution Model
+
+Each scenario is composed of one or more _Directed Acyclic Graphs_ (DAGs).
+A DAG is a chain of steps executed sequentially by assigned minions.
+
+[plantuml,dag-execution-model,svg]
+----
+@startuml
+
+title DAG Execution Model
+
+rectangle "Scenario: http-load" as scenario {
+    rectangle "DAG: root (under load)" as dag1 #E3F2FD {
+        component "HTTP Request" as step1
+        component "Response Parse" as step2
+        component "Assert Status" as step3
+        step1 --> step2
+        step2 --> step3
+    }
+
+    rectangle "DAG: polling (singleton)" as dag2 #FFF9C4 {
+        component "DB Poll" as step4
+        component "Aggregate" as step5
+        step4 --> step5
+    }
+
+    rectangle "DAG: verify (not under load)" as dag3 #E8F5E9 {
+        component "Compare Results" as step6
+        component "Log Outcome" as step7
+        step6 --> step7
+    }
+}
+
+note right of dag1
+  **Root DAG**: Entry point.
+  Executed by all minions
+  under the configured load.
+end note
+
+note right of dag2
+  **Singleton DAG**: Executed
+  by a single minion.
+  Polls data sources.
+end note
+
+note right of dag3
+  **Non-load DAG**: Executed
+  by a single minion for
+  data verification.
+end note
+
+@enduml
+----
+
+.DAG Properties
+[cols="2,3",options="header"]
+|===
+| Property | Description
+
+| `name`
+| Unique identifier within the scenario
+
+| `isRoot`
+| Entry point DAG; execution starts here
+
+| `isUnderLoad`
+| Executes under configured load (multiple minions)
+
+| `isSingleton`
+| Executed by exactly one minion
+
+| `tags`
+| Key-value metadata
+
+| `rootStep`
+| First step in the chain
+
+| `stepsCount`
+| Total number of steps in the DAG
+|===
+
+== Minion Lifecycle
+
+[plantuml,minion-lifecycle,svg]
+----
+@startuml
+
+title Minion Lifecycle
+
+state "Created\n(Paused)" as created #E3F2FD
+state "Started" as started #C8E6C9
+state "Running\n(Executing Steps)" as running #C8E6C9
+state "Stopped" as stopped #EEEEEE
+
+[*] --> created : minionsKeeper.create()\n(pauseAtStart = true)
+
+created --> started : minion.start()\n(releases waitForStart latch)
+
+started --> running : First job launched
+
+running --> running : Job completes,\nnew job launched
+
+running --> stopped : minion.stop(interrupt)\n--> cancel all jobs\n--> invoke onComplete hooks
+
+stopped --> [*]
+
+note right of created
+  Minion created during
+  Phase 3 (MinionsAssignment).
+  Waits for Phase 6 to start.
+end note
+
+note right of running
+  Each job is a coroutine
+  executing a step chain.
+  Multiple concurrent jobs
+  may be active.
+end note
+
+@enduml
+----
+
+=== Minion Interface
+
+[cols="2,4",options="header"]
+|===
+| Method | Description
+
+| `id`
+| Unique minion identifier (format: `{scenarioName}-{dagId}-{index}`)
+
+| `campaignKey`
+| Campaign this minion belongs to
+
+| `scenarioName`
+| Scenario this minion executes
+
+| `isSingleton`
+| Whether this is a singleton minion
+
+| `waitForStart()`
+| Suspends until `start()` is called
+
+| `start()`
+| Releases all waiting jobs
+
+| `launch(scope, context, countLatch, block)`
+| Launch a coroutine job in the minion's scope
+
+| `stop(interrupt)`
+| Cancel all running jobs and trigger completion hooks
+
+| `onComplete(block)`
+| Register a cleanup hook called on stop
+
+| `join()`
+| Wait for all running jobs to complete
+|===
+
+=== Minion Job Execution Flow
+
+[plantuml,minion-job-execution,svg]
+----
+@startuml
+
+title Minion Job Execution
+
+participant "Runner" as runner
+participant "Minion" as minion
+participant "Step" as step
+
+runner -> minion : launch(scope, context, block)
+activate minion
+
+minion -> minion : Increment executingSteps
+minion -> minion : Create lazy Job
+
+minion -> minion : Start job
+activate minion #E8F5E9
+
+minion -> minion : waitForStart()\n(suspends until start() called)
+
+...Minion started...
+
+minion -> step : execute(context)
+activate step
+step -> step : Process input\nGenerate output
+step --> minion
+deactivate step
+
+minion -> minion : Decrement executingSteps
+minion -> minion : Remove from runningJobs
+
+deactivate minion
+
+deactivate minion
+
+@enduml
+----
+
+== Step Execution
+
+Steps are the atomic units of work within a scenario.
+The `Runner` orchestrates step execution, propagating context from one step to the next.
+
+=== Step Interface
+
+[cols="2,4",options="header"]
+|===
+| Method | Description
+
+| `name`
+| Step identifier
+
+| `retryPolicy`
+| Optional retry policy for failed executions
+
+| `next`
+| List of subsequent steps
+
+| `init()`
+| Lifecycle initialization
+
+| `start(context)`
+| Called when campaign starts (per-campaign setup)
+
+| `execute(context)`
+| Core execution logic with input/output context
+
+| `stop(context)`
+| Called when campaign stops (per-campaign teardown)
+
+| `complete(completionContext)`
+| Called when minion completes (tail steps only)
+
+| `discard(minionIds)`
+| Discard state for specific minions
+
+| `destroy()`
+| Final cleanup when step is unloaded
+|===
+
+=== Step Execution Context
+
+The `StepContext<IN, OUT>` carries all execution data between steps:
+
+[plantuml,step-context,svg]
+----
+@startuml
+
+title Step Context Data Flow
+
+rectangle "StepContext<IN, OUT>" as ctx {
+    rectangle "Identity" as identity {
+        component "campaignKey" as ck
+        component "minionId" as mid
+        component "scenarioName" as sn
+    }
+    rectangle "Navigation" as nav {
+        component "previousStepName" as psn
+        component "stepName" as sname
+        component "stepType / stepFamily" as stf
+        component "stepIterationIndex" as sii
+    }
+    rectangle "State" as state {
+        component "isExhausted" as ex
+        component "isTail" as tail
+        component "generatedOutput" as go
+        component "errors: List<StepError>" as err
+    }
+    rectangle "I/O" as io {
+        component "input: ReceiveChannel<IN>" as input
+        component "output: SendChannel<OUT>" as output
+    }
+}
+
+component "Previous Step" as prev
+component "Current Step" as curr
+component "Next Step(s)" as next
+
+prev --> input : Send output
+curr --> output : Send output
+output --> next : Receive as input
+
+@enduml
+----
+
+.StepContext Key Methods
+[cols="2,4",options="header"]
+|===
+| Method | Description
+
+| `receive()`
+| Read input value from the previous step
+
+| `send(value)`
+| Send output to the next step(s)
+
+| `next(input, stepName)`
+| Create a child context for the next step with given input
+
+| `next(stepName)`
+| Create a child context without explicit input
+
+| `duplicate(inputChannel, outputChannel, stepIterationIndex)`
+| Create a copy of this context with different channels
+
+| `lock()` / `await()` / `release()`
+| Latch operations for synchronization
+
+| `close()`
+| Close the context and release resources
+|===
+
+=== Step Propagation
+
+The `Runner` propagates execution through the step chain:
+
+[plantuml,step-propagation,svg]
+----
+@startuml
+
+title Step Propagation Logic
+
+start
+
+:Execute current step;
+:step.execute(context);
+
+if (Has output?) then (yes)
+    :Consume output records;
+    while (More outputs?) is (yes)
+        :Create context for each next step;
+        fork
+            :Launch next step\n(separate coroutine);
+        fork again
+            :Launch next step\n(another next step);
+        end fork
+    endwhile (no)
+else (no)
+    if (Is exhausted?) then (yes)
+        :Launch error handlers\nwith exhausted context;
+    else (no)
+        :Execute completion\nconsumer (if any);
+    endif
+endif
+
+if (Is tail step?) then (yes)
+    :Call step.complete()\nwith CompletionContext;
+else (no)
+endif
+
+stop
+
+@enduml
+----
+
+The propagation supports fan-out: a single step can produce multiple output records, each launching a separate execution of subsequent steps.
+
+=== Step Output Records
+
+Each step can produce multiple `StepOutputRecord` values:
+
+[cols="2,3",options="header"]
+|===
+| Field | Description
+
+| `value`
+| The output data
+
+| `isTail`
+| Whether this is the last record in the stream (marks minion completion)
+|===
+
+== Runner Implementation
+
+The `RunnerImpl` provides three entry points for step execution:
+
+[cols="2,4",options="header"]
+|===
+| Method | Description
+
+| `run(minion, dag)`
+| Execute a DAG from its root step. Creates initial context with `Unit` input and starts the minion.
+
+| `runMinion(minion, rootStep, stepContext, completionConsumer)`
+| Main execution entry. Starts the minion immediately and launches the step propagation chain.
+
+| `execute(minion, rootStep, stepContext, completionConsumer)`
+| Execute without auto-starting the minion. Returns a `Job` for external control.
+|===
+
+=== Runner Metrics
+
+The runner tracks execution metrics per scenario:
+
+[cols="2,2,3",options="header"]
+|===
+| Metric | Type | Description
+
+| `running-steps`
+| Gauge
+| Number of steps currently executing
+
+| `executed-steps`
+| Counter
+| Total number of step executions completed
+|===
+
+== Cross-Factory Step Propagation
+
+When a step needs to execute on a different factory (e.g., a join step waiting for data from another factory), the context is serialized and sent as a `TransportableStepContext` directive via Redis.
+
+[plantuml,cross-factory-propagation,svg]
+----
+@startuml
+
+title Cross-Factory Step Propagation
+
+participant "Factory A\n(Step N)" as fa
+collections "Redis" as redis
+participant "Factory B\n(Step N+1)" as fb
+
+fa -> fa : Step N produces output
+fa -> fa : Next step is on Factory B
+fa -> redis : **TransportableStepContext**\n(serialized context + input)
+redis -> fb : ContextDirectiveListener\nreceives context
+fb -> fb : Deserialize context
+fb -> fb : Route to correct DAG\nvia LocalAssignmentStore
+fb -> fb : Runner.execute(minion, step, context)
+
+@enduml
+----
+
+The `ContextDirectiveListener` handles incoming `TransportableStepContext` and `TransportableCompletionContext` directives, routing them to the correct step in the local DAG.
+
+== Minion Tracking
+
+`MinionsKeeper` maintains the registry of all active minions:
+
+[cols="2,3",options="header"]
+|===
+| Data Structure | Purpose
+
+| `minions` (ConcurrentHashMap)
+| All minions by ID
+
+| `rootDagsOfMinions`
+| Root DAGs assigned to each minion
+
+| `idleSingletonMinions` (per scenario)
+| Singleton minions waiting for activation
+
+| `singletonMinions` (by DAG)
+| Singleton minions indexed by DAG
+
+| `idle-minions` gauge
+| Number of minions not yet started (per scenario)
+
+| `running-minions` gauge
+| Number of actively executing minions (per scenario)
+|===

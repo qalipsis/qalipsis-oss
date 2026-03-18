@@ -38,6 +38,7 @@ plugins {
     id("org.jreleaser")
     id("com.github.jk1.dependency-license-report")
     id("com.palantir.git-version")
+    id("org.asciidoctor.jvm.convert")
 }
 
 description = "QALIPSIS OSS"
@@ -341,5 +342,46 @@ tasks.register("aggregatedCoverageReport", JacocoReport::class) {
         html.required.set(true)
         html.outputLocation.set(layout.buildDirectory.dir("reports/coverage"))
     }
+}
+
+asciidoctorj {
+    modules {
+        diagram.use()
+        diagram.version("2.3.1")
+    }
+}
+
+tasks.asciidoctor {
+    group = "documentation"
+    description = "Generate HTML documentation from AsciiDoc sources with PlantUML diagrams."
+
+    sourceDir(file("docs"))
+    sources {
+        include("index.adoc")
+    }
+    baseDirFollowsSourceDir()
+    setOutputDir(layout.buildDirectory.dir("docs/html").get().asFile)
+
+    options(
+        mapOf(
+            "doctype" to "book",
+        )
+    )
+    attributes(
+        mapOf(
+            "source-highlighter" to "highlight.js",
+            "toc" to "left",
+            "toclevels" to "3",
+            "sectnums" to "",
+            "icons" to "font",
+            "idprefix" to "",
+            "idseparator" to "-",
+            "imagesdir" to "images",
+            "project-version" to project.version.toString(),
+            "revnumber" to project.version.toString(),
+            "plantuml-config" to file("docs/diagrams/plantuml-config.puml").absolutePath,
+            "docinfo" to "shared-footer",
+        )
+    )
 }
 
