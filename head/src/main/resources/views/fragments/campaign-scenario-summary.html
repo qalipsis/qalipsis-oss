@@ -39,7 +39,8 @@
                         <span th:text="${#temporals.format(campaign.start, 'yyyy-MM-dd')}"></span><br/>
                         <span class="muted" th:text="${#temporals.format(campaign.start, 'HH:mm:ss')}"></span>
                     </div>
-                    <div class="small-muted" th:text="${new java.lang.Integer(campaign.executionTime/ 60)} + 'm' + ' ' + ${campaign.executionTime} % 60 + 's' "></div>
+                    <div class="small-muted"
+                         th:text="${campaign.executionTime / 60} + 'm' + ' ' + ${campaign.executionTime % 60} + 's' "></div>
                 </div>
 
                 <div class="mid-section">

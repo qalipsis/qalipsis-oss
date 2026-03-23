@@ -20,7 +20,6 @@
 package io.qalipsis.core.head.model
 
 import io.micronaut.core.annotation.Introspected
-import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Duration
 
@@ -38,72 +37,72 @@ data class DefaultValuesCampaignConfiguration(
     /**
      * validation field of campaign.
      */
-    override val validation: Validation
-) : DefaultCampaignConfiguration
+    val validation: Validation
+)
 
 data class Validation(
     /**
      * maximum number of minions of a campaign, default to 10_000.
      */
-    override val maxMinionsCount: Int,
+    val maxMinionsCount: Int,
 
     /**
      * maximum duration of a campaign's execution, default to PT1H.
      */
-    override val maxExecutionDuration: Duration,
+    val maxExecutionDuration: Duration,
 
     /**
      * maximum number of scenarios to include in campaign, default to 4.
      */
-    override val maxScenariosCount: Int,
+    val maxScenariosCount: Int,
 
     /**
      * stage validation field of a campaign.
      */
-    override val stage: Stage
-) : DefaultCampaignConfiguration.Validation
+    val stage: Stage
+)
 
 data class Stage(
     /**
      * minimum number of minions of a stage, default to 1.
      */
-    override val minMinionsCount: Int,
+    val minMinionsCount: Int,
 
     /**
      * maximum number of minions of a stage, default to validation maxMinionsCount field.
      */
-    override val maxMinionsCount: Int?,
+    val maxMinionsCount: Int?,
 
     /**
      * minimum resolution of a stage, default to PT0.5S.
      */
-    override val minResolution: Duration,
+    val minResolution: Duration,
 
     /**
      * maximum resolution of a stage, default to PT5M.
      */
-    override val maxResolution: Duration,
+    val maxResolution: Duration,
 
     /**
      * minimum duration of a stage, default to PT5S.
      */
-    override val minDuration: Duration,
+    val minDuration: Duration,
 
     /**
      * maximum duration of a stage, default to validation maxExecutionDuration field.
      */
-    override val maxDuration: Duration?,
+    val maxDuration: Duration?,
 
     /**
      * minimum start duration of a stage, default to minDuration.
      */
-    override var minStartDuration: Duration?,
+    var minStartDuration: Duration?,
 
     /**
      * maximum start duration of a stage, default to maxDuration.
      */
-    override var maxStartDuration: Duration?
-) : DefaultCampaignConfiguration.Validation.Stage {
+    var maxStartDuration: Duration?
+) {
     init {
         maxStartDuration = maxStartDuration ?: maxDuration
         minStartDuration = minStartDuration ?: minDuration

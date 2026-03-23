@@ -20,7 +20,6 @@
 package io.qalipsis.core.factory.meters
 
 import io.micronaut.context.annotation.ConfigurationProperties
-import io.micronaut.core.bind.annotation.Bindable
 
 /**
  * Additional configuration properties to support percentiles and histogram measurement for
@@ -32,34 +31,29 @@ import io.micronaut.core.bind.annotation.Bindable
  * @author Francisca Eze
  */
 @ConfigurationProperties("meters.export")
-interface MeasurementConfiguration {
+class MeasurementConfiguration {
 
-    val summary: Summary
+    var summary = Summary()
 
-    val timer: Timer
+    var timer = Timer()
 
-    val throughput: Throughput
+    var throughput = Throughput()
 
     @ConfigurationProperties("summary")
-    interface Summary {
+    class Summary {
 
-        @get:Bindable(defaultValue = "")
-        val percentiles: List<Double>?
+        var percentiles: List<Double>? = null
     }
 
     @ConfigurationProperties("timer")
-    interface Timer {
+    class Timer {
 
-        @get:Bindable(defaultValue = "")
-        val percentiles: List<Double>?
-
+        var percentiles: List<Double>? = null
     }
 
     @ConfigurationProperties("throughput")
-    interface Throughput {
+    class Throughput {
 
-        @get:Bindable(defaultValue = "")
-        val percentiles: List<Double>?
-
+        var percentiles: List<Double>? = null
     }
 }

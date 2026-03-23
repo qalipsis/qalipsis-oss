@@ -21,7 +21,6 @@ package io.qalipsis.core.head.configuration
 
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
-import io.micronaut.core.bind.annotation.Bindable
 import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import java.time.Duration
@@ -29,54 +28,50 @@ import javax.validation.constraints.NotBlank
 
 @Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE])
 @ConfigurationProperties("head")
-interface HeadConfiguration {
+class HeadConfiguration {
 
     /**
      * Channel to use to register the factory to the head, defaults to "registration".
      */
-    @get:NotBlank
-    val handshakeRequestChannel: String
+    @field:NotBlank
+    var handshakeRequestChannel: String = "handshake-request"
 
     /**
      * Prefix of the channel name to provide to the factories, where they receive the broadcast directives.
      */
-    @get:NotBlank
-    val unicastChannelPrefix: String
+    @field:NotBlank
+    var unicastChannelPrefix: String = "unicast"
 
     /**
      * Channel to send the heartbeats to.
      */
-    @get:NotBlank
-    val heartbeatChannel: String
+    @field:NotBlank
+    var heartbeatChannel: String = "heartbeat"
 
     /**
      * Duration of the heartbeat to emit from the factories.
      */
-    @get:PositiveDuration
-    @get:Bindable(defaultValue = "PT30S")
-    val heartbeatDelay: Duration
+    @field:PositiveDuration
+    var heartbeatDelay: Duration = Duration.ofSeconds(30)
 
     /**
      * Duration to wait for feedbacks before forcing the complete end of a campaign.
      */
-    @get:PositiveDuration
-    @get:Bindable(defaultValue = "PT8S")
-    val campaignCancellationStateGracePeriod: Duration
+    @field:PositiveDuration
+    var campaignCancellationStateGracePeriod: Duration = Duration.ofSeconds(8)
 
     /**
      * Contains configuration properties (zones and factories) for clusters.
      */
-    val cluster: ClusterConfiguration
+    var cluster: ClusterConfiguration = ClusterConfiguration()
 
     @ConfigurationProperties("cluster")
-    interface ClusterConfiguration {
+    class ClusterConfiguration {
 
         /**
          * When the flag is set to true, the factories are started for a unique campaign and stopped
          * once it completes. The head should provide the convenient feedbacks to orchestrate them.
          */
-        @get:Bindable(defaultValue = "false")
-        val onDemandFactories: Boolean
-
+        var onDemandFactories: Boolean = false
     }
 }
