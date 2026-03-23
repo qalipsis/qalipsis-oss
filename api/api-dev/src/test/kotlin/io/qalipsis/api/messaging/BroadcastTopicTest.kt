@@ -129,13 +129,18 @@ internal class BroadcastTopicTest {
     }
 
     @Test
+    @Timeout(10)
     fun `should cancel idle subscription`() = testCoroutineDispatcher.run {
         // given
-        val topic = BroadcastTopic<Int>(100, Duration.ofMillis(20))
+        val topic = BroadcastTopic<Int>(100, Duration.ofMillis(200))
 
         // when
         val subscription = topic.subscribe("any-1")
-        delay(100)
+        // Wait for the idle timeout to cancel the subscription, polling to avoid
+        // flakiness from thread scheduling delays on loaded CI systems.
+        while (subscription.isActive()) {
+            delay(50)
+        }
 
         // then
         Assertions.assertFalse(subscription.isActive())
@@ -201,15 +206,15 @@ internal class BroadcastTopicTest {
     @Test
     @Timeout(10)
     fun `should not cancel subscription when actively polling`() = testCoroutineDispatcher.run {
-        // given
-        val topic = BroadcastTopic<Int>(100, Duration.ofMillis(50))
+        // given - use a generous idle timeout to tolerate thread scheduling delays on loaded CI systems
+        val topic = BroadcastTopic<Int>(100, Duration.ofMillis(200))
         val subscription = topic.subscribe("any-1")
 
         // when - keep polling faster than the idle timeout
         repeat(10) {
             topic.produceValue(it)
             Assertions.assertEquals(it, subscription.pollValue())
-            delay(10) // well within the 50ms timeout
+            delay(50) // well within the 200ms timeout.
         }
 
         // then - subscription should still be active

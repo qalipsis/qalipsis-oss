@@ -33,7 +33,7 @@ import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignConfigurationProvider
-import io.qalipsis.core.head.configuration.DefaultCampaignConfiguration
+import io.qalipsis.core.head.model.DefaultValuesCampaignConfiguration
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -105,7 +105,7 @@ class ConfigurationController(
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String
-    ): DefaultCampaignConfiguration {
+    ): DefaultValuesCampaignConfiguration {
         return campaignConfigurationProvider.retrieveCampaignConfigurationDetails(tenant)
     }
 }

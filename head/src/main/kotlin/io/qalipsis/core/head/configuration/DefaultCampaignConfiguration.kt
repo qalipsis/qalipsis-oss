@@ -20,73 +20,60 @@
 package io.qalipsis.core.head.configuration
 
 import io.micronaut.context.annotation.ConfigurationProperties
-import io.micronaut.core.annotation.Nullable
-import io.micronaut.core.bind.annotation.Bindable
 import io.qalipsis.api.constraints.PositiveDuration
 import java.time.Duration
 import javax.validation.constraints.Positive
 
 /**
- * Interface to fetch the default values that can be used to create a new campaign.
+ * Default values that can be used to create a new campaign.
  *
  * @author Joël Valère
  */
 
 @ConfigurationProperties("campaign.configuration")
-interface DefaultCampaignConfiguration {
+class DefaultCampaignConfiguration {
 
-    val validation: Validation
+    var validation: Validation = Validation()
 
     @ConfigurationProperties("validation")
-    interface Validation {
+    class Validation {
 
-        @get:Positive
-        @get:Bindable(defaultValue = "10000")
-        val maxMinionsCount: Int
+        @field:Positive
+        var maxMinionsCount: Int = 10000
 
-        @get:PositiveDuration
-        @get:Bindable(defaultValue = "PT1H")
-        val maxExecutionDuration: Duration
+        @field:PositiveDuration
+        var maxExecutionDuration: Duration = Duration.ofHours(1)
 
-        @get:Positive
-        @get:Bindable(defaultValue = "4")
-        val maxScenariosCount: Int
+        @field:Positive
+        var maxScenariosCount: Int = 4
 
-        val stage: Stage
+        var stage: Stage = Stage()
 
         @ConfigurationProperties("stage")
-        interface Stage {
+        class Stage {
 
-            @get:Positive
-            @get:Bindable(defaultValue = "1")
-            val minMinionsCount: Int
+            @field:Positive
+            var minMinionsCount: Int = 1
 
-            @get:Nullable
-            val maxMinionsCount: Int?
+            var maxMinionsCount: Int? = null
 
-            @get:PositiveDuration
-            @get:Bindable(defaultValue = "PT0.5S")
-            val minResolution: Duration
+            @field:PositiveDuration
+            var minResolution: Duration = Duration.ofMillis(500)
 
-            @get:PositiveDuration
-            @get:Bindable(defaultValue = "PT5M")
-            val maxResolution: Duration
+            @field:PositiveDuration
+            var maxResolution: Duration = Duration.ofMinutes(5)
 
-            @get:PositiveDuration
-            @get:Bindable(defaultValue = "PT5S")
-            val minDuration: Duration
+            @field:PositiveDuration
+            var minDuration: Duration = Duration.ofSeconds(5)
 
-            @get:Nullable
-            @get:PositiveDuration
-            val maxDuration: Duration?
+            @field:PositiveDuration
+            var maxDuration: Duration? = null
 
-            @get:Nullable
-            @get:PositiveDuration
-            val minStartDuration: Duration?
+            @field:PositiveDuration
+            var minStartDuration: Duration? = null
 
-            @get:Nullable
-            @get:PositiveDuration
-            val maxStartDuration: Duration?
+            @field:PositiveDuration
+            var maxStartDuration: Duration? = null
         }
     }
 }
