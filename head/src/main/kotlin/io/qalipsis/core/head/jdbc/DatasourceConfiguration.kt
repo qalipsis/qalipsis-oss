@@ -20,7 +20,6 @@ package io.qalipsis.core.head.jdbc
 
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requires
-import io.micronaut.core.bind.annotation.Bindable
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Positive
 
@@ -29,32 +28,25 @@ import javax.validation.constraints.Positive
  */
 @ConfigurationProperties(value = "datasource")
 @Requires(property = "liquibase.enabled", notEquals = "false")
-interface DatasourceConfiguration {
+class DatasourceConfiguration {
 
-    @get:NotBlank
-    @get:Bindable(defaultValue = "localhost")
-    val host: String
+    @field:NotBlank
+    var host: String = "localhost"
 
-    @get:Positive
-    @get:Bindable(defaultValue = "5432")
-    val port: Int
+    @field:Positive
+    var port: Int = 5432
 
-    @get:NotBlank
-    @get:Bindable(defaultValue = "qalipsis")
-    val database: String
+    @field:NotBlank
+    var database: String = "qalipsis"
 
-    @get:NotBlank
-    @get:Bindable(defaultValue = "qalipsis")
-    val schema: String
+    @field:NotBlank
+    var schema: String = "qalipsis"
 
-    @get:NotBlank
-    @get:Bindable(defaultValue = "qalipsis")
-    val username: String
+    @field:NotBlank
+    var username: String = "qalipsis"
 
-    @get:NotBlank
-    @get:Bindable(defaultValue = "qalipsis")
-    val password: String
+    @field:NotBlank
+    var password: String = "qalipsis"
 
-    @get:Bindable(defaultValue = "qalipsis")
-    val properties: Map<String, String>
+    var properties: Map<String, String> = emptyMap()
 }

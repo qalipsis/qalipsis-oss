@@ -24,10 +24,8 @@ import com.hazelcast.config.ScheduledExecutorConfig
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.micronaut.core.bind.annotation.Bindable
 import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.core.configuration.ExecutionEnvironments
-import jakarta.annotation.Nullable
 import java.time.Duration
 import javax.validation.Valid
 import javax.validation.constraints.Min
@@ -42,28 +40,24 @@ import javax.validation.constraints.Positive
     Requires(notEnv = [ExecutionEnvironments.SINGLE_HEAD])
 )
 @ConfigurationProperties("hazelcast")
-interface HazelcastConfiguration {
+class HazelcastConfiguration {
 
-    @get:Min(2000)
-    val port: Int?
+    @field:Min(2000)
+    var port: Int? = null
 
-    @get:Bindable(defaultValue = "TCP_IP_REDIS")
-    val discoveryStrategy: DiscoveryStrategy
+    var discoveryStrategy: DiscoveryStrategy = DiscoveryStrategy.TCP_IP_REDIS
 
-    @get:Valid
-    @get:Nullable
-    val multicast: MulticastDiscovery?
+    @field:Valid
+    var multicast: MulticastDiscovery? = null
 
-    @get:Valid
-    @get:Nullable
-    val tcpIp: TcpIpDiscovery?
+    @field:Valid
+    var tcpIp: TcpIpDiscovery? = null
 
-    @get:Valid
-    @get:Nullable
-    val kubernetes: KubernetesDiscovery?
+    @field:Valid
+    var kubernetes: KubernetesDiscovery? = null
 
-    @get:Valid
-    val scheduledExecutorService: ScheduledExecutorService
+    @field:Valid
+    var scheduledExecutorService: ScheduledExecutorService = ScheduledExecutorService()
 
     /**
      * Configuration to create a Hazelcast cluster within Kubernetes.
@@ -75,94 +69,81 @@ interface HazelcastConfiguration {
      * Documentation on [https://github.com/hazelcast/hazelcast-kubernetes/tree/v2.2.3](https://github.com/hazelcast/hazelcast-kubernetes/tree/v2.2.3).
      */
     @ConfigurationProperties("kubernetes")
-    interface KubernetesDiscovery {
+    class KubernetesDiscovery {
 
         /**
          * Kubernetes Namespace where Hazelcast is running; if not specified, the value is taken from the environment
          * variables KUBERNETES_NAMESPACE or OPENSHIFT_BUILD_NAMESPACE. If those are not set,
          * the namespace of the POD will be used (retrieved from /var/run/secrets/kubernetes.io/serviceaccount/namespace).
          */
-        @get:Nullable
-        val namespace: String?
+        var namespace: String? = null
 
         /**
          * Service name used to scan only PODs connected to the given service;
          * if not specified, then all PODs in the namespace are checked
          */
-        @get:Nullable
-        val serviceName: String?
+        var serviceName: String? = null
 
         /**
          * Service label used to tag services that should form the Hazelcast cluster together.
          */
-        @get:Nullable
-        val serviceLabelName: String?
+        var serviceLabelName: String? = null
 
         /**
          * Service label value used to tag services that should form the Hazelcast cluster together.
          */
-        @get:Nullable
-        val serviceLabelValue: String?
+        var serviceLabelValue: String? = null
 
         /**
          * Pod label used to tag services that should form the Hazelcast cluster together.
          */
-        @get:Nullable
-        val podLabelName: String?
+        var podLabelName: String? = null
 
         /**
          * Pod label value used to tag services that should form the Hazelcast cluster together.
          */
-        @get:Nullable
-        val podLabelValue: String?
+        var podLabelValue: String? = null
 
         /**
          * Number of retries in case of issues while connecting to Kubernetes API; defaults to 3.
          */
-        @get:Nullable
-        @get:Positive
-        val kubernetesApiRetries: Int?
+        @field:Positive
+        var kubernetesApiRetries: Int? = null
 
         /**
          * URL of Kubernetes Master; https://kubernetes.default.svc by default.
          */
-        @get:Nullable
-        val kubernetesMaster: String?
+        var kubernetesMaster: String? = null
 
         /**
          * API Token to Kubernetes API; if not specified, the value is taken from the file
          * /var/run/secrets/kubernetes.io/serviceaccount/token.
          */
-        @get:Nullable
-        val apiToken: String?
+        var apiToken: String? = null
 
         /**
          * CA Certificate for Kubernetes API; if not specified, the value is taken from the file
          * /var/run/secrets/kubernetes.io/serviceaccount/ca.crt.
          */
-        @get:Nullable
-        val caCertificate: String?
+        var caCertificate: String? = null
 
         /**
          * Endpoint port of the service; if specified with a value greater than 0, it overrides the default;
          * 0 by default.
          */
-        @get:Nullable
-        @get:Positive
-        val servicePort: Int?
+        @field:Positive
+        var servicePort: Int? = null
 
         /**
-         * When using DNS Lookup: service DNS (reduired), usually in the form of SERVICE-NAME.NAMESPACE.svc.cluster.local.
+         * When using DNS Lookup: service DNS (required), usually in the form of SERVICE-NAME.NAMESPACE.svc.cluster.local.
          */
-        @get:Nullable
-        val serviceDns: String?
+        var serviceDns: String? = null
 
         /**
          * When using DNS Lookup: custom time (optional) for how long the DNS Lookup is checked.
          */
-        @get:Nullable
-        @get:PositiveDuration
-        val serviceDnsTimeout: Duration?
+        @field:PositiveDuration
+        var serviceDnsTimeout: Duration? = null
 
         /**
          * Strategy to use to ensure high-availability.
@@ -173,16 +154,14 @@ interface HazelcastConfiguration {
          * When using NODE_AWARE configuration, backups are created in the other Kubernetes nodes. This feature is available only for the Kubernetes API mode.
          * Note: Your Kubernetes cluster must orchestrate Hazelcast Member PODs equally between the nodes, otherwise Node Aware feature may not work correctly.
          */
-        @get:Nullable
-        val groupType: MemberGroupType?
-
+        var groupType: MemberGroupType? = null
     }
 
     /**
      * Configuration to create a Hazelcast cluster by IP addresses and host names, stored in the Redis DB.
      */
     @ConfigurationProperties("tcp-ip")
-    interface TcpIpDiscovery {
+    class TcpIpDiscovery {
 
         /**
          * Defines the connection timeout in seconds. This is the maximum amount of time Hazelcast is going to try to
@@ -192,52 +171,46 @@ interface HazelcastConfiguration {
          * for example when a well known member is not up. Increasing this value is recommended if you have many
          * IPs listed and the members cannot properly build up the cluster. Its default value is 5 seconds.
          */
-        @get:PositiveDuration
-        @get:Nullable
-        val connectionTimeout: Duration?
+        @field:PositiveDuration
+        var connectionTimeout: Duration? = null
 
         /**
          * Timeout after which a member that did not send any heartbeat is ignored by new members joining the cluster.
          */
-        @get:PositiveDuration
-        @get:Bindable(defaultValue = "PT1M")
-        val timeout: Duration
-
+        @field:PositiveDuration
+        var timeout: Duration = Duration.ofMinutes(1)
     }
 
     @ConfigurationProperties("multicast")
-    interface MulticastDiscovery {
+    class MulticastDiscovery {
 
         /**
          * The multicast group IP address. Specify it when you want to create clusters within the same network.
          * Values can be between 224.0.0.0 and 239.255.255.255. Its default value is 224.2.2.3
          */
-        @get:Nullable
-        val group: String?
+        var group: String? = null
 
         /**
          * The multicast socket port that the Hazelcast member listens to and sends discovery messages through.
          * Its default value is 54327.
          */
-        @get:Nullable
-        @get:Min(2000)
-        val port: Int?
+        @field:Min(2000)
+        var port: Int? = null
 
         /**
          * Time-to-live value for multicast packets sent out to control the scope of multicasts. See more information,
          * see The [http://www.tldp.org/HOWTO/Multicast-HOWTO-2.html](Linux Documentation Project).
          */
-        @get:PositiveDuration
-        val timeToLive: Duration?
+        @field:PositiveDuration
+        var timeToLive: Duration? = null
 
         /**
          * Only when the members are starting up, this timeout (in seconds) specifies the period during which a member
          * waits for a multicast response from another member. For example, if you set it as 60 seconds,
          * each member waits for 60 seconds until a leader member is selected. Its default value is 2 seconds.
          */
-        @get:Nullable
-        @get:PositiveDuration
-        val timeout: Duration?
+        @field:PositiveDuration
+        var timeout: Duration? = null
 
         /**
          * Includes IP addresses of trusted members. When a member wants to join to the cluster, its join request
@@ -245,46 +218,35 @@ interface HazelcastConfiguration {
          * You can give an IP addresses range using the wildcard (*) on the last digit of IP address,
          * e.g., 192.168.1.* or 192.168.1.100-110.
          */
-        @get:Nullable
-        @get:Bindable(defaultValue = "")
-        val trustedInterfaces: Set<@NotBlank String>?
-
+        var trustedInterfaces: Set<@NotBlank String>? = null
     }
 
     @ConfigurationProperties("scheduled-executor-service")
-    interface ScheduledExecutorService {
+    class ScheduledExecutorService {
 
-        @get:Bindable(defaultValue = "false")
-        val statisticsEnabled: Boolean
+        var statisticsEnabled: Boolean = false
 
-        @get:Min(1)
-        @get:Bindable(defaultValue = "16")
-        val poolSize: Int
+        @field:Min(1)
+        var poolSize: Int = 16
 
-        @get:Min(1)
-        @get:Bindable(defaultValue = "1")
-        val durability: Int
+        @field:Min(1)
+        var durability: Int = 1
 
-        @get:Min(1)
-        @get:Bindable(defaultValue = "100")
-        val capacity: Int
+        @field:Min(1)
+        var capacity: Int = 100
 
-        @get:Bindable(defaultValue = "PER_NODE")
-        val capacityPolicy: ScheduledExecutorConfig.CapacityPolicy
+        var capacityPolicy: ScheduledExecutorConfig.CapacityPolicy = ScheduledExecutorConfig.CapacityPolicy.PER_NODE
 
-        @get:Nullable
-        val mergePolicy: MergePolicyConfig?
+        var mergePolicy: MergePolicyConfig? = null
 
         @ConfigurationProperties("merge-policy")
-        interface MergePolicyConfig {
+        class MergePolicyConfig {
 
-            @get:NotBlank
-            @get:Bindable(defaultValue = "PutIfAbsentMergePolicy")
-            val policy: String
+            @field:NotBlank
+            var policy: String = "PutIfAbsentMergePolicy"
 
-            @get:Min(1)
-            @get:Bindable(defaultValue = "100")
-            val batchSize: Int
+            @field:Min(1)
+            var batchSize: Int = 100
         }
     }
 

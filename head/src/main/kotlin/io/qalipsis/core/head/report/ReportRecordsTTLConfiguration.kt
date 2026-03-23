@@ -20,7 +20,6 @@
 package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.ConfigurationProperties
-import io.micronaut.core.bind.annotation.Bindable
 import io.qalipsis.api.constraints.PositiveDuration
 import java.time.Duration
 
@@ -30,25 +29,22 @@ import java.time.Duration
  * @author Francisca Eze
  */
 @ConfigurationProperties("report.records")
-interface ReportRecordsTTLConfiguration {
+class ReportRecordsTTLConfiguration {
 
     /**
      * Duration after which old report file records are deleted.
      */
-    @get:PositiveDuration
-    @get:Bindable(defaultValue = "P4D")
-    val fileTimeToLive: Duration?
+    @field:PositiveDuration
+    var fileTimeToLive: Duration? = Duration.ofDays(4)
 
     /**
      * Duration after which old report task records are deleted.
      */
-    @get:PositiveDuration
-    @get:Bindable(defaultValue = "P30D")
-    val taskTimeToLive: Duration?
+    @field:PositiveDuration
+    var taskTimeToLive: Duration? = Duration.ofDays(30)
 
     /**
      * Valid cron expression to trigger report records cleanup.
      */
-    @get:Bindable(defaultValue = "0 0 0 1/1 * ?")
-    val cron: String?
+    var cron: String? = "0 0 0 1/1 * ?"
 }
