@@ -246,6 +246,11 @@ class DataSeriesController(
             `in` = ParameterIn.PATH
         ) @PathVariable("data-type") dataType: DataType,
         @Parameter(
+            description = "Campaign key to filter the names by.",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @QueryValue("campaign") campaignKey: String? = null,
+        @Parameter(
             description = "Comma-separated list of filters to apply to names.",
             required = false,
             `in` = ParameterIn.QUERY
@@ -256,7 +261,7 @@ class DataSeriesController(
             `in` = ParameterIn.QUERY
         ) @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int,
     ): Collection<String> {
-        return dataProvider.searchNames(tenant, dataType, filter.asFilters(), size)
+        return dataProvider.searchNames(tenant, dataType, campaignKey, filter.asFilters(), size)
     }
 
     @Get("/{data-type}/fields")
@@ -285,8 +290,13 @@ class DataSeriesController(
             required = true,
             `in` = ParameterIn.PATH
         ) @PathVariable("data-type") dataType: DataType,
+        @Parameter(
+            description = "Event or meter name to filter the fields by.",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @QueryValue("name") name: String? = null,
     ): Collection<DataField> {
-        return dataProvider.listFields(tenant, dataType)
+        return dataProvider.listFields(tenant, dataType, name)
     }
 
     @Get("/{data-type}/tags")
@@ -313,6 +323,11 @@ class DataSeriesController(
             `in` = ParameterIn.PATH
         ) @PathVariable("data-type") dataType: DataType,
         @Parameter(
+            description = "Event or meter name to filter the tags by.",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @QueryValue("name") name: String? = null,
+        @Parameter(
             description = "Comma-separated list of filters to apply to tag names.",
             required = false,
             `in` = ParameterIn.QUERY
@@ -323,7 +338,7 @@ class DataSeriesController(
             `in` = ParameterIn.QUERY
         ) @QueryValue(defaultValue = "20") @Positive @Max(100) size: Int,
     ): Map<String, Collection<String>> {
-        return dataProvider.searchTagsAndValues(tenant, dataType, filter.asFilters(), size)
+        return dataProvider.searchTagsAndValues(tenant, dataType, name, filter.asFilters(), size)
     }
 
     @Get("/")
@@ -352,6 +367,11 @@ class DataSeriesController(
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
         @Parameter(
+            description = "Campaign key to filter the data-series by.",
+            required = false,
+            `in` = ParameterIn.QUERY
+        ) @QueryValue("campaign") campaignKey: String? = null,
+        @Parameter(
             description = "Sorting property and order, e.g., `name:DESC`.",
             required = false,
             `in` = ParameterIn.QUERY
@@ -379,6 +399,7 @@ class DataSeriesController(
         return dataSeriesService.searchDataSeries(
             tenant,
             authentication.name,
+            campaignKey = campaignKey,
             filter.asFilters(),
             sort.takeUnless(String::isNullOrBlank),
             page,

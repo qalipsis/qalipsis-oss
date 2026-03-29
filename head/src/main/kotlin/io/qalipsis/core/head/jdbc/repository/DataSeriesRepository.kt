@@ -254,6 +254,144 @@ interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long>
         pageable: Pageable
     ): Page<DataSeriesEntity>
 
+
+    @Query(
+        value = """SELECT 
+                    data_series_entity_.id, 
+                    data_series_entity_.reference, 
+                    data_series_entity_.version, 
+                    data_series_entity_.tenant_id, 
+                    data_series_entity_.display_name, 
+                    data_series_entity_.data_type,
+                    data_series_entity_.value_name,
+                    data_series_entity_.color, 
+                    data_series_entity_.filters, 
+                    data_series_entity_.field_name, 
+                    data_series_entity_.aggregation_operation, 
+                    data_series_entity_.timeframe_unit_ms, 
+                    data_series_entity_.display_format,
+                    data_series_entity_.query, 
+                    data_series_entity_.color_opacity,
+                        CASE 
+                            WHEN t.id <> current_tenant.id THEN 'READONLY'
+                            ELSE sharing_mode
+                        END AS sharing_mode,
+                        CASE 
+                            WHEN t.id <> current_tenant.id THEN -1
+                            ELSE creator_id
+                        END AS creator_id 
+                        FROM data_series AS data_series_entity_
+                            LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
+                            JOIN tenant t ON data_series_entity_.tenant_id = t.id
+                            JOIN tenant current_tenant ON current_tenant.reference = :currentTenant
+                        WHERE 
+                        (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
+                        AND (
+                         data_series_entity_.field_name ILIKE any (array[:filters]) 
+                         OR data_series_entity_.data_type ILIKE any (array[:filters])
+                         OR data_series_entity_.display_name ILIKE any (array[:filters])
+                         OR u.username ILIKE any (array[:filters]) 
+                         OR u.display_name ILIKE any (array[:filters])
+                        )
+                        AND (
+                            (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.field_name IN (:eventNames))
+                            OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.field_name IN (:meterNames))
+                        )
+                        AND t.reference IN (:tenant, '${Defaults.TENANT}')
+        """,
+        countQuery = """
+            SELECT COUNT(*)
+            FROM data_series AS data_series_entity_
+            LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
+            JOIN tenant t ON data_series_entity_.tenant_id = t.id
+            JOIN tenant current_tenant ON current_tenant.reference = :currentTenant
+            WHERE 
+            (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
+            AND (
+             data_series_entity_.field_name ILIKE any (array[:filters])
+             OR data_series_entity_.data_type ILIKE any (array[:filters]) 
+             OR data_series_entity_.display_name ILIKE any (array[:filters])
+             OR u.username ILIKE any (array[:filters]) 
+             OR u.display_name ILIKE any (array[:filters])
+            )
+            AND (
+                (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.field_name IN (:eventNames))
+                OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.field_name IN (:meterNames))
+            )
+            AND t.reference IN (:tenant, '${Defaults.TENANT}')""",
+        nativeQuery = true
+    )
+    suspend fun searchDataSeriesForDataNames(
+        tenant: String,
+        username: String,
+        currentTenant: String = tenant,
+        eventNames: Collection<String>,
+        meterNames: Collection<String>,
+        @Expandable filters: Collection<String>,
+        pageable: Pageable
+    ): Page<DataSeriesEntity>
+
+    @Query(
+        value =
+            """SELECT 
+            data_series_entity_.id, 
+            data_series_entity_.reference, 
+            data_series_entity_.version, 
+            data_series_entity_.tenant_id, 
+            data_series_entity_.display_name, 
+            data_series_entity_.data_type,
+            data_series_entity_.value_name,
+            data_series_entity_.color, 
+            data_series_entity_.filters, 
+            data_series_entity_.field_name, 
+            data_series_entity_.aggregation_operation, 
+            data_series_entity_.timeframe_unit_ms, 
+            data_series_entity_.display_format,
+            data_series_entity_.query, 
+            data_series_entity_.color_opacity,
+                CASE 
+                    WHEN t.id <> current_tenant.id THEN 'READONLY'
+                    ELSE sharing_mode
+                END AS sharing_mode,
+                CASE 
+                    WHEN t.id <> current_tenant.id THEN -1
+                    ELSE creator_id
+                END AS creator_id 
+                FROM data_series AS data_series_entity_
+                    LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
+                    JOIN tenant t ON data_series_entity_.tenant_id = t.id
+                    JOIN tenant current_tenant ON current_tenant.reference = :currentTenant
+                WHERE 
+                (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
+                AND (
+                    (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.field_name IN (:eventNames))
+                    OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.field_name IN (:meterNames))
+                )
+                AND t.reference IN (:tenant, '${Defaults.TENANT}')""",
+        countQuery = """
+            SELECT COUNT(*) 
+            FROM data_series AS data_series_entity_
+            LEFT JOIN "user" u ON data_series_entity_.creator_id = u.id
+            JOIN tenant t ON data_series_entity_.tenant_id = t.id
+            JOIN tenant current_tenant ON current_tenant.reference = :currentTenant
+            WHERE 
+            (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
+            AND (
+                (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.field_name IN (:eventNames))
+                OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.field_name IN (:meterNames))
+            )
+            AND t.reference IN (:tenant, '${Defaults.TENANT}')""",
+        nativeQuery = true
+    )
+    suspend fun searchDataSeriesForDataNames(
+        tenant: String,
+        username: String,
+        currentTenant: String = tenant,
+        eventNames: Collection<String>,
+        meterNames: Collection<String>,
+        pageable: Pageable
+    ): Page<DataSeriesEntity>
+
     @Query(
         value = """SELECT tenant_id, * FROM data_series ORDER BY tenant_id""",
         countQuery = """SELECT COUNT(*) FROM data_series""",

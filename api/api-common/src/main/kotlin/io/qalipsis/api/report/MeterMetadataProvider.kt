@@ -44,6 +44,7 @@ interface MeterMetadataProvider {
      */
     suspend fun searchNames(
         tenant: String,
+        campaignKey: String?,
         filters: Collection<String>,
         @Positive @Max(100) size: Int
     ): Collection<String>
@@ -54,7 +55,7 @@ interface MeterMetadataProvider {
      * @param tenant the reference of the tenant owning the data
      * @param meterName the name of the meter for which the fields are to be listed, if known
      */
-    suspend fun listFields(tenant: String, meterName: String? = null): Collection<DataField>
+    suspend fun listFields(tenant: String, meterName: String?): Collection<DataField>
 
     /**
      * Searches tags matching the potential filters and provide also values.
@@ -66,7 +67,7 @@ interface MeterMetadataProvider {
      */
     suspend fun searchTagsAndValues(
         tenant: String,
-        meterName: String? = null,
+        meterName: String?,
         filters: Collection<String>,
         @Positive @Max(100) size: Int
     ): Map<String, Collection<String>>
