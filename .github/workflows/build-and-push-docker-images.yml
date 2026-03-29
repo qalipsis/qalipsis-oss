@@ -3,10 +3,6 @@ name: Create and publish Docker images
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 'develop/*'
-      - 'main'
 
 env:
   REGISTRY: ghcr.io

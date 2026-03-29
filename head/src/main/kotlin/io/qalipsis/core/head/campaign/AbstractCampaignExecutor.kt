@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.head.campaign
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.coroutines.contextualLaunch
@@ -77,7 +78,12 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
         tryAndLog(log) {
             feedback as CampaignManagementFeedback
             lockProvider.withLock(feedback.campaignKey) {
-                val sourceCampaignState = get(feedback.tenant, feedback.campaignKey)
+                val sourceCampaignState = requireNotNull(
+                    get(
+                        feedback.tenant,
+                        feedback.campaignKey
+                    )
+                ) { "The campaign ${feedback.campaignKey} is not running" }
                 log.trace { "Processing $feedback on $sourceCampaignState" }
                 if (feedback is CampaignTimeoutFeedback) {
                     timeoutAbort(feedback.tenant, feedback.campaignKey, feedback.hard, sourceCampaignState)
@@ -180,25 +186,49 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
 
     @LogInput
     override suspend fun abort(tenant: String, aborter: String, campaignKey: String, hard: Boolean) {
-        tryAndLog(log) {
-            lockProvider.withLock(campaignKey) {
-                val sourceCampaignState = get(tenant, campaignKey)
-                if (!sourceCampaignState.isCompleted) {
-                    val campaignState = sourceCampaignState.abort(AbortRunningCampaign(hard))
-                    log.trace { "Campaign state $campaignState" }
-                    campaignState.inject(campaignExecutionContext)
+        val campaignStatus = campaignService.retrieve(tenant, campaignKey).status
+        if (campaignStatus == ExecutionStatus.SCHEDULED) {
+            tryAndLog(log) {
+                lockProvider.withLock(campaignKey) {
                     campaignService.abort(tenant, aborter, campaignKey)
-                    if (hard) {
-                        campaignReportStateKeeper.abort(campaignKey)
-                    }
-                    val directives = campaignState.init()
-                    if (!campaignState.isCompleted) {
-                        set(campaignState)
-                        directives.forEach {
-                            (it as? CampaignManagementDirective)?.tenant = tenant
-                            headChannel.publishDirective(it)
-                        }
-                    }
+                }
+            }
+        } else {
+            tryAndLog(log) {
+                lockProvider.withLock(campaignKey) {
+                    abortAlreadyStartedCampaign(tenant, campaignKey, hard, aborter)
+                }
+            }
+        }
+    }
+
+    /**
+     * Cancels a campaign that is already started. The campaign might potentially be finished, the
+     * abortion is a best effort.
+     */
+    @KTestable
+    private suspend fun abortAlreadyStartedCampaign(
+        tenant: String,
+        campaignKey: String,
+        hard: Boolean,
+        aborter: String
+    ) {
+        val sourceCampaignState =
+            requireNotNull(get(tenant, campaignKey)) { "The campaign $campaignKey is not running" }
+        if (!sourceCampaignState.isCompleted) {
+            val campaignState = sourceCampaignState.abort(AbortRunningCampaign(hard))
+            log.trace { "Campaign state $campaignState" }
+            campaignState.inject(campaignExecutionContext)
+            campaignService.abort(tenant, aborter, campaignKey)
+            if (hard) {
+                campaignReportStateKeeper.abort(campaignKey)
+            }
+            val directives = campaignState.init()
+            if (!campaignState.isCompleted) {
+                set(campaignState)
+                directives.forEach {
+                    (it as? CampaignManagementDirective)?.tenant = tenant
+                    headChannel.publishDirective(it)
                 }
             }
         }
@@ -217,7 +247,7 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
     ): CampaignExecutionState<C>
 
     @LogInputAndOutput
-    abstract suspend fun get(tenant: String, campaignKey: CampaignKey): CampaignExecutionState<C>
+    abstract suspend fun get(tenant: String, campaignKey: CampaignKey): CampaignExecutionState<C>?
 
     @LogInput
     abstract suspend fun set(state: CampaignExecutionState<C>)

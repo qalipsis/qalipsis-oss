@@ -59,6 +59,7 @@ import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.flowOf
@@ -998,6 +999,7 @@ internal class DataSeriesServiceImplTest {
             val result = dataSeriesService.searchDataSeries(
                 tenant = "my-tenant",
                 username = "user",
+                campaignKey = null,
                 filters = emptyList(),
                 sort = null,
                 page = 0,
@@ -1052,6 +1054,7 @@ internal class DataSeriesServiceImplTest {
             val result = dataSeriesService.searchDataSeries(
                 tenant = "my-tenant",
                 username = "user",
+                campaignKey = null,
                 filters = emptyList(),
                 sort = "fieldName",
                 page = 0,
@@ -1110,6 +1113,7 @@ internal class DataSeriesServiceImplTest {
                 dataSeriesService.searchDataSeries(
                     tenant = "my-tenant",
                     username = "user",
+                    campaignKey = null,
                     filters = listOf("Un*u_", "u_Er"),
                     sort = null,
                     page = 0,
@@ -1173,6 +1177,7 @@ internal class DataSeriesServiceImplTest {
                 dataSeriesService.searchDataSeries(
                     tenant = "my-tenant",
                     username = "user",
+                    campaignKey = null,
                     filters = listOf("F_oo", "Us_r"),
                     sort = "fieldName",
                     page = 0,
@@ -1193,6 +1198,517 @@ internal class DataSeriesServiceImplTest {
                 dataSeriesRepository.searchDataSeries(
                     tenant = "my-tenant",
                     username = "user",
+                    filters = listOf(filter1, filter2),
+                    pageable = pageable
+                )
+            }
+            confirmVerified(dataSeriesRepository)
+        }
+
+    @Test
+    internal fun `should return the searched data series for a campaign from the repository with default sorting and no filter`() =
+        testDispatcherProvider.run {
+            // given
+            val dataSeriesService = DataSeriesServiceImpl(
+                dataSeriesRepository,
+                tenantProvider,
+                userProvider,
+                idGenerator,
+                dataProvider,
+                this
+            )
+            val dataSeries1 = relaxedMockk<DataSeries>()
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 12
+                every { toModel("User 1") } returns dataSeries1
+            }
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 34
+                every { toModel("User 2") } returns dataSeries2
+            }
+            coEvery { userProvider.findIdAndDisplayNameByIdIn(setOf(12L, 34L)) } returns listOf(
+                mockk { every { id } returns 12L; every { displayName } returns "User 1" },
+                mockk { every { id } returns 34L; every { displayName } returns "User 2" }
+            )
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
+            val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), pageable, 2)
+            coEvery {
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = "my-tenant",
+                    username = "user",
+                    eventNames = any(),
+                    meterNames = any(),
+                    pageable = pageable
+                )
+            } returns page
+            coEvery {
+                dataProvider.searchNames(
+                    any(),
+                    DataType.EVENTS,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns listOf("my-event-1", "my-event-2")
+            coEvery {
+                dataProvider.searchNames(
+                    any(),
+                    DataType.METERS,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns listOf("my-meter-1", "my-meter-2")
+
+            // when
+            val result = dataSeriesService.searchDataSeries(
+                tenant = "my-tenant",
+                username = "user",
+                campaignKey = "my-campaign",
+                filters = emptyList(),
+                sort = null,
+                page = 0,
+                size = 20
+            )
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.api.query.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<DataSeries>::elements).all {
+                    hasSize(2)
+                    containsExactly(dataSeries1, dataSeries2)
+                }
+            }
+            coVerifyOrder {
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = "my-tenant",
+                    username = "user",
+                    eventNames = setOf("my-event-1", "my-event-2"),
+                    meterNames = setOf("my-meter-1", "my-meter-2"),
+                    pageable = pageable
+                )
+            }
+            confirmVerified(dataSeriesRepository)
+        }
+
+    @Test
+    internal fun `should return the searched data series for a campaign from the repository when no events nor meters are found`() =
+        testDispatcherProvider.run {
+            // given
+            val dataSeriesService = DataSeriesServiceImpl(
+                dataSeriesRepository,
+                tenantProvider,
+                userProvider,
+                idGenerator,
+                dataProvider,
+                this
+            )
+            val dataSeries1 = relaxedMockk<DataSeries>()
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 12
+                every { toModel("User 1") } returns dataSeries1
+            }
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 34
+                every { toModel("User 2") } returns dataSeries2
+            }
+            coEvery { userProvider.findIdAndDisplayNameByIdIn(setOf(12L, 34L)) } returns listOf(
+                mockk { every { id } returns 12L; every { displayName } returns "User 1" },
+                mockk { every { id } returns 34L; every { displayName } returns "User 2" }
+            )
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
+            val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), pageable, 2)
+            coEvery {
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = "my-tenant",
+                    username = "user",
+                    eventNames = any(),
+                    meterNames = any(),
+                    pageable = pageable
+                )
+            } returns page
+            coEvery {
+                dataProvider.searchNames(
+                    any(),
+                    DataType.EVENTS,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns emptyList()
+            coEvery {
+                dataProvider.searchNames(
+                    any(),
+                    DataType.METERS,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns emptyList()
+
+            // when
+            val result = dataSeriesService.searchDataSeries(
+                tenant = "my-tenant",
+                username = "user",
+                campaignKey = "my-campaign",
+                filters = emptyList(),
+                sort = null,
+                page = 0,
+                size = 20
+            )
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.api.query.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<DataSeries>::elements).all {
+                    hasSize(2)
+                    containsExactly(dataSeries1, dataSeries2)
+                }
+            }
+            coVerifyOrder {
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = "my-tenant",
+                    username = "user",
+                    eventNames = emptySet(),
+                    meterNames = emptySet(),
+                    pageable = pageable
+                )
+            }
+            confirmVerified(dataSeriesRepository)
+        }
+
+    @Test
+    internal fun `should return the searched data series for a campaign from the repository with specified sorting and no filter`() =
+        testDispatcherProvider.run {
+            // given
+            val dataSeriesService = DataSeriesServiceImpl(
+                dataSeriesRepository,
+                tenantProvider,
+                userProvider,
+                idGenerator,
+                dataProvider,
+                this
+            )
+            val dataSeries1 = relaxedMockk<DataSeries>()
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 12
+                every { toModel("User 1") } returns dataSeries1
+            }
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 34
+                every { toModel("User 2") } returns dataSeries2
+            }
+            coEvery { userProvider.findIdAndDisplayNameByIdIn(setOf(12L, 34L)) } returns listOf(
+                mockk { every { id } returns 12L; every { displayName } returns "User 1" },
+                mockk { every { id } returns 34L; every { displayName } returns "User 2" }
+            )
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("fieldName", true)))
+            val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), pageable, 2)
+            coEvery {
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = "my-tenant",
+                    username = "user",
+                    eventNames = any(),
+                    meterNames = any(),
+                    pageable = pageable
+                )
+            } returns page
+            coEvery {
+                dataProvider.searchNames(
+                    any(),
+                    DataType.EVENTS,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns listOf("my-event-1", "my-event-2")
+            coEvery {
+                dataProvider.searchNames(
+                    any(),
+                    DataType.METERS,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns listOf("my-meter-1", "my-meter-2")
+
+            // when
+            val result = dataSeriesService.searchDataSeries(
+                tenant = "my-tenant",
+                username = "user",
+                campaignKey = "my-campaign",
+                filters = emptyList(),
+                sort = "fieldName",
+                page = 0,
+                size = 20
+            )
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.api.query.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<DataSeries>::elements).all {
+                    hasSize(2)
+                    containsExactly(dataSeries1, dataSeries2)
+                }
+            }
+            coVerifyOnce {
+                dataProvider.searchNames(
+                    tenant = "my-tenant",
+                    dataType = DataType.EVENTS,
+                    campaignKey = "my-campaign",
+                    filters = emptyList(),
+                    size = 10000
+                )
+                dataProvider.searchNames(
+                    tenant = "my-tenant",
+                    dataType = DataType.METERS,
+                    campaignKey = "my-campaign",
+                    filters = emptyList(),
+                    size = 10000
+                )
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = "my-tenant",
+                    username = "user",
+                    eventNames = setOf("my-event-1", "my-event-2"),
+                    meterNames = setOf("my-meter-1", "my-meter-2"),
+                    pageable = pageable
+                )
+            }
+            confirmVerified(dataSeriesRepository)
+        }
+
+    @Test
+    internal fun `should return the searched data series for a campaign  from the repository with specified filters and default sort`() =
+        testDispatcherProvider.run {
+            // given
+            val dataSeriesService = DataSeriesServiceImpl(
+                dataSeriesRepository,
+                tenantProvider,
+                userProvider,
+                idGenerator,
+                dataProvider,
+                this
+            )
+            val filter1 = "%Un%u_%"
+            val filter2 = "%u_Er%"
+            val dataSeries1 = relaxedMockk<DataSeries>()
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 12
+                every { toModel("User 1") } returns dataSeries1
+            }
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 34
+                every { toModel("User 2") } returns dataSeries2
+            }
+            coEvery { userProvider.findIdAndDisplayNameByIdIn(setOf(12L, 34L)) } returns listOf(
+                mockk { every { id } returns 12L; every { displayName } returns "User 1" },
+                mockk { every { id } returns 34L; every { displayName } returns "User 2" }
+            )
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order("displayName")))
+            val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), Pageable.from(0, 20), 2)
+            coEvery {
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = "my-tenant",
+                    username = "user",
+                    eventNames = any(),
+                    meterNames = any(),
+                    filters = listOf(filter1, filter2),
+                    pageable = pageable
+                )
+            } returns page
+            coEvery {
+                dataProvider.searchNames(
+                    any(),
+                    DataType.EVENTS,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns listOf("my-event-1", "my-event-2")
+            coEvery {
+                dataProvider.searchNames(
+                    any(),
+                    DataType.METERS,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns listOf("my-meter-1", "my-meter-2")
+
+            // when
+            val result =
+                dataSeriesService.searchDataSeries(
+                    tenant = "my-tenant",
+                    username = "user",
+                    campaignKey = "my-campaign",
+                    filters = listOf("Un*u_", "u_Er"),
+                    sort = null,
+                    page = 0,
+                    size = 20
+                )
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.api.query.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<DataSeries>::elements).all {
+                    hasSize(2)
+                    containsExactly(dataSeries1, dataSeries2)
+                }
+            }
+            coVerifyOnce {
+                dataProvider.searchNames(
+                    tenant = "my-tenant",
+                    dataType = DataType.EVENTS,
+                    campaignKey = "my-campaign",
+                    filters = emptyList(),
+                    size = 10000
+                )
+                dataProvider.searchNames(
+                    tenant = "my-tenant",
+                    dataType = DataType.METERS,
+                    campaignKey = "my-campaign",
+                    filters = emptyList(),
+                    size = 10000
+                )
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = "my-tenant",
+                    username = "user",
+                    eventNames = setOf("my-event-1", "my-event-2"),
+                    meterNames = setOf("my-meter-1", "my-meter-2"),
+                    filters = listOf(filter1, filter2),
+                    pageable = pageable
+                )
+            }
+            confirmVerified(dataSeriesRepository)
+        }
+
+    @Test
+    internal fun `should return the searched data series for a campaign from the repository with specified sorting and filters`() =
+        testDispatcherProvider.run {
+            // given
+            val dataSeriesService = DataSeriesServiceImpl(
+                dataSeriesRepository,
+                tenantProvider,
+                userProvider,
+                idGenerator,
+                dataProvider,
+                this
+            )
+            val filter1 = "%F_oo%"
+            val filter2 = "%Us_r%"
+            val dataSeries1 = relaxedMockk<DataSeries>()
+            val dataSeries2 = relaxedMockk<DataSeries>()
+            val dataSeriesEntity1 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 12
+                every { toModel("User 1") } returns dataSeries1
+            }
+            val dataSeriesEntity2 = relaxedMockk<DataSeriesEntity> {
+                every { creatorId } returns 34
+                every { toModel("User 2") } returns dataSeries2
+            }
+            coEvery { userProvider.findIdAndDisplayNameByIdIn(setOf(12L, 34L)) } returns listOf(
+                mockk { every { id } returns 12L; every { displayName } returns "User 1" },
+                mockk { every { id } returns 34L; every { displayName } returns "User 2" }
+            )
+            val pageable = Pageable.from(0, 20, Sort.of(Sort.Order.asc("fieldName", true)))
+            val page = Page.of(listOf(dataSeriesEntity1, dataSeriesEntity2), Pageable.from(0, 20), 2)
+            coEvery {
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = "my-tenant",
+                    username = "user",
+                    eventNames = any(),
+                    meterNames = any(),
+                    filters = listOf(filter1, filter2),
+                    pageable = pageable
+                )
+            } returns page
+            coEvery {
+                dataProvider.searchNames(
+                    any(),
+                    DataType.EVENTS,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns listOf("my-event-1", "my-event-2")
+            coEvery {
+                dataProvider.searchNames(
+                    any(),
+                    DataType.METERS,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns listOf("my-meter-1", "my-meter-2")
+
+            // when
+            val result =
+                dataSeriesService.searchDataSeries(
+                    tenant = "my-tenant",
+                    username = "user",
+                    campaignKey = "my-campaign",
+                    filters = listOf("F_oo", "Us_r"),
+                    sort = "fieldName",
+                    page = 0,
+                    size = 20
+                )
+
+            // then
+            assertThat(result).all {
+                prop(io.qalipsis.api.query.Page<DataSeries>::page).isEqualTo(0)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalPages).isEqualTo(1)
+                prop(io.qalipsis.api.query.Page<DataSeries>::totalElements).isEqualTo(2)
+                prop(io.qalipsis.api.query.Page<DataSeries>::elements).all {
+                    hasSize(2)
+                    containsExactly(dataSeries1, dataSeries2)
+                }
+            }
+            coVerifyOnce {
+                dataProvider.searchNames(
+                    tenant = "my-tenant",
+                    dataType = DataType.EVENTS,
+                    campaignKey = "my-campaign",
+                    filters = emptyList(),
+                    size = 10000
+                )
+                dataProvider.searchNames(
+                    tenant = "my-tenant",
+                    dataType = DataType.METERS,
+                    campaignKey = "my-campaign",
+                    filters = emptyList(),
+                    size = 10000
+                )
+                dataProvider.searchNames(
+                    tenant = "my-tenant",
+                    dataType = DataType.EVENTS,
+                    campaignKey = "my-campaign",
+                    filters = emptyList(),
+                    size = 10000
+                )
+                dataProvider.searchNames(
+                    tenant = "my-tenant",
+                    dataType = DataType.METERS,
+                    campaignKey = "my-campaign",
+                    filters = emptyList(),
+                    size = 10000
+                )
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = "my-tenant",
+                    username = "user",
+                    eventNames = setOf("my-event-1", "my-event-2"),
+                    meterNames = setOf("my-meter-1", "my-meter-2"),
                     filters = listOf(filter1, filter2),
                     pageable = pageable
                 )

@@ -30,6 +30,7 @@ interface DataProvider {
      * Searches names of events in the tenant, matching the filters if specified.
      *
      * @param tenant the reference of the tenant owning the data
+     * @param campaignKey the key of the campaign to search data for, if any
      * @param dataType the type of data to inspect
      * @param filters the different filters (potentially with wildcard *) the names should match
      * @param size the maximum count of results to return
@@ -37,6 +38,7 @@ interface DataProvider {
     suspend fun searchNames(
         tenant: String,
         dataType: DataType,
+        campaignKey: String?,
         filters: Collection<String>,
         @Positive @Max(100) size: Int
     ): Collection<String>
@@ -45,14 +47,16 @@ interface DataProvider {
      * List all the fields that can be used for aggregation of data on events.
      *
      * @param tenant the reference of the tenant owning the data
+     * @param name the name of the event or meters to search tags for, if any
      * @param dataType the type of data to inspect
      */
-    suspend fun listFields(tenant: String, dataType: DataType): Collection<DataField>
+    suspend fun listFields(tenant: String, dataType: DataType, name: String?): Collection<DataField>
 
     /**
      * Searches tags matching the potential filters and provide also values.
      *
      * @param tenant the reference of the tenant owning the data
+     * @param name the name of the event or meters to search tags for, if any
      * @param dataType the type of data to inspect
      * @param filters the different filters (potentially with wildcard *) the tags names should match
      * @param size the maximum count of results of tags names and values for each name
@@ -60,6 +64,7 @@ interface DataProvider {
     suspend fun searchTagsAndValues(
         tenant: String,
         dataType: DataType,
+        name: String?,
         filters: Collection<String>,
         @Positive @Max(100) size: Int
     ): Map<String, Collection<String>>

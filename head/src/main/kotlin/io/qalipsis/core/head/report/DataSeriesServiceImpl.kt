@@ -173,20 +173,53 @@ class DataSeriesServiceImpl(
     override suspend fun searchDataSeries(
         tenant: String,
         username: String,
+        campaignKey: String?,
         filters: Collection<String>,
         sort: String?,
         page: Int,
-        size: Int,
+        size: Int
     ): QalipsisPage<DataSeries> {
         val sorting = sort?.let { SortingUtil.sort(DataSeriesEntity::class, it) }
             ?: Sort.of(Sort.Order(DataSeriesEntity::displayName.name))
         val pageable = Pageable.from(page, size, sorting)
 
-        val dataSeriesEntityPage = if (filters.isNotEmpty()) {
+        val dataSeriesEntityPage = if (campaignKey?.isNotBlank() == true) {
+            // If a campaign key is provided, search for data series related to events or meters recorded on the campaign.
+            val eventNames = mutableSetOf<String>()
+            val meterNames = mutableSetOf<String>()
+            val eventNamesSearch = backgroundScope.launch {
+                eventNames += dataProvider.searchNames(tenant, DataType.EVENTS, campaignKey, emptyList(), 10000)
+            }
+            val meterNamesSearch = backgroundScope.launch {
+                meterNames += dataProvider.searchNames(tenant, DataType.METERS, campaignKey, emptyList(), 10000)
+            }
+            eventNamesSearch.join()
+            meterNamesSearch.join()
+
+            if (filters.isNotEmpty()) {
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = tenant,
+                    username = username,
+                    eventNames = eventNames,
+                    meterNames = meterNames,
+                    filters = filters.formatsFilters(),
+                    pageable = pageable
+                )
+            } else {
+                dataSeriesRepository.searchDataSeriesForDataNames(
+                    tenant = tenant,
+                    username = username,
+                    eventNames = eventNames,
+                    meterNames = meterNames,
+                    pageable = pageable
+                )
+            }
+        } else if (filters.isNotEmpty()) {
             dataSeriesRepository.searchDataSeries(
                 tenant = tenant,
                 username = username,
-                filters = filters.formatsFilters(), pageable = pageable
+                filters = filters.formatsFilters(),
+                pageable = pageable
             )
         } else {
             dataSeriesRepository.searchDataSeries(tenant = tenant, username = username, pageable = pageable)

@@ -41,33 +41,33 @@ class DefaultDataProvider(
     override suspend fun searchNames(
         tenant: String,
         dataType: DataType,
+        campaignKey: String?,
         filters: Collection<String>,
         size: Int
     ): Collection<String> {
         return when (dataType) {
-            DataType.EVENTS -> eventProvider?.searchNames(tenant, filters, size)
-            DataType.METERS -> meterProvider?.searchNames(tenant, filters, size)
+            DataType.EVENTS -> eventProvider?.searchNames(tenant, campaignKey, filters, size)
+            DataType.METERS -> meterProvider?.searchNames(tenant, campaignKey, filters, size)
         }.orEmpty()
     }
 
-    override suspend fun listFields(tenant: String, dataType: DataType): Collection<DataField> {
+    override suspend fun listFields(tenant: String, dataType: DataType, name: String?): Collection<DataField> {
         return when (dataType) {
-            // TODO Add the event/meter name in the query.
-            DataType.EVENTS -> eventProvider?.listFields(tenant)
-            DataType.METERS -> meterProvider?.listFields(tenant)
+            DataType.EVENTS -> eventProvider?.listFields(tenant, eventName = name)
+            DataType.METERS -> meterProvider?.listFields(tenant, meterName = name)
         }.orEmpty()
     }
 
     override suspend fun searchTagsAndValues(
         tenant: String,
         dataType: DataType,
+        name: String?,
         filters: Collection<String>,
         size: Int
     ): Map<String, Collection<String>> {
         return when (dataType) {
-            // TODO Add the event/meter name in the query.
-            DataType.EVENTS -> eventProvider?.searchTagsAndValues(tenant, null, filters, size)
-            DataType.METERS -> meterProvider?.searchTagsAndValues(tenant, null, filters, size)
+            DataType.EVENTS -> eventProvider?.searchTagsAndValues(tenant, name, filters, size)
+            DataType.METERS -> meterProvider?.searchTagsAndValues(tenant, name, filters, size)
         }.orEmpty()
     }
 
