@@ -56,9 +56,9 @@ internal class DefaultDataProviderTest {
         val queryDescription = mockk<QueryDescription>()
 
         // then
-        assertThat(dataProvider.searchNames("my-tenant", DataType.EVENTS, emptySet(), 10)).isEmpty()
-        assertThat(dataProvider.listFields("my-tenant", DataType.EVENTS)).isEmpty()
-        assertThat(dataProvider.searchTagsAndValues("my-tenant", DataType.EVENTS, emptySet(), 10)).isEmpty()
+        assertThat(dataProvider.searchNames("my-tenant", DataType.EVENTS, "my-campaign", emptySet(), 10)).isEmpty()
+        assertThat(dataProvider.listFields("my-tenant", DataType.EVENTS, "my-event")).isEmpty()
+        assertThat(dataProvider.searchTagsAndValues("my-tenant", DataType.EVENTS, "my-event", emptySet(), 10)).isEmpty()
         assertThat(dataProvider.createQuery("my-tenant", DataType.EVENTS, queryDescription)).isEmpty()
 
         confirmVerified(eventProvider, meterProvider)
@@ -69,12 +69,13 @@ internal class DefaultDataProviderTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
         val names = listOf("1", "2")
-        coEvery { eventProvider.searchNames(any(), any(), any()) } returns names
+        val campaign = "my-campaign"
+        coEvery { eventProvider.searchNames(any(), any(), any(), any()) } returns names
         val filters = listOf("filter-1", "filter-2")
 
         // then
-        assertThat(dataProvider.searchNames("my-tenant", DataType.EVENTS, filters, 10)).isEqualTo(names)
-        coVerifyOnce { eventProvider.searchNames("my-tenant", refEq(filters), 10) }
+        assertThat(dataProvider.searchNames("my-tenant", DataType.EVENTS, campaign, filters, 10)).isEqualTo(names)
+        coVerifyOnce { eventProvider.searchNames("my-tenant", campaign, refEq(filters), 10) }
 
         confirmVerified(eventProvider, meterProvider)
     }
@@ -83,12 +84,13 @@ internal class DefaultDataProviderTest {
     internal fun `should return fields names of events`() = testDispatcherProvider.runTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
+        val eventName = "my-event"
         val fields = listOf(DataField("1", DataFieldType.NUMBER), DataField("2", DataFieldType.NUMBER, "SECONDS"))
-        coEvery { eventProvider.listFields(any()) } returns fields
+        coEvery { eventProvider.listFields(any(), any()) } returns fields
 
         // then
-        assertThat(dataProvider.listFields("my-tenant", DataType.EVENTS)).isEqualTo(fields)
-        coVerifyOnce { eventProvider.listFields("my-tenant") }
+        assertThat(dataProvider.listFields("my-tenant", DataType.EVENTS, eventName)).isEqualTo(fields)
+        coVerifyOnce { eventProvider.listFields("my-tenant", eventName) }
 
         confirmVerified(eventProvider, meterProvider)
     }
@@ -97,13 +99,16 @@ internal class DefaultDataProviderTest {
     internal fun `should return tags names and values of events`() = testDispatcherProvider.runTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
+        val eventName = "my-event"
         val tagsAndValues = mapOf("1" to listOf("val-1", "val-2"), "2" to listOf("val-3", "val-4"))
         coEvery { eventProvider.searchTagsAndValues(any(), any(), any(), any()) } returns tagsAndValues
         val filters = listOf("filter-1", "filter-2")
 
         // then
-        assertThat(dataProvider.searchTagsAndValues("my-tenant", DataType.EVENTS, filters, 10)).isEqualTo(tagsAndValues)
-        coVerifyOnce { eventProvider.searchTagsAndValues("my-tenant", any(), refEq(filters), 10) }
+        assertThat(dataProvider.searchTagsAndValues("my-tenant", DataType.EVENTS, eventName, filters, 10)).isEqualTo(
+            tagsAndValues
+        )
+        coVerifyOnce { eventProvider.searchTagsAndValues("my-tenant", eventName, refEq(filters), 10) }
 
         confirmVerified(eventProvider, meterProvider)
     }
@@ -145,9 +150,9 @@ internal class DefaultDataProviderTest {
         val queryDescription = mockk<QueryDescription>()
 
         // then
-        assertThat(dataProvider.searchNames("my-tenant", DataType.METERS, emptySet(), 10)).isEmpty()
-        assertThat(dataProvider.listFields("my-tenant", DataType.METERS)).isEmpty()
-        assertThat(dataProvider.searchTagsAndValues("my-tenant", DataType.METERS, emptySet(), 10)).isEmpty()
+        assertThat(dataProvider.searchNames("my-tenant", DataType.METERS, "my-campaign", emptySet(), 10)).isEmpty()
+        assertThat(dataProvider.listFields("my-tenant", DataType.METERS, "my-meter")).isEmpty()
+        assertThat(dataProvider.searchTagsAndValues("my-tenant", DataType.METERS, "my-meter", emptySet(), 10)).isEmpty()
         assertThat(dataProvider.createQuery("my-tenant", DataType.METERS, queryDescription)).isEmpty()
 
         confirmVerified(eventProvider, meterProvider)
@@ -157,13 +162,14 @@ internal class DefaultDataProviderTest {
     internal fun `should return names of meters`() = testDispatcherProvider.runTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
+        val campaign = "my-campaign"
         val names = listOf("1", "2")
-        coEvery { meterProvider.searchNames(any(), any(), any()) } returns names
+        coEvery { meterProvider.searchNames(any(), any(), any(), any()) } returns names
         val filters = listOf("filter-1", "filter-2")
 
         // then
-        assertThat(dataProvider.searchNames("my-tenant", DataType.METERS, filters, 10)).isEqualTo(names)
-        coVerifyOnce { meterProvider.searchNames("my-tenant", refEq(filters), 10) }
+        assertThat(dataProvider.searchNames("my-tenant", DataType.METERS, campaign, filters, 10)).isEqualTo(names)
+        coVerifyOnce { meterProvider.searchNames("my-tenant", campaign, refEq(filters), 10) }
 
         confirmVerified(eventProvider, meterProvider)
     }
@@ -172,12 +178,13 @@ internal class DefaultDataProviderTest {
     internal fun `should return fields names of meters`() = testDispatcherProvider.runTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
+        val meterName = "my-meter"
         val fields = listOf(DataField("1", DataFieldType.NUMBER), DataField("2", DataFieldType.NUMBER, "SECONDS"))
-        coEvery { meterProvider.listFields(any()) } returns fields
+        coEvery { meterProvider.listFields(any(), any()) } returns fields
 
         // then
-        assertThat(dataProvider.listFields("my-tenant", DataType.METERS)).isEqualTo(fields)
-        coVerifyOnce { meterProvider.listFields("my-tenant") }
+        assertThat(dataProvider.listFields("my-tenant", DataType.METERS, meterName)).isEqualTo(fields)
+        coVerifyOnce { meterProvider.listFields("my-tenant", meterName) }
 
         confirmVerified(eventProvider, meterProvider)
 
@@ -187,13 +194,16 @@ internal class DefaultDataProviderTest {
     internal fun `should return tags names and values of meters`() = testDispatcherProvider.runTest {
         // given
         val dataProvider = DefaultDataProvider(eventProvider, meterProvider)
+        val meterName = "my-meter"
         val tagsAndValues = mapOf("1" to listOf("val-1", "val-2"), "2" to listOf("val-3", "val-4"))
         coEvery { meterProvider.searchTagsAndValues(any(), any(), any(), any()) } returns tagsAndValues
         val filters = listOf("filter-1", "filter-2")
 
         // then
-        assertThat(dataProvider.searchTagsAndValues("my-tenant", DataType.METERS, filters, 10)).isEqualTo(tagsAndValues)
-        coVerifyOnce { meterProvider.searchTagsAndValues("my-tenant", any(), refEq(filters), 10) }
+        assertThat(dataProvider.searchTagsAndValues("my-tenant", DataType.METERS, meterName, filters, 10)).isEqualTo(
+            tagsAndValues
+        )
+        coVerifyOnce { meterProvider.searchTagsAndValues("my-tenant", meterName, refEq(filters), 10) }
 
         confirmVerified(eventProvider, meterProvider)
     }

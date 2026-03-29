@@ -61,6 +61,7 @@ interface DataSeriesService {
      *
      * @param tenant the reference of the tenant owning the data
      * @param username username of the currently authenticated user
+     * @param campaignKey the key of the campaign to search data for, if any
      * @param filters the different filters (potentially with wildcard *) the series should match
      * @param sort the sorting option which defaults to display name
      * @param size the maximum count of results of tags names and values for each name
@@ -69,6 +70,7 @@ interface DataSeriesService {
     suspend fun searchDataSeries(
         tenant: String,
         username: String,
+        campaignKey: String?,
         filters: Collection<String>,
         sort: String?,
         page: Int,

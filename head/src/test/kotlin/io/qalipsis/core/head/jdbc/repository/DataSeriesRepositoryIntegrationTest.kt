@@ -1688,6 +1688,2013 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
     }
 
     @Test
+    fun `should fetch data series for data names matching meter names without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meterSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-2",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meterSeries.id)
+                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("meter-field-1")
+            }
+        }
+
+    @Test
+    fun `should fetch data series for data names matching event names without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val eventSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-2",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(eventSeries.id)
+                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("event-field-1")
+            }
+        }
+
+    @Test
+    fun `should fetch data series for data names matching both event and meter names without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meterSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1"
+                )
+            )
+            val eventSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-other",
+                    displayName = "my-name-3",
+                    reference = "my-series-3"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meterSeries.id)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(eventSeries.id)
+            }
+        }
+
+    @Test
+    fun `should return empty result without error when both event and meter name collections are empty without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = emptyList(),
+                meterNames = emptyList(),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).isEmpty()
+        }
+
+    @Test
+    fun `should return empty result without error when both event and meter name collections are empty with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "matching-meter"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1",
+                    displayName = "matching-event",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = emptyList(),
+                meterNames = emptyList(),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).isEmpty()
+        }
+
+    @Test
+    fun `should return empty result for data names when no names match without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("no-match-event"),
+                meterNames = listOf("no-match-meter"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).isEmpty()
+        }
+
+    @Test
+    fun `should not return data series with sharing mode none for other users for data names without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            val ownSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    sharingMode = SharingMode.NONE
+                )
+            )
+            val sharedSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2",
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            val noneSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "my-name-3",
+                    reference = "my-series-3",
+                    sharingMode = SharingMode.NONE
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(ownSeries.id)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(sharedSeries.id)
+            }
+            assertThat(dataSeriesEntities).doesNotContain(noneSeries)
+        }
+
+    @Test
+    fun `should fetch data series for data names only from the specified tenant without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val otherTenant = tenantRepository.save(tenantPrototype.copy(reference = "other-tenant"))
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1"
+                )
+            )
+            val otherTenantSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = otherTenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = otherTenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(otherTenantSeries.id)
+            }
+        }
+
+    @Test
+    fun `should include default tenant data series for data names without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val defaultCreator = userRepository.save(
+                userPrototype.copy(
+                    username = "default-user",
+                    displayName = "Default test user for test"
+                )
+            )
+            val tenantSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1"
+                )
+            )
+            val defaultSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = defaultTenant.id,
+                    creatorId = defaultCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "default-meter",
+                    reference = "my-series-2",
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(defaultSeries.id)
+                index(0).prop(DataSeriesEntity::tenantId).isEqualTo(defaultTenant.id)
+                index(0).prop(DataSeriesEntity::creatorId).isEqualTo(-1)
+                index(0).prop(DataSeriesEntity::sharingMode).isEqualTo(SharingMode.READONLY)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(tenantSeries.id)
+                index(1).prop(DataSeriesEntity::creatorId).isEqualTo(creator.id)
+            }
+        }
+
+    @Test
+    fun `should not match event names against meter data series for data names without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "shared-field"
+                )
+            )
+            val eventSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "shared-field",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("shared-field"),
+                meterNames = listOf("no-match"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(eventSeries.id)
+            }
+        }
+
+    @Test
+    fun `should return the correct count for data names without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-other",
+                    displayName = "my-name-3",
+                    reference = "my-series-3"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
+
+            //when
+            val pagedDataSeries = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            )
+
+            //then
+            assertThat(pagedDataSeries.totalSize).isEqualTo(2)
+            assertThat(pagedDataSeries.content).hasSize(2)
+        }
+
+    @Test
+    fun `should fetch data series for data names matching meter names with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val matchingSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "matching-display"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "other-display",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(matchingSeries.id)
+                index(0).prop(DataSeriesEntity::displayName).isEqualTo("matching-display")
+            }
+        }
+
+    @Test
+    fun `should fetch data series for data names with filter on fieldName`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            val matchingSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1",
+                    displayName = "my-name-3",
+                    reference = "my-series-3"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%meter-f%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(matchingSeries.id)
+                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("meter-field-1")
+            }
+        }
+
+    @Test
+    fun `should fetch data series for data names with filter on data type`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            val eventSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1",
+                    displayName = "my-name-3",
+                    reference = "my-series-3"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%even%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(eventSeries.id)
+                index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
+            }
+        }
+
+    @Test
+    fun `should fetch data series for data names with filter on display name`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val matchingSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "special-display"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "other-name",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%sPEcIa%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(matchingSeries.id)
+                index(0).prop(DataSeriesEntity::displayName).isEqualTo("special-display")
+            }
+        }
+
+    @Test
+    fun `should fetch data series for data names with filter on user name`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    sharingMode = SharingMode.NONE
+                )
+            )
+            val matchingSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%another%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(matchingSeries.id)
+            }
+        }
+
+    @Test
+    fun `should fetch data series for data names with filter on creator display name`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator =
+                userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique-user"))
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1"
+                )
+            )
+            val matchingSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%unique%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(matchingSeries.id)
+            }
+        }
+
+    @Test
+    fun `should fetch nothing for data names if filters don't match`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%no-match-at-all%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).isEmpty()
+        }
+
+    @Test
+    fun `should fetch nothing for data names if data names don't match even when filters match`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "matching-display"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(1)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("no-match-event"),
+                meterNames = listOf("no-match-meter"),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).isEmpty()
+        }
+
+    @Test
+    fun `should not return data series with sharing mode none for other users for data names with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            val ownSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    sharingMode = SharingMode.NONE,
+                    displayName = "matching-own"
+                )
+            )
+            val sharedSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "matching-shared",
+                    reference = "my-series-2",
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            val noneSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "matching-none",
+                    reference = "my-series-3",
+                    sharingMode = SharingMode.NONE
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(ownSeries.id)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(sharedSeries.id)
+            }
+            assertThat(dataSeriesEntities).doesNotContain(noneSeries)
+        }
+
+    @Test
+    fun `should include default tenant data series for data names with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val defaultCreator = userRepository.save(
+                userPrototype.copy(
+                    username = "default-user",
+                    displayName = "Default test user for test"
+                )
+            )
+            val tenantSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "matching-tenant"
+                )
+            )
+            val defaultSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = defaultTenant.id,
+                    creatorId = defaultCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "matching-default",
+                    reference = "my-series-2",
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(defaultSeries.id)
+                index(0).prop(DataSeriesEntity::tenantId).isEqualTo(defaultTenant.id)
+                index(0).prop(DataSeriesEntity::creatorId).isEqualTo(-1)
+                index(0).prop(DataSeriesEntity::sharingMode).isEqualTo(SharingMode.READONLY)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(tenantSeries.id)
+                index(1).prop(DataSeriesEntity::creatorId).isEqualTo(creator.id)
+            }
+        }
+
+    @Test
+    fun `should not include default tenant data series for data names with filters when filter does not match`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val defaultCreator = userRepository.save(
+                userPrototype.copy(
+                    username = "default-user",
+                    displayName = "Default test user for test"
+                )
+            )
+            val tenantSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "matching-tenant"
+                )
+            )
+            val defaultSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = defaultTenant.id,
+                    creatorId = defaultCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "purple-series",
+                    reference = "my-series-2",
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(tenantSeries.id)
+            }
+            assertThat(dataSeriesEntities).doesNotContain(defaultSeries)
+        }
+
+    @Test
+    fun `should retrieve data series for data names with multiple filters matching different criteria`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator =
+                userRepository.save(userPrototype.copy(username = "another-user", displayName = "unique"))
+
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-no-match",
+                )
+            )
+            val dataSeriesWithIdealUser = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    reference = "my-series-2",
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1",
+                    sharingMode = SharingMode.WRITE,
+                    displayName = "my-display-name"
+                )
+            )
+            val dataSeriesWithIdealField = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    displayName = "ds-with-user",
+                    reference = "my-series-3",
+                    dataType = DataType.METERS,
+                    fieldName = "foo"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("foo"),
+                filters = listOf("%foo%", "%uNIQ%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(dataSeriesWithIdealField.id)
+                index(0).prop(DataSeriesEntity::reference).isEqualTo(dataSeriesWithIdealField.reference)
+                index(0).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeriesWithIdealField.creatorId)
+                index(0).prop(DataSeriesEntity::displayName).isEqualTo(dataSeriesWithIdealField.displayName)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(dataSeriesWithIdealUser.id)
+                index(1).prop(DataSeriesEntity::reference).isEqualTo(dataSeriesWithIdealUser.reference)
+                index(1).prop(DataSeriesEntity::creatorId).isEqualTo(dataSeriesWithIdealUser.creatorId)
+                index(1).prop(DataSeriesEntity::displayName).isEqualTo(dataSeriesWithIdealUser.displayName)
+            }
+        }
+
+    @Test
+    fun `should return the correct count for data names with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "matching-1"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-field-1",
+                    displayName = "matching-2",
+                    reference = "my-series-2"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-field-1",
+                    displayName = "other-name",
+                    reference = "my-series-3"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
+
+            //when
+            val pagedDataSeries = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            )
+
+            //then
+            assertThat(pagedDataSeries.totalSize).isEqualTo(2)
+            assertThat(pagedDataSeries.content).hasSize(2)
+        }
+
+    @Test
+    fun `should return all data series matching multiple meter names without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meter1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "cpu-usage",
+                    displayName = "CPU Usage"
+                )
+            )
+            val meter2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "memory-usage",
+                    displayName = "Memory Usage",
+                    reference = "my-series-2"
+                )
+            )
+            val meter3 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "disk-io",
+                    displayName = "Disk IO",
+                    reference = "my-series-3"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "network-latency",
+                    displayName = "Network Latency",
+                    reference = "my-series-4"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(4)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("no-match"),
+                meterNames = listOf("cpu-usage", "memory-usage", "disk-io"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(3)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meter1.id)
+                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(1).prop(DataSeriesEntity::id).isEqualTo(meter3.id)
+                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("disk-io")
+                index(2).prop(DataSeriesEntity::id).isEqualTo(meter2.id)
+                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("memory-usage")
+            }
+        }
+
+    @Test
+    fun `should return all data series matching multiple event names without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val event1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "user-login",
+                    displayName = "User Login"
+                )
+            )
+            val event2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "user-logout",
+                    displayName = "User Logout",
+                    reference = "my-series-2"
+                )
+            )
+            val event3 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "page-view",
+                    displayName = "Page View",
+                    reference = "my-series-3"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "error-thrown",
+                    displayName = "Error Thrown",
+                    reference = "my-series-4"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(4)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("user-login", "user-logout", "page-view"),
+                meterNames = listOf("no-match"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(3)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(event3.id)
+                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("page-view")
+                index(1).prop(DataSeriesEntity::id).isEqualTo(event1.id)
+                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+                index(2).prop(DataSeriesEntity::id).isEqualTo(event2.id)
+                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("user-logout")
+            }
+        }
+
+    @Test
+    fun `should return all data series matching multiple event and meter names combined without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meter1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "cpu-usage",
+                    displayName = "CPU Usage"
+                )
+            )
+            val meter2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "memory-usage",
+                    displayName = "Memory Usage",
+                    reference = "my-series-2"
+                )
+            )
+            val event1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "user-login",
+                    displayName = "User Login",
+                    reference = "my-series-3"
+                )
+            )
+            val event2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "page-view",
+                    displayName = "Page View",
+                    reference = "my-series-4"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "network-latency",
+                    displayName = "Network Latency",
+                    reference = "my-series-5"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "error-thrown",
+                    displayName = "Error Thrown",
+                    reference = "my-series-6"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(6)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("user-login", "page-view"),
+                meterNames = listOf("cpu-usage", "memory-usage"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(4)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meter1.id)
+                index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
+                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(1).prop(DataSeriesEntity::id).isEqualTo(meter2.id)
+                index(1).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
+                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("memory-usage")
+                index(2).prop(DataSeriesEntity::id).isEqualTo(event2.id)
+                index(2).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
+                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("page-view")
+                index(3).prop(DataSeriesEntity::id).isEqualTo(event1.id)
+                index(3).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
+                index(3).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+            }
+        }
+
+    @Test
+    fun `should return multiple data series per field name when several share the same field name without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            val meterA1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "cpu-usage",
+                    displayName = "CPU Avg",
+                    aggregationOperation = QueryAggregationOperator.AVERAGE
+                )
+            )
+            val meterA2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "cpu-usage",
+                    displayName = "CPU Max",
+                    reference = "my-series-2",
+                    aggregationOperation = QueryAggregationOperator.MAX,
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            val eventB1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "user-login",
+                    displayName = "Login Count",
+                    reference = "my-series-3"
+                )
+            )
+            val eventB2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "user-login",
+                    displayName = "Login Rate",
+                    reference = "my-series-4",
+                    sharingMode = SharingMode.READONLY
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(4)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("user-login"),
+                meterNames = listOf("cpu-usage"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(4)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meterA1.id)
+                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(1).prop(DataSeriesEntity::id).isEqualTo(meterA2.id)
+                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(2).prop(DataSeriesEntity::id).isEqualTo(eventB1.id)
+                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+                index(3).prop(DataSeriesEntity::id).isEqualTo(eventB2.id)
+                index(3).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+            }
+        }
+
+    @Test
+    fun `should return all data series matching multiple meter names with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meter1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "cpu-usage",
+                    displayName = "CPU Usage"
+                )
+            )
+            val meter2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "memory-usage",
+                    displayName = "Memory Usage",
+                    reference = "my-series-2"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "disk-io",
+                    displayName = "Disk IO",
+                    reference = "my-series-3"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("no-match"),
+                meterNames = listOf("cpu-usage", "memory-usage", "disk-io"),
+                filters = listOf("%Usage%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meter1.id)
+                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(1).prop(DataSeriesEntity::id).isEqualTo(meter2.id)
+                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("memory-usage")
+            }
+        }
+
+    @Test
+    fun `should return all data series matching multiple event and meter names combined with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meter1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "cpu-usage",
+                    displayName = "CPU Usage"
+                )
+            )
+            val meter2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "memory-usage",
+                    displayName = "Memory Usage",
+                    reference = "my-series-2"
+                )
+            )
+            val event1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "user-login",
+                    displayName = "User Login",
+                    reference = "my-series-3"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "page-view",
+                    displayName = "Page View",
+                    reference = "my-series-4"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "network-latency",
+                    displayName = "Network Latency",
+                    reference = "my-series-5"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(5)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("user-login", "page-view"),
+                meterNames = listOf("cpu-usage", "memory-usage"),
+                filters = listOf("%Usage%", "%Login%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(3)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meter1.id)
+                index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
+                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(1).prop(DataSeriesEntity::id).isEqualTo(meter2.id)
+                index(1).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
+                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("memory-usage")
+                index(2).prop(DataSeriesEntity::id).isEqualTo(event1.id)
+                index(2).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
+                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+            }
+        }
+
+    @Test
+    fun `should return multiple data series per field name when several share the same field name with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            val meterA1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "cpu-usage",
+                    displayName = "CPU Avg",
+                    aggregationOperation = QueryAggregationOperator.AVERAGE
+                )
+            )
+            val meterA2 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "cpu-usage",
+                    displayName = "CPU Max",
+                    reference = "my-series-2",
+                    aggregationOperation = QueryAggregationOperator.MAX,
+                    sharingMode = SharingMode.WRITE
+                )
+            )
+            val eventB1 = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "user-login",
+                    displayName = "Login Count",
+                    reference = "my-series-3"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "user-login",
+                    displayName = "Login Rate",
+                    reference = "my-series-4",
+                    sharingMode = SharingMode.READONLY
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(4)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("user-login"),
+                meterNames = listOf("cpu-usage"),
+                filters = listOf("%CPU%", "%Count%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(3)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meterA1.id)
+                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(0).prop(DataSeriesEntity::displayName).isEqualTo("CPU Avg")
+                index(1).prop(DataSeriesEntity::id).isEqualTo(meterA2.id)
+                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(1).prop(DataSeriesEntity::displayName).isEqualTo("CPU Max")
+                index(2).prop(DataSeriesEntity::id).isEqualTo(eventB1.id)
+                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+                index(2).prop(DataSeriesEntity::displayName).isEqualTo("Login Count")
+            }
+        }
+
+    @Test
+    fun `should return only the meter when event and meter share the same field name but only meterNames contains it without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meterSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "shared-name"
+                )
+            )
+            val eventSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "shared-name",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("no-match"),
+                meterNames = listOf("shared-name"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meterSeries.id)
+                index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
+            }
+            assertThat(dataSeriesEntities).doesNotContain(eventSeries)
+        }
+
+    @Test
+    fun `should return only the event when event and meter share the same field name but only eventNames contains it without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meterSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "shared-name"
+                )
+            )
+            val eventSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "shared-name",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("shared-name"),
+                meterNames = listOf("no-match"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(eventSeries.id)
+                index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
+            }
+            assertThat(dataSeriesEntities).doesNotContain(meterSeries)
+        }
+
+    @Test
+    fun `should return both event and meter when they share the same field name and both name lists contain it without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meterSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "shared-name"
+                )
+            )
+            val eventSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "shared-name",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("shared-name"),
+                meterNames = listOf("shared-name"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meterSeries.id)
+                index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(eventSeries.id)
+                index(1).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
+            }
+        }
+
+    @Test
+    fun `should return neither when event and meter share the same field name but the name is in the wrong list without filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-only-name"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-only-name",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when - event name in meterNames and meter name in eventNames (swapped)
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("meter-only-name"),
+                meterNames = listOf("event-only-name"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).isEmpty()
+        }
+
+    @Test
+    fun `should return only the meter when event and meter share the same field name but only meterNames contains it with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meterSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "shared-name",
+                    displayName = "matching-meter"
+                )
+            )
+            val eventSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "shared-name",
+                    displayName = "matching-event",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("no-match"),
+                meterNames = listOf("shared-name"),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(meterSeries.id)
+                index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
+            }
+            assertThat(dataSeriesEntities).doesNotContain(eventSeries)
+        }
+
+    @Test
+    fun `should return only the event when event and meter share the same field name but only eventNames contains it with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meterSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "shared-name",
+                    displayName = "matching-meter"
+                )
+            )
+            val eventSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "shared-name",
+                    displayName = "matching-event",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("shared-name"),
+                meterNames = listOf("no-match"),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(eventSeries.id)
+                index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
+            }
+            assertThat(dataSeriesEntities).doesNotContain(meterSeries)
+        }
+
+    @Test
+    fun `should return both event and meter when they share the same field name and both name lists contain it with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val meterSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "shared-name",
+                    displayName = "matching-meter"
+                )
+            )
+            val eventSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "shared-name",
+                    displayName = "matching-event",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("shared-name"),
+                meterNames = listOf("shared-name"),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(2)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(eventSeries.id)
+                index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
+                index(1).prop(DataSeriesEntity::id).isEqualTo(meterSeries.id)
+                index(1).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
+            }
+        }
+
+    @Test
+    fun `should return neither when event and meter share the same field name but the name is in the wrong list with filters`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.METERS,
+                    fieldName = "meter-only-name",
+                    displayName = "matching-meter"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = creator.id,
+                    dataType = DataType.EVENTS,
+                    fieldName = "event-only-name",
+                    displayName = "matching-event",
+                    reference = "my-series-2"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when - event name in meterNames and meter name in eventNames (swapped)
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("meter-only-name"),
+                meterNames = listOf("event-only-name"),
+                filters = listOf("%matching%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).isEmpty()
+        }
+
+    @Test
     fun `should delete the dataSeries by their references`() = testDispatcherProvider.run {
         //given
         val tenant = tenantRepository.save(tenantPrototype)

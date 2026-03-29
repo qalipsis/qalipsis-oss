@@ -27,6 +27,7 @@ import io.lettuce.core.api.coroutines.RedisSetCoroutinesCommands
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
@@ -126,9 +127,13 @@ class RedisCampaignReportStateKeeper(
         val campaignForcedStatus =
             redisHashCommands.hgetall("$campaignKey-report:$CAMPAIGN_FORCED_STATUS").map { it.key to it.value }.toList()
                 .toMap()
-        val campaignKnownStatus =
-            campaignForcedStatus[CAMPAIGN_FORCED_STATUS_RESULT]?.let { ExecutionStatus.valueOf(it) }
-        val campaignFailure = campaignForcedStatus[CAMPAIGN_FORCED_STATUS_FAILURE]
+        val campaignKnownStatus = campaignForcedStatus[CAMPAIGN_FORCED_STATUS_RESULT]?.let {
+            log.debug { "Campaign status for $campaignKey is forced to $it" }
+            ExecutionStatus.valueOf(it)
+        }
+        val campaignFailure = campaignForcedStatus[CAMPAIGN_FORCED_STATUS_FAILURE]?.also {
+            log.debug { "Campaign status for $campaignKey failure is `$it`" }
+        }
 
         return scenarios.map { scenarioName ->
             val rootKey = buildRedisReportKey(campaignKey, scenarioName)
@@ -168,9 +173,15 @@ class RedisCampaignReportStateKeeper(
                         }
                     }
 
-            val startTimestamp = Instant.parse(scenarioData.remove(START_TIMESTAMP_FIELD))
-            val endTimestamp = scenarioData.remove(END_TIMESTAMP_FIELD)?.let(Instant::parse)
-            val abortTimestamp = scenarioData.remove(ABORTED_TIMESTAMP_FIELD)?.let(Instant::parse)
+            val startTimestamp = Instant.parse(scenarioData.remove(START_TIMESTAMP_FIELD)).also {
+                log.debug { "Start timestamp for $campaignKey is $it" }
+            }
+            val endTimestamp = scenarioData.remove(END_TIMESTAMP_FIELD)?.let(Instant::parse).also {
+                log.debug { "End timestamp for $campaignKey is $it" }
+            }
+            val abortTimestamp = scenarioData.remove(ABORTED_TIMESTAMP_FIELD)?.let(Instant::parse).also {
+                log.debug { "Abortion timestamp for $campaignKey is $it" }
+            }
 
             val successfullyInitializedSteps =
                 redisListCommands.lrange("$rootKey$SUCCESSFUL_STEP_INITIALIZATION_KEY_POSTFIX", 0, -1)
@@ -208,26 +219,55 @@ class RedisCampaignReportStateKeeper(
                     message = it
                 )
             }) + initializationMessages + executionFailuresDetails + messages
+            val successfulStepExecutions = successfulExecutions.values.sum()
+            val failedStepExecutions = failedExecutions.values.sum()
+            val startedMinions = scenarioData[STARTED_MINIONS_FIELD]?.toInt() ?: 0
             val status = when {
-                campaignKnownStatus == ExecutionStatus.ABORTED -> ExecutionStatus.ABORTED
-                campaignKnownStatus == ExecutionStatus.FAILED -> ExecutionStatus.FAILED
-                allMessages.any { it.severity == ReportMessageSeverity.ERROR } -> ExecutionStatus.FAILED
-                allMessages.any { it.severity == ReportMessageSeverity.WARN } -> ExecutionStatus.WARNING
-                else -> ExecutionStatus.SUCCESSFUL
+                campaignKnownStatus == ExecutionStatus.ABORTED -> {
+                    log.debug { "Scenario $scenarioName resolved status is ${ExecutionStatus.ABORTED}, because of the forced status" }
+                    ExecutionStatus.ABORTED
+                }
+
+                campaignKnownStatus == ExecutionStatus.FAILED -> {
+                    log.debug { "Scenario $scenarioName resolved status is ${ExecutionStatus.FAILED}, because of the forced status" }
+                    ExecutionStatus.FAILED
+                }
+
+                allMessages.any { it.severity == ReportMessageSeverity.ERROR } -> {
+                    log.debug { "Scenario $scenarioName resolved status is ${ExecutionStatus.FAILED}, because of the presence of errors" }
+                    ExecutionStatus.FAILED
+                }
+
+                allMessages.any { it.severity == ReportMessageSeverity.WARN } -> {
+                    log.debug { "Scenario $scenarioName resolved status is ${ExecutionStatus.WARNING}, because of the presence of warnings" }
+                    ExecutionStatus.WARNING
+                }
+
+                startedMinions == 0 || (successfulStepExecutions == 0 && failedStepExecutions == 0) -> {
+                    log.debug { "Scenario $scenarioName resolved status is ${ExecutionStatus.ABORTED}, because no step was executed" }
+                    ExecutionStatus.ABORTED
+                }
+
+                else -> {
+                    log.debug { "Scenario $scenarioName resolved status is ${ExecutionStatus.SUCCESSFUL}, because no other condition is met" }
+                    ExecutionStatus.SUCCESSFUL
+                }
             }
             DefaultScenarioReportingExecutionState(
                 scenarioName = scenarioName,
                 start = startTimestamp,
-                startedMinions = scenarioData[STARTED_MINIONS_FIELD]?.toInt() ?: 0,
+                startedMinions = startedMinions,
                 completedMinions = scenarioData[COMPLETED_MINIONS_FIELD]?.toInt() ?: 0,
-                successfulStepExecutions = successfulExecutions.values.sum(),
-                failedStepExecutions = failedExecutions.values.sum(),
+                successfulStepExecutions = successfulStepExecutions,
+                failedStepExecutions = failedStepExecutions,
                 end = endTimestamp,
                 abort = abortTimestamp,
                 status = status,
                 messages = allMessages
             ).toReport(campaignKey)
-        }.toCampaignReport(campaignKnownStatus)
+        }.toCampaignReport(campaignKnownStatus).also {
+            log.debug { "Campaign report for campaign $campaignKey created successfully: $it" }
+        }
     }
 
     /**
@@ -241,6 +281,8 @@ class RedisCampaignReportStateKeeper(
 
 
     private companion object {
+
+        val log = logger()
 
         const val STARTED_MINIONS_FIELD = "__started-minions"
 

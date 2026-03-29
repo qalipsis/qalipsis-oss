@@ -59,6 +59,7 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.ChannelNameFactory
+import io.qalipsis.core.head.campaign.catadioptre.abortAlreadyStartedCampaign
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.communication.HeadChannel
@@ -684,6 +685,7 @@ internal class RedisCampaignExecutorTest {
     internal fun `should not abort a completed campaign`() = testDispatcherProvider.run {
         //given
         val campaignExecutor = redisCampaignExecutor(this)
+        coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.SUCCESSFUL
         val completedState = mockk<CampaignExecutionState<CampaignExecutionContext>> {
             every { isCompleted } returns true
         }
@@ -694,15 +696,17 @@ internal class RedisCampaignExecutorTest {
 
         // then
         coVerifyOrder {
+            campaignService.retrieve("my-tenant", "first_campaign")
             campaignExecutor.get("my-tenant", "first_campaign")
         }
         confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
     }
 
     @Test
-    internal fun `should abort hard a campaign`() = testDispatcherProvider.run {
+    internal fun `should abort a campaign in hard mode`() = testDispatcherProvider.run {
         //given
         val campaignExecutor = redisCampaignExecutor(this)
+        coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.IN_PROGRESS
         val campaign = RunningCampaign(
             tenant = "my-tenant",
             key = "first_campaign",
@@ -739,7 +743,12 @@ internal class RedisCampaignExecutorTest {
         // then
         val sentDirectives = mutableListOf<Directive>()
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
+        coExcludeRecords {
+            campaignExecutor.abort(any(), any(), any(), any())
+            campaignExecutor.abortAlreadyStartedCampaign(any(), any(), any(), any())
+        }
         coVerifyOrder {
+            campaignService.retrieve("my-tenant", "first_campaign")
             campaignExecutor.get("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignReportStateKeeper.abort("first_campaign")
@@ -769,6 +778,7 @@ internal class RedisCampaignExecutorTest {
         }
 
         confirmVerified(
+            campaignExecutor,
             headChannel,
             factoryService,
             campaignService,
@@ -780,9 +790,10 @@ internal class RedisCampaignExecutorTest {
     }
 
     @Test
-    internal fun `should abort soft a campaign`() = testDispatcherProvider.run {
-        //given
+    internal fun `should abort a campaign softly`() = testDispatcherProvider.run {
+        // given
         val campaignExecutor = redisCampaignExecutor(this)
+        coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.IN_PROGRESS
         val campaign = RunningCampaign(
             tenant = "my-tenant",
             key = "first_campaign",
@@ -821,7 +832,12 @@ internal class RedisCampaignExecutorTest {
         // then
         val sentDirectives = mutableListOf<Directive>()
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
+        coExcludeRecords {
+            campaignExecutor.abort(any(), any(), any(), any())
+            campaignExecutor.abortAlreadyStartedCampaign(any(), any(), any(), any())
+        }
         coVerifyOrder {
+            campaignService.retrieve("my-tenant", "first_campaign")
             campaignExecutor.get("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignExecutor.set(capture(newState))
@@ -850,6 +866,7 @@ internal class RedisCampaignExecutorTest {
         }
 
         confirmVerified(
+            campaignExecutor,
             headChannel,
             factoryService,
             campaignService,
@@ -858,6 +875,78 @@ internal class RedisCampaignExecutorTest {
             campaignExecutionContext,
             operations
         )
+    }
+
+    @Test
+    internal fun `should not abort a completed campaign with state in cache`() = testDispatcherProvider.run {
+        // given
+        val campaignExecutor = redisCampaignExecutor(this)
+        coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.SUCCESSFUL
+        val campaign = RunningCampaign(
+            tenant = "my-tenant",
+            key = "first_campaign",
+            scenarios = linkedMapOf("scenario-1" to relaxedMockk(), "scenario-2" to relaxedMockk())
+        )
+        coEvery {
+            operations.getState("my-tenant", "first_campaign")
+        } returns Pair(campaign, CampaignRedisState.COMPLETION_STATE)
+        val campaignState = mockk<RedisRunningState> {
+            every { campaignKey } returns "first_campaign"
+            every { initialized } returns true
+            every { isCompleted } returns true
+        }
+        coJustRun { campaignService.abort("my-tenant", "my-user", "first_campaign") }
+        val abortedCampaignState = mockk<RedisRunningState> {
+            every { campaignKey } returns "first_campaign"
+            coEvery { init() } returns listOf(
+                CampaignAbortDirective(
+                    "first_campaign",
+                    "channel",
+                    listOf("scenario-1", "scenario-2"),
+                    AbortRunningCampaign(false)
+                )
+            )
+            every { isCompleted } returns false
+        }
+        coEvery { campaignState.abort(any()) } returns abortedCampaignState
+        justRun { abortedCampaignState.inject(campaignExecutionContext) }
+        coEvery { campaignExecutor.get("my-tenant", "first_campaign") } returns campaignState
+        campaign.message = "problem"
+        campaign.broadcastChannel = "channel"
+
+        // when
+        campaignExecutor.abort("my-tenant", "my-user", "first_campaign", true)
+
+        // then
+        coExcludeRecords {
+            campaignExecutor.abort(any(), any(), any(), any())
+            campaignExecutor.abortAlreadyStartedCampaign(any(), any(), any(), any())
+        }
+        coVerifyOrder {
+            campaignService.retrieve("my-tenant", "first_campaign")
+            campaignExecutor.get("my-tenant", "first_campaign")
+        }
+        confirmVerified(campaignExecutor, campaignService, campaignReportStateKeeper, headChannel)
+    }
+
+    @Test
+    internal fun `should cancel a scheduled campaign`() = testDispatcherProvider.run {
+        //given
+        val campaignExecutor = redisCampaignExecutor(this)
+        coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.SCHEDULED
+
+        // when
+        campaignExecutor.abort("my-tenant", "my-user", "first_campaign", true)
+
+        // then
+        coExcludeRecords {
+            campaignExecutor.abort(any(), any(), any(), any())
+        }
+        coVerifyOrder {
+            campaignService.retrieve("my-tenant", "first_campaign")
+            campaignService.abort("my-tenant", "my-user", "first_campaign")
+        }
+        confirmVerified(campaignExecutor, campaignService, campaignReportStateKeeper, headChannel)
     }
 
     @Test

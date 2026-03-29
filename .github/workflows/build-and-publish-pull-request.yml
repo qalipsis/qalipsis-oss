@@ -2,9 +2,12 @@ name: Verify the pull request
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
+    types:
+      - opened
+      - reopened
     branches:
-      - 'develop/*'
+      - 'develop/**'
       - 'main'
 
 env:

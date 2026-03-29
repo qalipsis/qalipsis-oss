@@ -333,11 +333,11 @@ internal class DataSeriesControllerIntegrationTest {
     }
 
     @Test
-    internal fun `should search names for the events without filter`() {
+    internal fun `should search names for the events without arguments`() {
         // given
         val names = listOf("event-1", "event-2")
         val request = HttpRequest.GET<List<String>>("/events/names")
-        coEvery { dataProvider.searchNames(any(), any(), any(), any()) } returns names
+        coEvery { dataProvider.searchNames(any(), any(), any(), any(), any()) } returns names
 
         // when
         val response = httpClient.toBlocking().exchange(request, Argument.listOf(String::class.java))
@@ -347,6 +347,7 @@ internal class DataSeriesControllerIntegrationTest {
             dataProvider.searchNames(
                 tenant = Defaults.TENANT,
                 dataType = EVENTS,
+                campaignKey = isNull(),
                 filters = emptyList(),
                 size = 20
             )
@@ -361,11 +362,12 @@ internal class DataSeriesControllerIntegrationTest {
     }
 
     @Test
-    internal fun `should search names for the meters with filter and page size`() {
+    internal fun `should search names for the meters with campaign key, filter and page size`() {
         // given
         val names = listOf("event-1", "event-2")
-        val request = HttpRequest.GET<List<String>>("/meters/names?filter=filter-1%2Cfilter-2&size=12")
-        coEvery { dataProvider.searchNames(any(), any(), any(), any()) } returns names
+        val request =
+            HttpRequest.GET<List<String>>("/meters/names?campaign=my-campaign&filter=filter-1%2Cfilter-2&size=12")
+        coEvery { dataProvider.searchNames(any(), any(), any(), any(), any()) } returns names
 
         // when
         val response = httpClient.toBlocking().exchange(request, Argument.listOf(String::class.java))
@@ -375,6 +377,7 @@ internal class DataSeriesControllerIntegrationTest {
             dataProvider.searchNames(
                 tenant = Defaults.TENANT,
                 dataType = DataType.METERS,
+                campaignKey = "my-campaign",
                 filters = listOf("filter-1", "filter-2"),
                 size = 12
             )
@@ -425,11 +428,11 @@ internal class DataSeriesControllerIntegrationTest {
     }
 
     @Test
-    internal fun `should search field names for the events`() {
+    internal fun `should search field names for the events without argument`() {
         // given
         val fields = listOf(DataField("1", DataFieldType.NUMBER), DataField("2", DataFieldType.NUMBER, "SECONDS"))
         val request = HttpRequest.GET<List<String>>("/events/fields")
-        coEvery { dataProvider.listFields(any(), any()) } returns fields
+        coEvery { dataProvider.listFields(any(), any(), any()) } returns fields
 
         // when
         val response = httpClient.toBlocking().exchange(request, Argument.listOf(DataField::class.java))
@@ -438,7 +441,8 @@ internal class DataSeriesControllerIntegrationTest {
         coVerifyOnce {
             dataProvider.listFields(
                 tenant = Defaults.TENANT,
-                dataType = EVENTS
+                dataType = EVENTS,
+                name = isNull()
             )
         }
 
@@ -451,11 +455,38 @@ internal class DataSeriesControllerIntegrationTest {
     }
 
     @Test
-    internal fun `should search tags for the events without filter`() {
+    internal fun `should search field names for the events with a name`() {
+        // given
+        val fields = listOf(DataField("1", DataFieldType.NUMBER), DataField("2", DataFieldType.NUMBER, "SECONDS"))
+        val request = HttpRequest.GET<List<String>>("/events/fields?name=my-event")
+        coEvery { dataProvider.listFields(any(), any(), any()) } returns fields
+
+        // when
+        val response = httpClient.toBlocking().exchange(request, Argument.listOf(DataField::class.java))
+
+        // then
+        coVerifyOnce {
+            dataProvider.listFields(
+                tenant = Defaults.TENANT,
+                dataType = EVENTS,
+                name = "my-event"
+            )
+        }
+
+        assertThat(response).all {
+            transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
+            transform("body") { it.body() }.isEqualTo(fields)
+
+        }
+        confirmVerified(dataProvider)
+    }
+
+    @Test
+    internal fun `should search tags for the events without argument`() {
         // given
         val tags = mapOf("tag-1" to listOf("value-1", "value-2"), "tag-2" to listOf("value-3", "value-4"))
         val request = HttpRequest.GET<List<String>>("/events/tags")
-        coEvery { dataProvider.searchTagsAndValues(any(), any(), any(), any()) } returns tags
+        coEvery { dataProvider.searchTagsAndValues(any(), any(), any(), any(), any()) } returns tags
 
         // when
         val response = httpClient.toBlocking()
@@ -466,6 +497,7 @@ internal class DataSeriesControllerIntegrationTest {
             dataProvider.searchTagsAndValues(
                 tenant = Defaults.TENANT,
                 dataType = EVENTS,
+                name = isNull(),
                 filters = emptyList(),
                 size = 20
             )
@@ -480,11 +512,11 @@ internal class DataSeriesControllerIntegrationTest {
     }
 
     @Test
-    internal fun `should search tags for the meters with filter and page size`() {
+    internal fun `should search tags for the meters with name, filter and page size`() {
         // given
         val tags = mapOf("tag-1" to listOf("value-1", "value-2"), "tag-2" to listOf("value-3", "value-4"))
-        val request = HttpRequest.GET<List<String>>("/meters/tags?filter=filter-1%2Cfilter-2&size=12")
-        coEvery { dataProvider.searchTagsAndValues(any(), any(), any(), any()) } returns tags
+        val request = HttpRequest.GET<List<String>>("/meters/tags?name=my-event&filter=filter-1%2Cfilter-2&size=12")
+        coEvery { dataProvider.searchTagsAndValues(any(), any(), any(), any(), any()) } returns tags
 
         // when
         val response = httpClient.toBlocking()
@@ -495,6 +527,7 @@ internal class DataSeriesControllerIntegrationTest {
             dataProvider.searchTagsAndValues(
                 tenant = Defaults.TENANT,
                 dataType = DataType.METERS,
+                name = "my-event",
                 filters = listOf("filter-1", "filter-2"),
                 size = 12
             )
@@ -564,6 +597,7 @@ internal class DataSeriesControllerIntegrationTest {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
                 username = Defaults.USERNAME,
+                campaignKey = isNull(),
                 filters = emptyList(),
                 sort = "displayName:asc",
                 page = 0,
@@ -579,6 +613,7 @@ internal class DataSeriesControllerIntegrationTest {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
                 username = Defaults.USERNAME,
+                campaignKey = isNull(),
                 filters = emptyList(),
                 sort = "displayName:asc",
                 page = 0,
@@ -625,7 +660,7 @@ internal class DataSeriesControllerIntegrationTest {
     }
 
     @Test
-    internal fun `should search for data series with filter and default sorting`() {
+    internal fun `should search for data series with campaign key, filter and default sorting`() {
         // given
         val dataSeries = DataSeries(
             displayName = "NewData",
@@ -647,11 +682,12 @@ internal class DataSeriesControllerIntegrationTest {
             aggregationOperation = null,
             timeframeUnit = Duration.ofHours(2),
         )
-        val request = HttpRequest.GET<Page<DataSeries>>("?filter=foo,filter-2&size=7")
+        val request = HttpRequest.GET<Page<DataSeries>>("?campaign=my-campaign&filter=foo,filter-2&size=7")
         coEvery {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
                 username = Defaults.USERNAME,
+                campaignKey = "my-campaign",
                 filters = listOf("foo", "filter-2"),
                 sort = "displayName:asc",
                 page = 0,
@@ -667,6 +703,7 @@ internal class DataSeriesControllerIntegrationTest {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
                 username = Defaults.USERNAME,
+                campaignKey = "my-campaign",
                 filters = listOf("foo", "filter-2"),
                 sort = "displayName:asc",
                 page = 0,
@@ -708,6 +745,7 @@ internal class DataSeriesControllerIntegrationTest {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
                 username = Defaults.USERNAME,
+                campaignKey = isNull(),
                 filters = emptyList(),
                 sort = "color",
                 page = 0,
@@ -723,6 +761,7 @@ internal class DataSeriesControllerIntegrationTest {
             dataSeriesService.searchDataSeries(
                 tenant = Defaults.TENANT,
                 username = Defaults.USERNAME,
+                campaignKey = isNull(),
                 filters = emptyList(),
                 sort = "color",
                 page = 0,

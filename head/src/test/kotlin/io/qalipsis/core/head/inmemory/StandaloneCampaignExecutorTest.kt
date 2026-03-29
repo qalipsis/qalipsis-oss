@@ -58,6 +58,7 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.campaign.ChannelNameFactory
+import io.qalipsis.core.head.campaign.catadioptre.abortAlreadyStartedCampaign
 import io.qalipsis.core.head.campaign.states.CampaignExecutionContext
 import io.qalipsis.core.head.campaign.states.CampaignExecutionState
 import io.qalipsis.core.head.campaign.states.FactoryAssignmentState
@@ -346,9 +347,10 @@ internal class StandaloneCampaignExecutorTest {
         }
 
     @Test
-    internal fun `should abort hard a campaign`() = testDispatcherProvider.run {
+    internal fun `should abort a campaign in hard mode`() = testDispatcherProvider.run {
         //given
         val campaignExecutor = standaloneCampaignExecutor(this)
+        coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.IN_PROGRESS
         campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
@@ -374,15 +376,17 @@ internal class StandaloneCampaignExecutorTest {
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
         coExcludeRecords {
             campaignExecutor.abort(any(), any(), any(), any())
+            campaignExecutor.abortAlreadyStartedCampaign(any(), any(), any(), any())
         }
         coVerifyOrder {
+            campaignService.retrieve("my-tenant", "first_campaign")
             campaignExecutor.get("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignReportStateKeeper.abort("first_campaign")
             campaignExecutor.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
-        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+        confirmVerified(campaignExecutor, campaignService, campaignReportStateKeeper, headChannel)
 
         assertThat(newState.captured).isInstanceOf(CampaignExecutionState::class)
         assertThat(sentDirectives).all {
@@ -405,9 +409,10 @@ internal class StandaloneCampaignExecutorTest {
     }
 
     @Test
-    internal fun `should abort soft a campaign`() = testDispatcherProvider.run {
+    internal fun `should abort a campaign softly`() = testDispatcherProvider.run {
         //given
         val campaignExecutor = standaloneCampaignExecutor(this)
+        coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.IN_PROGRESS
         campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
@@ -433,14 +438,16 @@ internal class StandaloneCampaignExecutorTest {
         val newState = slot<CampaignExecutionState<CampaignExecutionContext>>()
         coExcludeRecords {
             campaignExecutor.abort(any(), any(), any(), any())
+            campaignExecutor.abortAlreadyStartedCampaign(any(), any(), any(), any())
         }
         coVerifyOrder {
+            campaignService.retrieve("my-tenant", "first_campaign")
             campaignExecutor.get("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
             campaignExecutor.set(capture(newState))
             headChannel.publishDirective(capture(sentDirectives))
         }
-        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+        confirmVerified(campaignExecutor, campaignService, campaignReportStateKeeper, headChannel)
 
         assertThat(newState.captured).isInstanceOf(CampaignExecutionState::class)
         assertThat(sentDirectives).all {
@@ -473,9 +480,10 @@ internal class StandaloneCampaignExecutorTest {
     }
 
     @Test
-    internal fun `should not abort a completed campaign`() = testDispatcherProvider.run {
+    internal fun `should not abort a completed campaign with state in cache`() = testDispatcherProvider.run {
         //given
         val campaignExecutor = standaloneCampaignExecutor(this)
+        coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.SUCCESSFUL
         campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
@@ -488,11 +496,33 @@ internal class StandaloneCampaignExecutorTest {
         // then
         coExcludeRecords {
             campaignExecutor.abort(any(), any(), any(), any())
+            campaignExecutor.abortAlreadyStartedCampaign(any(), any(), any(), any())
         }
         coVerifyOrder {
+            campaignService.retrieve("my-tenant", "first_campaign")
             campaignExecutor.get("my-tenant", "first_campaign")
         }
-        confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+        confirmVerified(campaignExecutor, campaignService, campaignReportStateKeeper, headChannel)
+    }
+
+    @Test
+    internal fun `should cancel a scheduled campaign`() = testDispatcherProvider.run {
+        //given
+        val campaignExecutor = standaloneCampaignExecutor(this)
+        coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.SCHEDULED
+
+        // when
+        campaignExecutor.abort("my-tenant", "my-user", "first_campaign", true)
+
+        // then
+        coExcludeRecords {
+            campaignExecutor.abort(any(), any(), any(), any())
+        }
+        coVerifyOrder {
+            campaignService.retrieve("my-tenant", "first_campaign")
+            campaignService.abort("my-tenant", "my-user", "first_campaign")
+        }
+        confirmVerified(campaignExecutor, campaignService, campaignReportStateKeeper, headChannel)
     }
 
     @Test
