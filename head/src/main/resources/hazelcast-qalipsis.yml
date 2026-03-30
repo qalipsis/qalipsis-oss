@@ -6,3 +6,5 @@ hazelcast:
     data-serializable-factories:
       - factory-id: 1
         class-name: io.qalipsis.core.head.campaign.states.DistributedDelayedFeedbackManager$DelayedFeedbackTaskFactory
+      - factory-id: 2
+        class-name: io.qalipsis.core.head.campaign.scheduler.HazelcastCampaignSchedulerImpl$CampaignScheduleTaskFactory
