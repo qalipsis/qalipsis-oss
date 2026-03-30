@@ -134,7 +134,7 @@ class HazelcastFactory(
             CLUSTER_REGISTRY,
             Instant.now().epochSecond.toDouble(),
             "${localAddress}:${hc.networkConfig.port}",
-        )
+        ).get()
 
         taskScheduler.scheduleAtFixedRate(Duration.ZERO, tcpIpConfiguration.timeout.dividedBy(2)) {
             // On a regular basis, sends a heart beat to update the score of the local cluster.
@@ -247,6 +247,7 @@ class HazelcastFactory(
     }
 
     private companion object {
+
         val log = logger()
 
         const val CLUSTER_REGISTRY = "hazelcast-cluster"
