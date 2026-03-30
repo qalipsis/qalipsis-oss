@@ -39,22 +39,24 @@ class ScheduledCampaignsRegistry {
     private val campaignScheduleKeyStore: ConcurrentHashMap<CampaignKey, Job> = ConcurrentHashMap()
 
     /**
-     * Cancels a scheduled test campaign job.
+     * Cancels a scheduled test campaign.
      *
      * @param campaignKey identifier to the job to be cancelled
      */
     suspend fun cancelSchedule(campaignKey: CampaignKey) {
+        log.debug { "Cancelling campaign schedule for $campaignKey" }
         tryAndLogOrNull(log) { campaignScheduleKeyStore[campaignKey]?.cancel() }
         campaignScheduleKeyStore.remove(campaignKey)
     }
 
     /**
-     * Updates the campaign schedule keystore.
+     * Updates the campaign schedule.
      *
      * @param campaignKey identifier to the job to be added to the store
      * @param scheduleJob background job that handles scheduling of the test campaign
      */
     suspend fun updateSchedule(campaignKey: CampaignKey, scheduleJob: Job) {
+        log.debug { "Updating campaign schedule for $campaignKey" }
         campaignScheduleKeyStore[campaignKey] = scheduleJob
     }
 
