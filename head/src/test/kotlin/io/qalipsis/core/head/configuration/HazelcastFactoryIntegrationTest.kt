@@ -9,6 +9,7 @@ import assertk.assertions.prop
 import com.hazelcast.cluster.Address
 import com.hazelcast.cluster.Member
 import com.hazelcast.config.ScheduledExecutorConfig
+import com.hazelcast.core.Hazelcast
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
@@ -20,6 +21,7 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
@@ -36,6 +38,12 @@ internal class HazelcastFactoryIntegrationTest : AbstractRedisIntegrationTest() 
 
     @Inject
     lateinit var hazelcastFactory: HazelcastFactory
+
+    @AfterEach
+    fun tearDown() {
+        Hazelcast.shutdownAll()
+        connection.sync().del(CLUSTER_REGISTRY)
+    }
 
     @Test
     fun `should build a cluster with tcp configuration`() {
@@ -87,6 +95,10 @@ internal class HazelcastFactoryIntegrationTest : AbstractRedisIntegrationTest() 
                 it.prop(Member::getAddress).prop(Address::getPort).isEqualTo(port2)
             }
         }
+    }
+
+    private companion object {
+        const val CLUSTER_REGISTRY = "hazelcast-cluster"
     }
 
 }
