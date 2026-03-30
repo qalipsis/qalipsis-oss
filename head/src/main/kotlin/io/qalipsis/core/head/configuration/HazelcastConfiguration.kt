@@ -51,7 +51,7 @@ class HazelcastConfiguration {
     var multicast: MulticastDiscovery? = null
 
     @field:Valid
-    var tcpIp: TcpIpDiscovery? = null
+    var tcpIp: TcpIpDiscovery? = TcpIpDiscovery()
 
     @field:Valid
     var kubernetes: KubernetesDiscovery? = null

@@ -122,18 +122,20 @@ class HazelcastFactory(
     ) {
         val tcpIpConfiguration =
             requireNotNull(configuration.tcpIp) { "The configuration for TCP IP is required with prefix `hazelcast.tcp-ip`" }
+        val localAddress = InetAddress.getLocalHost().hostAddress
+        val localAddressAndPort = "${localAddress}:${hc.networkConfig.port}"
+
         // List only the members that are recently active.
         val minScore = Instant.now().minus(tcpIpConfiguration.timeout).epochSecond
-        val members = redisSetAsyncCommands!!.zrangebyscore(
+        val otherMembers = redisSetAsyncCommands!!.zrangebyscore(
             CLUSTER_REGISTRY,
             Range.from(Boundary.including(minScore), Boundary.unbounded())
-        ).get()
-        val localAddress = InetAddress.getLocalHost().hostAddress
+        ).get() - localAddressAndPort
 
         redisSetAsyncCommands.zadd(
             CLUSTER_REGISTRY,
             Instant.now().epochSecond.toDouble(),
-            "${localAddress}:${hc.networkConfig.port}",
+            localAddressAndPort,
         ).get()
 
         taskScheduler.scheduleAtFixedRate(Duration.ZERO, tcpIpConfiguration.timeout.dividedBy(2)) {
@@ -142,7 +144,7 @@ class HazelcastFactory(
             redisSetAsyncCommands.zadd(
                 CLUSTER_REGISTRY,
                 now.epochSecond.toDouble(),
-                "${localAddress}:${hc.networkConfig.port}",
+                localAddressAndPort,
             )
             // And cleans the members that did not send a heartbeat recently.
             val timeout = now - tcpIpConfiguration.timeout
@@ -153,12 +155,12 @@ class HazelcastFactory(
         }
 
         hc.networkConfig.join.tcpIpConfig.setEnabled(true)
-        if (members.isNotEmpty()) {
+        if (otherMembers.isNotEmpty()) {
             tcpIpConfiguration.connectionTimeout?.let { connectionTimeout ->
                 hc.networkConfig.join.tcpIpConfig.setConnectionTimeoutSeconds(connectionTimeout.toSeconds().toInt())
             }
-            log.debug { "Connecting to the Hazelcast cluster with members: $members" }
-            hc.networkConfig.join.tcpIpConfig.setMembers(members.toList())
+            log.debug { "Connecting to the Hazelcast cluster with members: $otherMembers" }
+            hc.networkConfig.join.tcpIpConfig.setMembers(otherMembers.toList())
         }
     }
 

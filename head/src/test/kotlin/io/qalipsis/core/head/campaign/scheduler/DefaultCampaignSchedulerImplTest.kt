@@ -6,9 +6,9 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
-import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
+import io.mockk.coExcludeRecords
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -17,6 +17,7 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.spyk
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ExecutionStatus.SCHEDULED
 import io.qalipsis.api.report.ExecutionStatus.SUCCESSFUL
 import io.qalipsis.api.sync.Latch
@@ -26,6 +27,7 @@ import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.campaign.CampaignExecutor
 import io.qalipsis.core.head.campaign.CampaignPreparator
+import io.qalipsis.core.head.campaign.scheduler.catadioptre.executeCampaign
 import io.qalipsis.core.head.factory.FactoryService
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
@@ -157,20 +159,20 @@ internal class DefaultCampaignSchedulerImplTest {
             ),
             recordPrivateCalls = true
         )
-        val instant = getTimeMock().plusMillis(5)
+        val currentTime = getTimeMock()
 
         val latch = Latch(true)
-        every {
-            defaultCampaignSchedulerImpl["schedulingExecution"](refEq("campaign-key"), refEq(instant))
+        coEvery {
+            defaultCampaignSchedulerImpl.executeCampaign(refEq("campaign-key"))
         } coAnswers { latch.release() }
 
         // when
-        defaultCampaignSchedulerImpl.schedule("campaign-key", instant)
+        defaultCampaignSchedulerImpl.schedule("campaign-key", currentTime)
         latch.await()
 
         // then
         coVerifyOrder {
-            defaultCampaignSchedulerImpl["schedulingExecution"](refEq("campaign-key"), refEq(instant))
+            defaultCampaignSchedulerImpl.executeCampaign(refEq("campaign-key"))
             scheduledCampaignsRegistry.updateSchedule("campaign-key", any<Job>())
         }
         confirmVerified(
@@ -201,6 +203,85 @@ internal class DefaultCampaignSchedulerImplTest {
             recordPrivateCalls = true
         )
         val currentTime = getTimeMock()
+        val instant = currentTime.plusMillis(5)
+        val configuration = CampaignConfiguration(
+            name = "My new campaign",
+            speedFactor = 123.2,
+            timeout = Duration.ofSeconds(715),
+            hardTimeout = false,
+            scenarios = mapOf(
+                "scenario-1" to ScenarioRequest(1),
+                "scenario-2" to ScenarioRequest(3)
+            ),
+            scheduledAt = instant,
+            scheduling = null
+        )
+        val campaignEntity = CampaignEntity(
+            key = "campaign-key",
+            name = "My new campaign",
+            speedFactor = 123.0,
+            start = currentTime.minusSeconds(173),
+            end = currentTime,
+            scheduledMinions = 123,
+            result = SUCCESSFUL,
+            configurer = 1L,
+            tenantId = 123L,
+            configuration = configuration
+        )
+
+        val latch = Latch(true)
+        coEvery { campaignRepository.findByKey(refEq("campaign-key")) } returns campaignEntity
+        coEvery { userProvider.findUsernameById(1L) } returns "The configurer"
+        coEvery { tenantProvider.findReferenceById(123) } returns "my-tenant"
+        coEvery { campaignRepository.delete(any()) } coAnswers { latch.release(); 1 }
+
+        // when
+        defaultCampaignSchedulerImpl.executeCampaign("campaign-key")
+        latch.await()
+
+        // then
+        coExcludeRecords {
+            defaultCampaignSchedulerImpl.executeCampaign(any())
+        }
+        coVerifyOrder {
+            campaignRepository.findByKey(refEq("campaign-key"))
+            userProvider.findUsernameById(1L)
+            tenantProvider.findReferenceById(123)
+            campaignExecutor.start(
+                refEq("my-tenant"),
+                refEq("The configurer"),
+                configuration.copy(name = "My new campaign")
+            )
+            campaignRepository.delete(refEq(campaignEntity))
+        }
+        confirmVerified(
+            defaultCampaignSchedulerImpl,
+            userProvider,
+            campaignExecutor,
+            tenantProvider,
+            campaignRepository,
+            factoryService,
+            campaignPreparator
+        )
+
+    }
+
+    @Test
+    internal fun `should execute a scheduled campaign to repeat`() = testDispatcherProvider.runTest {
+        defaultCampaignSchedulerImpl = spyk(
+            DefaultCampaignSchedulerImpl(
+                userProvider = userProvider,
+                campaignExecutor = campaignExecutor,
+                tenantProvider = tenantProvider,
+                campaignRepository = campaignRepository,
+                factoryService = factoryService,
+                campaignPreparator = campaignPreparator,
+                scheduledCampaignsRegistry = scheduledCampaignsRegistry,
+                coroutineScope = this
+            ),
+            recordPrivateCalls = true
+        )
+        val currentTime = getTimeMock(Instant.parse("2023-03-12T22:03:12.725Z"))
         val nextSchedule = currentTime.plusMillis(10)
         val scheduling = mockk<Scheduling> {
             every { nextSchedule(currentTime) } returns nextSchedule
@@ -241,10 +322,13 @@ internal class DefaultCampaignSchedulerImplTest {
         } coAnswers { latch.release() }
 
         // when
-        defaultCampaignSchedulerImpl.coInvokeInvisible<Void>("schedulingExecution", "campaign-key", instant)
+        defaultCampaignSchedulerImpl.executeCampaign("campaign-key")
         latch.await()
 
         // then
+        coExcludeRecords {
+            defaultCampaignSchedulerImpl.executeCampaign(any())
+        }
         coVerifyOrder {
             campaignRepository.findByKey(refEq("campaign-key"))
             userProvider.findUsernameById(1L)
@@ -252,7 +336,7 @@ internal class DefaultCampaignSchedulerImplTest {
             campaignExecutor.start(
                 refEq("my-tenant"),
                 refEq("The configurer"),
-                configuration.copy(name = "My new campaign ($currentTime)")
+                configuration.copy(name = "My new campaign (2023-03-12, 22:03)")
             )
             campaignRepository.update(withArg {
                 assertThat(it).all {
@@ -265,13 +349,14 @@ internal class DefaultCampaignSchedulerImplTest {
                     prop(CampaignEntity::configurer).isEqualTo(1L)
                     prop(CampaignEntity::tenantId).isEqualTo(123L)
                     prop(CampaignEntity::configuration).isSameInstanceAs(configuration)
-                    prop(CampaignEntity::result).isEqualTo(SUCCESSFUL)
+                    prop(CampaignEntity::result).isEqualTo(ExecutionStatus.SCHEDULED)
                     prop(CampaignEntity::start).isEqualTo(nextSchedule)
                 }
             })
             defaultCampaignSchedulerImpl.schedule(refEq("campaign-key"), refEq(nextSchedule))
         }
         confirmVerified(
+            defaultCampaignSchedulerImpl,
             userProvider,
             campaignExecutor,
             tenantProvider,
@@ -279,7 +364,6 @@ internal class DefaultCampaignSchedulerImplTest {
             factoryService,
             campaignPreparator
         )
-
     }
 
     @Test
@@ -300,7 +384,6 @@ internal class DefaultCampaignSchedulerImplTest {
             )
 
             val currentTime = getTimeMock()
-            val instant = currentTime.plusMillis(5)
             val campaignEntity = CampaignEntity(
                 key = "campaign-key",
                 name = "My new campaign",
@@ -317,15 +400,19 @@ internal class DefaultCampaignSchedulerImplTest {
 
             // when
             val exception = assertThrows<IllegalArgumentException> {
-                defaultCampaignSchedulerImpl.coInvokeInvisible<Void>("schedulingExecution", "campaign-key", instant)
+                defaultCampaignSchedulerImpl.executeCampaign("campaign-key")
             }
 
             // then
+            coExcludeRecords {
+                defaultCampaignSchedulerImpl.executeCampaign(any())
+            }
             assertThat(exception.message).isEqualTo("No configuration was found for the campaign")
             coVerifyOrder {
                 campaignRepository.findByKey(refEq("campaign-key"))
             }
             confirmVerified(
+                defaultCampaignSchedulerImpl,
                 userProvider,
                 campaignExecutor,
                 tenantProvider,
@@ -385,7 +472,7 @@ internal class DefaultCampaignSchedulerImplTest {
 
             // when
             val exception = assertThrows<IllegalArgumentException> {
-                defaultCampaignSchedulerImpl.coInvokeInvisible<Void>("schedulingExecution", "campaign-key", instant)
+                defaultCampaignSchedulerImpl.executeCampaign("campaign-key")
             }
 
             // then
@@ -643,8 +730,7 @@ internal class DefaultCampaignSchedulerImplTest {
                     campaignPreparator = campaignPreparator,
                     scheduledCampaignsRegistry = scheduledCampaignsRegistry,
                     coroutineScope = this
-                ),
-                recordPrivateCalls = true
+                )
             )
 
             // given
@@ -762,8 +848,7 @@ internal class DefaultCampaignSchedulerImplTest {
             confirmVerified(campaignRepository)
         }
 
-    private fun getTimeMock(): Instant {
-        val now = Instant.now()
+    private fun getTimeMock(now: Instant = Instant.now()): Instant {
         val fixedClock = Clock.fixed(now, ZoneId.systemDefault())
         mockkStatic(Clock::class)
         every { Clock.systemUTC() } returns fixedClock
