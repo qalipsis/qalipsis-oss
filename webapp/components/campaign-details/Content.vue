@@ -32,7 +32,10 @@
                     <div class="text-white">
                       {{ zoneKeyToZoneModel[zoneKey]?.title }}
                     </div>
-                    <div v-if="zoneKeyToZoneModel[zoneKey]?.description" class="text-gray-200">
+                    <div
+                      v-if="zoneKeyToZoneModel[zoneKey]?.description"
+                      class="text-gray-200"
+                    >
                       {{ zoneKeyToZoneModel[zoneKey]?.description }}
                     </div>
                   </div>
@@ -119,8 +122,8 @@ const zoneKeyToZoneModel = ref<{ [key: string]: Zone }>()
 const scenarioReports = computed(() =>
   ScenarioHelper.getSelectedScenarioReports(
     campaignDetailsStore.selectedScenarioNames,
-    campaignDetailsStore.campaignDetails!
-  )
+    campaignDetailsStore.campaignDetails!,
+  ),
 )
 const campaignDetailStatus = computed(() => campaignDetailsStore.campaignDetails!.status)
 const preselectedDataSeriesReferences = computed(() => campaignDetailsStore.selectedDataSeriesReferences)
@@ -140,7 +143,6 @@ const _setZoneKeyToModel = async () => {
 
     return acc
   }, {})
-  console.log(zoneKeyToZoneModel.value)
 }
 
 const _updateChart = async () => {

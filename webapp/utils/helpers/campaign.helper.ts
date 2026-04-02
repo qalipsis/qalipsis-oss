@@ -98,10 +98,10 @@ const renderCampaignDetailsChartTooltip: (options: any) => any = ({ seriesIndex,
                   ${point.y}
                 </div>
               </div>
-            </div>`
+            </div>`,
         )
       }
-    })
+    }),
   )
 
   return `<div class="p-4 min-w-72 rounded-md bg-gray-900 text-white font-light">
@@ -122,8 +122,8 @@ export class CampaignHelper {
       formattedTimeoutValue.value === null
         ? TimeoutTypeConstant.NONE
         : campaignConfig.hardTimeout
-        ? TimeoutTypeConstant.HARD
-        : TimeoutTypeConstant.SOFT
+          ? TimeoutTypeConstant.HARD
+          : TimeoutTypeConstant.SOFT
 
     return {
       timeoutType: timeoutType,
@@ -147,7 +147,7 @@ export class CampaignHelper {
   static toCampaignConfiguration(
     campaignName: string,
     campaignConfigForm: CampaignConfigurationForm,
-    scenarioConfigFormMap: { [key: string]: ScenarioConfigurationForm }
+    scenarioConfigFormMap: { [key: string]: ScenarioConfigurationForm },
   ): CampaignConfiguration {
     const scenarios = Object.keys(scenarioConfigFormMap).reduce<{
       [key: string]: ScenarioRequest
@@ -168,7 +168,7 @@ export class CampaignHelper {
     if (campaignConfigForm.durationValue) {
       campaignConfiguration.timeout = TimeframeHelper.toIsoStringDuration(
         +campaignConfigForm.durationValue,
-        campaignConfigForm.durationUnit
+        campaignConfigForm.durationUnit,
       )
     }
 
@@ -287,7 +287,7 @@ export class CampaignHelper {
   static toChartData(
     aggregationResult: { [key: string]: TimeSeriesAggregationResult[] },
     dataSeries: DataSeries[],
-    campaignExecutionDetails: CampaignExecutionDetails
+    campaignExecutionDetails: CampaignExecutionDetails,
   ): ChartData {
     const aggregations = Object.entries(aggregationResult)?.filter(([_, value]) => value.length)
     const chartDataSeries: ApexAxisChartSeries = []
@@ -320,8 +320,8 @@ export class CampaignHelper {
           seriesDefinition?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
             ? 0
             : seriesDefinition?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
-            ? 6
-            : 2,
+              ? 6
+              : 2,
       }
 
       // The data series for the chart.
@@ -346,6 +346,9 @@ export class CampaignHelper {
       ...campaign,
       scenarioText: campaign.scenarios.map((scenario) => scenario.name).join(','),
       creationTime: TimeframeHelper.toSpecificFormat(new Date(campaign.creation), 'dd/MM/yyyy, HH:mm:ss'),
+      startTime: campaign.start
+        ? TimeframeHelper.toSpecificFormat(new Date(campaign.start), 'dd/MM/yyyy, HH:mm:ss')
+        : 'Not started yet',
       /**
        * Only shows the elapsed time when the status is scheduled,
        * or the status is aborted and there is no end time for the campaign.
@@ -355,7 +358,7 @@ export class CampaignHelper {
           ? '-'
           : TimeframeHelper.elapsedTime(
               new Date(campaign.creation),
-              campaign.end ? new Date(campaign.end) : new Date()
+              campaign.end ? new Date(campaign.end) : new Date(),
             ),
       statusTag: campaign.status ? CampaignHelper.toExecutionStatusTag(campaign.status) : null,
     }))

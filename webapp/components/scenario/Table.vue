@@ -37,13 +37,13 @@
           <div v-if="!scenarioConfig[record.name]">
             <BaseIcon
               icon="qls-icon-error-fill"
-              class="text-base text-gray-400"
+              class="text-base text-gray-400 dark:text-gray-200"
             />
           </div>
           <div v-else>
             <BaseIcon
               icon="qls-icon-check-fill"
-              class="text-base text-green-500"
+              class="text-base text-green-500 dark:text-green-300"
             />
           </div>
         </div>
@@ -71,8 +71,16 @@ const { fetchScenarios } = useScenarioApi()
 const toastStore = useToastStore()
 const scenarioTableStore = useScenarioTableStore()
 
-const { selectedRowKeys, selectedRows, dataSource, totalElements, pageSize, currentPageIndex, scenarioConfig, rowSelectionEnabled } =
-  storeToRefs(scenarioTableStore)
+const {
+  selectedRowKeys,
+  selectedRows,
+  dataSource,
+  totalElements,
+  pageSize,
+  currentPageIndex,
+  scenarioConfig,
+  rowSelectionEnabled,
+} = storeToRefs(scenarioTableStore)
 
 let selectedScenarioSummary: ScenarioSummary
 
@@ -127,8 +135,8 @@ const handlePaginationChange = (pageIndex: number) => {
 
 const handleSelectionChange = (tableSelection: TableSelection) => {
   scenarioTableStore.$patch({
-    selectedRows: tableSelection.selectedRows,
-    selectedRowKeys: tableSelection.selectedRowKeys,
+    selectedRows: [...tableSelection.selectedRows],
+    selectedRowKeys: [...tableSelection.selectedRowKeys],
   })
 }
 
@@ -139,7 +147,12 @@ const handleConfigureBtnClick = (scenarioSummary: ScenarioSummary) => {
 }
 
 const handleScenarioConfigFormSubmit = (form: ScenarioConfigurationForm) => {
-  scenarioTableStore.scenarioConfig[selectedScenarioSummary!.name] = form
+  scenarioTableStore.$patch({
+    scenarioConfig: {
+      ...scenarioTableStore.scenarioConfig,
+      [selectedScenarioSummary!.name]: form,
+    },
+  })
   if (!scenarioTableStore.selectedRows.some((r) => r.name === selectedScenarioSummary!.name)) {
     scenarioTableStore.selectedRows = [...scenarioTableStore.selectedRows, selectedScenarioSummary]
   }

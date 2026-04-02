@@ -27,7 +27,7 @@
           <div
             class="flex items-center justify-between border-l border-solid p-2 border-gray-200 w-20 h-10"
             :class="{
-              'border-red-500': hasError,
+              'border-red-600 dark:border-red-400': hasError,
             }"
           >
             <input
@@ -109,19 +109,22 @@ const emit = defineEmits<{
   (e: 'update:formSelectModelValue', v: string): void
 }>()
 
+const inputFieldValidationSchema = toRef(props, 'inputFieldValidationSchema')
+const selectFieldValidationSchema = toRef(props, 'selectFieldValidationSchema')
+
 const { value: inputValue, errorMessage: inputErrorMessage } = useField<string>(
   () => props.formInputControlName,
-  props.inputFieldValidationSchema,
+  inputFieldValidationSchema,
   {
     initialValue: props.formInputModelValue,
-  }
+  },
 )
 const { value: selectValue, errorMessage: selectErrorMessage } = useField<string>(
   () => props.formSelectControlName,
-  props.selectFieldValidationSchema,
+  selectFieldValidationSchema,
   {
     initialValue: props.formSelectModelValue,
-  }
+  },
 )
 
 const optionLabelKey = computed(() => props.labelKey ?? 'label')
@@ -130,7 +133,7 @@ const optionValueKey = computed(() => props.valueKey ?? 'value')
 const hasError = computed(() => (inputErrorMessage.value || selectErrorMessage.value ? true : false))
 
 const selectedOptionLabel = computed(
-  () => props.options.find((option) => option[optionValueKey.value] === selectValue.value)?.label
+  () => props.options.find((option) => option[optionValueKey.value] === selectValue.value)?.label,
 )
 
 const debouncedInputChange = debounce((newValue: string) => {

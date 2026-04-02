@@ -1,36 +1,37 @@
 /* Date picker */
 :root {
   .dp__theme_light {
-    --dp-primary-color: #39BABC;
-    --dp-hover-color: #EBF9F9;
+    --dp-primary-color: #39babc;
+    --dp-hover-color: #ebf9f9;
     --dp-background-color: #fff;
     --dp-primary-disabled-color: #939b9d;
-    --dp-border-color: #C1C6CD;
-    --dp-border-color-hover: #39BABC;
-    --dp-border-color-focus: #39BABC;
+    --dp-border-color: #c1c6cd;
+    --dp-border-color-hover: #39babc;
+    --dp-border-color-focus: #39babc;
 
     .dp__input {
       &:hover {
-        background-color: #EBF9F9;
+        background-color: #ebf9f9;
       }
     }
   }
 
   .dp__theme_dark {
-    --dp-background-color: #272B30;
-    --dp-primary-color: #39BABC;
-    --dp-border-color: #C1C6CD;
-    --dp-border-color-hover: #39BABC;
-    --dp-border-color-focus: #39BABC;
+    --dp-background-color: #272b30;
+    --dp-primary-color: #39babc;
+    --dp-border-color: #c1c6cd;
+    --dp-border-color-hover: #39babc;
+    --dp-border-color-focus: #39babc;
 
     .dp__input {
       &:hover {
-        background-color: #3B4149;
+        background-color: #3b4149;
       }
     }
 
-    .dp__arrow_top, .dp__menu {
-      background-color: #1D2024;
+    .dp__arrow_top,
+    .dp__menu {
+      background-color: #1d2024;
     }
   }
 
@@ -44,4 +45,41 @@
       border-color: #ff7875;
     }
   }
+}
+
+/* Override apex chart download option css in dark theme */
+
+/* Dark theme */
+.dark .apexcharts-toolbar {
+  .apexcharts-zoomin-icon svg,
+  .apexcharts-zoomout-icon svg,
+  .apexcharts-reset-icon svg {
+    fill: #c1c6cd;
+  }
+
+  .apexcharts-zoomin-icon:hover svg,
+  .apexcharts-zoomout-icon:hover svg,
+  .apexcharts-reset-icon:hover svg {
+    fill: #dadde1 !important;
+  }
+}
+
+.dark .apexcharts-menu-icon svg {
+  fill: #c1c6cd;
+}
+
+.dark .apexcharts-menu-icon:hover svg {
+  fill: #dadde1 !important;
+}
+
+.dark .apexcharts-menu-item.exportSVG,
+.dark .apexcharts-menu-item.exportPNG {
+  background: #1e293b;
+  color: #f1f5f9;
+}
+
+.dark .apexcharts-menu-item.exportSVG:hover,
+.dark .apexcharts-menu-item.exportPNG:hover {
+  background: #334155;
+  color: #fff;
 }

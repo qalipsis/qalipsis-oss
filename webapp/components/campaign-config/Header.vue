@@ -206,7 +206,7 @@ const _executeCampaign = async () => {
           {
             minionsCount: defaultStage.minMinionsCount,
             duration: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minDuration),
-            startDuration: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minStartDuration),
+            rampUpDuration: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minStartDuration),
             resolution: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minResolution),
           },
         ],

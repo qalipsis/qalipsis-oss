@@ -39,6 +39,16 @@ export class TimeframeHelper {
     }
   }
 
+  static toMs = (value: number, unit: TimeframeUnit): number => {
+    const UNIT_MAP = { MS: 1, SEC: 1_000, MIN: 60_000, HR: 3_600_000 } as const
+    return value * UNIT_MAP[unit]
+  }
+
+  static fromMs = (ms: number, unit: TimeframeUnit): number => {
+    const UNIT_MAP = { MS: 1, SEC: 1_000, MIN: 60_000, HR: 3_600_000 } as const
+    return ms / UNIT_MAP[unit]
+  }
+
   static getTimezoneOptions = (): FormMenuOption[] => {
     return Intl.supportedValuesOf('timeZone').map((timezone) => ({
       label: timezone,

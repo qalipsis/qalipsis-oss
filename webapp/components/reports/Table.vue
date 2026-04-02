@@ -1,24 +1,24 @@
 <template>
   <BaseTable
-      :data-source="dataSource"
-      :table-column-configs="ReportsTableConfig.TABLE_COLUMNS"
-      :total-elements="totalElements"
-      :page-size="pageSize"
-      :row-selection-enabled="true"
-      :row-all-selection-enabled="true"
-      :current-page-index="currentPageIndex"
-      row-key="reference"
-      row-class="group"
-      @sorter-change="handleSorterChange"
-      @page-change="handlePaginationChange"
-      @selectionChange="handleSelectionChange"
-      @refresh="handleRefreshBtnClick"
+    :data-source="dataSource"
+    :table-column-configs="ReportsTableConfig.TABLE_COLUMNS"
+    :total-elements="totalElements"
+    :page-size="pageSize"
+    :row-selection-enabled="true"
+    :row-all-selection-enabled="true"
+    :current-page-index="currentPageIndex"
+    row-key="reference"
+    row-class="group"
+    @sorter-change="handleSorterChange"
+    @page-change="handlePaginationChange"
+    @selectionChange="handleSelectionChange"
+    @refresh="handleRefreshBtnClick"
   >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'displayName'">
         <div
-            class="cursor-pointer hover:text-primary-500"
-            @click="handleReportNameClick(record as ReportTableData)"
+          class="cursor-pointer hover:text-primary-500"
+          @click="handleReportNameClick(record as ReportTableData)"
         >
           <span>{{ record.displayName }}</span>
         </div>
@@ -29,8 +29,8 @@
         <PopoverButton class="outline-none">
           <div class="flex items-center invisible group-hover:visible">
             <BaseIcon
-                icon="qls-icon-menu"
-                class="text-2xl hover:text-primary-500 text-gray-700"
+              icon="qls-icon-menu"
+              class="text-2xl hover:text-primary-500 text-gray-700 dark:text-gray-200"
             />
           </div>
         </PopoverButton>
@@ -38,12 +38,12 @@
           <PopoverButton class="outline-none w-full">
             <div :class="TailwindClassHelper.menuWrapperBaseClass">
               <div
-                  :class="TailwindClassHelper.menuItemBaseClass"
-                  @click="handleDownloadBtnClick(record)"
+                :class="TailwindClassHelper.menuItemBaseClass"
+                @click="handleDownloadBtnClick(record)"
               >
                 <BaseIcon
-                    icon="qls-icon-document"
-                    class="text-xl"
+                  icon="qls-icon-document"
+                  class="text-xl"
                 />
                 <span class="pl-2"> Download </span>
               </div>
@@ -52,12 +52,12 @@
           <PopoverButton class="outline-none w-full">
             <div :class="TailwindClassHelper.menuWrapperBaseClass">
               <div
-                  :class="TailwindClassHelper.menuItemBaseClass"
-                  @click="handleDeleteBtnClick(record as ReportTableData)"
+                :class="TailwindClassHelper.menuItemBaseClass"
+                @click="handleDeleteBtnClick(record as ReportTableData)"
               >
                 <BaseIcon
-                    icon="qls-icon-delete"
-                    class="text-xl"
+                  icon="qls-icon-delete"
+                  class="text-xl"
                 />
                 <span class="pl-2"> Delete </span>
               </div>
@@ -68,20 +68,20 @@
     </template>
   </BaseTable>
   <ReportsDeleteConfirmationModal
-      v-model:open="modalOpen"
-      :reportReferences="reportReferences"
-      :modalContent="deleteModalContent"
+    v-model:open="modalOpen"
+    :reportReferences="reportReferences"
+    :modalContent="deleteModalContent"
   />
 </template>
 
 <script setup lang="ts">
-import {Popover, PopoverButton, PopoverPanel} from '@headlessui/vue'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 
 const userStore = useUserStore()
 const toastStore = useToastStore()
 const reportsTableStore = useReportsTableStore()
-const {downloadReport} = useReportApi()
-const {dataSource, totalElements, currentPageIndex, pageSize} = storeToRefs(reportsTableStore)
+const { downloadReport } = useReportApi()
+const { dataSource, totalElements, currentPageIndex, pageSize } = storeToRefs(reportsTableStore)
 
 const reportReferences = ref<string[]>([])
 const deleteModalContent = ref('')
@@ -136,7 +136,7 @@ const _fetchTableData = async () => {
     await reportsTableStore.fetchReportsTableDataSource()
   } catch (error) {
     console.log(error)
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
 
@@ -144,7 +144,7 @@ const handleDownloadBtnClick = async (reportTableData: ReportTableData) => {
   try {
     await downloadReport(reportTableData.reference)
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
 </script>

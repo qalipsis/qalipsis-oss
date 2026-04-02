@@ -56,7 +56,8 @@ const debouncedInputChange = debounce((newValue: string) => {
   emit('update:modelValue', newValue)
 }, 300)
 
-const {value: inputValue, errorMessage} = useField<string>(() => props.formControlName, props.fieldValidationSchema, {
+const fieldValidationSchema = toRef(props, 'fieldValidationSchema')
+const {value: inputValue, errorMessage} = useField<string>(() => props.formControlName, fieldValidationSchema, {
   initialValue: props.modelValue,
 })
 const hasError = computed(() => (errorMessage.value ? true : false))

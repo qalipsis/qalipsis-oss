@@ -2,71 +2,72 @@
   <section class="w-full dark:text-gray-100 dark:bg-gray-900 rounded-lg">
     <table class="w-full text-sm">
       <thead class="border-b border-solid border-gray-100 dark:border-gray-700">
-      <tr>
-        <th
+        <tr>
+          <th
             v-if="rowSelectionEnabled"
             class="w-9"
-        >
-          <div class="p-2">
-            <BaseTableCheckbox
+          >
+            <div class="p-2">
+              <BaseTableCheckbox
                 v-if="rowAllSelectionEnabled"
                 value="selectAll"
                 v-model="rowAllSelectionChecked"
                 @update:model-value="handleRowAllSelectionChange"
                 :disabled="disabledRowAllSelection()"
                 :indeterminate="!rowAllSelectionChecked && currentPageSelectedRowKeys.length > 0"
-            ></BaseTableCheckbox>
-          </div>
-        </th>
-        <template
+              ></BaseTableCheckbox>
+            </div>
+          </th>
+          <template
             v-for="tableColumnConfig in tableColumnConfigs"
             :key="tableColumnConfig.key"
-        >
-          <th
+          >
+            <th
               class="group"
+              :style="tableColumnConfig.width ? { width: tableColumnConfig.width } : {}"
               :class="{
                 'hover:bg-primary-50 dark:hover:bg-gray-800 cursor-pointer': tableColumnConfig.sortingEnabled,
               }"
-          >
-            <div class="flex items-center justify-between">
-              <div
+            >
+              <div class="flex items-center justify-between">
+                <div
                   class="flex flex-grow p-4 items-center justify-between group"
                   @click="tableColumnConfig.sortingEnabled && handleSorterClick(tableColumnConfig.key)"
-              >
+                >
                   <span class="text-base font-semibold">
                     {{ tableColumnConfig.title }}
                   </span>
-                <BaseTableSorter
+                  <BaseTableSorter
                     v-if="tableColumnConfig.sortingEnabled"
                     :sorter-key="tableColumnConfig.key"
                     :active-sorter-key="activeSorterKey"
                     :active-sorter-direction="activeSorterDirection"
-                ></BaseTableSorter>
+                  ></BaseTableSorter>
+                </div>
+                <div class="h-5 border-r border-solid border-gray-200 group-last:border-r-0"></div>
               </div>
-              <div class="h-5 border-r border-solid border-gray-200 group-last:border-r-0"></div>
-            </div>
-          </th>
-        </template>
-        <th
+            </th>
+          </template>
+          <th
             v-if="!refreshHidden || $slots.actionCell"
-            class="w-40 px-2"
-        >
-          <div
+            class="w-12 px-2"
+          >
+            <div
               class="flex items-center cursor-pointer"
               @click="emit('refresh')"
-          >
-            <BaseTooltip text="Refresh">
-              <BaseIcon
+            >
+              <BaseTooltip text="Refresh">
+                <BaseIcon
                   icon="qls-icon-refresh"
                   class="text-2xl text-primary-900 dark:text-gray-100 hover:text-primary-500"
-              />
-            </BaseTooltip>
-          </div>
-        </th>
-      </tr>
+                />
+              </BaseTooltip>
+            </div>
+          </th>
+        </tr>
       </thead>
       <tbody>
-      <tr
+        <tr
           v-for="record in displayRows"
           class="hover:bg-gray-50 dark:hover:bg-gray-800"
           :key="record[rowKey]"
@@ -74,54 +75,54 @@
             currentPageSelectedRowKeys.includes(record[rowKey]) ? 'bg-primary-50 dark:bg-gray-800' : '',
             rowClass ?? '',
           ]"
-      >
-        <td v-if="rowSelectionEnabled">
-          <div class="p-2">
-            <BaseTableCheckbox
+        >
+          <td v-if="rowSelectionEnabled">
+            <div class="p-2">
+              <BaseTableCheckbox
                 ref="tableRowCheckboxes"
                 v-model="currentPageSelectedRowKeys"
                 :value="record[rowKey]"
                 :disabled="disableRowSelection(record)"
                 @update:model-value="handleRowSelectionChange(record[rowKey])"
-            ></BaseTableCheckbox>
-          </div>
-        </td>
-        <td
+              ></BaseTableCheckbox>
+            </div>
+          </td>
+          <td
             v-for="tableColumnConfig in tableColumnConfigs"
             :key="tableColumnConfig.key"
             class="p-4"
-        >
-          <slot
+          >
+            <slot
               name="bodyCell"
               :record="record"
               :column="tableColumnConfig"
-          >
-            <div>
-              {{ record[tableColumnConfig.key] }}
-            </div>
-          </slot>
-        </td>
-        <td
+            >
+              <div>
+                {{ record[tableColumnConfig.key] }}
+              </div>
+            </slot>
+          </td>
+          <td
             class="px-2"
             v-if="$slots.actionCell"
-        >
-          <slot
+          >
+            <slot
               name="actionCell"
               :record="record"
-          ></slot>
-        </td>
-      </tr>
+            ></slot>
+          </td>
+        </tr>
       </tbody>
     </table>
     <div
-        v-if="displayRows.length === 0"
-        class="w-full h-32"
+      v-if="displayRows.length === 0"
+      class="w-full h-32"
     >
       <div class="h-full mt-10 text-gray-300">
         <div class="flex items-center justify-center">
           <BaseIcon
-              icon="qls-icon-document"
-              class="text-3xl"
+            icon="qls-icon-document"
+            class="text-3xl"
           >
           </BaseIcon>
         </div>
@@ -131,14 +132,14 @@
       </div>
     </div>
     <div
-        v-if="displayRows.length > 0"
-        class="my-1"
+      v-if="displayRows.length > 0"
+      class="my-1"
     >
       <BaseTablePaginator
-          :page-size="pageSize"
-          :total-elements="totalElements"
-          :current-page-index="currentPageIndex"
-          @page-change="handlePageChange($event)"
+        :page-size="pageSize"
+        :total-elements="totalElements"
+        :current-page-index="currentPageIndex"
+        @page-change="handlePageChange($event)"
       ></BaseTablePaginator>
     </div>
   </section>
@@ -253,16 +254,16 @@ const activeSorterKey = ref('')
 const activeSorterDirection = ref<'' | SortingDirection>('')
 
 watch(
-    () => [props.dataSource, props.selectedRowKeys],
-    () => {
-      allSelectedRowKeys.value = props.selectedRowKeys ? [...props.selectedRowKeys] : []
-      currentPageSelectedRowKeys.value = props.dataSource
-          .map((rowKey) => rowKey[props.rowKey])
-          .filter((rowKey) => allSelectedRowKeys.value.includes(rowKey) || props.selectedRowKeys?.includes(rowKey))
-      rowAllSelectionChecked.value = currentPageSelectedRowKeys.value.length === props.dataSource.length
-      _updateDisplayRows()
-      _updateCachedRows()
-    }
+  () => [props.dataSource, props.selectedRowKeys],
+  () => {
+    allSelectedRowKeys.value = props.selectedRowKeys ? [...props.selectedRowKeys] : []
+    currentPageSelectedRowKeys.value = props.dataSource
+      .map((rowKey) => rowKey[props.rowKey])
+      .filter((rowKey) => allSelectedRowKeys.value.includes(rowKey) || props.selectedRowKeys?.includes(rowKey))
+    rowAllSelectionChecked.value = currentPageSelectedRowKeys.value.length === props.dataSource.length
+    _updateDisplayRows()
+    _updateCachedRows()
+  },
 )
 
 const disabledRowAllSelection = () => {
@@ -381,7 +382,7 @@ const _updateCachedRows = () => {
 
 const _sortDisplayRowsFromDataSource = (sorter: TableSorter | null) => {
   if (sorter) {
-    const {key, direction} = sorter
+    const { key, direction } = sorter
     const sortedRows = displayRows.value.sort((a, b) => a[key].localeCompare(b[key]))
     displayRows.value = direction === 'desc' ? sortedRows.reverse() : sortedRows
   } else {

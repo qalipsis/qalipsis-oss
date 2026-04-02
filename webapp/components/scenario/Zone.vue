@@ -18,7 +18,6 @@
             :form-control-name="`zones[${index}].share`"
             :field-validation-schema="zoneSchema.share"
             :disabled="disabled"
-            @input="emit('zoneSharedInputChange', fields[index].value.share)"
           />
         </div>
         <div
@@ -48,10 +47,6 @@ const props = defineProps<{
   zoneForm?: ZoneForm
 }>()
 
-const emit = defineEmits<{
-  (e: 'zoneSharedInputChange', v: number | null): void
-}>()
-
 const { remove, fields } = useFieldArray<ZoneForm>('zones')
 
 const zoneSchema = {
@@ -77,6 +72,5 @@ const zoneSchema = {
 
 const handleDeleteBtnClick = () => {
   remove(props.index)
-  emit('zoneSharedInputChange', null)
 }
 </script>
