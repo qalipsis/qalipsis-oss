@@ -1,86 +1,104 @@
 <template>
   <div>
     <BaseTable
-        :data-source="dataSource"
-        :table-column-configs="CampaignsTableConfig.TABLE_COLUMNS"
-        :totalElements="totalElements"
-        :pageSize="pageSize"
-        :selected-row-keys="selectedRowKeys"
-        :currentPageIndex="currentPageIndex"
-        :row-all-selection-enabled="true"
-        :row-selection-enabled="rowSelectionEnabled"
-        :disable-row="disableRow"
-        row-class="group"
-        rowKey="key"
-        @sorter-change="handleSorterChange"
-        @page-change="handlePaginationChange"
-        @selectionChange="handleSelectionChange"
-        @refresh="handleRefreshBtnClick"
+      :data-source="dataSource"
+      :table-column-configs="CampaignsTableConfig.TABLE_COLUMNS"
+      :totalElements="totalElements"
+      :pageSize="pageSize"
+      :selected-row-keys="selectedRowKeys"
+      :currentPageIndex="currentPageIndex"
+      :row-all-selection-enabled="true"
+      :row-selection-enabled="rowSelectionEnabled"
+      :disable-row="disableRow"
+      row-class="group"
+      rowKey="key"
+      @sorter-change="handleSorterChange"
+      @page-change="handlePaginationChange"
+      @selectionChange="handleSelectionChange"
+      @refresh="handleRefreshBtnClick"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
           <div
-              :class="{ 'cursor-pointer hover:text-primary-500': actionsEnabled }"
-              class="flex items-center"
-              @click="handleNameClick(record as CampaignTableData)"
+            :class="{ 'cursor-pointer hover:text-primary-500': actionsEnabled }"
+            class="flex items-center"
+            @click="handleNameClick(record as CampaignTableData)"
           >
             <span>{{ record.name }}</span>
           </div>
         </template>
-        <template v-if="column.key === 'creation'">
-          <span>{{ record.creationTime }}</span>
+        <template v-if="column.key === 'startTime'">
+          <span>{{ record.startTime }}</span>
         </template>
         <template v-if="column.key === 'result'">
           <BaseTag
-              :text="record.statusTag.text"
-              :text-css-class="record.statusTag.textCssClass"
-              :background-css-class="record.statusTag.backgroundCssClass"
+            :text="record.statusTag.text"
+            :text-css-class="record.statusTag.textCssClass"
+            :background-css-class="record.statusTag.backgroundCssClass"
           />
         </template>
       </template>
       <template #actionCell="{ record }">
         <div
-            v-if="actionsEnabled && record.status === 'SCHEDULED'"
-            class="cursor-pointer"
+          v-if="actionsEnabled && (record.status === 'SCHEDULED' || finishedStatuses.includes(record.status))"
+          class="cursor-pointer"
         >
           <Popover class="relative">
             <PopoverButton class="outline-none">
               <div class="flex items-center invisible group-hover:visible">
                 <BaseIcon
-                    icon="qls-icon-menu"
-                    class="text-2xl hover:text-primary-500 text-gray-700"
+                  icon="qls-icon-menu"
+                  class="text-2xl hover:text-primary-500 text-gray-700 dark:text-gray-200"
                 />
               </div>
             </PopoverButton>
             <PopoverPanel :class="TailwindClassHelper.menuPanelBaseClass">
-              <PopoverButton class="outline-none">
-                <div :class="TailwindClassHelper.menuWrapperBaseClass">
-                  <div
+              <template v-if="record.status === 'SCHEDULED'">
+                <PopoverButton class="outline-none">
+                  <div :class="TailwindClassHelper.menuWrapperBaseClass">
+                    <div
                       :class="TailwindClassHelper.menuItemBaseClass"
                       @click="handleRunNowBtnClick(record)"
-                  >
-                    <BaseIcon
+                    >
+                      <BaseIcon
                         icon="qls-icon-time"
                         class="text-xl"
-                    />
-                    <span class="pl-2"> Run now </span>
+                      />
+                      <span class="pl-2"> Run now </span>
+                    </div>
                   </div>
-                </div>
-              </PopoverButton>
-              <PopoverButton class="outline-none">
-                <div :class="TailwindClassHelper.menuWrapperBaseClass">
-                  <div
+                </PopoverButton>
+                <PopoverButton class="outline-none">
+                  <div :class="TailwindClassHelper.menuWrapperBaseClass">
+                    <div
                       :class="TailwindClassHelper.menuItemBaseClass"
                       @click="handleAbortBtnClick(record)"
-                  >
-                    <BaseIcon
+                    >
+                      <BaseIcon
                         icon="qls-icon-delete"
                         class="text-xl"
-                    />
-                    <span class="pl-2"> Abort </span>
+                      />
+                      <span class="pl-2"> Abort </span>
+                    </div>
                   </div>
-                </div>
-              </PopoverButton>
+                </PopoverButton>
+              </template>
+              <template v-if="finishedStatuses.includes(record.status)">
+                <PopoverButton class="outline-none">
+                  <div :class="TailwindClassHelper.menuWrapperBaseClass">
+                    <div
+                      :class="TailwindClassHelper.menuItemBaseClass"
+                      @click="handleReplayBtnClick(record)"
+                    >
+                      <BaseIcon
+                        icon="qls-icon-play"
+                        class="text-xl"
+                      />
+                      <span class="pl-2"> Replay </span>
+                    </div>
+                  </div>
+                </PopoverButton>
+              </template>
             </PopoverPanel>
           </Popover>
         </div>
@@ -96,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import {Popover, PopoverButton, PopoverPanel} from '@headlessui/vue'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 
 const props = defineProps<{
   actionsEnabled?: boolean
@@ -108,8 +126,10 @@ const props = defineProps<{
 const campaignsTableStore = useCampaignsTableStore()
 const toastStore = useToastStore()
 
-const {dataSource, totalElements, pageSize, currentPageIndex} = storeToRefs(campaignsTableStore)
-const {fetchCampaignConfig, createCampaign, abortCampaign} = useCampaignApi()
+const { dataSource, totalElements, pageSize, currentPageIndex } = storeToRefs(campaignsTableStore)
+const { fetchCampaignConfig, createCampaign, replayCampaign } = useCampaignApi()
+
+const finishedStatuses: ExecutionStatus[] = ['ABORTED', 'FAILED', 'SUCCESSFUL', 'WARNING']
 
 const selectedRowKeys = computed(() => campaignsTableStore.selectedRowKeys)
 
@@ -181,19 +201,6 @@ const handleCampaignAborted = async () => {
   await _fetchTableData()
 }
 
-// const handleConfirmAbortBtnClick = async () => {
-//   try {
-//     await abortCampaign(selectedCampaignTableData.key, true)
-//     await _fetchTableData()
-//     campaignAbortModalOpen.value = false
-//     toastStore.success({
-//       text: `The scheduled campaign "${selectedCampaignTableData.name}" has been successfully aborted`,
-//     })
-//   } catch (error) {
-//     toastStore.error({text: ErrorHelper.getErrorMessage(error)})
-//   }
-// }
-
 const handleRunNowBtnClick = async (campaignTableData: CampaignTableData) => {
   try {
     // Fetches the campaign config
@@ -203,7 +210,19 @@ const handleRunNowBtnClick = async (campaignTableData: CampaignTableData) => {
     // navigate to the campaign details
     navigateTo(`/campaigns/${campaign.key}`)
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
+  }
+}
+
+const handleReplayBtnClick = async (campaignTableData: CampaignTableData) => {
+  try {
+    // Replays the campaign
+    await replayCampaign(campaignTableData.key)
+
+    // Reloads table data
+    await _fetchTableData()
+  } catch (error) {
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
 
@@ -211,9 +230,9 @@ const handleNameClick = (campaignTableData: CampaignTableData) => {
   if (!props.actionsEnabled) return
 
   const pageLink =
-      campaignTableData.status === ExecutionStatusConstant.SCHEDULED
-          ? `/campaigns/config/${campaignTableData.key}`
-          : `campaigns/${campaignTableData.key}`
+    campaignTableData.status === ExecutionStatusConstant.SCHEDULED
+      ? `/campaigns/config/${campaignTableData.key}`
+      : `campaigns/${campaignTableData.key}`
 
   navigateTo(pageLink)
 }
@@ -222,7 +241,7 @@ const _fetchTableData = async () => {
   try {
     await campaignsTableStore.fetchCampaignsTableDataSource(props.extraQueryParams)
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
 </script>

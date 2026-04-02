@@ -346,7 +346,9 @@ export interface ExternalExecutionProfileConfiguration {
 export interface ExecutionProfileStage {
     minionsCount: number;
     duration: number;
-    startDuration: number;
+    durationUnit?: TimeframeUnit;
+    rampUpDuration: number;
+    rampUpDurationUnit?: TimeframeUnit;
     resolution: number;
 }
 

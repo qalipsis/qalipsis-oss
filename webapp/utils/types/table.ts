@@ -2,6 +2,8 @@ export interface TableColumnConfig {
     title: string;
     key: string;
     sortingEnabled?: boolean;
+    /** Column width as a percentage of the table width. Example: '40%' */
+    width?: string;
 }
 
 export interface TableSelection {
