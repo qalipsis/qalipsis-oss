@@ -1,25 +1,24 @@
 <template>
   <div class="flex items-center">
     <input
-        type="checkbox"
-        :id="formControlName"
-        :class="[TailwindClassHelper.checkBoxClass, TailwindClassHelper.checkBoxMarkerClass]"
-        :checked="checkboxValue"
-        v-model="checkboxValue"
-        :disabled="disabled"
-        @change="emit('change', checkboxValue)"
+      type="checkbox"
+      :id="formControlName"
+      :class="[TailwindClassConfig.checkBoxClass, TailwindClassConfig.checkBoxMarkerClass]"
+      v-model="checkboxValue"
+      :disabled="disabled"
+      @change="emit('change', checkboxValue)"
     />
     <label
-        class="ml-2 cursor-pointer"
-        :for="formControlName"
-    >{{ label }}</label
+      class="ml-2 cursor-pointer"
+      :for="formControlName"
+      >{{ label }}</label
     >
-    <FormErrorMessage :errorMessage="errorMessage"/>
+    <FormErrorMessage :errorMessage="errorMessage" />
   </div>
 </template>
 
 <script setup lang="ts">
-import {type TypedSchema, useField} from 'vee-validate'
+import { type TypedSchema, useField } from 'vee-validate'
 
 const props = defineProps<{
   label: string
@@ -31,8 +30,8 @@ const emit = defineEmits<{
   (e: 'change', v: boolean): void
 }>()
 
-const {value: checkboxValue, errorMessage} = useField<boolean>(
-    () => props.formControlName,
-    props.fieldValidationSchema
+const { value: checkboxValue, errorMessage } = useField<boolean>(
+  () => props.formControlName,
+  props.fieldValidationSchema,
 )
 </script>

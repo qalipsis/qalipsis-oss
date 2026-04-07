@@ -29,6 +29,7 @@ const props = defineProps<{
 
 const reportDetailsStore = useReportDetailsStore();
 const {fetchTimeSeriesAggregation} = useTimeSeriesApi();
+const toastStore = useToastStore();
 
 const tableData = ref<ReportDetailsTableData[]>([]);
 const preselectedDataSeriesReferences = ref<string[]>([]);
@@ -57,7 +58,10 @@ const handleDeleteBtnClick = () => {
 const handleSelectedDataSeriesChange = (dataSeriesOptions: DataSeriesOption[]) => {
   selectedDataSeriesOptions = dataSeriesOptions;
   const dataComponents = [...reportDetailsStore.dataComponents];
-  dataComponents[props.componentIndex].datas = dataSeriesOptions;
+  const component = dataComponents[props.componentIndex];
+  if (component) {
+    component.datas = dataSeriesOptions;
+  }
   reportDetailsStore.$patch({
     dataComponents: dataComponents
   })
@@ -76,7 +80,7 @@ const _updateTableData = async (dataSeriesOptions: DataSeriesOption[]) => {
     const timeSeriesAggregationResult = await fetchTimeSeriesAggregation(queryParam);
     tableData.value = ReportHelper.toReportDetailsTableData(timeSeriesAggregationResult, dataSeriesOptions, reportDetailsStore.activeCampaignOptions);
   } catch (error) {
-    console.error(error)
+    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
   }
 }
 

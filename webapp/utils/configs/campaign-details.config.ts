@@ -1,7 +1,5 @@
-import {TimeoutTypeConstant} from '../types/campaign';
-
-export class CampaignDetailsConfig {
-    static CAMPAIGN_TIMEOUT_OPTIONS = [
+export const CampaignDetailsConfig = {
+    CAMPAIGN_TIMEOUT_OPTIONS: [
         {
             label: "None",
             value: TimeoutTypeConstant.NONE,
@@ -14,9 +12,9 @@ export class CampaignDetailsConfig {
             label: "Hard Timeout",
             value: TimeoutTypeConstant.HARD,
         },
-    ];
+    ],
 
-    static REPEAT_TIME_RANGE_OPTIONS = [
+    REPEAT_TIME_RANGE_OPTIONS: [
         {
             label: "Day",
             value: "HOURLY",
@@ -29,17 +27,17 @@ export class CampaignDetailsConfig {
             label: "Month",
             value: "MONTHLY",
         },
-    ];
+    ],
 
-    static HOURLY_REPEAT_OPTIONS = Array.from(
+    HOURLY_REPEAT_OPTIONS: Array.from(
         {length: 24},
         (_, i) => i + 1
     ).map((num) => ({
         label: num.toString(),
         value: num.toString(),
-    }));
+    })),
 
-    static DAILY_REPEAT_OPTIONS = Object.entries({
+    DAILY_REPEAT_OPTIONS: Object.entries({
         Mo: 0,
         Tu: 1,
         We: 2,
@@ -50,19 +48,18 @@ export class CampaignDetailsConfig {
     }).map(([key, value]) => ({
         label: key,
         value: value.toString(),
-    }));
+    })),
 
-    static MONTHLY_REPEAT_OPTIONS = Array.from(
+    MONTHLY_REPEAT_OPTIONS: Array.from(
         {length: 31},
         (_, i) => i + 1
     ).map((num) => ({
         label: num.toString(),
         value: num.toString(),
-    }));
+    })),
 
-    static RELATIVE_DAY_OF_MONTH_OPTIONS = Array.from({length: 7}, (_, i) => i - 7).map((num) => ({
+    RELATIVE_DAY_OF_MONTH_OPTIONS: Array.from({length: 7}, (_, i) => i - 7).map((num) => ({
         label: num.toString(),
         value: num.toString(),
-    }));
-
+    })),
 }

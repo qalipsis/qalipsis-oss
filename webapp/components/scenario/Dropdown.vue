@@ -1,6 +1,6 @@
 <template>
   <Menu>
-    <div :class="TailwindClassHelper.formDropdownClass">
+    <div :class="TailwindClassConfig.formDropdownClass">
       <MenuButton :disabled="hasOnlyOneScenarioOption" class="outline-none">
         <div
             class="h-10 flex items-center"
@@ -23,16 +23,16 @@
         </div>
       </MenuButton>
       <transition
-          :enter-active-class="TailwindClassHelper.formDropdownTransitionEnterActiveClass"
-          :enter-from-class="TailwindClassHelper.formDropdownTransitionEnterFromClass"
-          :enter-to-class="TailwindClassHelper.formDropdownTransitionEnterToClass"
-          :leave-active-class="TailwindClassHelper.formDropdownTransitionLeaveActiveClass"
-          :leave-from-class="TailwindClassHelper.formDropdownTransitionLeaveFromClass"
-          :leave-to-class="TailwindClassHelper.formDropdownTransitionLeaveToClass"
+          :enter-active-class="TailwindClassConfig.formDropdownTransitionEnterActiveClass"
+          :enter-from-class="TailwindClassConfig.formDropdownTransitionEnterFromClass"
+          :enter-to-class="TailwindClassConfig.formDropdownTransitionEnterToClass"
+          :leave-active-class="TailwindClassConfig.formDropdownTransitionLeaveActiveClass"
+          :leave-from-class="TailwindClassConfig.formDropdownTransitionLeaveFromClass"
+          :leave-to-class="TailwindClassConfig.formDropdownTransitionLeaveToClass"
       >
         <MenuItems
             class="w-72"
-            :class="TailwindClassHelper.formDropdownPanelClass"
+            :class="TailwindClassConfig.formDropdownPanelClass"
         >
           <MenuItem
               v-if="!hasOnlyOneScenarioOption"
@@ -43,10 +43,10 @@
                 class="flex items-center cursor-pointer"
                 :class="[
                   isScenarioSummarySelected
-                    ? TailwindClassHelper.formDropdownOptionActiveClass
+                    ? TailwindClassConfig.formDropdownOptionActiveClass
                     : '',
-                  TailwindClassHelper.formDropdownOptionClass,
-                  TailwindClassHelper.formDropdownOptionHoverClass
+                  TailwindClassConfig.formDropdownOptionClass,
+                  TailwindClassConfig.formDropdownOptionHoverClass
                 ]"
             >
               {{ ScenarioDetailsConfig.SCENARIO_SUMMARY_NAME }}
@@ -65,10 +65,10 @@
               class="flex items-center mb-1 cursor-pointer"
               :class="[
                 scenario.isActive
-                  ? TailwindClassHelper.formDropdownOptionActiveClass
+                  ? TailwindClassConfig.formDropdownOptionActiveClass
                   : '',
-                TailwindClassHelper.formDropdownOptionClass,
-                TailwindClassHelper.formDropdownOptionHoverClass
+                TailwindClassConfig.formDropdownOptionClass,
+                TailwindClassConfig.formDropdownOptionHoverClass
               ]"
               @click="handleScenarioOptionClick(scenario)"
             >
@@ -110,8 +110,10 @@ onMounted(() => {
 
   // Sets the selected scenario options to be the only one scenario option.
   if (hasOnlyOneScenarioOption.value) {
-    selectedScenarioNames.value = [props.scenarioNames[0]];
-    selectedScenarioNamesLabel.value = props.scenarioNames[0];
+    const onlyScenarioName = props.scenarioNames[0]!;
+    selectedScenarioNames.value = [onlyScenarioName];
+    selectedScenarioNamesLabel.value = onlyScenarioName;
+
     return;
   }
 

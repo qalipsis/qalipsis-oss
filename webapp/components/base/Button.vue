@@ -11,8 +11,7 @@
       class="pr-2"
       :class="btnTextClass"
       :icon="icon"
-    >
-    </BaseIcon>
+    />
     <span :class="btnTextClass">
       {{ text }}
     </span>
@@ -50,7 +49,7 @@ const filledButtonBgThemeClass: { [theme in ThemeType]: string } = {
 
 const props = defineProps<{
   text: string
-  theme?: 'primary' | 'success' | 'error' | 'warning' | 'info'
+  theme?: ThemeType
   btnStyle?: 'outlined' | 'filled'
   icon?: string
   disabled?: boolean
@@ -63,12 +62,10 @@ const btnBgThemeClass = computed(() => _getBtnBgThemeClass())
 const btnTextClass = computed(() => _getBtnTextClass())
 
 const _getBtnBgThemeClass = (): string => {
-  const theme = _getBtnTheme()
+  const theme = props.theme ?? 'primary'
   switch (props.btnStyle) {
     case 'outlined':
-      return outlinedBtnBgThemeClass[theme]  
-    case 'filled':
-      return filledButtonBgThemeClass[theme]
+      return outlinedBtnBgThemeClass[theme]
     default:
       return filledButtonBgThemeClass[theme]
   }
@@ -76,32 +73,21 @@ const _getBtnBgThemeClass = (): string => {
 
 const _getBtnTextClass = (): string => {
   switch (props.btnStyle) {
-    case 'outlined':
-      const theme = _getBtnTheme()
-      return outlineButtonTextThemeClass[theme]  
-    case 'filled':
-      return filledBtnBaseTextClass
+    case 'outlined': {
+      const theme = props.theme ?? 'primary'
+      return outlineButtonTextThemeClass[theme]
+    }
     default:
       return filledBtnBaseTextClass
   }
-}
-
-const _getBtnTheme = (): ThemeType => {
-  return props.theme ?? 'primary'
 }
 
 const _getBtnBaseClass = (): string => {
   switch (props.btnStyle) {
     case 'outlined':
-      return outlinedBtnBaseClass  
-    case 'filled':
-      return filledBtnBaseClass
+      return outlinedBtnBaseClass
     default:
       return filledBtnBaseClass
   }
 }
-
-
-
-
 </script>

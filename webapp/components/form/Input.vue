@@ -1,36 +1,36 @@
 <template>
   <div>
     <FormLabel
-        :text="label"
-        :hasError="hasError"
+      :text="label"
+      :hasError="hasError"
     />
     <div
-        :class="[
-        TailwindClassHelper.formInputWrapperClass,
-        hasError ? TailwindClassHelper.formInputWrapperErrorClass : TailwindClassHelper.formInputWrapperActiveClass,
+      :class="[
+        TailwindClassConfig.formInputWrapperClass,
+        hasError ? TailwindClassConfig.formInputWrapperErrorClass : TailwindClassConfig.formInputWrapperActiveClass,
       ]"
     >
       <input
-          :class="TailwindClassHelper.formInputClass"
-          :id="formControlName"
-          :value="inputValue"
-          :type="inputFormControlType"
-          :placeholder="placeholder"
-          :disabled="disabled"
-          @input="handleInputChange(($event.target as HTMLInputElement).value)"
+        :class="TailwindClassConfig.formInputClass"
+        :id="formControlName"
+        :value="inputValue"
+        :type="type ?? 'text'"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        @input="debouncedInputChange(($event.target as HTMLInputElement).value)"
       />
       <span
-          v-if="suffix"
-          class="text-gray-400"
-      >{{ suffix }}</span
+        v-if="suffix"
+        class="text-gray-400"
+        >{{ suffix }}</span
       >
     </div>
-    <FormErrorMessage :errorMessage="errorMessage"/>
+    <FormErrorMessage :errorMessage="errorMessage" />
   </div>
 </template>
 
 <script setup lang="ts">
-import {type TypedSchema, useField} from 'vee-validate'
+import { type TypedSchema, useField } from 'vee-validate'
 
 const props = defineProps<{
   label: string
@@ -42,8 +42,6 @@ const props = defineProps<{
   suffix?: string
   disabled?: boolean
 }>()
-
-const inputFormControlType = computed(() => props.type ?? 'text')
 
 const emit = defineEmits<{
   (e: 'input', v: string): void
@@ -57,12 +55,8 @@ const debouncedInputChange = debounce((newValue: string) => {
 }, 300)
 
 const fieldValidationSchema = toRef(props, 'fieldValidationSchema')
-const {value: inputValue, errorMessage} = useField<string>(() => props.formControlName, fieldValidationSchema, {
+const { value: inputValue, errorMessage } = useField<string>(() => props.formControlName, fieldValidationSchema, {
   initialValue: props.modelValue,
 })
-const hasError = computed(() => (errorMessage.value ? true : false))
-
-const handleInputChange = (newValue: string) => {
-  debouncedInputChange(newValue)
-}
+const hasError = computed(() => !!errorMessage.value)
 </script>

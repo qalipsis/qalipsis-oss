@@ -5,21 +5,19 @@
 </template>
 
 <script setup lang="ts">
-
 const props = defineProps<{
-  permissions: string[],
+  permissions: string[]
   requiredAll?: boolean
-}>();
-const userStore = useUserStore();
+}>()
+const userStore = useUserStore()
 
 const canViewContent = computed(() => {
   if (props.requiredAll) {
-    return userStore.permissions.every(permission => props.permissions.length ? props.permissions.includes(permission) : true);
+    return props.permissions.every((permission) => userStore.permissions.includes(permission))
   }
 
-  return userStore.permissions.some(permission => {
-    return props.permissions.length ? props.permissions.includes(permission) : true;
-  });
-});
+  if (!props.permissions.length) return true
 
+  return userStore.permissions.some((permission) => props.permissions.includes(permission))
+})
 </script>

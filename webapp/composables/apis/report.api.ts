@@ -4,10 +4,10 @@ export const useReportApi = () => {
   const { api$, get$, delete$, post$, put$ } = baseApi()
 
   /**
-   * Fetches the campaigns
+   * Fetches the reports
    *
    * @param pageQueryParams The query parameters
-   * @returns The page list of data series
+   * @returns The paginated list of reports
    */
   const fetchReports = async (pageQueryParams: PageQueryParams): Promise<Page<DataReport>> => {
     return get$<Page<DataReport>, any>('/reports', pageQueryParams)
@@ -32,14 +32,21 @@ export const useReportApi = () => {
    */
   const fetchReportDetails = async (reference: string): Promise<DataReport> => {
     const report = await get$<DataReport, unknown>(`/reports/${reference}`)
-    report.dataComponents = report.dataComponents ? report.dataComponents.map((d) => ({ ...d, id: Date.now() })) : []
+    report.dataComponents = report.dataComponents ? report.dataComponents.map((d: DataComponent) => ({ ...d, id: Date.now() })) : []
 
     return report
   }
 
+  /**
+   * Downloads a report as a PDF file.
+   * Triggers report generation, then polls the file endpoint (up to 20 retries, 500ms apart)
+   * until the file is ready, then initiates a browser download.
+   *
+   * @param reference The identifier of the report
+   */
   const downloadReport = async (reference: string): Promise<void> => {
     // Triggers the report generation
-    const reportTask = await post$<ReportTask, unknown>(`/reports/${reference}/render`, null)
+    const reportTask = await post$<ReportTask>(`/reports/${reference}/render`)
     // Download the report
     const blob = await api$<Blob>(`/reports/file/${reportTask.reference}`, {
       method: 'get',
@@ -73,8 +80,7 @@ export const useReportApi = () => {
    * @param reportReferences The report references to be deleted
    */
   const deleteReports = async (reportReferences: string[]): Promise<void> => {
-    const reportParams = `?report=${reportReferences.join(',')}`
-    return delete$(`/reports/${reportParams}`)
+    return delete$(`/reports?report=${reportReferences.join(',')}`)
   }
 
   return {

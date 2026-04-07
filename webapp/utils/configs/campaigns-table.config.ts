@@ -1,5 +1,5 @@
-export class CampaignsTableConfig {
-  static TABLE_COLUMNS: TableColumnConfig[] = [
+export const CampaignsTableConfig = {
+  TABLE_COLUMNS: [
     {
       title: 'Campaign',
       key: 'name',
@@ -23,5 +23,5 @@ export class CampaignsTableConfig {
       title: 'Elapsed time',
       key: 'elapsedTime',
     },
-  ]
+  ] as TableColumnConfig[],
 }

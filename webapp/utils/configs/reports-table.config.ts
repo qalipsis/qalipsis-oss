@@ -1,5 +1,5 @@
-export class ReportsTableConfig {
-    static TABLE_COLUMNS: TableColumnConfig[] = [
+export const ReportsTableConfig = {
+    TABLE_COLUMNS: [
         {
             title: 'Name',
             key: 'displayName',
@@ -14,5 +14,5 @@ export class ReportsTableConfig {
             title: 'Campaigns',
             key: 'concatenatedCampaignNames',
         },
-    ]
+    ] as TableColumnConfig[],
 }

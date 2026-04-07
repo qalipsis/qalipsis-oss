@@ -43,7 +43,7 @@
 const props = defineProps<{
   open: boolean,
   title: string,
-  messages: ReportMessage[];
+  messages: ReportMessageDisplay[];
 }>()
 
 const emit = defineEmits<{

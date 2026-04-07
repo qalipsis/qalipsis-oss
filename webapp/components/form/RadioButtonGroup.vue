@@ -40,24 +40,11 @@ const emit = defineEmits<{
 
 const { value: fieldValue, errorMessage } = useField<string>(() => props.formControlName)
 
-// Local reactive value for injection
-const selected = ref(fieldValue.value)
-
-// Sync vee-validate value → selected
-watch(
-  () => fieldValue.value,
-  (val) => {
-    selected.value = val
-  },
-)
-
-// Provide the radio group context
 provide('radioGroup', {
-  modelValue: selected,
+  modelValue: fieldValue,
   updateValue: (val: string) => {
-    selected.value = val
-    fieldValue.value = val // update vee-validate field
-    emit('change', val) // emit change event
+    fieldValue.value = val
+    emit('change', val)
   },
 })
 </script>

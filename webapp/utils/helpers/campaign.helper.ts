@@ -1,8 +1,6 @@
 import type { ApexOptions } from 'apexcharts'
 import { eachDayOfInterval, format, isSameDay, sub } from 'date-fns'
 import { DateTime } from 'luxon'
-import tinycolor from 'tinycolor2'
-import type { TagStyleClass } from '../types/common'
 
 const defaultTagClass: TagStyleClass = {
   backgroundCssClass: 'bg-gray-100 dark:bg-gray-700',
@@ -113,8 +111,8 @@ const renderCampaignDetailsChartTooltip: (options: any) => any = ({ seriesIndex,
       </div>`
 }
 
-export class CampaignHelper {
-  static toCampaignConfigForm(campaignConfig: CampaignConfiguration): CampaignConfigurationForm {
+export const CampaignHelper = {
+  toCampaignConfigForm(campaignConfig: CampaignConfiguration): CampaignConfigurationForm {
     const formattedTimeoutValue: FormattedTimeframe = campaignConfig.timeout
       ? TimeframeHelper.toFormattedTimeframe(campaignConfig.timeout)
       : { value: null, unit: TimeframeUnitConstant.MS }
@@ -129,8 +127,8 @@ export class CampaignHelper {
       timeoutType: timeoutType,
       durationValue: formattedTimeoutValue.value ? formattedTimeoutValue.value.toString() : '',
       durationUnit: formattedTimeoutValue.unit,
-      scheduled: campaignConfig.scheduledAt ? true : false,
-      repeatEnabled: campaignConfig.scheduling?.scheduling ? true : false,
+      scheduled: !!campaignConfig.scheduledAt,
+      repeatEnabled: !!campaignConfig.scheduling?.scheduling,
       repeatTimeRange: campaignConfig.scheduling?.scheduling ?? 'DAILY',
       repeatValues: campaignConfig.scheduling?.restrictions
         ? campaignConfig.scheduling?.restrictions.map((r) => r.toString())
@@ -142,9 +140,9 @@ export class CampaignHelper {
       timezone: campaignConfig.scheduling?.timeZone ?? '',
       scheduledTime: campaignConfig.scheduledAt ? DateTime.fromISO(campaignConfig.scheduledAt).toJSDate() : null,
     }
-  }
+  },
 
-  static toCampaignConfiguration(
+  toCampaignConfiguration(
     campaignName: string,
     campaignConfigForm: CampaignConfigurationForm,
     scenarioConfigFormMap: { [key: string]: ScenarioConfigurationForm },
@@ -152,7 +150,7 @@ export class CampaignHelper {
     const scenarios = Object.keys(scenarioConfigFormMap).reduce<{
       [key: string]: ScenarioRequest
     }>((acc, cur) => {
-      acc[cur] = ScenarioHelper.toScenarioRequest(scenarioConfigFormMap[cur])
+      acc[cur] = ScenarioHelper.toScenarioRequest(scenarioConfigFormMap[cur]!)
 
       return acc
     }, {})
@@ -192,9 +190,9 @@ export class CampaignHelper {
     }
 
     return campaignConfiguration
-  }
+  },
 
-  static toCampaignSummaryChartData(campaignSummary: CampaignSummaryResult[]): ChartData {
+  toCampaignSummaryChartData(campaignSummary: CampaignSummaryResult[]): ChartData {
     const xAxisEndDate = new Date()
     const xAxisStartDate = sub(new Date(), { days: 6 })
     const xAxisDayIntervals = eachDayOfInterval({
@@ -261,7 +259,6 @@ export class CampaignHelper {
     const failedDataSeries: number[] = []
 
     if (campaignSummary?.length > 0) {
-      // Prepares the successful and failed data series
       xAxisDayIntervals.forEach((day) => {
         const daySummary = campaignSummary.find((summary) => isSameDay(new Date(summary.start), day))
         successfulDataSeries.push(daySummary?.successful ?? 0)
@@ -282,20 +279,19 @@ export class CampaignHelper {
         },
       ],
     }
-  }
+  },
 
-  static toChartData(
+  toChartData(
     aggregationResult: { [key: string]: TimeSeriesAggregationResult[] },
     dataSeries: DataSeries[],
     campaignExecutionDetails: CampaignExecutionDetails,
   ): ChartData {
     const aggregations = Object.entries(aggregationResult)?.filter(([_, value]) => value.length)
     const chartDataSeries: ApexAxisChartSeries = []
-    const chartOptions: ApexOptions = ChartsConfig.DEFAULT_CHART_OPTIONS
+    const chartOptions: ApexOptions = ChartsConfig.getDefaultChartOptions()
     const yAxisConfigs: ApexYAxis[] = []
     chartOptions.tooltip!.custom = renderCampaignDetailsChartTooltip
 
-    // No aggregation result, returns an empty chart with the scheduled minions of the campaigns.
     if (!aggregations || aggregations?.length === 0) {
       chartOptions.yaxis = ChartHelper.getEmptyChartYAxisOptions(campaignExecutionDetails.scheduledMinions)
 
@@ -305,29 +301,10 @@ export class CampaignHelper {
       }
     }
 
-    // Prepares the data series for the chart
     aggregations.forEach(([key, value]) => {
-      const seriesDefinition = dataSeries.find((s) => s.reference === key)
-      const chartOptionData: ChartOptionData = {
-        dataSeriesName: seriesDefinition?.displayName ?? key,
-        dataSeriesColor:
-          seriesDefinition?.color && tinycolor(seriesDefinition?.color).isValid()
-            ? seriesDefinition?.color
-            : `${ColorsConfig.PURPLE_COLOR_HEX_CODE}`,
-        isDurationNanoField: seriesDefinition?.fieldName === SeriesDetailsConfig.DURATION_NANO_FIELD_NAME,
-        isMinionsCountSeries: key === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
-        decimal:
-          seriesDefinition?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
-            ? 0
-            : seriesDefinition?.reference === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
-              ? 6
-              : 2,
-      }
+      const chartOptionData = ChartHelper.toChartOptionData(key, dataSeries)
 
-      // The data series for the chart.
       const series = ChartHelper.getDataSeries(chartOptionData, value)
-
-      // The y axis config for the chart.
       const yAxisConfig: ApexYAxis = ChartHelper.getYAxisOptions(chartOptionData)
       chartDataSeries.push(series)
       yAxisConfigs.push(yAxisConfig)
@@ -339,9 +316,9 @@ export class CampaignHelper {
       chartOptions: chartOptions,
       chartDataSeries: chartDataSeries,
     }
-  }
+  },
 
-  static toTableData(campaigns: Campaign[]): CampaignTableData[] {
+  toTableData(campaigns: Campaign[]): CampaignTableData[] {
     return campaigns.map((campaign) => ({
       ...campaign,
       scenarioText: campaign.scenarios.map((scenario) => scenario.name).join(','),
@@ -362,9 +339,9 @@ export class CampaignHelper {
             ),
       statusTag: campaign.status ? CampaignHelper.toExecutionStatusTag(campaign.status) : null,
     }))
-  }
+  },
 
-  static toExecutionStatusTag(executionStatus: ExecutionStatus): Tag {
+  toExecutionStatusTag(executionStatus: ExecutionStatus): Tag {
     const tag: Tag = tagClass[executionStatus] ?? {
       text: executionStatus,
       backgroundCssClass: defaultTagClass.backgroundCssClass,
@@ -372,5 +349,5 @@ export class CampaignHelper {
     }
 
     return tag
-  }
+  },
 }
