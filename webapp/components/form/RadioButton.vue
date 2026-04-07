@@ -19,8 +19,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject } from 'vue'
-
 const props = defineProps<{
   value: string
   label?: string | number
@@ -42,8 +40,6 @@ const isChecked = computed(() => radioGroup.modelValue.value === props.value)
 
 // Click handler calls parent update function
 const handleChange = () => {
-  if (props.disabled) return
-
   radioGroup.updateValue(props.value)
 }
 </script>

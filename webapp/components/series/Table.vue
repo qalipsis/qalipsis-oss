@@ -51,13 +51,13 @@
                 />
               </div>
             </PopoverButton>
-            <PopoverPanel :class="TailwindClassHelper.menuPanelBaseClass">
+            <PopoverPanel :class="TailwindClassConfig.menuPanelBaseClass">
               <div
                 v-if="!record.disabled"
-                :class="TailwindClassHelper.menuWrapperBaseClass"
+                :class="TailwindClassConfig.menuWrapperBaseClass"
               >
                 <div
-                  :class="TailwindClassHelper.menuItemBaseClass"
+                  :class="TailwindClassConfig.menuItemBaseClass"
                   @click="handleDeleteBtnClick(record as DataSeriesTableData)"
                 >
                   <BaseIcon
@@ -69,10 +69,10 @@
               </div>
               <div
                 v-if="!record.disabled"
-                :class="TailwindClassHelper.menuWrapperBaseClass"
+                :class="TailwindClassConfig.menuWrapperBaseClass"
               >
                 <div
-                  :class="TailwindClassHelper.menuItemBaseClass"
+                  :class="TailwindClassConfig.menuItemBaseClass"
                   @click="handleEditBtnClick(record as DataSeriesTableData)"
                 >
                   <BaseIcon
@@ -82,9 +82,9 @@
                   <span class="pl-2"> Edit </span>
                 </div>
               </div>
-              <div :class="TailwindClassHelper.menuWrapperBaseClass">
+              <div :class="TailwindClassConfig.menuWrapperBaseClass">
                 <div
-                  :class="TailwindClassHelper.menuItemBaseClass"
+                  :class="TailwindClassConfig.menuItemBaseClass"
                   @click="handleDuplicateBtnClick(record as DataSeriesTableData)"
                 >
                   <BaseIcon
@@ -139,18 +139,18 @@ const dataSeriesReferences = ref<string[]>([])
 const deleteModalContent = ref('')
 const modalOpen = ref(false)
 
-onMounted(() => {
-  if (props.selectedDataSeriesReferences) {
-    seriesTableStore.$patch({
-      selectedRowKeys: props.selectedDataSeriesReferences,
-    })
-  }
-  _fetchTableData()
-})
+const { handlePaginationChange, handleSorterChange, refresh } = useTableLifecycle(
+  seriesTableStore,
+  () => {
+    if (props.selectedDataSeriesReferences) {
+      seriesTableStore.$patch({
+        selectedRowKeys: props.selectedDataSeriesReferences,
+      })
+    }
 
-onBeforeUnmount(() => {
-  seriesTableStore.$reset()
-})
+    return seriesTableStore.fetchDataSeriesTableDataSource()
+  }
+)
 
 const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
   /**
@@ -172,21 +172,6 @@ const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
   return disabled
 }
 
-const handleSorterChange = (tableSorter: TableSorter | null) => {
-  const sort = tableSorter ? `${tableSorter.key}:${tableSorter.direction}` : ''
-  seriesTableStore.$patch({
-    sort: sort,
-  })
-  _fetchTableData()
-}
-
-const handlePaginationChange = (pageIndex: number) => {
-  seriesTableStore.$patch({
-    currentPageIndex: pageIndex,
-  })
-  _fetchTableData()
-}
-
 const handleSelectionChange = (tableSelection: TableSelection) => {
   seriesTableStore.$patch({
     selectedRows: tableSelection.selectedRows,
@@ -200,7 +185,7 @@ const handleEditBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
 }
 
 const handleRefreshBtnClick = () => {
-  _fetchTableData()
+  refresh()
 }
 
 const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData) => {
@@ -211,20 +196,12 @@ const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData)
   } catch (error) {
     toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-  _fetchTableData()
+  refresh()
 }
 
 const handleDeleteBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
   dataSeriesReferences.value = [dataSeriesTableData.key]
   deleteModalContent.value = dataSeriesTableData.displayName
   modalOpen.value = true
-}
-
-const _fetchTableData = async () => {
-  try {
-    await seriesTableStore.fetchDataSeriesTableDataSource()
-  } catch (error) {
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
-  }
 }
 </script>

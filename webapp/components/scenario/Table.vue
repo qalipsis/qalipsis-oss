@@ -1,16 +1,16 @@
 <template>
   <BaseTable
-    :data-source="dataSource"
-    :table-column-configs="SCENARIO_TABLE_COLUMNS"
+    :data-source="pagedData"
+    :table-column-configs="ScenariosTableConfig.TABLE_COLUMNS"
     :total-elements="totalElements"
     :page-size="pageSize"
     :current-page-index="currentPageIndex"
     :disable-row="disableRow"
     :row-selection-enabled="rowSelectionEnabled"
     :selected-row-keys="selectedRowKeys"
-    :all-data-source-included="true"
     rowKey="name"
-    @page-change="handlePaginationChange"
+    @page-change="handlePageChange"
+    @sorter-change="handleSorterChange"
     @selection-change="handleSelectionChange"
     @refresh="handleRefreshBtnClick"
   >
@@ -53,7 +53,7 @@
   <ScenarioConfigDrawer
     v-if="configDrawerOpen"
     v-model:open="configDrawerOpen"
-    :scenario="selectedScenarioSummary"
+    :scenario="selectedScenarioSummary!"
     :configuration="campaignConfiguration"
     :scenario-form="selectedScenarioConfigForm"
     :disabled="!rowSelectionEnabled"
@@ -75,14 +75,15 @@ const {
   selectedRowKeys,
   selectedRows,
   dataSource,
-  totalElements,
   pageSize,
-  currentPageIndex,
   scenarioConfig,
   rowSelectionEnabled,
 } = storeToRefs(scenarioTableStore)
 
-let selectedScenarioSummary: ScenarioSummary
+const { pagedData, totalElements, currentPageIndex, handlePageChange, handleSorterChange } =
+  useClientSidePagination(dataSource, pageSize)
+
+let selectedScenarioSummary: ScenarioSummary | undefined
 
 const selectedScenarioConfigForm = ref<ScenarioConfigurationForm>()
 
@@ -96,13 +97,11 @@ onMounted(async () => {
       scenarioTableStore.$patch({
         dataSource: scenarios,
         allScenarios: scenarios,
-        totalElements: scenarios.length,
       })
     } else {
       scenarioTableStore.$patch({
         dataSource: selectedRows.value,
         allScenarios: selectedRows.value,
-        totalElements: selectedRows.value.length,
       })
     }
   } catch (error) {
@@ -127,12 +126,6 @@ const disableRow = (record: ScenarioSummary) => {
   )
 }
 
-const handlePaginationChange = (pageIndex: number) => {
-  scenarioTableStore.$patch({
-    currentPageIndex: pageIndex,
-  })
-}
-
 const handleSelectionChange = (tableSelection: TableSelection) => {
   scenarioTableStore.$patch({
     selectedRows: [...tableSelection.selectedRows],
@@ -147,18 +140,21 @@ const handleConfigureBtnClick = (scenarioSummary: ScenarioSummary) => {
 }
 
 const handleScenarioConfigFormSubmit = (form: ScenarioConfigurationForm) => {
+  if (!selectedScenarioSummary) return
+
+  const scenario = selectedScenarioSummary;
   scenarioTableStore.$patch({
     scenarioConfig: {
       ...scenarioTableStore.scenarioConfig,
-      [selectedScenarioSummary!.name]: form,
+      [scenario.name]: form,
     },
   })
-  if (!scenarioTableStore.selectedRows.some((r) => r.name === selectedScenarioSummary!.name)) {
-    scenarioTableStore.selectedRows = [...scenarioTableStore.selectedRows, selectedScenarioSummary]
+  if (!scenarioTableStore.selectedRows.some((r) => r.name === scenario.name)) {
+    scenarioTableStore.selectedRows = [...scenarioTableStore.selectedRows, scenario]
   }
 
-  if (!scenarioTableStore.selectedRowKeys.some((rowKey) => rowKey === selectedScenarioSummary!.name)) {
-    scenarioTableStore.selectedRowKeys = [...scenarioTableStore.selectedRowKeys, selectedScenarioSummary.name]
+  if (!scenarioTableStore.selectedRowKeys.some((rowKey) => rowKey === scenario.name)) {
+    scenarioTableStore.selectedRowKeys = [...scenarioTableStore.selectedRowKeys, scenario.name]
   }
 }
 </script>

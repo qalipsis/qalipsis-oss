@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:nuxt.com)",
+      "Bash(sed -i \"s|from '../types/campaign'|from '~/types/campaign'|g\" d:/qalipsis/qalipsis-oss/webapp/utils/configs/campaign-details.config.ts)",
+      "Bash(sed -i \"s|from '../types/table'|from '~/types/table'|g\" d:/qalipsis/qalipsis-oss/webapp/utils/configs/scenario-details.config.ts)",
+      "Bash(sed -i \"s|from '../types/table'|from '~/types/table'|g\" d:/qalipsis/qalipsis-oss/webapp/utils/configs/scenarios-table.config.ts)",
+      "Bash(sed -i \"s|from '../types/aggregation-data'|from '~/types/aggregation-data-config'|g\" d:/qalipsis/qalipsis-oss/webapp/utils/helpers/aggregation-data.helper.ts)",
+      "Bash(sed -i \"s|from '../types/common'|from '~/types/tag'|g\" d:/qalipsis/qalipsis-oss/webapp/utils/helpers/campaign.helper.ts)",
+      "Bash(sed -i \"s|from '../types/common'|from '~/types/tag'|g\" d:/qalipsis/qalipsis-oss/webapp/utils/helpers/scenario.helper.ts)",
+      "Bash(sed -i \"s|from '../types/scenario'|from '~/types/scenario'|g\" d:/qalipsis/qalipsis-oss/webapp/utils/helpers/scenario.helper.ts)",
+      "Bash(sed -i \"s|from '../types/timeframe'|from '~/types/timeframe'|g\" d:/qalipsis/qalipsis-oss/webapp/utils/helpers/scenario.helper.ts)",
+      "Bash(wc -l /d/qalipsis/qalipsis-oss/webapp/components/**/*.vue)"
+    ]
+  }
+}

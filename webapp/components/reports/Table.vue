@@ -34,11 +34,11 @@
             />
           </div>
         </PopoverButton>
-        <PopoverPanel :class="TailwindClassHelper.menuPanelBaseClass">
+        <PopoverPanel :class="TailwindClassConfig.menuPanelBaseClass">
           <PopoverButton class="outline-none w-full">
-            <div :class="TailwindClassHelper.menuWrapperBaseClass">
+            <div :class="TailwindClassConfig.menuWrapperBaseClass">
               <div
-                :class="TailwindClassHelper.menuItemBaseClass"
+                :class="TailwindClassConfig.menuItemBaseClass"
                 @click="handleDownloadBtnClick(record)"
               >
                 <BaseIcon
@@ -50,9 +50,9 @@
             </div>
           </PopoverButton>
           <PopoverButton class="outline-none w-full">
-            <div :class="TailwindClassHelper.menuWrapperBaseClass">
+            <div :class="TailwindClassConfig.menuWrapperBaseClass">
               <div
-                :class="TailwindClassHelper.menuItemBaseClass"
+                :class="TailwindClassConfig.menuItemBaseClass"
                 @click="handleDeleteBtnClick(record as ReportTableData)"
               >
                 <BaseIcon
@@ -87,21 +87,10 @@ const reportReferences = ref<string[]>([])
 const deleteModalContent = ref('')
 const modalOpen = ref(false)
 
-onMounted(async () => {
-  _fetchTableData()
-})
-
-onBeforeUnmount(() => {
-  reportsTableStore.$reset()
-})
-
-const handleSorterChange = (tableSorter: TableSorter | null) => {
-  const sort = tableSorter ? `${tableSorter.key}:${tableSorter.direction}` : ''
-  reportsTableStore.$patch({
-    sort: sort,
-  })
-  _fetchTableData()
-}
+const { handlePaginationChange, handleSorterChange, refresh } = useTableLifecycle(
+  reportsTableStore,
+  () => reportsTableStore.fetchReportsTableDataSource()
+)
 
 const handleSelectionChange = (tableSelection: TableSelection) => {
   reportsTableStore.$patch({
@@ -110,34 +99,18 @@ const handleSelectionChange = (tableSelection: TableSelection) => {
   })
 }
 
-const handlePaginationChange = (pageIndex: number) => {
-  reportsTableStore.$patch({
-    currentPageIndex: pageIndex,
-  })
-  _fetchTableData()
-}
-
 const handleReportNameClick = (reportTableData: ReportTableData) => {
   navigateTo(`/reports/${reportTableData.reference}`)
 }
 
 const handleRefreshBtnClick = () => {
-  _fetchTableData()
+  refresh()
 }
 
 const handleDeleteBtnClick = (reportTableData: ReportTableData) => {
   reportReferences.value = [reportTableData.reference]
   deleteModalContent.value = reportTableData.displayName
   modalOpen.value = true
-}
-
-const _fetchTableData = async () => {
-  try {
-    await reportsTableStore.fetchReportsTableDataSource()
-  } catch (error) {
-    console.log(error)
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
-  }
 }
 
 const handleDownloadBtnClick = async (reportTableData: ReportTableData) => {

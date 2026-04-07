@@ -1,14 +1,14 @@
-export class SeriesTableConfig {
-    static TABLE_COLUMNS: TableColumnConfig[] = [
+export const SeriesTableConfig = {
+    TABLE_COLUMNS: [
         {
             title: "Name",
             key: "displayName",
-            sortingEnabled: true
+            sortingEnabled: true,
         },
         {
             title: "Time-series type",
             key: "dataType",
-            sortingEnabled: true
+            sortingEnabled: true,
         },
         {
             title: "Field name",
@@ -21,7 +21,7 @@ export class SeriesTableConfig {
         {
             title: "Shared",
             key: "sharingMode",
-            sortingEnabled: true
-        }
-    ];
+            sortingEnabled: true,
+        },
+    ] as TableColumnConfig[],
 }

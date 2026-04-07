@@ -10,7 +10,7 @@
     >
       <div
         class="w-full"
-        :class="TailwindClassHelper.formDropdownClass"
+        :class="TailwindClassConfig.formDropdownClass"
       >
         <ComboboxButton
           :disabled="disabled"
@@ -18,16 +18,16 @@
         >
           <div
             :class="[
-              TailwindClassHelper.formInputWrapperClass,
+              TailwindClassConfig.formInputWrapperClass,
               hasError
-                ? TailwindClassHelper.formInputWrapperErrorClass
-                : TailwindClassHelper.formInputWrapperActiveClass,
+                ? TailwindClassConfig.formInputWrapperErrorClass
+                : TailwindClassConfig.formInputWrapperActiveClass,
             ]"
           >
             <input
               type="text"
               autocomplete="off"
-              :class="TailwindClassHelper.formInputClass"
+              :class="TailwindClassConfig.formInputClass"
               :value="inputValue"
               :id="formControlName"
               :placeholder="placeholder"
@@ -42,34 +42,34 @@
           </div>
         </ComboboxButton>
         <transition
-          :enter-active-class="TailwindClassHelper.formDropdownTransitionEnterActiveClass"
-          :enter-from-class="TailwindClassHelper.formDropdownTransitionEnterFromClass"
-          :enter-to-class="TailwindClassHelper.formDropdownTransitionEnterToClass"
-          :leave-active-class="TailwindClassHelper.formDropdownTransitionLeaveActiveClass"
-          :leave-from-class="TailwindClassHelper.formDropdownTransitionLeaveFromClass"
-          :leave-to-class="TailwindClassHelper.formDropdownTransitionLeaveToClass"
+          :enter-active-class="TailwindClassConfig.formDropdownTransitionEnterActiveClass"
+          :enter-from-class="TailwindClassConfig.formDropdownTransitionEnterFromClass"
+          :enter-to-class="TailwindClassConfig.formDropdownTransitionEnterToClass"
+          :leave-active-class="TailwindClassConfig.formDropdownTransitionLeaveActiveClass"
+          :leave-from-class="TailwindClassConfig.formDropdownTransitionLeaveFromClass"
+          :leave-to-class="TailwindClassConfig.formDropdownTransitionLeaveToClass"
         >
           <ComboboxOptions
             class="w-full"
-            :class="[TailwindClassHelper.formDropdownPanelClass, !filteredOptions.length ? 'invisible' : 'visible']"
+            :class="[TailwindClassConfig.formDropdownPanelClass, !filteredOptions.length ? 'invisible' : 'visible']"
           >
             <ComboboxOption
-              v-for="filteredOption in filteredOptions"
-              :key="filteredOption[optionValueKey]"
-              :value="filteredOption[optionValueKey]"
-              :disabled="filteredOption.disabled"
+              v-for="option in filteredOptions"
+              :key="option.value"
+              :value="option.value"
+              :disabled="option.disabled"
               v-slot="{ active, selected }"
               as="template"
             >
               <div>
                 <slot
                   name="optionContent"
-                  :option="filteredOption"
+                  :option="option"
                 >
                   <FormSelectOption
-                    :label="filteredOption[optionLabelKey]"
+                    :label="option.label"
                     :active="active"
-                    :disabled="filteredOption.disabled"
+                    :disabled="option.disabled"
                     :selected="selected"
                   />
                 </slot>
@@ -84,20 +84,14 @@
 </template>
 
 <script setup lang="ts">
-import { CampaignsPatternInput } from '#components'
 import { Combobox, ComboboxButton, ComboboxOption, ComboboxOptions } from '@headlessui/vue'
 import { type TypedSchema, useField } from 'vee-validate'
 
 const props = defineProps<{
   label: string
   formControlName: string
-  /**
-   * The options for the dropdown menu.
-   */
-  options: FormMenuOption[] | any[]
+  options: FormMenuOption[]
   modelValue?: string
-  labelKey?: string
-  valueKey?: string
   fieldValidationSchema?: TypedSchema
   placeholder?: string
   disabled?: boolean
@@ -109,21 +103,20 @@ const emit = defineEmits<{
   (e: 'update:modelValue', v: string): void
 }>()
 
-const { value: selectedFormControlValue, errorMessage } = useField<string | string[]>(
+const { value: selectedFormControlValue, errorMessage } = useField<string>(
   () => props.formControlName,
-  props.fieldValidationSchema
+  props.fieldValidationSchema,
 )
 
-const optionLabelKey = computed(() => props.labelKey ?? 'label')
-const optionValueKey = computed(() => props.valueKey ?? 'value')
+const findLabel = (value: string) => props.options.find((o) => o.value === value)?.label ?? value
 
-const selectedOptionLabel = computed(
-  () => props.options.find((option) => option[optionValueKey.value] === selectedFormControlValue.value)?.label
-)
+const inputValue = ref(findLabel(selectedFormControlValue.value ?? ''))
 
-const inputValue = ref(selectedOptionLabel.value ?? selectedFormControlValue.value ?? '')
+watch(selectedFormControlValue, (newVal) => {
+  inputValue.value = findLabel(newVal ?? '')
+})
 
-const hasError = computed(() => (errorMessage.value ? true : false))
+const hasError = computed(() => !!errorMessage.value)
 
 const filteredOptions = computed(() => {
   if (props.customSearchEnabled) {
@@ -132,33 +125,36 @@ const filteredOptions = computed(() => {
 
   return inputValue.value === ''
     ? props.options
-    : props.options.filter((option) =>
-        option[optionLabelKey.value].toLowerCase().includes(inputValue.value.toLowerCase())
-      )
+    : props.options.filter((option) => option.label.toLowerCase().includes(inputValue.value.toLowerCase()))
 })
 
-const debouncedInputChange = debounce((newValue: string) => {
-  inputValue.value = newValue
-  selectedFormControlValue.value = newValue
+let inputTimer: ReturnType<typeof setTimeout> | null = null
 
-  if (props.customSearchEnabled) {
-    emit('search', newValue)
-  }
-
-  emit('select', newValue)
-  emit('update:modelValue', newValue)
-}, 300)
+onUnmounted(() => {
+  if (inputTimer) clearTimeout(inputTimer)
+})
 
 const handleInputChange = (newValue: string) => {
-  debouncedInputChange(newValue)
+  inputValue.value = newValue
+  if (inputTimer) clearTimeout(inputTimer)
+  inputTimer = setTimeout(() => {
+    selectedFormControlValue.value = newValue
+    if (props.customSearchEnabled) emit('search', newValue)
+    emit('update:modelValue', newValue)
+  }, 300)
 }
 
 const handleSelect = (newValue: string) => {
-  const selectedOption = props.options.find((opt) => opt[optionValueKey.value] === newValue)
+  if (inputTimer) {
+    clearTimeout(inputTimer)
+    inputTimer = null
+  }
+  const selectedOption = props.options.find((o) => o.value === newValue)
   if (selectedOption) {
-    inputValue.value = selectedOption[optionLabelKey.value]
+    inputValue.value = selectedOption.label
     emit('select', newValue)
   }
+
   emit('update:modelValue', newValue)
 }
 </script>

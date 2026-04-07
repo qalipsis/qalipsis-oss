@@ -29,7 +29,6 @@ const chartDataSeries = ref<ApexAxisChartSeries>();
 onMounted(async () => {
   const currentDate = new Date();
   const timezoneOffsetInHours = currentDate.getTimezoneOffset() / 60;
-  let campaignSummary: CampaignSummaryResult[] = [];
 
   try {
     const queryParam: CampaignSummaryResultQueryParams = {
@@ -37,14 +36,13 @@ onMounted(async () => {
       timeframe: "P1D",
       timeOffset: timezoneOffsetInHours
     }
-    campaignSummary = await fetchCampaignSummary(queryParam);
+    const campaignSummary = await fetchCampaignSummary(queryParam);
+    const campaignSummaryChartData: ChartData = CampaignHelper.toCampaignSummaryChartData(campaignSummary);
+    chartOptions.value = campaignSummaryChartData.chartOptions;
+    chartDataSeries.value = campaignSummaryChartData.chartDataSeries;
   } catch (error) {
     toastStore.error({text: ErrorHelper.getErrorMessage(error)});
   }
-
-  const campaignSummaryChartData: ChartData = CampaignHelper.toCampaignSummaryChartData(campaignSummary);
-  chartOptions.value = campaignSummaryChartData.chartOptions;
-  chartDataSeries.value = campaignSummaryChartData.chartDataSeries;
 })
 
 </script>

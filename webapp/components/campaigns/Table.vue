@@ -52,12 +52,12 @@
                 />
               </div>
             </PopoverButton>
-            <PopoverPanel :class="TailwindClassHelper.menuPanelBaseClass">
+            <PopoverPanel :class="TailwindClassConfig.menuPanelBaseClass">
               <template v-if="record.status === 'SCHEDULED'">
                 <PopoverButton class="outline-none">
-                  <div :class="TailwindClassHelper.menuWrapperBaseClass">
+                  <div :class="TailwindClassConfig.menuWrapperBaseClass">
                     <div
-                      :class="TailwindClassHelper.menuItemBaseClass"
+                      :class="TailwindClassConfig.menuItemBaseClass"
                       @click="handleRunNowBtnClick(record)"
                     >
                       <BaseIcon
@@ -69,9 +69,9 @@
                   </div>
                 </PopoverButton>
                 <PopoverButton class="outline-none">
-                  <div :class="TailwindClassHelper.menuWrapperBaseClass">
+                  <div :class="TailwindClassConfig.menuWrapperBaseClass">
                     <div
-                      :class="TailwindClassHelper.menuItemBaseClass"
+                      :class="TailwindClassConfig.menuItemBaseClass"
                       @click="handleAbortBtnClick(record)"
                     >
                       <BaseIcon
@@ -85,9 +85,9 @@
               </template>
               <template v-if="finishedStatuses.includes(record.status)">
                 <PopoverButton class="outline-none">
-                  <div :class="TailwindClassHelper.menuWrapperBaseClass">
+                  <div :class="TailwindClassConfig.menuWrapperBaseClass">
                     <div
-                      :class="TailwindClassHelper.menuItemBaseClass"
+                      :class="TailwindClassConfig.menuItemBaseClass"
                       @click="handleReplayBtnClick(record)"
                     >
                       <BaseIcon
@@ -127,7 +127,7 @@ const campaignsTableStore = useCampaignsTableStore()
 const toastStore = useToastStore()
 
 const { dataSource, totalElements, pageSize, currentPageIndex } = storeToRefs(campaignsTableStore)
-const { fetchCampaignConfig, createCampaign, replayCampaign } = useCampaignApi()
+const { fetchCampaignConfiguration, createCampaign, replayCampaign } = useCampaignApi()
 
 const finishedStatuses: ExecutionStatus[] = ['ABORTED', 'FAILED', 'SUCCESSFUL', 'WARNING']
 
@@ -137,20 +137,10 @@ const campaignAbortModalOpen = ref(false)
 
 let selectedCampaignTableData: CampaignTableData
 
-onMounted(() => {
-  _fetchTableData()
-})
-
-onBeforeUnmount(() => {
-  campaignsTableStore.$reset()
-})
-
-const handlePaginationChange = (pageIndex: number) => {
-  campaignsTableStore.$patch({
-    currentPageIndex: pageIndex,
-  })
-  _fetchTableData()
-}
+const { handlePaginationChange, handleSorterChange, refresh } = useTableLifecycle(
+  campaignsTableStore,
+  () => campaignsTableStore.fetchCampaignsTableDataSource(props.extraQueryParams)
+)
 
 const handleSelectionChange = (tableSelection: TableSelection) => {
   campaignsTableStore.$patch({
@@ -180,16 +170,8 @@ const disableRow = (campaign: CampaignTableData): boolean => {
   return disabled
 }
 
-const handleSorterChange = (tableSorter: TableSorter | null) => {
-  const sort = tableSorter ? `${tableSorter.key}:${tableSorter.direction}` : ''
-  campaignsTableStore.$patch({
-    sort: sort,
-  })
-  _fetchTableData()
-}
-
 const handleRefreshBtnClick = () => {
-  _fetchTableData()
+  refresh()
 }
 
 const handleAbortBtnClick = (campaignTableData: CampaignTableData) => {
@@ -198,13 +180,13 @@ const handleAbortBtnClick = (campaignTableData: CampaignTableData) => {
 }
 
 const handleCampaignAborted = async () => {
-  await _fetchTableData()
+  await refresh()
 }
 
 const handleRunNowBtnClick = async (campaignTableData: CampaignTableData) => {
   try {
     // Fetches the campaign config
-    const campaignConfig = await fetchCampaignConfig(campaignTableData.key)
+    const campaignConfig = await fetchCampaignConfiguration(campaignTableData.key)
     // Creates the campaign
     const campaign = await createCampaign(campaignConfig)
     // navigate to the campaign details
@@ -220,7 +202,7 @@ const handleReplayBtnClick = async (campaignTableData: CampaignTableData) => {
     await replayCampaign(campaignTableData.key)
 
     // Reloads table data
-    await _fetchTableData()
+    await refresh()
   } catch (error) {
     toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
@@ -232,16 +214,8 @@ const handleNameClick = (campaignTableData: CampaignTableData) => {
   const pageLink =
     campaignTableData.status === ExecutionStatusConstant.SCHEDULED
       ? `/campaigns/config/${campaignTableData.key}`
-      : `campaigns/${campaignTableData.key}`
+      : `/campaigns/${campaignTableData.key}`
 
   navigateTo(pageLink)
-}
-
-const _fetchTableData = async () => {
-  try {
-    await campaignsTableStore.fetchCampaignsTableDataSource(props.extraQueryParams)
-  } catch (error) {
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
-  }
 }
 </script>

@@ -37,7 +37,7 @@ const handleConfirmButtonClick = async () => {
 
   // When the selected data reference are greater or equal to the current display data
   let pageIndex = reportsTableStore.currentPageIndex;
-  if (props.reportReferences.length > reportsTableStore.dataSource?.length) {
+  if (props.reportReferences.length > (reportsTableStore.dataSource?.length ?? 0)) {
     // Sets the current page index to the previous one.
     pageIndex = reportsTableStore.currentPageIndex - 1 >= 0 ? reportsTableStore.currentPageIndex - 1 : 0;
   }
@@ -48,7 +48,7 @@ const handleConfirmButtonClick = async () => {
     selectedRowKeys: []
   })
 
-  reportsTableStore.fetchReportsTableDataSource();
+  await reportsTableStore.fetchReportsTableDataSource();
 }
 
 </script>

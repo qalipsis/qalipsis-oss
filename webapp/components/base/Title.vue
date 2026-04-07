@@ -62,7 +62,6 @@ const startEditing = () => {
 
 // --- Handlers ---
 const handleEscKeyDown = (e: KeyboardEvent) => {
-  if (e.key !== 'Escape') return
   e.preventDefault()
   isEditing.value = false
   editingText.value = props.content
@@ -76,6 +75,12 @@ const handleEnterKeyDown = () => {
 }
 
 const handleBlur = () => {
+  if (!editingText.value.trim()) {
+    isEditing.value = false
+    editingText.value = props.content
+
+    return
+  }
   handleEnterKeyDown()
 }
 </script>

@@ -1,22 +1,4 @@
 import { format } from 'date-fns'
-import {
-  type ExecutionProfileStage,
-  type ReportMessage,
-  type ReportMessageSeverity,
-  type ScenarioConfigurationForm,
-  type ScenarioReport,
-  type ScenarioRequest,
-  type Stage,
-  StageExternalExecutionProfileConfiguration,
-  type ZoneForm,
-} from '../types/scenario'
-import type { TagStyleClass } from '../types/common'
-import type { TimeframeUnit } from '../types/timeframe'
-
-const defaultTagClass: TagStyleClass = {
-  backgroundCssClass: 'bg-gray-100 dark:bg-gray-700',
-  textCssClass: 'text-gray-700 dark:text-gray-100',
-}
 
 const tagClass: { [key in ReportMessageSeverity]: TagStyleClass } = {
   INFO: {
@@ -37,8 +19,8 @@ const tagClass: { [key in ReportMessageSeverity]: TagStyleClass } = {
   },
 }
 
-export class ScenarioHelper {
-  static toScenarioConfigForm(campaignConfiguration: CampaignConfiguration): {
+export const ScenarioHelper = {
+  toScenarioConfigForm(campaignConfiguration: CampaignConfiguration): {
     [key: string]: ScenarioConfigurationForm
   } {
     if (!campaignConfiguration?.scenarios) return {}
@@ -61,6 +43,7 @@ export class ScenarioHelper {
         const formattedDuration = TimeframeHelper.toFormattedTimeframe(
           TimeframeHelper.toIsoStringDuration(stage.totalDurationMs, 'MS'),
         )
+
         return {
           resolution: stage.resolutionMs,
           minionsCount: stage.minionsCount,
@@ -85,11 +68,12 @@ export class ScenarioHelper {
 
       return acc
     }, {})
-  }
+  },
 
-  static toScenarioRequest(scenarioConfigForm: ScenarioConfigurationForm): ScenarioRequest {
+  toScenarioRequest(scenarioConfigForm: ScenarioConfigurationForm): ScenarioRequest {
     const totalMinionsCount = scenarioConfigForm.executionProfileStages.reduce((acc, cur) => {
       acc += +cur.minionsCount
+
       return acc
     }, 0)
     const toMs = (value: number, unit?: TimeframeUnit): number =>
@@ -118,7 +102,7 @@ export class ScenarioHelper {
     }
 
     return scenarioRequest
-  }
+  },
 
   /**
    * Gets the scenario reports for the UI.
@@ -127,7 +111,7 @@ export class ScenarioHelper {
    * @param campaignExecutionDetails The campaign execution details.
    * @returns the list of scenario reports for the UI.
    */
-  static getSelectedScenarioReports(
+  getSelectedScenarioReports(
     selectedScenarioNames: string[],
     campaignExecutionDetails: CampaignExecutionDetails,
   ): ScenarioReport[] {
@@ -178,11 +162,8 @@ export class ScenarioHelper {
       }, []),
     }
 
-    /**
-     * When there is only one scenario report, the summary report is set as the only one report.
-     */
     return shouldScenarioSummaryReportIncluded ? [scenarioSummaryReport, ...reports] : reports
-  }
+  },
 
   /**
    * Converts the severity to a tag.
@@ -190,13 +171,12 @@ export class ScenarioHelper {
    * @param severity The severity of the report message.
    * @returns A tag for displaying the severity on the table.
    */
-  static toSeverityTag(severity: ReportMessageSeverity): Tag {
+  toSeverityTag(severity: ReportMessageSeverity): Tag {
     return {
-      backgroundCssClass: tagClass[severity].backgroundCssClass ?? defaultTagClass.backgroundCssClass,
-      textCssClass: tagClass[severity].textCssClass ?? defaultTagClass.textCssClass,
+      ...tagClass[severity],
       text: severity,
     }
-  }
+  },
 
   /**
    * The time display text for the campaign
@@ -210,16 +190,14 @@ export class ScenarioHelper {
    * toTimeDisplayText('2023-02-20T19:18:09.482991Z', '2023-02-20T19:18:19.820797Z') -> 02/20/23, 20:18:09 -> 20:18:19(00:00:11)
    * toTimeDisplayText('2023-02-20T19:18:09.482991Z', null) -> 02/20/23, 20:18:09 (00:00:30)
    */
-  static toTimeDisplayText(start: string, end?: string): string {
+  toTimeDisplayText(start: string, end?: string): string {
     const startDate = new Date(start)
     const endDate = end ? new Date(end) : new Date()
 
-    const intervalInMilliseconds = endDate.getTime() - startDate.getTime()
-    const intervalInHHMMSSFormat = TimeframeHelper.milliSecondsInHHMMSSFormat(intervalInMilliseconds)
-
-    const hasIdenticalDate = startDate.toDateString() === endDate.toDateString()
-
     try {
+      const intervalInMilliseconds = endDate.getTime() - startDate.getTime()
+      const intervalInHHMMSSFormat = TimeframeHelper.milliSecondsInHHMMSSFormat(intervalInMilliseconds)
+      const hasIdenticalDate = startDate.toDateString() === endDate.toDateString()
       const startDateText = format(startDate, 'MM/dd/yy, HH:mm:ss')
       const endDateFormat = hasIdenticalDate ? 'HH:mm:ss' : 'MM/dd/yy, HH:mm:ss'
       const endDateText = format(endDate, endDateFormat)
@@ -231,17 +209,16 @@ export class ScenarioHelper {
       console.error(error)
       return ''
     }
-  }
+  },
 
   /**
    * Gets the chart series to be displayed.
    *
    * @param executionProfileStages the execution profiles from the scenario config.
-   *
    * @returns the chart data series to be displayed
    */
-  static toScenarioConfigChartData(executionProfileStages: ExecutionProfileStage[]): ChartData {
-    const chartDatSeries: { x: number; y: number }[] = [{ x: 0, y: 0 }]
+  toScenarioConfigChartData(executionProfileStages: ExecutionProfileStage[]): ChartData {
+    const chartDataSeries: { x: number; y: number }[] = [{ x: 0, y: 0 }]
     let cumulativeDuration = 0
     let cumulativeMinionsCount = 0
 
@@ -251,7 +228,7 @@ export class ScenarioHelper {
       if (executionProfileStage.duration === executionProfileStage.rampUpDuration) {
         cumulativeDuration += +executionProfileStage.duration
         const cumulativeDurationInSeconds = cumulativeDuration / 1000
-        chartDatSeries.push({
+        chartDataSeries.push({
           x: cumulativeDurationInSeconds,
           y: cumulativeMinionsCount,
         })
@@ -259,11 +236,11 @@ export class ScenarioHelper {
         const cumulativeStartDurationInSeconds = (+executionProfileStage.rampUpDuration + cumulativeDuration) / 1000
         const cumulativeDurationInSeconds = (+executionProfileStage.duration + cumulativeDuration) / 1000
         cumulativeDuration += +executionProfileStage.duration
-        chartDatSeries.push({
+        chartDataSeries.push({
           x: cumulativeStartDurationInSeconds,
           y: cumulativeMinionsCount,
         })
-        chartDatSeries.push({
+        chartDataSeries.push({
           x: cumulativeDurationInSeconds,
           y: cumulativeMinionsCount,
         })
@@ -277,11 +254,11 @@ export class ScenarioHelper {
       chartDataSeries: [
         {
           name: 'Minions',
-          data: chartDatSeries,
+          data: chartDataSeries,
         },
       ],
     }
-  }
+  },
 
   /**
    * Calculate the minion data series for the stacked bar chart.
@@ -289,51 +266,30 @@ export class ScenarioHelper {
    * @param completedMinions the number of completed minions
    * @param startedMinions the number of started minions
    * @param scheduledMinions the number of scheduled minions
-   *
    * @returns the data series for the stacked bar chart
    */
-  static toMinionBarChartSeries(
+  toMinionBarChartSeries(
     completedMinions: number,
     startedMinions: number,
     scheduledMinions: number,
   ): ApexAxisChartSeries {
-    // The bar chart length for the completed minions is the same as the number of completed minions
     const completedMinionsBarChartLength = completedMinions
-
-    // The bar chart length for the started minions equals to the number of started minions minus the number of completed minions.
     const startedMinionsBarChartLength = startedMinions - completedMinions
-
-    // The bar chart length for the scheduled minions equals to the number of scheduled minions minus the number of started minions
     const scheduledMinionsBarChartLength = scheduledMinions - startedMinions
 
     return [
       {
         name: 'Completed Minions',
-        data: [
-          {
-            x: 0,
-            y: completedMinionsBarChartLength,
-          },
-        ],
+        data: [{ x: 0, y: completedMinionsBarChartLength }],
       },
       {
         name: 'Started Minions',
-        data: [
-          {
-            x: 0,
-            y: startedMinionsBarChartLength,
-          },
-        ],
+        data: [{ x: 0, y: startedMinionsBarChartLength }],
       },
       {
         name: 'Scheduled Minions',
-        data: [
-          {
-            x: 0,
-            y: scheduledMinionsBarChartLength,
-          },
-        ],
+        data: [{ x: 0, y: scheduledMinionsBarChartLength }],
       },
     ]
-  }
+  },
 }

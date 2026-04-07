@@ -1,6 +1,9 @@
 <template>
-  <div class="px-3 rounded-xl flex items-center justify-center h-5 w-fit text-xs"
-       :class="[textCssClass, backgroundCssClass]" @click="emit('click')">
+  <div
+    class="px-3 rounded-xl flex items-center justify-center h-5 w-fit text-xs"
+    :class="[textCssClass, backgroundCssClass]"
+    @click="emit('click')"
+  >
     <span>{{ text }}</span>
   </div>
 </template>
@@ -10,17 +13,17 @@ defineProps<{
   /**
    * The css class for the tag background
    */
-  backgroundCssClass: string;
+  backgroundCssClass: string
   /**
    * The css class for the text
    */
-  textCssClass: string;
+  textCssClass: string
   /**
    * The text of the tag
    */
-  text: string;
+  text: string
 }>()
 const emit = defineEmits<{
   (e: 'click'): void
-}>();
+}>()
 </script>

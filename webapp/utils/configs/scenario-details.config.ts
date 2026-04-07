@@ -1,18 +1,17 @@
 import type { ApexOptions } from 'apexcharts'
-import type { TableColumnConfig } from '../types/table'
 
-export class ScenarioDetailsConfig {
+export const ScenarioDetailsConfig = {
   /**
    * The name for the scenario summary.
    */
-  static SCENARIO_SUMMARY_NAME = 'Campaign Summary'
+  SCENARIO_SUMMARY_NAME: 'Campaign Summary',
 
   /**
    * The identifier for the scenario summary.
    */
-  static SCENARIO_SUMMARY_ID = 'campaignSummary'
+  SCENARIO_SUMMARY_ID: 'campaignSummary',
 
-  static NEW_MESSAGE_TABLE_COLUMNS: TableColumnConfig[] = [
+  NEW_MESSAGE_TABLE_COLUMNS: [
     {
       title: 'Step Name',
       key: 'stepName',
@@ -25,27 +24,9 @@ export class ScenarioDetailsConfig {
       title: 'Message',
       key: 'message',
     },
-  ]
+  ] as TableColumnConfig[],
 
-  static MESSAGE_TABLE_COLUMNS = [
-    {
-      title: 'Step Name',
-      dataIndex: 'stepName',
-      key: 'displayName',
-    },
-    {
-      title: 'Severity',
-      dataIndex: 'severity',
-      key: 'severity',
-    },
-    {
-      title: 'Message',
-      dataIndex: 'message',
-      key: 'message',
-    },
-  ]
-
-  static getScenarioChartOptions = (cumulativeMinionsCount: number): ApexOptions => {
+  getScenarioChartOptions: (cumulativeMinionsCount: number): ApexOptions => {
     return {
       chart: {
         type: 'area',
@@ -69,10 +50,11 @@ export class ScenarioDetailsConfig {
       tooltip: {
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
           const xValue = w.globals.seriesX[seriesIndex][dataPointIndex]
+
           return `
             <div class="px-3 py-2 min-w-36 rounded-md bg-gray-900 text-white font-light border-none">
               <div class="pb-2 mb-2 border-b border-solid border-gray-500">
-                <span>Duration: ${xValue}s</span>  
+                <span>Duration: ${xValue}s</span>
               </div>
               <span>Minions: ${series[seriesIndex][dataPointIndex]}</span>
             </div>
@@ -126,9 +108,9 @@ export class ScenarioDetailsConfig {
         },
       },
     }
-  }
+  },
 
-  static MINION_STACKED_BAR_CHART_OPTIONS: ApexOptions = {
+  MINION_STACKED_BAR_CHART_OPTIONS: {
     colors: [ColorsConfig.PRIMARY_COLOR_HEX_CODE, ColorsConfig.PURPLE_COLOR_HEX_CODE, ColorsConfig.GREY_2_HEX_CODE],
     chart: {
       type: 'bar',
@@ -216,9 +198,9 @@ export class ScenarioDetailsConfig {
         },
       },
     },
-  }
+  } as ApexOptions,
 
-  static EXECUTION_STEP_DONUT_CHART_OPTIONS: ApexOptions = {
+  EXECUTION_STEP_DONUT_CHART_OPTIONS: {
     colors: [ColorsConfig.PRIMARY_COLOR_HEX_CODE, ColorsConfig.PINK_HEX_CODE],
     chart: {
       type: 'donut',
@@ -267,5 +249,5 @@ export class ScenarioDetailsConfig {
         },
       },
     },
-  }
+  } as ApexOptions,
 }

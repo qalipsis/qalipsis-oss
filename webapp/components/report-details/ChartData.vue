@@ -28,6 +28,7 @@ const props = defineProps<{
 
 const reportDetailsStore = useReportDetailsStore();
 const {fetchTimeSeriesAggregation} = useTimeSeriesApi();
+const toastStore = useToastStore();
 
 const chartOptions = ref<ApexOptions>();
 const chartDataSeries = ref<ApexAxisChartSeries>();
@@ -53,7 +54,10 @@ const handleDeleteBtnClick = () => {
 const handleSelectedDataSeriesChange = (dataSeriesOptions: DataSeriesOption[]) => {
   selectedDataSeriesOptions = dataSeriesOptions;
   const dataComponents = [...reportDetailsStore.dataComponents];
-  dataComponents[props.componentIndex].datas = dataSeriesOptions;
+  const component = dataComponents[props.componentIndex];
+  if (component) {
+    component.datas = dataSeriesOptions;
+  }
   reportDetailsStore.$patch({
     dataComponents: dataComponents
   });
@@ -77,9 +81,10 @@ const _updateChartData = async (dataSeriesOptions: DataSeriesOption[]) => {
     chartOptions.value = chartData.chartOptions;
     chartDataSeries.value = chartData.chartDataSeries;
   } catch (error) {
-    console.error(error);
+    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
+  } finally {
+    isLoadingChart.value = false;
   }
-  isLoadingChart.value = false;
 }
 
 </script>

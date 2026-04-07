@@ -49,6 +49,17 @@ export default defineNuxtConfig({
 
   modules: ['@vueuse/nuxt', '@pinia/nuxt', 'nuxt-headlessui'],
 
+  imports: {
+    dirs: [
+      'types',
+      'types/api',
+      'utils/helpers',
+      'utils/configs',
+      'composables/apis',
+      'stores',
+    ],
+  },
+
   runtimeConfig: {
     // Public keys that are exposed to the client
     public: {

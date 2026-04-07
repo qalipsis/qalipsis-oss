@@ -5,10 +5,10 @@ export const useCampaignApi = () => {
    * Fetches the campaigns
    *
    * @param pageQueryParams The query parameters
-   * @returns The page list of data series
+   * @returns The page list of campaigns
    */
-  const fetchCampaigns = async (pageQueryParams: PageQueryParams): Promise<Page<Campaign>> => {
-    return get$<Page<Campaign>, any>('/campaigns', pageQueryParams)
+  const fetchCampaigns = (pageQueryParams: PageQueryParams): Promise<Page<Campaign>> => {
+    return get$<Page<Campaign>, PageQueryParams>('/campaigns', pageQueryParams)
   }
 
   /**
@@ -17,8 +17,8 @@ export const useCampaignApi = () => {
    * @param campaignKey The key of the campaign
    * @returns The configuration of the campaign
    */
-  const fetchCampaignConfig = async (campaignKey: string): Promise<CampaignConfiguration> => {
-    return get$<CampaignConfiguration, any>(`/campaigns/${campaignKey}/configuration`)
+  const fetchCampaignConfiguration = (campaignKey: string): Promise<CampaignConfiguration> => {
+    return get$<CampaignConfiguration, never>(`/campaigns/${campaignKey}/configuration`)
   }
 
   /**
@@ -27,8 +27,8 @@ export const useCampaignApi = () => {
    * @param params The campaign configuration
    * @returns The new campaign details
    */
-  const createCampaign = async (params: CampaignConfiguration): Promise<Campaign> => {
-    return post$<Campaign, CampaignConfiguration>('/campaigns', params)
+  const createCampaign = (params: CampaignConfiguration): Promise<Campaign> => {
+    return post$<Campaign>('/campaigns', params)
   }
 
   /**
@@ -37,8 +37,8 @@ export const useCampaignApi = () => {
    * @param params The campaign configuration
    * @returns The scheduled campaign details
    */
-  const scheduleCampaign = async (params: CampaignConfiguration): Promise<Campaign> => {
-    return post$<Campaign, CampaignConfiguration>('/campaigns/schedule', params)
+  const scheduleCampaign = (params: CampaignConfiguration): Promise<Campaign> => {
+    return post$<Campaign>('/campaigns/schedule', params)
   }
 
   /**
@@ -48,7 +48,7 @@ export const useCampaignApi = () => {
    * @param params The campaign configuration to be updated
    * @returns The updated campaign configuration
    */
-  const updateCampaignConfig = async (campaignKey: string, params: CampaignConfiguration): Promise<Campaign> => {
+  const updateCampaignConfig = (campaignKey: string, params: CampaignConfiguration): Promise<Campaign> => {
     return put$<Campaign, CampaignConfiguration>(`/campaigns/schedule/${campaignKey}`, params)
   }
 
@@ -67,6 +67,7 @@ export const useCampaignApi = () => {
      * Thus, this function returns the first item which contains the execution details for the provided campaign reference.
      */
     const campaigns = await get$<CampaignExecutionDetails[], unknown>(`/campaigns/${campaignReference}`)
+    if (!campaigns.length) throw new Error(`No campaign found for reference: ${campaignReference}`)
 
     return campaigns[0]
   }
@@ -88,7 +89,7 @@ export const useCampaignApi = () => {
    * @param isForceAbort Forces the campaign to fail when set to true, defaults to false.
    */
   const abortCampaign = (key: string, isForceAbort: boolean): Promise<CampaignExecutionDetails> => {
-    return post$<CampaignExecutionDetails, { hard: boolean }>(`/campaigns/${key}/abort`, { hard: isForceAbort })
+    return post$<CampaignExecutionDetails>(`/campaigns/${key}/abort`, { hard: isForceAbort })
   }
 
   /**
@@ -98,12 +99,12 @@ export const useCampaignApi = () => {
    * @returns The campaign details
    */
   const replayCampaign = (key: string): Promise<CampaignExecutionDetails> => {
-    return post$<CampaignExecutionDetails, unknown>(`/campaigns/${key}/replay`)
+    return post$<CampaignExecutionDetails>(`/campaigns/${key}/replay`)
   }
 
   return {
     fetchCampaigns,
-    fetchCampaignConfig,
+    fetchCampaignConfiguration,
     createCampaign,
     updateCampaignConfig,
     scheduleCampaign,

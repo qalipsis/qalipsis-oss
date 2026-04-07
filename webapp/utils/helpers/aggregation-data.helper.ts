@@ -1,4 +1,3 @@
-import type { AggregationDataConfig } from '../types/aggregation-data'
 
 export const AggregationDataHelper = {
   getTimeSeriesAggregationQueryParam(config: AggregationDataConfig): TimeSeriesAggregationQueryParam {

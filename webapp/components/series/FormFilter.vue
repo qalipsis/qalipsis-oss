@@ -89,7 +89,10 @@ const operatorOptions = SeriesHelper.getFilterOperatorOptions();
 const tagValueOptions = ref<FormMenuOption[]>([]);
 
 onMounted(() => {
-  _prepareTagValueOptions(fields.value[props.index].value.name);
+  const field = fields.value[props.index];
+  if (field) {
+    _prepareTagValueOptions(field.value.name);
+  }
 });
 
 const handleTagSelect = (tagName: string) => {

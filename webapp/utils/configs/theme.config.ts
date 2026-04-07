@@ -1,3 +1,3 @@
-export class ThemeConfig {
-    static THEME_KEY = 'theme';
+export const ThemeConfig = {
+    THEME_KEY: 'theme',
 }
