@@ -1,29 +1,34 @@
 <template>
-  <div v-if="isPageReady && campaignDetails">
+  <div
+    v-if="isPageReady && campaignDetails"
+    class="h-full flex flex-col"
+  >
     <BaseHeader>
       <div class="flex items-center w-full justify-between">
         <div class="flex items-center">
           <BaseIcon
-              icon="qls-icon-arrow-back"
-              class="cursor-pointer pl-1 pr-5 hover:text-primary-500 text-2xl"
-              @click="navigateTo('/campaigns')"
+            icon="qls-icon-arrow-back"
+            class="cursor-pointer pl-1 pr-5 hover:text-primary-500 text-2xl"
+            @click="navigateTo('/campaigns')"
           />
-          <BaseTitle v-model:content="name"/>
+          <BaseTitle v-model:content="name" />
         </div>
-        <div class="flex items-center">
+        <div class="flex items-center gap-x-2">
           <ScenarioDropdown
-              v-if="scenarioNames.length > 0"
-              :scenarioNames="scenarioNames"
-              :selectedScenarioNames="selectedScenarioNames"
-              @scenarioChange="handleScenarioChange($event)"
+            v-if="scenarioNames.length > 0"
+            :scenarioNames="scenarioNames"
+            :selectedScenarioNames="selectedScenarioNames"
+            @scenarioChange="handleScenarioChange($event)"
           />
-        </div>
-      </div>
-    </BaseHeader>
-    <BaseContentWrapper>
-      <BaseCard>
-        <div class="flex justify-between">
-          <ScenarioDetails :scenarioReports="scenarioReports" />
+          <template v-if="campaignDetails.status === 'IN_PROGRESS'">
+            <BasePermission :permissions="[writeCampaignPermission]">
+              <BaseButton
+                text="Stop all"
+                theme="error"
+                @click="campaignStopModalOpen = true"
+              />
+            </BasePermission>
+          </template>
           <template v-if="campaignDetails.zones && campaignDetails.zones.length > 0">
             <div
               v-if="firstZoneKey && zoneKeyToZoneModel[firstZoneKey]"
@@ -66,34 +71,39 @@
               </BaseTooltip>
             </div>
           </template>
-          <template v-if="campaignDetails.status === 'IN_PROGRESS'">
-            <BasePermission :permissions="[writeCampaignPermission]">
-              <BaseButton
-                text="Stop all"
-                theme="error"
-                @click="campaignStopModalOpen = true"
-              />
-            </BasePermission>
-          </template>
         </div>
-      </BaseCard>
-      <div class="shadow-md pt-2 pb-2 pr-4 pl-4 mb-2">
-        <SeriesMenu
-          :preselectedDataSeriesReferences="preselectedDataSeriesReferences"
-          @selectedDataSeriesChange="handleSelectedDataSeriesChange($event)"
-        />
-        <div class="mt-10">
+      </div>
+    </BaseHeader>
+    <BaseContentWrapper>
+      <div class="shrink-0">
+        <BaseCard>
+          <ScenarioDetails
+            :scenarioReports="scenarioReports"
+            :status="campaignDetails.status"
+          />
+        </BaseCard>
+      </div>
+      <div class="shadow-md py-4 px-4 flex items-stretch gap-x-4 flex-1 min-h-0">
+        <div class="flex-1 min-h-[600px] h-full py-2">
           <apexchart
             v-if="!isUpdatingChart"
+            height="100%"
             :options="chartOptions"
             :series="chartDataSeries"
-            :height="460"
             @zoomed="handleZoom"
           />
           <div
             v-if="isUpdatingChart"
-            class="h-[460px] bg-white dark:bg-primary-900"
+            class="h-full bg-white dark:bg-primary-900"
           ></div>
+        </div>
+        <div class="w-72 py-2 h-full">
+          <SeriesPanel
+            :preselectedDataSeriesReferences="preselectedDataSeriesReferences"
+            :campaignKey="campaignDetails.key"
+            :maximum="8"
+            @selectedDataSeriesChange="handleSelectedDataSeriesChange($event)"
+          />
         </div>
       </div>
     </BaseContentWrapper>
@@ -125,7 +135,7 @@
 
 <script setup lang="ts">
 const { fetchCampaignDetails, abortCampaign } = useCampaignApi()
-const { fetchAllDataSeries, storeAllDataSeriesToCache } = useDataSeriesApi()
+const { getCachedDataSeries } = useDataSeriesApi()
 const { fetchZones } = useZonesApi()
 
 const campaignDetailsStore = useCampaignDetailsStore()
@@ -163,9 +173,7 @@ const { run: _runPollingCycle } = usePolling(
     await _fetchCampaignDetails()
     campaignDetailsStore.$patch({
       campaignDetails: campaignDetails.value,
-      selectedScenarioNames: campaignDetails.value?.scenarios
-        ? campaignDetails.value.scenarios.map((s) => s.name)
-        : [],
+      selectedScenarioNames: campaignDetails.value?.scenarios ? campaignDetails.value.scenarios.map((s) => s.name) : [],
     })
     isUpdatingChart.value = true
     try {
@@ -174,36 +182,28 @@ const { run: _runPollingCycle } = usePolling(
       isUpdatingChart.value = false
     }
   },
-  () => campaignDetails.value?.status === 'IN_PROGRESS'
+  () => campaignDetails.value?.status === 'IN_PROGRESS',
 )
 
 onMounted(async () => {
   await _fetchCampaignDetails()
 
-  const allDataSeries = (await fetchAllDataSeries()).filter(
-      (d) => d.reference !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE
-  )
-  storeAllDataSeriesToCache(allDataSeries)
-
-  const scenarioNamesFromQuery = route.query?.scenarios
-    ? String(route.query.scenarios).split(',').filter(Boolean)
-    : []
+  const scenarioNamesFromQuery = route.query?.scenarios ? String(route.query.scenarios).split(',').filter(Boolean) : []
   const min = route.query?.min?.toString()
   const max = route.query?.max?.toString()
 
   campaignDetailsStore.$patch({
     campaignDetails: campaignDetails.value,
     selectedScenarioNames:
-        scenarioNamesFromQuery.length > 0
-            ? scenarioNamesFromQuery
-            : campaignDetails.value?.scenarios?.map((s) => s.name),
+      scenarioNamesFromQuery.length > 0 ? scenarioNamesFromQuery : campaignDetails.value?.scenarios?.map((s) => s.name),
     timeRange: { min, max },
   })
 
-  const dataSeriesReferences = route.query?.series
-    ? String(route.query.series).split(',').filter(Boolean)
-    : []
+  const dataSeriesReferences = route.query?.series ? String(route.query.series).split(',').filter(Boolean) : []
   if (dataSeriesReferences.length > 0) {
+    const allDataSeries = (await getCachedDataSeries({ campaign: campaignDetails.value?.key })).filter(
+      (d) => d.reference !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
+    )
     const selectedDataSeries = allDataSeries.filter((d) => dataSeriesReferences.includes(d.reference))
     campaignDetailsStore.$patch({ selectedDataSeries })
   }
@@ -226,7 +226,7 @@ const _fetchCampaignDetails = async () => {
     const campaignKey = route.params.id as string
     campaignDetails.value = await fetchCampaignDetails(campaignKey)
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
 
@@ -247,7 +247,7 @@ const handleScenarioChange = async (names: string[]) => {
   try {
     await campaignDetailsStore.updateChart()
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
 

@@ -15,10 +15,11 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   numberOfSelectedItems: number
+  defaultChecked?: boolean
 }>()
-const showChecked = ref(false)
+const showChecked = ref(props.defaultChecked ?? false)
 const emit = defineEmits<{
   (e: 'checkedChange', v: boolean): void
 }>()

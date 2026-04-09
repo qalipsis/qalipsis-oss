@@ -41,7 +41,7 @@ const storeCache = (cacheKey: string, response: any, ttl: number) => {
   }
 }
 
-export const cacheApi = () => {
+export const useCacheApi = () => {
   const { get$, api$ } = baseApi()
 
   const withCache = async <T>(cacheKey: string, ttl: number, fetcher: () => Promise<T>): Promise<T> => {
@@ -60,7 +60,7 @@ export const cacheApi = () => {
     return withCache(cacheKey, ttl, () => api$<T>(url, options))
   }
 
-  const getCache$ = async <T, R>(url: string, query: { [key: string]: R }, ttl = DEFAULT_TTL): Promise<T> => {
+  const getCache$ = async <T, R extends object = Record<string, unknown>>(url: string, query?: R, ttl = DEFAULT_TTL): Promise<T> => {
     const cacheKey = getCacheKey(url, ttl, query)
 
     return withCache(cacheKey, ttl, () => get$<T, R>(url, query))

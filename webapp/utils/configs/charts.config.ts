@@ -18,7 +18,7 @@ export const ChartsConfig = {
                 type: 'line',
                 toolbar: {
                     show: true,
-                    offsetY: -28,
+                    offsetY: 0,
                     tools: {
                         download: false,
                         selection: false,
@@ -70,6 +70,11 @@ export const ChartsConfig = {
                 },
             },
             yaxis: [],
+            grid: {
+                padding: {
+                    top: 20,
+                }
+            },
             dataLabels: {
                 enabled: false
             },

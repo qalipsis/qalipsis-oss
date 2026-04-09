@@ -99,7 +99,7 @@ const { selectedRowKeys, scenarioConfig } = storeToRefs(scenarioTableStore)
 
 const campaignConfiguration = ref<DefaultCampaignConfiguration>()
 const campaignConfigForm = ref<CampaignConfigurationForm>()
-const campaignName = ref<string>()
+const campaignName = ref('')
 const campaignKey = ref<string>()
 
 const { executeCampaign } = useCampaignExecution(campaignConfiguration, campaignKey)
@@ -172,18 +172,13 @@ const handleCampaignAborted = () => {
 }
 
 const handleSearch = (searchTerm: string) => {
-  scenarioTableStore.$patch({
-    query: searchTerm,
-    currentPageIndex: 0,
-  })
+  scenarioTableStore.$patch({ query: searchTerm })
   scenarioTableStore.refreshScenarios()
 }
 
 const handleCheckedChange = (checked: boolean) => {
   scenarioTableStore.$patch({
-    currentPageIndex: 0,
     dataSource: checked ? scenarioTableStore.selectedRows : scenarioTableStore.allScenarios,
-    totalElements: checked ? scenarioTableStore.selectedRows.length : scenarioTableStore.allScenarios.length,
   })
 }
 

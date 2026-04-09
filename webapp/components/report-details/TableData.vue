@@ -1,12 +1,15 @@
 <template>
   <section class="group mb-4">
     <div class="flex justify-end mb-2 invisible transition-all ease-in-out duration-300 group-hover:visible">
-      <BaseButton icon="qls-icon-delete" text="Delete" btn-style="outlined" @click="handleDeleteBtnClick"/>
+      <BaseButton
+        icon="qls-icon-delete"
+        text="Delete"
+        btn-style="outlined"
+        @click="handleDeleteBtnClick"
+      />
     </div>
-    <SeriesMenu
-        :preselectedDataSeriesReferences="preselectedDataSeriesReferences"
-        @selectedDataSeriesChange="handleSelectedDataSeriesChange($event)"/>
-    <BaseTable
+    <div class="flex">
+      <BaseTable
         :data-source="tableData"
         :total-elements="tableData.length"
         :table-column-configs="ReportDetailsConfig.TABLE_COLUMNS"
@@ -16,72 +19,85 @@
         :refresh-hidden="true"
         @page-change="handlePaginationChange"
         row-key="id"
-    ></BaseTable>
+      ></BaseTable>
+      <div class="shrink-0 w-72 py-2 h-full">
+        <SeriesPanel
+          :preselectedDataSeriesReferences="preselectedDataSeriesReferences"
+          :maximum="8"
+          @selectedDataSeriesChange="handleSelectedDataSeriesChange($event)"
+        />
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-
 const props = defineProps<{
-  componentIndex: number,
-  dataSeries: DataSeries[],
-}>();
+  componentIndex: number
+  dataSeries: DataSeries[]
+}>()
 
-const reportDetailsStore = useReportDetailsStore();
-const {fetchTimeSeriesAggregation} = useTimeSeriesApi();
-const toastStore = useToastStore();
+const reportDetailsStore = useReportDetailsStore()
+const { fetchTimeSeriesAggregation } = useTimeSeriesApi()
+const toastStore = useToastStore()
 
-const tableData = ref<ReportDetailsTableData[]>([]);
-const preselectedDataSeriesReferences = ref<string[]>([]);
-const currentPageIndex = ref<number>(0);
+const tableData = ref<ReportDetailsTableData[]>([])
+const preselectedDataSeriesReferences = ref<string[]>([])
+const currentPageIndex = ref<number>(0)
 
-let selectedDataSeriesOptions: DataSeriesOption[] = [];
+let selectedDataSeriesOptions: DataSeriesOption[] = []
 
 onMounted(() => {
-  preselectedDataSeriesReferences.value = props.dataSeries.map(dataSeries => dataSeries.reference);
-  selectedDataSeriesOptions = SeriesHelper.toDataSeriesOptions(props.dataSeries, []);
+  preselectedDataSeriesReferences.value = props.dataSeries.map((dataSeries) => dataSeries.reference)
+  selectedDataSeriesOptions = SeriesHelper.toDataSeriesOptions(props.dataSeries, [])
   _updateTableData(selectedDataSeriesOptions)
 })
 
-watch(() => [reportDetailsStore.activeCampaignOptions, reportDetailsStore.selectedScenarioNames], () => {
-  _updateTableData(selectedDataSeriesOptions);
-})
+watch(
+  () => [reportDetailsStore.activeCampaignOptions, reportDetailsStore.selectedScenarioNames],
+  () => {
+    _updateTableData(selectedDataSeriesOptions)
+  },
+)
 
 const handlePaginationChange = (pageIndex: number) => {
   currentPageIndex.value = pageIndex
 }
 
 const handleDeleteBtnClick = () => {
-  reportDetailsStore.deleteDataComponent(props.componentIndex);
+  reportDetailsStore.deleteDataComponent(props.componentIndex)
 }
 
 const handleSelectedDataSeriesChange = (dataSeriesOptions: DataSeriesOption[]) => {
-  selectedDataSeriesOptions = dataSeriesOptions;
-  const dataComponents = [...reportDetailsStore.dataComponents];
-  const component = dataComponents[props.componentIndex];
+  selectedDataSeriesOptions = dataSeriesOptions
+  const dataComponents = [...reportDetailsStore.dataComponents]
+  const component = dataComponents[props.componentIndex]
   if (component) {
-    component.datas = dataSeriesOptions;
+    component.datas = dataSeriesOptions
   }
   reportDetailsStore.$patch({
-    dataComponents: dataComponents
+    dataComponents: dataComponents,
   })
-  _updateTableData(dataSeriesOptions);
+  _updateTableData(dataSeriesOptions)
 }
 
 const _updateTableData = async (dataSeriesOptions: DataSeriesOption[]) => {
   const queryParam: TimeSeriesAggregationQueryParam = AggregationDataHelper.getTimeSeriesAggregationQueryParam({
-    series: dataSeriesOptions.map(dataSeriesOption => dataSeriesOption.reference),
-    campaigns: reportDetailsStore.activeCampaignOptions.map(campaignOption => campaignOption.key),
+    series: dataSeriesOptions.map((dataSeriesOption) => dataSeriesOption.reference),
+    campaigns: reportDetailsStore.activeCampaignOptions.map((campaignOption) => campaignOption.key),
     selectedScenarios: reportDetailsStore.selectedScenarioNames,
-    availableScenarios: reportDetailsStore.scenarioNames
+    availableScenarios: reportDetailsStore.scenarioNames,
   })
 
   try {
-    const timeSeriesAggregationResult = await fetchTimeSeriesAggregation(queryParam);
-    tableData.value = ReportHelper.toReportDetailsTableData(timeSeriesAggregationResult, dataSeriesOptions, reportDetailsStore.activeCampaignOptions);
+    const timeSeriesAggregationResult = await fetchTimeSeriesAggregation(queryParam)
+    tableData.value = ReportHelper.toReportDetailsTableData(
+      timeSeriesAggregationResult,
+      dataSeriesOptions,
+      reportDetailsStore.activeCampaignOptions,
+    )
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)});
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
 }
-
 </script>

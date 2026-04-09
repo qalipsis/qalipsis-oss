@@ -7,7 +7,7 @@ export const useUserApi = () => {
    * @returns The profile of the user
    */
   const fetchProfile = (): Promise<Profile> => {
-    return get$<Profile, unknown>('/users/profile')
+    return get$<Profile>('/users/profile')
   }
 
   /**
@@ -16,7 +16,7 @@ export const useUserApi = () => {
    * @returns The available permissions
    */
   const fetchPermissions = (): Promise<PermissionEnum[]> => {
-    return get$<PermissionEnum[], unknown>('/users/permissions')
+    return get$<PermissionEnum[]>('/users/permissions')
   }
 
   return {

@@ -7,7 +7,7 @@ export const useZonesApi = () => {
    * @returns The available zones
    */
   const fetchZones = (): Promise<Zone[]> => {
-    return get$<Zone[], unknown>('/zones')
+    return get$<Zone[]>('/zones')
   }
 
   return {

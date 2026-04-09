@@ -76,8 +76,7 @@ export const ScenarioHelper = {
 
       return acc
     }, 0)
-    const toMs = (value: number, unit?: TimeframeUnit): number =>
-      unit ? TimeframeHelper.toMs(value, unit) : value
+    const toMs = (value: number, unit?: TimeframeUnit): number => (unit ? TimeframeHelper.toMs(value, unit) : value)
     const stages: Stage[] = scenarioConfigForm.executionProfileStages.map((executionProfileStage) => {
       return {
         minionsCount: +executionProfileStage.minionsCount,
@@ -195,20 +194,24 @@ export const ScenarioHelper = {
     const endDate = end ? new Date(end) : new Date()
 
     try {
-      const intervalInMilliseconds = endDate.getTime() - startDate.getTime()
-      const intervalInHHMMSSFormat = TimeframeHelper.milliSecondsInHHMMSSFormat(intervalInMilliseconds)
       const hasIdenticalDate = startDate.toDateString() === endDate.toDateString()
       const startDateText = format(startDate, 'MM/dd/yy, HH:mm:ss')
       const endDateFormat = hasIdenticalDate ? 'HH:mm:ss' : 'MM/dd/yy, HH:mm:ss'
       const endDateText = format(endDate, endDateFormat)
 
-      return end
-        ? `${startDateText} -> ${endDateText}(${intervalInHHMMSSFormat})`
-        : `${startDateText}(${intervalInHHMMSSFormat})`
+      return end ? `${startDateText} ➞ ${endDateText}` : `${startDateText}`
     } catch (error) {
       console.error(error)
       return ''
     }
+  },
+
+  toIntervalInHHMMSSFormat(start: string, end?: string): string {
+    const startDate = new Date(start)
+    const endDate = end ? new Date(end) : new Date()
+    const intervalInMilliseconds = endDate.getTime() - startDate.getTime()
+
+    return TimeframeHelper.milliSecondsInHHMMSSFormat(intervalInMilliseconds)
   },
 
   /**

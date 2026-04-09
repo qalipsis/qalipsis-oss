@@ -123,18 +123,13 @@ const handleBackBtnClick = () => {
 }
 
 const handleSearch = (searchTerm: string) => {
-  scenarioTableStore.$patch({
-    query: searchTerm,
-    currentPageIndex: 0,
-  })
+  scenarioTableStore.$patch({ query: searchTerm })
   scenarioTableStore.refreshScenarios()
 }
 
 const handleCheckedChange = (checked: boolean) => {
   scenarioTableStore.$patch({
-    currentPageIndex: 0,
     dataSource: checked ? scenarioTableStore.selectedRows : scenarioTableStore.allScenarios,
-    totalElements: checked ? scenarioTableStore.selectedRows.length : scenarioTableStore.allScenarios.length,
   })
 }
 
