@@ -7,7 +7,7 @@ export const useConfigurationApi = () => {
    * @returns the configuration of the campaign
    */
   const fetchDefaultCampaignConfiguration = (): Promise<DefaultCampaignConfiguration> => {
-    return get$<DefaultCampaignConfiguration, unknown>('/configuration/campaign')
+    return get$<DefaultCampaignConfiguration>('/configuration/campaign')
   }
 
   return {

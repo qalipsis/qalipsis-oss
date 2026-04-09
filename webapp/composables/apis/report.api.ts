@@ -10,7 +10,7 @@ export const useReportApi = () => {
    * @returns The paginated list of reports
    */
   const fetchReports = async (pageQueryParams: PageQueryParams): Promise<Page<DataReport>> => {
-    return get$<Page<DataReport>, any>('/reports', pageQueryParams)
+    return get$<Page<DataReport>, PageQueryParams>('/reports', pageQueryParams)
   }
 
   /**
@@ -31,7 +31,7 @@ export const useReportApi = () => {
    * @returns The details of the report
    */
   const fetchReportDetails = async (reference: string): Promise<DataReport> => {
-    const report = await get$<DataReport, unknown>(`/reports/${reference}`)
+    const report = await get$<DataReport>(`/reports/${reference}`)
     report.dataComponents = report.dataComponents ? report.dataComponents.map((d: DataComponent) => ({ ...d, id: Date.now() })) : []
 
     return report
@@ -61,6 +61,7 @@ export const useReportApi = () => {
     link.download = `${result}-${reference}.pdf`
     document.body.appendChild(link)
     link.click()
+    document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
   }
 
@@ -71,7 +72,7 @@ export const useReportApi = () => {
    * @returns The created report.
    */
   const createReport = async (reportCreationAndUpdateRequest: ReportCreationAndUpdateRequest): Promise<DataReport> => {
-    return post$<DataReport, ReportCreationAndUpdateRequest>('/reports', reportCreationAndUpdateRequest)
+    return post$<DataReport>('/reports', reportCreationAndUpdateRequest)
   }
 
   /**

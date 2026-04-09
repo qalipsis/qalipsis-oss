@@ -18,7 +18,7 @@ export const useCampaignApi = () => {
    * @returns The configuration of the campaign
    */
   const fetchCampaignConfiguration = (campaignKey: string): Promise<CampaignConfiguration> => {
-    return get$<CampaignConfiguration, never>(`/campaigns/${campaignKey}/configuration`)
+    return get$<CampaignConfiguration>(`/campaigns/${campaignKey}/configuration`)
   }
 
   /**
@@ -66,10 +66,10 @@ export const useCampaignApi = () => {
      *
      * Thus, this function returns the first item which contains the execution details for the provided campaign reference.
      */
-    const campaigns = await get$<CampaignExecutionDetails[], unknown>(`/campaigns/${campaignReference}`)
+    const campaigns = await get$<CampaignExecutionDetails[]>(`/campaigns/${campaignReference}`)
     if (!campaigns.length) throw new Error(`No campaign found for reference: ${campaignReference}`)
 
-    return campaigns[0]
+    return campaigns[0]!
   }
 
   /**
@@ -79,7 +79,7 @@ export const useCampaignApi = () => {
    * @returns The list of campaign details
    */
   const fetchMultipleCampaignsDetails = (campaignReferences: string[]): Promise<CampaignExecutionDetails[]> => {
-    return get$<CampaignExecutionDetails[], unknown>(`/campaigns/${campaignReferences.join(',')}`)
+    return get$<CampaignExecutionDetails[]>(`/campaigns/${campaignReferences.join(',')}`)
   }
 
   /**

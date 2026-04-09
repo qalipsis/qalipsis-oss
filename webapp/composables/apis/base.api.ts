@@ -15,7 +15,7 @@ export const baseApi = () => {
     }) as Promise<T>
   }
 
-  const get$ = <T, R>(url: string, query?: { [key: string]: R }): Promise<T> => {
+  const get$ = <T, R extends object = Record<string, unknown>>(url: string, query?: R): Promise<T> => {
     return $fetch(url, {
       baseURL,
       method: 'GET',
@@ -27,11 +27,11 @@ export const baseApi = () => {
     return $fetch(url, {
       baseURL,
       method: 'POST',
-      body: requestParams ?? undefined,
+      body: requestParams,
     }) as Promise<T>
   }
 
-  const put$ = <T, R>(url: string, requestParams: R): Promise<T> => {
+  const put$ = <T, R extends object>(url: string, requestParams: R): Promise<T> => {
     return $fetch(url, {
       baseURL,
       method: 'PUT',
@@ -39,7 +39,7 @@ export const baseApi = () => {
     }) as Promise<T>
   }
 
-  const patch$ = <T, R>(url: string, requestParams: R): Promise<T> => {
+  const patch$ = <T, R extends object>(url: string, requestParams: R): Promise<T> => {
     return $fetch(url, {
       baseURL,
       method: 'PATCH',

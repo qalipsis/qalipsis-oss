@@ -1,4 +1,5 @@
 let _allDataSeries: DataSeries[] = []
+const _campaignDataSeriesCache = new Map<string, DataSeries[]>()
 
 export const useDataSeriesApi = () => {
   const { get$, delete$, post$, patch$ } = baseApi()
@@ -9,8 +10,8 @@ export const useDataSeriesApi = () => {
    * @param pageQueryParams The query parameters
    * @returns The page list of data series
    */
-  const fetchDataSeries = async (pageQueryParams: PageQueryParams): Promise<Page<DataSeries>> => {
-    return get$<Page<DataSeries>, PageQueryParams>('/data-series', pageQueryParams)
+  const fetchDataSeries = async (pageQueryParams: DataSeriesPageQueryParams): Promise<Page<DataSeries>> => {
+    return get$<Page<DataSeries>, DataSeriesPageQueryParams>('/data-series', pageQueryParams)
   }
 
   const getAllCachedDataSeries = async (): Promise<DataSeries[]> => {
@@ -31,17 +32,37 @@ export const useDataSeriesApi = () => {
   }
 
   /**
+   * Fetches all data series for the given params, with results cached per param set.
+   *
+   * @param params The query params (supports optional campaign key).
+   * @returns All matching data series.
+   */
+  const getCachedDataSeries = async (params: DataSeriesPageQueryParams): Promise<DataSeries[]> => {
+    const cacheKey = JSON.stringify(params)
+    if (_campaignDataSeriesCache.has(cacheKey)) {
+      return _campaignDataSeriesCache.get(cacheKey)!
+    }
+    const result = await _fetchAllDataSeriesRecursively({ page: 0, size: 100, ...params }, [])
+    _campaignDataSeriesCache.set(cacheKey, result)
+
+    return result
+  }
+
+  /**
    * Fetches all data series recursively page by page.
    *
    * @param queryParams The page query params.
    * @param dataSeries The accumulated list of fetched data series.
    * @returns The complete list of all data series.
    */
-  const _fetchAllDataSeriesRecursively = async (queryParams: PageQueryParams, dataSeries: DataSeries[]): Promise<DataSeries[]> => {
-    const res = await get$<Page<DataSeries>, PageQueryParams>('/data-series', queryParams)
+  const _fetchAllDataSeriesRecursively = async (
+    queryParams: DataSeriesPageQueryParams,
+    dataSeries: DataSeries[],
+  ): Promise<DataSeries[]> => {
+    const res = await get$<Page<DataSeries>, DataSeriesPageQueryParams>('/data-series', queryParams)
     dataSeries.push(...(res?.elements ?? []))
     if (res.page < res.totalPages - 1) {
-      queryParams.page = queryParams.page! + 1
+      queryParams.page = queryParams.page + 1
 
       return _fetchAllDataSeriesRecursively(queryParams, dataSeries)
     }
@@ -98,10 +119,7 @@ export const useDataSeriesApi = () => {
    * @returns The available value names.
    */
   const fetchValueNames = (dataType: DataType, query?: string): Promise<string[]> => {
-    return get$<string[], Record<string, unknown>>(
-      `/data-series/${dataType}/names`,
-      query ? { filter: `*${query}*`, size: 20 } : undefined,
-    )
+    return get$<string[]>(`/data-series/${dataType}/names`, query ? { filter: `*${query}*`, size: 20 } : undefined)
   }
 
   /**
@@ -111,7 +129,7 @@ export const useDataSeriesApi = () => {
    * @returns The available fields.
    */
   const fetchFields = (dataType: DataType): Promise<DataField[]> => {
-    return get$<DataField[], unknown>(`/data-series/${dataType}/fields`)
+    return get$<DataField[]>(`/data-series/${dataType}/fields`)
   }
 
   /**
@@ -121,7 +139,7 @@ export const useDataSeriesApi = () => {
    * @returns A map of the tags
    */
   const fetchTags = (dataType: DataType): Promise<{ [key: string]: string[] }> => {
-    return get$<{ [key: string]: string[] }, unknown>(`/data-series/${dataType}/tags`)
+    return get$<{ [key: string]: string[] }>(`/data-series/${dataType}/tags`)
   }
 
   /**
@@ -156,6 +174,7 @@ export const useDataSeriesApi = () => {
     deleteDataSeries,
     duplicateDataSeries,
     fetchAllDataSeries,
+    getCachedDataSeries,
     fetchValueNames,
     fetchFields,
     fetchTags,

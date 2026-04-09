@@ -1,3 +1,5 @@
 <script setup>
-await navigateTo('/campaigns')
+definePageMeta({
+  middleware: () => navigateTo('/campaigns', { replace: true })
+})
 </script>
