@@ -92,9 +92,7 @@ const displayedOptions = computed(() => {
 
 const hasMore = computed(() => !!props.maximum && dataSeriesOptions.value.length > props.maximum)
 
-const showCapNotice = computed(
-  () => !currentSearchTerm.value && dataSeriesOptions.value.length > (props.maximum ?? MAX_DATA_SERIES_ITEMS),
-)
+const showCapNotice = computed(() => displayedOptions.value.length < availableDataSeriesOptions.value.length)
 
 const activeReferences = computed(() => dataSeriesOptions.value.filter((d) => d.isActive).map((d) => d.reference))
 

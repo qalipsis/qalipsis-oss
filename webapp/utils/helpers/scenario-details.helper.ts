@@ -1,7 +1,7 @@
 const elapsedTimeWidthClass = {
   sm: 'w-40',
   md: 'w-56',
-  lg: 'w-60',
+  lg: 'w-72',
 }
 
 export const ScenarioDetailsHelper = {
