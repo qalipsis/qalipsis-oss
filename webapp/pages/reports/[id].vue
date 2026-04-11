@@ -211,17 +211,18 @@ const _fetchReport = async () => {
     storeAllDataSeriesToCache(allDataSeries)
     const allDataSeriesOptions: DataSeriesOption[] = SeriesHelper.toDataSeriesOptions(allDataSeries, [])
 
-    campaignOptions = campaigns
-      ? campaigns.map((campaignDetail, index) => ({
-          ...campaignDetail,
-          enrichedScenarioReports: ScenarioHelper.getSelectedScenarioReports(
-            reportDetails.resolvedScenarioNames!,
-            campaignDetail,
-          ),
-          strokeDashArray: index + 1,
-          isActive: true,
-        }))
-      : []
+    campaignOptions =
+      campaigns.length > 0
+        ? campaigns.map((campaignDetail, index) => ({
+            ...campaignDetail,
+            enrichedScenarioReports: ScenarioHelper.getSelectedScenarioReports(
+              reportDetails.resolvedScenarioNames!,
+              campaignDetail,
+            ),
+            strokeDashArray: index + 1,
+            isActive: true,
+          }))
+        : []
     reportDetailsStore.$patch({
       reportDetails: reportDetails,
       reportName: reportDetails.displayName,

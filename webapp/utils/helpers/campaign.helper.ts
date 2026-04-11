@@ -90,7 +90,7 @@ const renderCampaignDetailsChartTooltip: (options: any) => any = ({ seriesIndex,
               <div class="w-3 h-3 mr-2 rounded-full border-2 border-solid border-white" style="background-color:${series.color}"></div>
               <div class="flex flex-grow justify-between items-center py-2  font-normal text-xs text-gray-200">
                 <div class="pr-1">
-                  ${series.name}:
+                  ${series.name === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE ? 'Minions count' : series.name}:
                 </div>
                 <div class="ml-2">
                   ${point.y}
