@@ -1,4 +1,11 @@
-import type { FetchOptions } from 'ofetch'
+interface ApiRequestOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'get' | 'post' | 'put' | 'patch' | 'delete'
+  body?: unknown
+  query?: Record<string, unknown>
+  responseType?: 'json' | 'text' | 'blob' | 'arrayBuffer' | 'stream'
+  retry?: number
+  retryDelay?: number
+}
 
 export const baseApi = () => {
   const config = useRuntimeConfig()
@@ -8,10 +15,15 @@ export const baseApi = () => {
    * Generic fetch wrapper that accepts raw FetchOptions.
    * Use this for advanced cases such as blob downloads (responseType: 'blob') or custom retry logic.
    */
-  const api$ = <T>(url: string, options: FetchOptions): Promise<T> => {
+  const api$ = <T>(url: string, options: ApiRequestOptions): Promise<T> => {
     return $fetch(url, {
       baseURL,
-      ...options,
+      method: options.method,
+      body: options.body as Record<string, unknown> | undefined,
+      query: options.query,
+      responseType: options.responseType,
+      retry: options.retry,
+      retryDelay: options.retryDelay,
     }) as Promise<T>
   }
 
@@ -27,7 +39,7 @@ export const baseApi = () => {
     return $fetch(url, {
       baseURL,
       method: 'POST',
-      body: requestParams,
+      body: requestParams as Record<string, unknown>,
     }) as Promise<T>
   }
 
