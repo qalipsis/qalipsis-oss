@@ -138,7 +138,7 @@ const handleSearch = async (searchTerm: string) => {
   const request: DataSeriesPageQueryParams = {
     page: 0,
     size: 100,
-    filter: TableHelper.getSanitizedQuery(searchTerm),
+    filter: searchTerm,
     ...(forThisCampaignOnly.value && props.campaignKey ? { campaign: props.campaignKey } : {}),
   }
 

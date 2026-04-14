@@ -50,14 +50,7 @@ export default defineNuxtConfig({
   modules: ['@vueuse/nuxt', '@pinia/nuxt', 'nuxt-headlessui'],
 
   imports: {
-    dirs: [
-      'types',
-      'types/api',
-      'utils/helpers',
-      'utils/configs',
-      'composables/apis',
-      'stores',
-    ],
+    dirs: ['types', 'types/api', 'utils/helpers', 'utils/configs', 'composables/apis', 'stores'],
   },
 
   runtimeConfig: {
@@ -76,5 +69,12 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
+
+  typescript: {
+    tsConfig: {
+      exclude: ['../.output', '../.gradle', '../build', '../src'],
+    },
+  },
+
   compatibilityDate: '2025-04-21',
 })
