@@ -23,18 +23,12 @@ export const ColorHelper = {
     enrichHexCodeWithOpacity(hexCode?: string, opacity?: number): string {
         if (!hexCode) return ColorsConfig.PRIMARY_COLOR_HEX_CODE
 
-        try {
-            const color = tinycolor(hexCode)
-
-            if (opacity !== undefined) {
-                color.setAlpha(opacity / 100)
-            }
-
-            return `#${color.toHex8()}`
-        } catch (error) {
-            console.error(`Cannot parse hex code ${hexCode} and opacity ${opacity}`)
-            throw error
+        const color = tinycolor(hexCode)
+        if (opacity !== undefined) {
+            color.setAlpha(opacity / 100)
         }
+
+        return `#${color.toHex8()}`
     },
 
     getHexCode(enrichedHexCode: string): string {

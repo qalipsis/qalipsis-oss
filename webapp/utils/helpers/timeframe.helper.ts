@@ -113,17 +113,12 @@ export const TimeframeHelper = {
     if (isNaN(milliSeconds)) return ''
 
     let diff = Math.round(milliSeconds / 1000)
-    let s = diff % 60
+    const s = diff % 60
     diff = (diff - s) / 60
-    let m = diff % 60
-    diff = (diff - m) / 60
-    let h = diff
+    const m = diff % 60
+    const h = (diff - m) / 60
 
-    let ss = s <= 9 && s >= 0 ? `0${s}` : s
-    let mm = m <= 9 && m >= 0 ? `0${m}` : m
-    let hh = h <= 9 && h >= 0 ? `0${h}` : h
-
-    return hh + ':' + mm + ':' + ss
+    return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':')
   },
 
   /**
@@ -158,6 +153,13 @@ export const TimeframeHelper = {
       unit: formattedTimeframeUnit,
       value: formattedTimeframeValue,
     }
+  },
+
+  /**
+   * Converts a millisecond value directly to a FormattedTimeframe with its largest exact unit.
+   */
+  msToFormattedTimeframe(ms: number): FormattedTimeframe {
+    return TimeframeHelper.toFormattedTimeframe(TimeframeHelper.toIsoStringDuration(ms, 'MS'))
   },
 
   /**

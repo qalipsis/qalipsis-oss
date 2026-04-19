@@ -1,4 +1,4 @@
-interface ApiRequestOptions {
+export interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'get' | 'post' | 'put' | 'patch' | 'delete'
   body?: unknown
   query?: Record<string, unknown>

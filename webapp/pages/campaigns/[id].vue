@@ -232,11 +232,7 @@ const _fetchCampaignDetails = async () => {
 
 const _setZoneKeyToModel = async () => {
   const zones = await fetchZones()
-  zoneKeyToZoneModel.value = zones.reduce<{ [key: string]: Zone }>((acc, cur) => {
-    acc[cur.key] = cur
-
-    return acc
-  }, {})
+  zoneKeyToZoneModel.value = keyBy(zones, 'key')
 }
 
 const handleScenarioChange = async (names: string[]) => {

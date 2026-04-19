@@ -37,12 +37,8 @@ export const ScenarioHelper = {
       const profile = executionProfile as StageExternalExecutionProfileConfiguration
 
       const stages = (profile.stages ?? []).map<ExecutionProfileStage>((stage) => {
-        const formattedRampUp = TimeframeHelper.toFormattedTimeframe(
-          TimeframeHelper.toIsoStringDuration(stage.rampUpDurationMs, 'MS'),
-        )
-        const formattedDuration = TimeframeHelper.toFormattedTimeframe(
-          TimeframeHelper.toIsoStringDuration(stage.totalDurationMs, 'MS'),
-        )
+        const formattedRampUp = TimeframeHelper.msToFormattedTimeframe(stage.rampUpDurationMs)
+        const formattedDuration = TimeframeHelper.msToFormattedTimeframe(stage.totalDurationMs)
 
         return {
           resolution: stage.resolutionMs,
@@ -92,12 +88,9 @@ export const ScenarioHelper = {
     }
 
     if (scenarioConfigForm.zones.length > 0) {
-      const zones = scenarioConfigForm.zones.reduce<{ [key: string]: number }>((acc, cur) => {
-        acc[cur.name] = cur.share
-
-        return acc
-      }, {})
-      scenarioRequest.zones = zones
+      scenarioRequest.zones = Object.fromEntries(
+        scenarioConfigForm.zones.map((zone) => [zone.name, zone.share]),
+      )
     }
 
     return scenarioRequest
