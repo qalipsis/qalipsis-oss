@@ -62,7 +62,7 @@ export const useDataSeriesApi = () => {
     const res = await get$<Page<DataSeries>, DataSeriesPageQueryParams>('/data-series', queryParams)
     dataSeries.push(...(res?.elements ?? []))
     if (res.page < res.totalPages - 1) {
-      queryParams.page = queryParams.page + 1
+      queryParams.page = (queryParams.page ?? 0) + 1
 
       return _fetchAllDataSeriesRecursively(queryParams, dataSeries)
     }

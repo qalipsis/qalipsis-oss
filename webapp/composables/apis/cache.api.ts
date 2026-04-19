@@ -1,5 +1,4 @@
 import { add, isBefore } from 'date-fns'
-import type { FetchOptions } from 'ofetch'
 
 interface CacheItem {
   /**
@@ -54,7 +53,7 @@ export const useCacheApi = () => {
     return response
   }
 
-  const apiCache$ = async <T>(url: string, options: FetchOptions, ttl = DEFAULT_TTL): Promise<T> => {
+  const apiCache$ = async <T>(url: string, options: ApiRequestOptions, ttl = DEFAULT_TTL): Promise<T> => {
     const cacheKey = getCacheKey(url, ttl, options)
 
     return withCache(cacheKey, ttl, () => api$<T>(url, options))

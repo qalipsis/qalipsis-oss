@@ -39,6 +39,11 @@ export interface ChartOptionData {
      * The decimal for displaying the data
      */
     decimal: number;
+
+    /**
+     * Formats a raw value according to this series' unit and decimal rules.
+     */
+    format: (value: number) => string;
 }
 
 /**

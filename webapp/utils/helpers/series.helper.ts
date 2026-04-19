@@ -8,34 +8,33 @@ function areFiltersIdentical(
     return arraysEqual<DataSeriesFilter>(originalDataSeriesFilters, newDataSeriesFilters)
 }
 
+const buildTimeframePatch = (form: DataSeriesForm): DataSeriesPatch =>
+    new TimeframeDataSeriesPatch(TimeframeHelper.toIsoStringDuration(form.timeframeValue!, form.timeframeUnit))
+
+const buildColorPatch = (form: DataSeriesForm): DataSeriesPatch =>
+    new ColorDataSeriesPatch(form.color, form.colorOpacity)
+
+const patchBuilders: Record<string, (form: DataSeriesForm) => DataSeriesPatch> = {
+    name: (f) => new DisplayNameDataSeriesPatch(f.name),
+    sharingMode: (f) => new SharingModeDataSeriesPatch(f.sharingMode!),
+    fieldName: (f) => new FieldNameDataSeriesPatch(f.fieldName),
+    valueName: (f) => new ValueNameDataSeriesPatch(f.valueName),
+    aggregationOperation: (f) => new AggregationDataSeriesPatch(f.aggregationOperation!),
+    timeframeValue: buildTimeframePatch,
+    timeframeUnit: buildTimeframePatch,
+    color: buildColorPatch,
+    colorOpacity: buildColorPatch,
+    filters: (f) => new FilterDataSeriesPatch(f.filters),
+}
+
 /**
  * Gets the patch request of the field from the series form.
  */
 function getPatchRequest(key: string, formValue: DataSeriesForm): DataSeriesPatch {
-    switch (key) {
-        case 'name':
-            return new DisplayNameDataSeriesPatch(formValue.name)
-        case 'sharingMode':
-            return new SharingModeDataSeriesPatch(formValue.sharingMode!)
-        case 'fieldName':
-            return new FieldNameDataSeriesPatch(formValue.fieldName)
-        case 'valueName':
-            return new ValueNameDataSeriesPatch(formValue.valueName)
-        case 'aggregationOperation':
-            return new AggregationDataSeriesPatch(formValue.aggregationOperation!)
-        case 'timeframeValue':
-        case 'timeframeUnit':
-            return new TimeframeDataSeriesPatch(
-                TimeframeHelper.toIsoStringDuration(formValue.timeframeValue!, formValue.timeframeUnit)
-            )
-        case 'color':
-        case 'colorOpacity':
-            return new ColorDataSeriesPatch(formValue.color, formValue.colorOpacity)
-        case 'filters':
-            return new FilterDataSeriesPatch(formValue.filters)
-        default:
-            throw new Error(`Unknown form key ${key}`)
-    }
+    const builder = patchBuilders[key]
+    if (!builder) throw new Error(`Unknown form key ${key}`)
+
+    return builder(formValue)
 }
 
 export const SeriesHelper = {

@@ -13,10 +13,11 @@ export const useCampaignExecution = (
     const defaultStage = campaignConfiguration.value.validation.stage
 
     scenarioTableStore.selectedRows.forEach((scenario) => {
-      if (scenarioTableStore.scenarioConfig[scenario.name]) {
+      const existingConfig = scenarioTableStore.scenarioConfig[scenario.name]
+      if (existingConfig) {
         selectedScenarioConfigMap[scenario.name] = {
-          ...scenarioTableStore.scenarioConfig[scenario.name],
-          executionProfileStages: scenarioTableStore.scenarioConfig[scenario.name].executionProfileStages.map(
+          ...existingConfig,
+          executionProfileStages: existingConfig.executionProfileStages.map(
             (executionProfileStage) => ({
               ...executionProfileStage,
               resolution: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minResolution),

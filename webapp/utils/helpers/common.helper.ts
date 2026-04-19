@@ -44,6 +44,18 @@ export function objectsEqual<T>(o1: T, o2: T): boolean {
   return keys1.every((key) => objectsEqual((o1 as Record<string, unknown>)[key], (o2 as Record<string, unknown>)[key]))
 }
 
+/**
+ * Indexes an array of objects by one of their string/number properties.
+ *
+ * @example keyBy(campaigns, 'key') → { 'a': campaignA, 'b': campaignB }
+ */
+export function keyBy<T, K extends keyof T>(
+  items: T[],
+  key: K,
+): Record<string, T> {
+  return Object.fromEntries(items.map((item) => [String(item[key]), item]))
+}
+
 export function arraysEqual<T>(a1: T[], a2: T[]): boolean {
   if (a1 === a2) return true
   if (a1.length !== a2.length) return false
