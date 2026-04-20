@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -144,10 +145,27 @@ internal class HazelcastCampaignSchedulerImplIntegrationTest {
             val clusterName = "test-cluster-${UUID.randomUUID()}"
             val port1 = SocketUtils.findAvailableTcpPort()
             val port2 = SocketUtils.findAvailableTcpPort()
-            val hz1 = buildClusteredHazelcastInstance(clusterName, port1, listOf("127.0.0.1:$port2"))
-            val hz2 = buildClusteredHazelcastInstance(clusterName, port2, listOf("127.0.0.1:$port1"))
+            // Both instances must be started concurrently. newHazelcastInstance blocks until the node
+            // has joined a cluster (or formed standalone), so a sequential start lets node 1 time out
+            // on node 2's still-closed port, blacklist it, and bring up a standalone cluster before
+            // node 2 ever boots.
+            val hz1Future = CompletableFuture.supplyAsync {
+                buildClusteredHazelcastInstance(clusterName, port1, listOf("127.0.0.1:$port2"))
+            }
+            val hz2Future = CompletableFuture.supplyAsync {
+                buildClusteredHazelcastInstance(clusterName, port2, listOf("127.0.0.1:$port1"))
+            }
+            val hz1 = hz1Future.get(30, TimeUnit.SECONDS)
+            val hz2 = hz2Future.get(30, TimeUnit.SECONDS)
 
             assertThat(waitForCluster(expectedSize = 2, hz1, hz2)).isTrue()
+            // The IScheduledExecutorService and the RingBuffer backing the ReliableTopic both rely
+            // on partition assignments. A freshly formed cluster has no partitions yet assigned, and
+            // isClusterSafe returns true vacuously in that state (no migrations to do). Force initial
+            // partition arrangement by touching a partitioned data structure on each member, then
+            // wait for any resulting migrations to settle before scheduling.
+            listOf(hz1, hz2).forEach { it.getMap<String, String>("warmup").size }
+            assertThat(waitForClusterSafe(hz1, hz2)).isTrue()
 
             val scope1 = CoroutineScope(Dispatchers.Default)
             val scope2 = CoroutineScope(Dispatchers.Default)
@@ -169,9 +187,14 @@ internal class HazelcastCampaignSchedulerImplIntegrationTest {
 
             scheduler1.setup()
             scheduler2.setup()
+            // Give the ReliableTopic message listeners on both members a moment to attach to the
+            // backing Ringbuffer. Without this, a publish that follows setup() too closely can be
+            // missed by listeners that have not yet advanced their read cursor.
+            Thread.sleep(3000)
 
-            // when - schedule on node 1.
-            scheduler1.schedule("campaign-key", Instant.now())
+            // when - schedule on node 1 with a small delay so the scheduled task is not racing
+            // partition assignment.
+            scheduler1.schedule("campaign-key", Instant.now().plusMillis(500))
 
             // then - wait for one execution.
             assertThat(latch.await(15, TimeUnit.SECONDS)).isTrue()
@@ -232,6 +255,20 @@ internal class HazelcastCampaignSchedulerImplIntegrationTest {
             ),
             recordPrivateCalls = true
         )
+    }
+
+    private fun waitForClusterSafe(
+        vararg instances: HazelcastInstance,
+        timeoutMs: Long = 30000
+    ): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (instances.all { it.partitionService.isClusterSafe }) {
+                return true
+            }
+            Thread.sleep(200)
+        }
+        return false
     }
 
     private fun waitForCluster(

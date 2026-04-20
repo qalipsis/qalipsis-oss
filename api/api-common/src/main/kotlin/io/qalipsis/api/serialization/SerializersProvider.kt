@@ -19,17 +19,23 @@
 
 package io.qalipsis.api.serialization
 
-import io.qalipsis.api.services.ServicesFiles
+import io.qalipsis.api.serialization.SerializersProvider.Companion.SERIALIZERS_DIR
 import io.qalipsis.core.serialization.builtin.ByteArraySerializationWrapper
 import io.qalipsis.core.serialization.builtin.StringSerializationWrapper
 import io.qalipsis.core.serialization.builtin.UnitSerializationWrapper
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialFormat
+import java.io.File
+import java.net.JarURLConnection
+import java.net.URL
 import kotlin.reflect.KClass
 
 /**
  * Provides all the serializers for [SerialFormat]s, fetching the list of serializers from the compile-time generated
- * lists.
+ * resource files.
+ *
+ * Each compiled [SerialFormatWrapper] has its own empty resource file under [SERIALIZERS_DIR], named after the
+ * fully qualified wrapper class. The provider discovers them by listing that directory.
  *
  * @author Eric Jessé
  */
@@ -42,12 +48,40 @@ class SerializersProvider(
      * All the [SerialFormatWrapper]s found in the classpath.
      */
     val serialFormatWrappers: Collection<SerialFormatWrapper<*>> =
-        this.javaClass.classLoader.getResources("META-INF/services/qalipsis/serializers")
+        this.javaClass.classLoader.getResources(SERIALIZERS_DIR)
             .toList()
-            .flatMap { ServicesFiles.readFile(it.openStream()) }
-            .map { wrapperClass ->
-                buildWrapperInstance(wrapperClass)
-            } + NATIVE_SERIALIZERS
+            .asSequence()
+            .flatMap { url -> listSerializerClassNames(url) }
+            .map(::buildWrapperInstance)
+            .toList() + NATIVE_SERIALIZERS
+
+    /**
+     * Lists the serializer wrapper class names found at the given classpath [URL],
+     * supporting both file-system directories and JAR entries.
+     */
+    private fun listSerializerClassNames(url: URL): Sequence<String> {
+        return when (url.protocol) {
+            "file" -> {
+                File(url.toURI()).listFiles { file -> file.isFile }
+                    ?.asSequence()
+                    ?.map { it.name }
+                    ?: emptySequence()
+            }
+
+            "jar" -> {
+                val connection = url.openConnection() as JarURLConnection
+                val prefix = connection.entryName + "/"
+                connection.jarFile.entries().asSequence()
+                    .filter { !it.isDirectory && it.name.startsWith(prefix) }
+                    .map { it.name.removePrefix(prefix) }
+                    .filter { it.isNotEmpty() && !it.contains('/') }
+                    .toList()
+                    .asSequence()
+            }
+
+            else -> emptySequence()
+        }
+    }
 
     /**
      * Creates a new instance of a [SerialFormatWrapper], passing the convenient [SerialFormat] to the constructor.
@@ -84,6 +118,8 @@ class SerializersProvider(
     }
 
     private companion object {
+
+        const val SERIALIZERS_DIR = "META-INF/services/qalipsis/serializers"
 
         val NATIVE_SERIALIZERS =
             listOf(StringSerializationWrapper(), UnitSerializationWrapper(), ByteArraySerializationWrapper())
