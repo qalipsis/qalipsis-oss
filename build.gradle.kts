@@ -154,6 +154,16 @@ allprojects {
     if (isNotPlatform()) {
         configureNotPlatform()
     }
+
+    // TODO Disable if offline.
+    configurations.configureEach {
+        resolutionStrategy.cacheChangingModulesFor(0, TimeUnit.SECONDS)
+        resolutionStrategy.cacheDynamicVersionsFor(0, TimeUnit.SECONDS)
+    }
+    // TODO Add the --write-locks flag to the release process.
+    if (!version.toString().endsWith("-SNAPSHOT")) {
+        dependencyLocking.lockAllConfigurations()
+    }
 }
 /**
  * Verifies whether a Gradle project is a Java platform module.
@@ -260,6 +270,21 @@ fun Project.configureNotPlatform() {
                 archives(findByName("testFixturesSources") as Jar)
                 archives(findByName("testFixturesJavadoc") as Jar)
                 archives(findByName("testFixturesJar") as Jar)
+            }
+        }
+    }
+
+    pluginManager.withPlugin("org.jetbrains.kotlin.kapt") {
+        configure<org.jetbrains.kotlin.gradle.plugin.KaptExtension> {
+            arguments {
+                arg(
+                    "configuration.reference.output.dir",
+                    "${project.layout.buildDirectory.get().asFile}/docs/configuration"
+                )
+                arg(
+                    "configuration.reference.resources.dir",
+                    "${projectDir}/src/main/resources"
+                )
             }
         }
     }

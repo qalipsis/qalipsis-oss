@@ -250,7 +250,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
 
     private fun checkRestEndpointAvailability(httpPort: Int) {
         val request = HttpRequest.newBuilder()
-            .uri(URI.create("http://localhost:$httpPort"))
+            .uri(URI.create("http://localhost:$httpPort/api"))
             .headers(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN)
             .build()
         await("Querying homepage")

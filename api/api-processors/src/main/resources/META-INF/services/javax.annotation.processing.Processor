@@ -19,3 +19,4 @@
 
 io.qalipsis.api.processors.ScenarioAnnotationProcessor
 io.qalipsis.api.processors.SerializationAnnotationProcessor
+io.qalipsis.api.processors.configuration.ConfigurationReferenceAnnotationProcessor

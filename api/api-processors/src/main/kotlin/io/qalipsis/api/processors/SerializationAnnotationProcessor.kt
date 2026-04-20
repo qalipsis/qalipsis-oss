@@ -44,7 +44,6 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedOptions
-import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
@@ -60,7 +59,6 @@ import kotlin.reflect.KClass
 
 @ExperimentalStdlibApi
 @DelicateKotlinPoetApi("Awareness of delicate aspect")
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @SupportedAnnotationTypes(
     SerializationAnnotationProcessor.ANNOTATION_CLASS_NAME,
     SerializationAnnotationProcessor.SERIALIZABLE_CLASS_NAME
@@ -101,6 +99,10 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
     private var autoFormat: Format = JSON
 
     private var autoModeSerializationStatements: SerializationStatements = JsonSerializationStatements
+
+    override fun getSupportedSourceVersion(): SourceVersion? {
+        return SourceVersion.latestSupported()
+    }
 
     override fun init(processingEnv: ProcessingEnvironment) {
         try {

@@ -1,0 +1,24 @@
+#groups:
+#  - title: "Head"
+#    pattern: "head.**"
+#  - title: "Hazelcast"
+#    pattern: "hazelcast.**"
+#properties:
+#  some.prop:
+#    description: "override"
+#    ignore: false
+#    type: "String"
+#    default: "hello"
+
+
+groups:
+  - title: "Head"
+    pattern: "head.**"
+  - title: "Campaign"
+    pattern: "campaign.**"
+  - title: "Hazelcast"
+    pattern: "hazelcast.**"
+  - title: "Datasource"
+    pattern: "datasource.**"
+  - title: "Report"
+    pattern: "report.**"
