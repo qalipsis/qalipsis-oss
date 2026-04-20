@@ -20,11 +20,18 @@
 package io.qalipsis.api.scenario
 
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.api.services.ServicesFiles
+import io.qalipsis.api.scenario.ClasspathScenarioInitializer.Companion.SCENARIOS_DIR
+import java.io.File
+import java.net.JarURLConnection
+import java.net.URL
 import java.util.concurrent.Semaphore
 
 /**
  * Class in charge of initializing the scenarios from the classpath.
+ *
+ * Scenarios are discovered by scanning all JSON files under [SCENARIOS_DIR] in the classpath.
+ * Each file is named after the fully qualified loader class (compatible with [Class.forName]),
+ * with inner classes using `$` as separator instead of `.`.
  */
 class ClasspathScenarioInitializer : ScenarioFactory {
 
@@ -36,8 +43,10 @@ class ClasspathScenarioInitializer : ScenarioFactory {
 
     companion object {
 
+        private const val SCENARIOS_DIR = "META-INF/services/qalipsis/scenarios"
+
         /**
-         * Sempahore preventing from scenarios specifications to be generated concurrently.
+         * Semaphore preventing from scenarios specifications to be generated concurrently.
          */
         private val LOADING_SEMAPHORE = Semaphore(1)
 
@@ -54,17 +63,50 @@ class ClasspathScenarioInitializer : ScenarioFactory {
         /**
          * Instances of all the [ScenarioLoader] present in the classpath.
          */
-        private val scenariosLoader = this::class.java.classLoader.getResources("META-INF/services/qalipsis/scenarios")
-            .toList()
-            .asSequence()
-            .flatMap { ServicesFiles.readFile(it.openStream()) }
-            .map { scenarioMetadata ->
-                // Loading from the TSV form.
-                // TODO Improve it using JSON.
-                val loaderClass = scenarioMetadata.split("\t")[3]
-                Class.forName(loaderClass).getConstructor().newInstance() as ScenarioLoader
+        private val scenariosLoader: Map<String, ScenarioLoader> = loadScenariosFromClasspath()
+
+        /**
+         * Scans the classpath for individual scenario JSON files and instantiates the
+         * corresponding [ScenarioLoader] classes identified by the file names.
+         */
+        private fun loadScenariosFromClasspath(): Map<String, ScenarioLoader> {
+            return this::class.java.classLoader.getResources(SCENARIOS_DIR)
+                .toList()
+                .asSequence()
+                .flatMap { url -> listScenarioClassNames(url) }
+                .map { className ->
+                    Class.forName(className).getConstructor().newInstance() as ScenarioLoader
+                }
+                .associateBy { it.name }
+        }
+
+        /**
+         * Lists the scenario loader class names found at the given classpath [URL],
+         * supporting both file-system directories and JAR entries.
+         */
+        private fun listScenarioClassNames(url: URL): Sequence<String> {
+            return when (url.protocol) {
+                "file" -> {
+                    val dir = File(url.toURI())
+                    dir.listFiles { file -> file.name.endsWith(".json") }
+                        ?.asSequence()
+                        ?.map { it.name.removeSuffix(".json") }
+                        ?: emptySequence()
+                }
+
+                "jar" -> {
+                    val connection = url.openConnection() as JarURLConnection
+                    val prefix = connection.entryName + "/"
+                    connection.jarFile.entries().asSequence()
+                        .filter { !it.isDirectory && it.name.startsWith(prefix) && it.name.endsWith(".json") }
+                        .map { it.name.removePrefix(prefix).removeSuffix(".json") }
+                        .toList()
+                        .asSequence()
+                }
+
+                else -> emptySequence()
             }
-            .associateBy { it.name }
+        }
 
         /**
          * Recreates all the scenario specifications from the [ScenarioLoader] in the classpath.

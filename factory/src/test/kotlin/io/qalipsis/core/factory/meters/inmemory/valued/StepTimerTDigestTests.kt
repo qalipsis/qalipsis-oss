@@ -22,6 +22,7 @@ package io.qalipsis.core.factory.meters.inmemory.valued
 import assertk.assertThat
 import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
+import io.micronaut.core.io.scan.ClassPathResourceLoader
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.qalipsis.api.meters.Meter
@@ -29,12 +30,12 @@ import io.qalipsis.core.factory.meters.inmemory.valued.catadioptre.counter
 import io.qalipsis.core.factory.meters.inmemory.valued.catadioptre.total
 import io.qalipsis.core.reporter.MeterReporter
 import io.qalipsis.test.coroutines.TestDispatcherProvider
+import io.qalipsis.test.io.readResourceLines
 import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.io.File
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.Executors
@@ -129,7 +130,8 @@ internal class StepTimerTDigestTests {
         val timer = StepTimer(id, meterReporter, listOf(25.0, 50.0))
 
         // when
-        File("duration_in_nanos2.txt").forEachLine {
+        ClassPathResourceLoader.defaultLoader(this::class.java.classLoader)
+            .readResourceLines("duration_in_nanos2.txt").forEach {
             val amount = it.substring(0, it.length - 1)
             timer.record(Duration.of(amount.toLong(), ChronoUnit.NANOS))
         }

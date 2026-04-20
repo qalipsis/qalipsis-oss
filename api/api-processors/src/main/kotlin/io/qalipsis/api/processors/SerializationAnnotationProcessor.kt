@@ -37,14 +37,12 @@ import io.qalipsis.api.serialization.Serializable.Format
 import io.qalipsis.api.serialization.Serializable.Format.AUTO
 import io.qalipsis.api.serialization.Serializable.Format.JSON
 import io.qalipsis.api.serialization.Serializable.Format.PROTOBUF
-import io.qalipsis.api.services.ServicesFiles
 import java.nio.file.Path
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedOptions
-import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
@@ -60,7 +58,6 @@ import kotlin.reflect.KClass
 
 @ExperimentalStdlibApi
 @DelicateKotlinPoetApi("Awareness of delicate aspect")
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @SupportedAnnotationTypes(
     SerializationAnnotationProcessor.ANNOTATION_CLASS_NAME,
     SerializationAnnotationProcessor.SERIALIZABLE_CLASS_NAME
@@ -93,14 +90,13 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
      */
     private lateinit var kaptKotlinGeneratedDir: Path
 
-    /**
-     * Qualified names of all the serializable classes.
-     */
-    private val allSerializers = mutableSetOf<String>()
-
     private var autoFormat: Format = JSON
 
     private var autoModeSerializationStatements: SerializationStatements = JsonSerializationStatements
+
+    override fun getSupportedSourceVersion(): SourceVersion? {
+        return SourceVersion.latestSupported()
+    }
 
     override fun init(processingEnv: ProcessingEnvironment) {
         try {
@@ -132,16 +128,6 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
 
         // Processes the elements having the native Kotlin annotation.
         roundEnv.getElementsAnnotatedWith(Serializable::class.java).forEach(this::proceedQalipsisSerialization)
-
-        // Updates the file with the list of serializers.
-        if (roundEnv.processingOver()) {
-            ServicesFiles.writeFile(
-                allSerializers,
-                processingEnv.filer.createResource(StandardLocation.CLASS_OUTPUT, "", SERIALIZERS_PATH)
-                    .openOutputStream()
-            )
-            allSerializers.clear()
-        }
 
         return true
     }
@@ -197,7 +183,13 @@ class SerializationAnnotationProcessor : AbstractProcessor() {
             val packageName = elementUtils.getPackageOf(annotatedType)
             val serializationWrapperClassName = "${annotatedType.simpleName}SerializationWrapper"
             generateKotlinWrapper(packageName, serializationWrapperClassName, annotatedType, serializationStatements)
-            allSerializers += "${packageName}.${serializationWrapperClassName}"
+
+            // Write an empty resource file named after the wrapper class FQN. The provider discovers
+            // serializers by listing this directory, which keeps annotation processing incremental.
+            val wrapperFqn = "${packageName}.${serializationWrapperClassName}"
+            processingEnv.filer.createResource(
+                StandardLocation.CLASS_OUTPUT, "", "$SERIALIZERS_PATH/$wrapperFqn"
+            ).openOutputStream().close()
         } else {
             processingEnv.messager.printMessage(
                 Diagnostic.Kind.WARNING,

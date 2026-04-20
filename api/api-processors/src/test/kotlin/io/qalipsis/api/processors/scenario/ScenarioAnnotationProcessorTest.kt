@@ -21,6 +21,7 @@ package io.qalipsis.api.processors.scenario
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsOnly
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isLessThan
@@ -34,11 +35,11 @@ import io.micronaut.inject.qualifiers.Qualifiers
 import io.mockk.every
 import io.qalipsis.api.scenario.Injector
 import io.qalipsis.api.scenario.ScenarioLoader
-import io.qalipsis.api.services.ServicesFiles
-import io.qalipsis.test.io.readFileLines
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.io.File
+import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
 import java.util.Optional
@@ -53,17 +54,52 @@ internal class ScenarioAnnotationProcessorTest {
      */
     @Test
     internal fun `annotated methods should have been listed at compilation time`() {
-        val scenarioResources = this.javaClass.classLoader.getResources("META-INF/services/qalipsis/scenarios").toList()
+        val scenariosUrl = this.javaClass.classLoader.getResource("META-INF/services/qalipsis/scenarios")
+        Assertions.assertNotNull(scenariosUrl)
 
-        Assertions.assertEquals(1, scenarioResources.size)
-        val scenarios = readFileLines(scenarioResources[0].openStream(), true, "#").toSet()
+        val scenariosDir = File(scenariosUrl!!.toURI())
+        val jsonFiles = scenariosDir.listFiles { file -> file.name.endsWith(".json") }!!
+            .associate { it.name.removeSuffix(".json") to it.readText(StandardCharsets.UTF_8) }
 
-        val expected = setOf(
-            "a-method-outside-a-class\tScenario in a file\t0.1\tio.qalipsis.api.scenariosloader.ScenarioClassKt\$\$aMethodOutsideAClass",
-            "a-method-inside-an-object\t\t1.34\tio.qalipsis.api.scenariosloader.ScenarioDeclaration\$\$aMethodInsideAnObject",
-            "a-method-inside-a-class\tScenario in a class\t0.2.3\tio.qalipsis.api.scenariosloader.ScenarioClass\$\$aMethodInsideAClass"
+        Assertions.assertEquals(3, jsonFiles.size)
+
+        // Verify file names correspond to the loader class names.
+        assertThat(jsonFiles.keys).containsOnly(
+            "io.qalipsis.api.scenariosloader.ScenarioClassKt\$\$aMethodOutsideAClass",
+            "io.qalipsis.api.scenariosloader.ScenarioClass\$\$aMethodInsideAClass",
+            "io.qalipsis.api.scenariosloader.ScenarioDeclaration\$\$aMethodInsideAnObject"
         )
-        Assertions.assertEquals(expected, scenarios)
+
+        // Verify JSON content of each scenario file.
+        val outsideAClass = jsonFiles["io.qalipsis.api.scenariosloader.ScenarioClassKt\$\$aMethodOutsideAClass"]!!
+        assertThat(outsideAClass).all {
+            transform { it.contains(""""name": "a-method-outside-a-class"""") }.isEqualTo(true)
+            transform { it.contains(""""description": "Scenario in a file"""") }.isEqualTo(true)
+            transform { it.contains(""""version": "0.1"""") }.isEqualTo(true)
+            transform { it.contains(""""loader": "io.qalipsis.api.scenariosloader.ScenarioClassKt${'$'}${'$'}aMethodOutsideAClass"""") }.isEqualTo(
+                true
+            )
+        }
+
+        val insideAClass = jsonFiles["io.qalipsis.api.scenariosloader.ScenarioClass\$\$aMethodInsideAClass"]!!
+        assertThat(insideAClass).all {
+            transform { it.contains(""""name": "a-method-inside-a-class"""") }.isEqualTo(true)
+            transform { it.contains(""""description": "Scenario in a class"""") }.isEqualTo(true)
+            transform { it.contains(""""version": "0.2.3"""") }.isEqualTo(true)
+            transform { it.contains(""""loader": "io.qalipsis.api.scenariosloader.ScenarioClass${'$'}${'$'}aMethodInsideAClass"""") }.isEqualTo(
+                true
+            )
+        }
+
+        val insideAnObject = jsonFiles["io.qalipsis.api.scenariosloader.ScenarioDeclaration\$\$aMethodInsideAnObject"]!!
+        assertThat(insideAnObject).all {
+            transform { it.contains(""""name": "a-method-inside-an-object"""") }.isEqualTo(true)
+            transform { it.contains(""""description": """"") }.isEqualTo(true)
+            transform { it.contains(""""version": "1.34"""") }.isEqualTo(true)
+            transform { it.contains(""""loader": "io.qalipsis.api.scenariosloader.ScenarioDeclaration${'$'}${'$'}aMethodInsideAnObject"""") }.isEqualTo(
+                true
+            )
+        }
     }
 
     @Test
@@ -180,11 +216,11 @@ internal class ScenarioAnnotationProcessorTest {
      * Loads the scenarios and inject the relevant resources.
      */
     private fun createScenariosLoader(): Collection<ScenarioLoader> {
-        return this.javaClass.classLoader.getResources("META-INF/services/qalipsis/scenarios")
-            .toList()
-            .flatMap { ServicesFiles.readFile(it.openStream()) }
-            .map { scenarioMetadata ->
-                val loaderClass = scenarioMetadata.split("\t")[3]
+        val scenariosUrl = this.javaClass.classLoader.getResource("META-INF/services/qalipsis/scenarios")!!
+        val scenariosDir = File(scenariosUrl.toURI())
+        return scenariosDir.listFiles { file -> file.name.endsWith(".json") }!!
+            .map { file ->
+                val loaderClass = file.name.removeSuffix(".json")
                 Class.forName(loaderClass).getConstructor().newInstance() as ScenarioLoader
             }
     }

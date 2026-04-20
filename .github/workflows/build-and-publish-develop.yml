@@ -36,7 +36,7 @@ jobs:
         if: always()
 
       - name: Unit tests
-        run: ./gradlew test --continue --refresh-dependencies
+        run: ./gradlew test --continue
 
       - name: Integration Tests
         run: ./gradlew integrationTest --continue

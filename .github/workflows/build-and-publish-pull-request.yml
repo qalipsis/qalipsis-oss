@@ -36,7 +36,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
 
       - name: Unit tests
-        run: ./gradlew test --continue --refresh-dependencies
+        run: ./gradlew test --continue
         if: always()
 
       - name: Integration Tests

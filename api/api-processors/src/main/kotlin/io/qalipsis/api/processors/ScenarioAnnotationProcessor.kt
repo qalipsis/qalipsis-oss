@@ -21,15 +21,13 @@ package io.qalipsis.api.processors
 
 import com.squareup.javapoet.JavaFile
 import io.qalipsis.api.annotations.Scenario
-import io.qalipsis.api.services.ServicesFiles
-import java.io.IOException
+import io.qalipsis.api.processors.ScenarioAnnotationProcessor.Companion.SCENARIOS_DIR
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedAnnotationTypes
-import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.ElementKind.METHOD
 import javax.lang.model.element.ExecutableElement
@@ -43,26 +41,30 @@ import javax.tools.StandardLocation
  * This processor creates implementations of [io.qalipsis.api.injector.Injector] containing the declaration
  * of the scenario and metadata.
  *
+ * Each scenario gets its own JSON metadata file under [SCENARIOS_DIR], named after the loader class.
+ * This enables incremental builds since only the changed scenario's file is regenerated.
+ *
  * If the enclosing class or the method itself expects parameters, they are injected from the Micronaut runtime.
  *
  * @author Eric Jessé
  */
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @SupportedAnnotationTypes(ScenarioAnnotationProcessor.ANNOTATION_CLASS_NAME)
 internal class ScenarioAnnotationProcessor : AbstractProcessor() {
 
     companion object {
 
-        const val SCENARIOS_PATH = "META-INF/services/qalipsis/scenarios"
+        const val SCENARIOS_DIR = "META-INF/services/qalipsis/scenarios"
 
         const val ANNOTATION_CLASS_NAME = "io.qalipsis.api.annotations.Scenario"
-
-        const val RESOURCE_FIELD_SEPARATOR = "\t"
     }
 
     private lateinit var typeUtils: TypeUtils
 
     private lateinit var injectionResolutionUtils: InjectionResolutionUtils
+
+    override fun getSupportedSourceVersion(): SourceVersion? {
+        return SourceVersion.latestSupported()
+    }
 
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
@@ -76,17 +78,7 @@ internal class ScenarioAnnotationProcessor : AbstractProcessor() {
         if (annotatedElements.isEmpty()) return false
 
         val filer = processingEnv.filer
-        // Loading the existing file.
-        val existingFile = filer.getResource(StandardLocation.CLASS_OUTPUT, "", SCENARIOS_PATH)
-        // Looking for existing resources.
-        val alreadyProcessedScenarios = try {
-            ServicesFiles.readFile(existingFile.openInputStream())
-        } catch (e: IOException) {
-            emptySet()
-        }.map { line ->
-            ScenarioResourceMetadata.ofLine(line)
-        }.associateBy { it.scenarioName }
-        val allScenariosByName = alreadyProcessedScenarios.toMutableMap()
+        val processedNames = mutableSetOf<String>()
 
         annotatedElements
             .asSequence()
@@ -103,18 +95,12 @@ internal class ScenarioAnnotationProcessor : AbstractProcessor() {
                 )
                 val loaderSpec = scenarioLoaderClassGenerator.generateClassLoader()
 
-                if (allScenariosByName.containsKey(scenarioLoaderClassGenerator.scenarioName)) {
+                if (!processedNames.add(scenarioLoaderClassGenerator.scenarioName)) {
                     processingEnv.messager.printMessage(
                         ERROR,
                         "The scenario with name ${scenarioLoaderClassGenerator.scenarioName} already exists in the source files"
                     )
                 }
-                allScenariosByName[scenarioLoaderClassGenerator.scenarioName] = ScenarioResourceMetadata(
-                    scenarioName = scenarioLoaderClassGenerator.scenarioName,
-                    scenarioDescription = scenarioLoaderClassGenerator.scenarioDescription,
-                    scenarioVersion = scenarioLoaderClassGenerator.scenarioVersion,
-                    scenarioLoader = executableMethod.loaderFullClassName
-                )
 
                 val javaFile = JavaFile.builder("io.qalipsis.api.scenariosloader", loaderSpec).build()
                 val loader = filer.createSourceFile("${executableMethod.loaderFullClassName}")
@@ -122,40 +108,46 @@ internal class ScenarioAnnotationProcessor : AbstractProcessor() {
                     javaFile.writeTo(writer)
                     writer.flush()
                 }
-            }
 
-        // Create the list of scenarios as a resource.
-        val scenariosFile = filer.createResource(StandardLocation.CLASS_OUTPUT, "", SCENARIOS_PATH)
-        ServicesFiles.writeFile(allScenariosByName.map { it.value.asResource }, scenariosFile.openOutputStream())
+                // Write the individual JSON metadata file, named after the loader class.
+                val scenarioFile = filer.createResource(
+                    StandardLocation.CLASS_OUTPUT, "",
+                    "$SCENARIOS_DIR/${executableMethod.loaderFullClassName}.json"
+                )
+                OutputStreamWriter(scenarioFile.openOutputStream(), StandardCharsets.UTF_8).use { writer ->
+                    writer.write(
+                        buildJsonMetadata(
+                            scenarioLoaderClassGenerator.scenarioName,
+                            scenarioLoaderClassGenerator.scenarioDescription,
+                            scenarioLoaderClassGenerator.scenarioVersion,
+                            executableMethod.loaderFullClassName
+                        )
+                    )
+                    writer.flush()
+                }
+            }
 
         return true
     }
 
-    /**
-     * Represents the metadata of a scenario to write into the resource file.
-     */
-    private data class ScenarioResourceMetadata(
-        val scenarioName: String,
-        val scenarioDescription: String,
-        val scenarioVersion: String,
-        val scenarioLoader: String
-    ) {
-        val asResource: String =
-            "$scenarioName$RESOURCE_FIELD_SEPARATOR$scenarioDescription$RESOURCE_FIELD_SEPARATOR$scenarioVersion$RESOURCE_FIELD_SEPARATOR$scenarioLoader"
+    private fun buildJsonMetadata(name: String, description: String, version: String, loader: String): String {
+        return """
+            |{
+            |  "name": "${escapeJson(name)}",
+            |  "description": "${escapeJson(description)}",
+            |  "version": "${escapeJson(version)}",
+            |  "loader": "${escapeJson(loader)}"
+            |}
+        """.trimMargin()
+    }
 
-        companion object {
-
-            fun ofLine(line: String): ScenarioResourceMetadata {
-                val tokens = line.split(RESOURCE_FIELD_SEPARATOR)
-                return ScenarioResourceMetadata(
-                    scenarioName = tokens[0],
-                    scenarioDescription = tokens[1],
-                    scenarioVersion = tokens[2],
-                    scenarioLoader = tokens[3]
-                )
-            }
-
-        }
+    private fun escapeJson(value: String): String {
+        return value
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
     }
 
 }
