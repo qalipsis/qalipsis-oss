@@ -25,8 +25,10 @@ import com.varabyte.kotter.foundation.firstSuccess
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.session
 import com.varabyte.kotter.foundation.timer.addTimer
+import com.varabyte.kotter.runtime.terminal.Terminal
+import com.varabyte.kotter.runtime.terminal.TerminalSize
+import com.varabyte.kotter.runtime.terminal.inmemory.InMemoryTerminal
 import com.varabyte.kotter.terminal.system.SystemTerminal
-import com.varabyte.kotter.terminal.virtual.TerminalSize
 import com.varabyte.kotter.terminal.virtual.VirtualTerminal
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
@@ -80,55 +82,63 @@ class ConsoleCampaignProgressionReporter(
     }
 
     override suspend fun preCreate(campaignConfiguration: CampaignConfiguration, runningCampaign: RunningCampaign) {
-        // Initializes the states of the campaign and scenarios.
-        campaignState = CampaignState(runningCampaign.key)
-        runningCampaign.scenarios.forEach { (scenarioName, scenarioConfiguration) ->
-            campaignState.progressionState.scheduledMinions.addAndGet(scenarioConfiguration.minionsCount)
-            campaignState.scenarios[scenarioName] = ScenarioState(scenarioName).also {
-                it.progressionState.scheduledMinions.set(scenarioConfiguration.minionsCount)
+        defaultTerminal()?.let { terminal ->
+            // Initializes the states of the campaign and scenarios.
+            campaignState = CampaignState(runningCampaign.key)
+            runningCampaign.scenarios.forEach { (scenarioName, scenarioConfiguration) ->
+                campaignState.progressionState.scheduledMinions.addAndGet(scenarioConfiguration.minionsCount)
+                campaignState.scenarios[scenarioName] = ScenarioState(scenarioName).also {
+                    it.progressionState.scheduledMinions.set(scenarioConfiguration.minionsCount)
+                }
             }
-        }
 
-        consoleAppender = disableLogbackConsoleAppender()
-        val consoleRenderer = ConsoleRenderer(campaignState, consoleMeterReporter)
-        campaignCompletion = CompletableFuture()
+            consoleAppender = disableLogbackConsoleAppender()
+            val consoleRenderer = ConsoleRenderer(campaignState, consoleMeterReporter)
+            campaignCompletion = CompletableFuture()
 
-        thread(name = "console-live-reporter", isDaemon = false) {
-            session(clearTerminal = false, terminal = defaultTerminal()) {
-                section {
-                    consoleRenderer.render(this, this.width.coerceAtLeast(WIDTH))
-                }.runUntilSignal {
-                    addTimer(1.seconds, repeat = true) {
-                        rerender()
-                        if (campaignCompletion.isDone) {
-                            log.info { "Stopping the rendering of the live in the console" }
-                            repeat = false
-                            signal()
+            thread(name = "console-live-reporter", isDaemon = false) {
+                session(clearTerminal = false, terminal = terminal) {
+                    section {
+                        consoleRenderer.render(this, this.width.coerceAtLeast(WIDTH))
+                    }.runUntilSignal {
+                        addTimer(1.seconds, repeat = true) {
+                            rerender()
+                            if (campaignCompletion.isDone) {
+                                log.info { "Stopping the rendering of the live in the console" }
+                                repeat = false
+                                signal()
+                            }
                         }
                     }
                 }
             }
-        }
+        } ?: run { log.warn { "Cannot create the console renderer, no terminal available" } }
     }
 
     /**
      * Creates the terminal for the rendering, first trying to use the system terminal, or a virtual terminal when not possible.
      */
-    private fun defaultTerminal() = listOf(
-        { SystemTerminal() },
-        {
-            VirtualTerminal.create(
-                title = "QALIPSIS",
-                fontSize = 11,
-                terminalSize = TerminalSize(WIDTH, 50)
-            )
-        }
-    ).firstSuccess()
+    private fun defaultTerminal(): Terminal? {
+        return runCatching {
+            listOf(
+                { SystemTerminal() },
+                {
+                    VirtualTerminal.create(
+                        title = "QALIPSIS",
+                        fontSize = 11,
+                        terminalSize = TerminalSize(WIDTH, 50)
+                    )
+                },
+                { InMemoryTerminal() }
+            ).firstSuccess()
+        }.getOrNull()
+    }
 
     /**
      * Disables the console appender to avoid having all the exceptions listed in the console.
      */
     private fun disableLogbackConsoleAppender(): ConsoleAppender<*>? {
+        log.warn { "Disabling the console logging in order to display the live report" }
         val loggerContext = (LoggerFactory.getILoggerFactory() as LoggerContext)
         val consoleAppender = loggerContext.getLogger("ROOT").getAppender("console") as? ConsoleAppender<*>
         consoleAppender?.stop()
@@ -136,19 +146,21 @@ class ConsoleCampaignProgressionReporter(
     }
 
     suspend fun report() {
-        val consoleRenderer = ConsoleRenderer(campaignState, consoleMeterReporter)
-        session(terminal = defaultTerminal()) {
-            section {
-                consoleRenderer.render(this, this.width.coerceAtLeast(WIDTH))
-            }.runUntilSignal {
-                addTimer(2.seconds, repeat = false) {
-                    rerender()
-                    consoleAppender?.start()
-                    processBlocker.cancel()
-                    signal()
+        defaultTerminal()?.let { terminal ->
+            val consoleRenderer = ConsoleRenderer(campaignState, consoleMeterReporter)
+            session(terminal = terminal) {
+                section {
+                    consoleRenderer.render(this, this.width.coerceAtLeast(WIDTH))
+                }.runUntilSignal {
+                    addTimer(2.seconds, repeat = false) {
+                        rerender()
+                        consoleAppender?.start()
+                        processBlocker.cancel()
+                        signal()
+                    }
                 }
             }
-        }
+        } ?: run { log.warn { "Cannot create the console renderer, no terminal available" } }
     }
 
     override suspend fun preSchedule(
