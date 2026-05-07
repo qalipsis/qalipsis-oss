@@ -61,12 +61,34 @@ export default defineNuxtConfig({
     },
   },
 
-  css: [resolve(__dirname, 'assets/scss/main.scss')],
+  css: [resolve(__dirname, 'app/assets/scss/main.scss')],
 
   postcss: {
     plugins: {
       tailwindcss: {},
       autoprefixer: {},
+    },
+  },
+
+  vite: {
+    optimizeDeps: {
+      include: [
+        'apexcharts',
+        'vue3-apexcharts',
+        '@vuepic/vue-datepicker',
+        '@ckpack/vue-color',
+        '@headlessui/vue',
+        'fuse.js',
+        'luxon',
+        'date-fns',
+        'tinycolor2',
+        'tippy.js',
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        'vee-validate',
+        '@vee-validate/zod',
+        'zod',
+      ],
     },
   },
 
