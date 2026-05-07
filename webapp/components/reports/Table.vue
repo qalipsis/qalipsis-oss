@@ -7,23 +7,15 @@
     :row-selection-enabled="true"
     :row-all-selection-enabled="true"
     :current-page-index="currentPageIndex"
+    :row-click-enabled="true"
     row-key="reference"
     row-class="group"
     @sorter-change="handleSorterChange"
     @page-change="handlePaginationChange"
     @selectionChange="handleSelectionChange"
     @refresh="handleRefreshBtnClick"
+    @row-click="handleReportNameClick"
   >
-    <template #bodyCell="{ column, record }">
-      <template v-if="column.key === 'displayName'">
-        <div
-          class="cursor-pointer hover:text-primary-500"
-          @click="handleReportNameClick(record as ReportTableData)"
-        >
-          <span>{{ record.displayName }}</span>
-        </div>
-      </template>
-    </template>
     <template #actionCell="{ record }">
       <Popover class="relative">
         <PopoverButton class="outline-none">

@@ -10,22 +10,18 @@
       :row-all-selection-enabled="true"
       :row-selection-enabled="rowSelectionEnabled"
       :disable-row="disableRow"
+      :row-click-enabled="actionsEnabled"
       row-class="group"
       rowKey="key"
       @sorter-change="handleSorterChange"
       @page-change="handlePaginationChange"
       @selectionChange="handleSelectionChange"
       @refresh="handleRefreshBtnClick"
+      @row-click="handleNameClick"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
-          <div
-            :class="{ 'cursor-pointer hover:text-primary-500': actionsEnabled }"
-            class="flex items-center"
-            @click="handleNameClick(record as CampaignTableData)"
-          >
-            <span>{{ record.name }}</span>
-          </div>
+          <span>{{ record.name }}</span>
         </template>
         <template v-if="column.key === 'startTime'">
           <span>{{ record.startTime }}</span>

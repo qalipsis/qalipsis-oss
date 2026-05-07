@@ -73,10 +73,15 @@
           :key="record[rowKey]"
           :class="[
             currentPageSelectedRowKeys.includes(record[rowKey]) ? 'bg-primary-50 dark:bg-gray-800' : '',
+            rowClickEnabled ? 'cursor-pointer' : '',
             rowClass ?? '',
           ]"
+          @click="handleRowClick(record)"
         >
-          <td v-if="rowSelectionEnabled">
+          <td
+            v-if="rowSelectionEnabled"
+            @click.stop
+          >
             <div class="p-2">
               <BaseTableCheckbox
                 v-model="currentPageSelectedRowKeys"
@@ -104,6 +109,7 @@
           <td
             class="px-2"
             v-if="$slots.actionCell"
+            @click.stop
           >
             <slot
               name="actionCell"
@@ -205,6 +211,13 @@ const props = defineProps<{
    * A flag to indicate if the refresh button should be hidden.
    */
   refreshHidden?: boolean
+
+  /**
+   * A flag to indicate that rows are clickable. When true, clicking a row emits `rowClick`
+   * and the row gets a pointer cursor. Clicks on the selection checkbox cell and action cell
+   * are excluded so they keep their own behavior.
+   */
+  rowClickEnabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -212,6 +225,7 @@ const emit = defineEmits<{
   (e: 'pageChange', v: number): void
   (e: 'selectionChange', v: TableSelection): void
   (e: 'refresh'): void
+  (e: 'rowClick', v: any): void
 }>()
 
 const {
@@ -275,5 +289,11 @@ const handleSorterClick = (columnKey: string) => {
 
 const handlePageChange = (pageIndex: number) => {
   emit('pageChange', pageIndex)
+}
+
+const handleRowClick = (record: any) => {
+  if (!props.rowClickEnabled) return
+
+  emit('rowClick', record)
 }
 </script>
