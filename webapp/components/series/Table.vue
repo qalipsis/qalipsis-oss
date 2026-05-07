@@ -9,22 +9,18 @@
     :row-selection-enabled="true"
     :row-all-selection-enabled="true"
     :selected-row-keys="selectedRowKeys"
+    :row-click-enabled="canClickDataSeriesName"
     row-key="reference"
     row-class="group"
     @sorter-change="handleSorterChange"
     @page-change="handlePaginationChange"
     @selectionChange="handleSelectionChange"
     @refresh="handleRefreshBtnClick"
+    @row-click="handleEditBtnClick"
   >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'displayName'">
-        <div
-          class="flex items-center"
-          :class="{
-            'cursor-pointer hover:text-primary-500': canClickDataSeriesName,
-          }"
-          @click="canClickDataSeriesName && handleEditBtnClick(record as DataSeriesTableData)"
-        >
+        <div class="flex items-center">
           <div
             class="w-2 h-2 rounded-full mr-2"
             :style="{ backgroundColor: `${record.color || 'transparent'}` }"
