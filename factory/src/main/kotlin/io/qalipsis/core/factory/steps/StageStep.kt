@@ -135,7 +135,7 @@ class StageStep<I, O>(
 
         if (failure.get()) {
             val lastError = context.errors.lastOrNull()
-            throw StepExecutionException(RuntimeException(lastError?.message ?: "Stage '${this.name}' failed"))
+            throw StepExecutionException(lastError?.message ?: "Stage '${this.name}' failed")
         }
     }
 

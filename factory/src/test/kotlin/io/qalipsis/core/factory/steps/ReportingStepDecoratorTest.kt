@@ -40,6 +40,7 @@ import io.qalipsis.api.meters.Timer
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
+import io.qalipsis.core.factory.steps.catadioptre.started
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -95,6 +96,7 @@ internal class ReportingStepDecoratorTest {
 
     @BeforeEach
     internal fun setUp() {
+        reportingStepDecorator.started().set(false)
         every { decorated.retryPolicy } returns null
         every { decorated.name } returns "the decorated"
 
@@ -222,6 +224,7 @@ internal class ReportingStepDecoratorTest {
     @Test
     internal fun `should stop the decorated step`() = testDispatcherProvider.run {
         // when
+        reportingStepDecorator.started().set(true)
         reportingStepDecorator.stop(startStopContext)
 
         // then

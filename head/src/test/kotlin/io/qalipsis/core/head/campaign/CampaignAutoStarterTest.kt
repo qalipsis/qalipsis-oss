@@ -20,9 +20,11 @@
 package io.qalipsis.core.head.campaign
 
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isGreaterThanOrEqualTo
+import assertk.assertions.isPresent
 import assertk.assertions.isTrue
 import io.mockk.coEvery
 import io.mockk.every
@@ -194,12 +196,10 @@ internal class CampaignAutoStarterTest {
             assertThat(campaignAutoStarter.campaignLatch().isLocked).isFalse()
 
             // when
-            val exception = assertThrows<RuntimeException> {
-                campaignAutoStarter.join()
-            }
+            val result = campaignAutoStarter.await()
 
             // then
-            assertThat(exception.message).isEqualTo("No executable scenario was found")
+            assertThat(result).isPresent().isEqualTo(201)
         }
 
     @Test
@@ -283,7 +283,7 @@ internal class CampaignAutoStarterTest {
                 headChannel.publishDirective(FactoryShutdownDirective("channel-factory-2"))
             }
 
-            campaignAutoStarter.join()
+            assertThat(campaignAutoStarter.await()).isEmpty()
         }
 
     @Test
@@ -338,14 +338,7 @@ internal class CampaignAutoStarterTest {
 
             // then
             assertThat(campaignAutoStarter.campaignLatch().isLocked).isFalse()
-
-            // when
-            val exception = assertThrows<RuntimeException> {
-                campaignAutoStarter.join()
-            }
-
-            // then
-            assertThat(exception.message).isEqualTo("There is an error")
+            assertThat(campaignAutoStarter.await()).isPresent().isEqualTo(202)
         }
 
     @Test
@@ -385,6 +378,9 @@ internal class CampaignAutoStarterTest {
             assertThat(campaignAutoStarter.campaignLatch().isLocked).isTrue()
             assertThrows<TimeoutCancellationException> {
                 withTimeout(100) { campaignAutoStarter.join() }
+            }
+            assertThrows<TimeoutCancellationException> {
+                withTimeout(100) { campaignAutoStarter.await() }
             }
         }
 

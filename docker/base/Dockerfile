@@ -22,6 +22,4 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 8400
 
-ENV LOG_PATH=/app/logs
-ENV MIN_FLAT_FILE_LOG_LEVEL=ALL
 ENTRYPOINT ["/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]

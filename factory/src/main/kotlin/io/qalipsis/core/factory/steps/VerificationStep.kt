@@ -26,8 +26,6 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.Counter
-import io.qalipsis.api.report.CampaignReportLiveStateRegistry
-import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.steps.AbstractStep
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -41,7 +39,6 @@ class VerificationStep<I, O>(
     id: StepName,
     private val eventsLogger: EventsLogger,
     private val meterRegistry: CampaignMeterRegistry,
-    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry,
     @Suppress("UNCHECKED_CAST") private val assertionBlock: (suspend (input: I) -> O) = { value ->
         value as O
     }
@@ -87,16 +84,4 @@ class VerificationStep<I, O>(
         }
     }
 
-    override suspend fun stop(context: StepStartStopContext) {
-        if (started.compareAndExchange(true, false) && assertionFailuresCount.get() > 0) {
-            reportLiveStateRegistry.put(
-                context.campaignKey,
-                context.scenarioName,
-                this.name,
-                ReportMessageSeverity.ERROR,
-                "Assertion failure(s): ${assertionFailuresCount.get()} (See the details in the events)"
-            )
-        }
-        super.stop(context)
-    }
 }

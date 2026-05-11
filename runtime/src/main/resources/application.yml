@@ -38,10 +38,7 @@ logging:
     include-caller-data: false
     never-block: false
   level:
-    io.qalipsis.core.head: info
-    io.micronaut: warn
-    io.netty: warn
-    io.qalipsis: warn
+    io.qalipsis.core: info
     events: all
 
 shared-registry:
