@@ -22,7 +22,6 @@ package io.qalipsis.core.factory.steps.converters
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.meters.CampaignMeterRegistry
-import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
 import io.qalipsis.api.steps.StepSpecificationConverter
@@ -38,7 +37,6 @@ import io.qalipsis.core.factory.steps.VerificationStep
 class VerificationStepSpecificationConverter(
     private val eventsLogger: EventsLogger,
     private val meterRegistry: CampaignMeterRegistry,
-    private val reportLiveStateRegistry: CampaignReportLiveStateRegistry
 ) : StepSpecificationConverter<VerificationStepSpecification<*, *>> {
 
     override fun support(stepSpecification: StepSpecification<*, *, *>): Boolean {
@@ -49,7 +47,7 @@ class VerificationStepSpecificationConverter(
         @Suppress("UNCHECKED_CAST")
         val spec = creationContext.stepSpecification as VerificationStepSpecification<I, O>
         val step =
-            VerificationStep(spec.name, eventsLogger, meterRegistry, reportLiveStateRegistry, spec.verificationBlock)
+            VerificationStep(spec.name, eventsLogger, meterRegistry, spec.verificationBlock)
         creationContext.createdStep(step)
     }
 

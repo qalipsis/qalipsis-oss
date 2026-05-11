@@ -22,10 +22,15 @@ package io.qalipsis.core.head.campaign
 import io.aerisconsulting.catadioptre.KTestable
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.report.CampaignReport
+import io.qalipsis.api.report.CampaignReportPublisher
+import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.annotations.LogInput
@@ -46,6 +51,7 @@ import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.core.lifetime.HeadStartupComponent
 import io.qalipsis.core.lifetime.ProcessBlocker
+import io.qalipsis.core.lifetime.ProcessExitCodeSupplier
 import jakarta.annotation.PreDestroy
 import jakarta.inject.Provider
 import jakarta.inject.Singleton
@@ -53,6 +59,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.slf4j.event.Level
+import java.util.Optional
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -72,7 +79,8 @@ class CampaignAutoStarter(
     private val campaignReportStateKeeper: CampaignReportStateKeeper,
     private val autostartCampaignConfiguration: AutostartCampaignConfiguration,
     private val headChannel: HeadChannel
-) : ProcessBlocker, HeadStartupComponent, HeartbeatListener, HandshakeRequestListener {
+) : ProcessBlocker, ProcessExitCodeSupplier, HeadStartupComponent, HeartbeatListener, HandshakeRequestListener,
+    CampaignReportPublisher {
 
     @KTestable
     private val campaignLatch = Latch(true, "campaign-auto-starter")
@@ -103,6 +111,8 @@ class CampaignAutoStarter(
 
     @KTestable
     private lateinit var campaign: RunningCampaign
+
+    private var exitCode: Int? = null
 
     override fun getStartupOrder() = Int.MIN_VALUE + 1
 
@@ -147,6 +157,7 @@ class CampaignAutoStarter(
                         )
                         autostartCampaignConfiguration.generatedKey = campaign.key
                     } else {
+                        exitCode = 201
                         log.error { "No executable scenario was found" }
                         error = "No executable scenario was found"
                         // Call the abort to generate a failure.
@@ -162,14 +173,38 @@ class CampaignAutoStarter(
     private fun calculateMinionsCount(scenario: ScenarioSummary) =
         if (autostartCampaignConfiguration.minionsCountPerScenario > 0) autostartCampaignConfiguration.minionsCountPerScenario else (scenario.minionsCount * autostartCampaignConfiguration.minionsFactor).toInt()
 
+    override suspend fun publish(
+        tenant: String,
+        campaignKey: CampaignKey,
+        report: CampaignReport
+    ) {
+        if (report.status == ExecutionStatus.SUCCESSFUL) {
+            log.info { "The campaign $campaignKey was successfully completed" }
+        } else {
+            exitCode = 202
+            val errors = report.scenariosReports
+                .filter { it.status != ExecutionStatus.SUCCESSFUL }
+                .flatMap { it.messages }
+                .filter { it.severity != ReportMessageSeverity.INFO }
+                .map { "Step ${it.stepName}: ${it.message}" }
+            error = errors.joinToString()
+
+            log.error {
+                "The campaign $campaignKey completed with errors: ${
+                    errors.joinToString(
+                        "\n\t",
+                        "\n\t",
+                        "\n"
+                    )
+                }"
+            }
+        }
+    }
+
     @LogInput
     suspend fun completeCampaign(directive: CompleteCampaignDirective) {
-        // TODO Use a CampaignHook instead of forcing that call in the DisabledState.
-        if (directive.isSuccessful) {
-            log.info { "The campaign ${directive.campaignKey} was completed: ${directive.message?.takeIf { it.isNotBlank() } ?: "<no detail>"}" }
-        } else {
-            log.error { "The campaign ${directive.campaignKey} failed: ${directive.message ?: "<no detail>"}" }
-            error = directive.message?.takeIf { it.isNotBlank() }
+        if (!directive.isSuccessful) {
+            exitCode = 202
         }
         campaign.factories.forEach { (_, factory) ->
             headChannel.publishDirective(FactoryShutdownDirective(factory.unicastChannel))
@@ -178,12 +213,17 @@ class CampaignAutoStarter(
         campaignLatch.release()
     }
 
+    override suspend fun await(): Optional<Int> {
+        campaignLatch.await()
+        return Optional.ofNullable(exitCode)
+    }
+
     override suspend fun join() {
         campaignLatch.await()
-        error?.let {
-            log.error { "An error occurred while executing the campaign: $error" }
-            throw RuntimeException(it)
-        }
+    }
+
+    override fun getOrder(): Int {
+        return Int.MAX_VALUE
     }
 
     @PreDestroy

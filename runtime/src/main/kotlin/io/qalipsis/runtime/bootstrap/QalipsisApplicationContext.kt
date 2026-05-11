@@ -74,21 +74,22 @@ class QalipsisApplicationContext(
         try {
             doExecute(processBlockers, processExitCodeSuppliers)
         } catch (e: Exception) {
-            if (log.isDebugEnabled) {
+            if (e is ExitStatusException && e.exitStatus >= 200) { // QALIPSIS started by the execution failed.
+                log.error { "QALIPSIS execution failed: ${e.message}" }
+            } else if (log.isDebugEnabled && e !is ExitStatusException) {
                 log.error(e) { "QALIPSIS could not start: ${e.message}" }
             } else {
                 log.error { "QALIPSIS could not start: ${e.message}" }
             }
             exitCode = (e as? ExitStatusException)?.exitStatus ?: exitCode.takeIf { it != 0 } ?: 2
-            log.error(e) { e.message }
-            log.warn { "Cancelling all the process blockers" }
+            log.debug { "Cancelling all the process blockers" }
             processBlockers.forEach { blocker ->
                 runCatching {
                     blocker.cancel()
                     applicationContext.destroyBean(blocker)
                 }
             }
-            log.warn { "Forcing all the coroutine scope providers to close" }
+            log.debug { "Forcing all the coroutine scope providers to close" }
             applicationContext.getBeansOfType(CoroutineScopeProvider::class.java).forEach {
                 runCatching {
                     applicationContext.destroyBean(it)

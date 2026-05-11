@@ -26,8 +26,6 @@ import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.events.EventsLogger
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.Counter
-import io.qalipsis.api.report.CampaignReportLiveStateRegistry
-import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -68,9 +66,6 @@ internal class VerificationStepTest {
     private lateinit var errorCounter: Counter
 
     @RelaxedMockK
-    private lateinit var reportLiveStateRegistry: CampaignReportLiveStateRegistry
-
-    @RelaxedMockK
     private lateinit var stepStartStopContext: StepStartStopContext
 
     @BeforeEach
@@ -108,7 +103,7 @@ internal class VerificationStepTest {
     @Test
     @Timeout(1)
     fun `should simply forward with default step`() = testCoroutineDispatcher.runTest {
-        val step = VerificationStep<Int, Int>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry)
+        val step = VerificationStep<Int, Int>("my-step", eventsLogger, meterRegistry)
         step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, Int>(input = 1)
 
@@ -127,7 +122,7 @@ internal class VerificationStepTest {
             eventsLogger.info("step.assertion.success", timestamp = any(), tagsSupplier = any())
         }
 
-        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
+        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter)
     }
 
     @Test
@@ -137,7 +132,6 @@ internal class VerificationStepTest {
             "my-step",
             eventsLogger,
             meterRegistry,
-            reportLiveStateRegistry
         ) { value -> value.toString() }
         step.start(stepStartStopContext)
         val ctx = StepTestHelper.createStepContext<Int, String>(input = 1)
@@ -156,14 +150,14 @@ internal class VerificationStepTest {
             successCounter.increment()
             eventsLogger.info("step.assertion.success", timestamp = any(), tagsSupplier = any())
         }
-        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
+        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter)
     }
 
     @Test
     @Timeout(1)
     fun `should not forward data when assertion throwing error`() = testCoroutineDispatcher.runTest {
         val step =
-            VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry) { value ->
+            VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry) { value ->
                 fail<Any>("This is an error")
                 value.toString()
             }
@@ -188,22 +182,15 @@ internal class VerificationStepTest {
                 timestamp = any(),
                 tagsSupplier = any()
             )
-            reportLiveStateRegistry.put(
-                eq("my-campaign"),
-                eq("my-scenario"),
-                eq("my-step"),
-                eq(ReportMessageSeverity.ERROR),
-                any()
-            )
         }
 
-        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
+        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter)
     }
 
     @Test
     @Timeout(1)
     fun `should not forward data when assertion throwing exception`() = testCoroutineDispatcher.runTest {
-        val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry) {
+        val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry) {
             throw RuntimeException("The error")
         }
         step.start(stepStartStopContext)
@@ -223,13 +210,13 @@ internal class VerificationStepTest {
             errorCounter.increment()
             eventsLogger.warn("step.assertion.error", value = "The error", timestamp = any(), tagsSupplier = any())
         }
-        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
+        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter)
     }
 
     @Test
     @Timeout(1)
     fun `should not forward data when assertion fails`() = testCoroutineDispatcher.runTest {
-        val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry, reportLiveStateRegistry) {
+        val step = VerificationStep<Int, String>("my-step", eventsLogger, meterRegistry) {
             throw Error("The error")
         }
         step.start(stepStartStopContext)
@@ -248,15 +235,8 @@ internal class VerificationStepTest {
         coVerifyOnce {
             failureCounter.increment()
             eventsLogger.warn("step.assertion.failure", value = "The error", timestamp = any(), tagsSupplier = any())
-            reportLiveStateRegistry.put(
-                eq("my-campaign"),
-                eq("my-scenario"),
-                eq("my-step"),
-                eq(ReportMessageSeverity.ERROR),
-                "Assertion failure(s): 1 (See the details in the events)"
-            )
         }
-        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter, reportLiveStateRegistry)
+        confirmVerified(eventsLogger, successCounter, failureCounter, errorCounter)
     }
 
 }

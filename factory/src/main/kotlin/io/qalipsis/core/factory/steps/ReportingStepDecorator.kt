@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.factory.steps
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepName
@@ -31,6 +32,7 @@ import io.qalipsis.api.meters.Counter
 import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
+import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.retry.RetryPolicy
 import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
@@ -40,6 +42,8 @@ import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factory.orchestration.StepUtils.isHidden
 import io.qalipsis.core.factory.orchestration.StepUtils.type
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Decorator of a step, that records the successes and errors of the [decorated] step and reports the state
@@ -63,6 +67,8 @@ class ReportingStepDecorator<I, O>(
     override val next = decorated.next
 
     private val stepType = decorated.type
+
+    private val failureCounts = AtomicInteger(0)
 
     /**
      * Meter storing the number of running steps.
@@ -89,50 +95,71 @@ class ReportingStepDecorator<I, O>(
      */
     private val isDecoratedVisible = !decorated.isHidden
 
-    override suspend fun start(context: StepStartStopContext) {
-        try {
-            decorated.start(context)
-            reportLiveStateRegistry.recordSuccessfulStepInitialization(
-                context.campaignKey,
-                context.scenarioName,
-                decorated.name
-            )
-        } catch (t: Throwable) {
-            reportLiveStateRegistry.recordFailedStepInitialization(
-                context.campaignKey,
-                context.scenarioName,
-                decorated.name,
-                t
-            )
-            throw t
-        }
+    @KTestable
+    private val started = AtomicBoolean(false)
 
-        runningStepsGauge = meterRegistry.gauge(
-            scenarioName = context.scenarioName,
-            stepName = context.stepName,
-            name = "running-steps",
-            tags = mapOf("scenario" to context.scenarioName)
-        )
-        executedStepCounter = meterRegistry.counter(
-            scenarioName = context.scenarioName,
-            stepName = context.stepName,
-            name = "executed-steps",
-            tags = mapOf("scenario" to context.scenarioName))
-        completionTimer = meterRegistry.timer(
-            scenarioName = context.scenarioName,
-            stepName = context.stepName,
-            name = "step-execution",
-            tags = mapOf("step" to decorated.name, "status" to "completed"))
-        failureTimer = meterRegistry.timer(
-            scenarioName = context.scenarioName,
-            stepName = context.stepName,
-            name = "step-execution",
-            tags = mapOf("step" to decorated.name, "status" to "failed"))
-        super<StepDecorator>.start(context)
+    override suspend fun start(context: StepStartStopContext) {
+        if (started.compareAndSet(false, true)) {
+            try {
+                decorated.start(context)
+                reportLiveStateRegistry.recordSuccessfulStepInitialization(
+                    context.campaignKey,
+                    context.scenarioName,
+                    decorated.name
+                )
+            } catch (t: Throwable) {
+                reportLiveStateRegistry.recordFailedStepInitialization(
+                    context.campaignKey,
+                    context.scenarioName,
+                    decorated.name,
+                    t
+                )
+                throw t
+            }
+
+            runningStepsGauge = meterRegistry.gauge(
+                scenarioName = context.scenarioName,
+                stepName = context.stepName,
+                name = "running-steps",
+                tags = mapOf("scenario" to context.scenarioName)
+            )
+            executedStepCounter = meterRegistry.counter(
+                scenarioName = context.scenarioName,
+                stepName = context.stepName,
+                name = "executed-steps",
+                tags = mapOf("scenario" to context.scenarioName)
+            )
+            completionTimer = meterRegistry.timer(
+                scenarioName = context.scenarioName,
+                stepName = context.stepName,
+                name = "step-execution",
+                tags = mapOf("step" to decorated.name, "status" to "completed")
+            )
+            failureTimer = meterRegistry.timer(
+                scenarioName = context.scenarioName,
+                stepName = context.stepName,
+                name = "step-execution",
+                tags = mapOf("step" to decorated.name, "status" to "failed")
+            )
+            super<StepDecorator>.start(context)
+        }
     }
 
     override suspend fun stop(context: StepStartStopContext) {
-        super<StepDecorator>.stop(context)
+        if (started.compareAndSet(true, false)) {
+            if (failureCounts.get() > 0) {
+                val stepName =
+                    supplyIf(isDecoratedVisible) { decorated.name } ?: "Unnamed step of type ${decorated.type}"
+                reportLiveStateRegistry.put(
+                    context.campaignKey,
+                    context.scenarioName,
+                    stepName,
+                    ReportMessageSeverity.ERROR,
+                    "${failureCounts.get()} failures (See the details in the events if you activated them)"
+                )
+            }
+            super<StepDecorator>.stop(context)
+        }
     }
 
     override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
@@ -151,6 +178,7 @@ class ReportingStepDecorator<I, O>(
             executeStep(minion, decorated as Step<Any?, Any?>, context as StepContext<Any?, Any?>)
             if (context.isExhausted) {
                 log.trace { "Step completed with failure" }
+                failureCounts.incrementAndGet()
                 if (isDecoratedVisible) {
                     val duration = Duration.ofNanos(System.nanoTime() - start)
                     failureTimer.record(duration)
@@ -162,7 +190,10 @@ class ReportingStepDecorator<I, O>(
                 reportLiveStateRegistry.recordFailedStepExecution(
                     context.campaignKey,
                     context.scenarioName,
-                    decorated.name
+                    decorated.name,
+                    cause = supplyIf(reportErrors) {
+                        context.errors.lastOrNull()?.let { StepExecutionException(it.message) }
+                    }
                 )
             } else {
                 log.trace { "Step completed successfully" }
@@ -181,6 +212,7 @@ class ReportingStepDecorator<I, O>(
             }
         } catch (t: Throwable) {
             val cause = getFailureCause(t, context, decorated)
+            failureCounts.incrementAndGet()
             if (isDecoratedVisible) {
                 log.trace { "Reporting the failed execution of the decorated step" }
                 val duration = Duration.ofNanos(System.nanoTime() - start)

@@ -273,7 +273,7 @@ class ContextInitializer(
     private fun loadPlugins(): Collection<String> {
         return this.javaClass.classLoader.getResources("META-INF/services/qalipsis/plugin")
             .asSequence()
-            .flatMap { folder -> ServicesFiles.readFile(folder.openStream()) }
+            .flatMap { file -> ServicesFiles.readFile(file.openStream()) }
             .flatMap { it.split(",") }
             .map { it.trim() }
             .filter { it.isNotBlank() }
