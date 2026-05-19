@@ -18,7 +18,10 @@
             :disabled="dataSeries?.disabled"
           />
         </div>
-        <div class="col-span-12" v-if="config.public.projectName !== WEBAPP_OSS_PROJECT_NAME">
+        <div
+          class="col-span-12"
+          v-if="config.public.projectName !== WEBAPP_OSS_PROJECT_NAME"
+        >
           <FormSelect
             label="Sharing mode"
             form-control-name="sharingMode"
@@ -42,7 +45,7 @@
             form-control-name="valueName"
             :customSearchEnabled="true"
             :label="valueNameLabel"
-            :options="valueNameOptions"
+            :options="valueNameOptions ?? []"
             :disabled="dataSeries?.disabled"
             :field-validation-schema="fieldValidationSchema.valueName"
             @search="handleFieldNameSearch($event)"
@@ -131,7 +134,7 @@
               v-for="(field, index) in fields"
               :key="field.key"
               :index="index"
-              :tagMap="tagMap"
+              :tagMap="tagMap ?? {}"
               :disabled="dataSeries?.disabled"
             />
           </template>
@@ -153,11 +156,9 @@
 </template>
 
 <script setup lang="ts">
-import { useFieldArray, useForm } from 'vee-validate'
+import { type TypedSchema, useFieldArray, useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as zod from 'zod'
-
-type Timer = string | number | NodeJS.Timeout | null | undefined
 
 const WEBAPP_OSS_PROJECT_NAME = 'webapp-oss'
 const config = useRuntimeConfig()
@@ -178,7 +179,7 @@ const toastStore = useToastStore()
 
 const initialFormValue: DataSeriesForm = {
   name: props.dataSeries?.displayName ?? '',
-  sharingMode: props.dataSeries?.sharingMode ?? config.public.projectName === WEBAPP_OSS_PROJECT_NAME ? 'NONE' : null,
+  sharingMode: props.dataSeries?.sharingMode ?? (config.public.projectName === WEBAPP_OSS_PROJECT_NAME ? 'NONE' : null),
   dataType: props.dataSeries?.dataType ?? DataTypeConstant.EVENTS,
   valueName: props.dataSeries?.valueName ?? '',
   fieldName: props.dataSeries?.fieldName ?? '',
@@ -190,19 +191,7 @@ const initialFormValue: DataSeriesForm = {
   filters: props.dataSeries?.filters ?? [],
 }
 const { handleSubmit, setFieldValue, values, errors } = useForm<DataSeriesForm>({
-  initialValues: {
-    name: props.dataSeries?.displayName ?? '',
-    sharingMode: props.dataSeries?.sharingMode ?? config.public.projectName === WEBAPP_OSS_PROJECT_NAME ? 'NONE' : null,
-    dataType: props.dataSeries?.dataType ?? DataTypeConstant.EVENTS,
-    valueName: props.dataSeries?.valueName ?? '',
-    fieldName: props.dataSeries?.fieldName ?? '',
-    aggregationOperation: props.dataSeries?.aggregationOperation ?? null,
-    timeframeValue: props.dataSeries?.formattedTimeframe.value ?? 5000,
-    timeframeUnit: props.dataSeries?.formattedTimeframe.unit ?? TimeframeUnitConstant.MS,
-    color: props.dataSeries?.color ?? ColorsConfig.PRIMARY_COLOR_HEX_CODE,
-    colorOpacity: props.dataSeries?.colorOpacity ?? 100,
-    filters: props.dataSeries?.filters ?? [],
-  },
+  initialValues: initialFormValue,
 })
 /**
  * The push function and the fields from the filter field.
@@ -214,34 +203,27 @@ const sharingModeOptions = SeriesHelper.getSharingModeOptions()
 const dataTypeOptions = SeriesHelper.getTimeSeriesTypeOptions()
 const timeframeUnitOptions = TimeframeHelper.getTimeframeUnitOptions()
 const aggregationOperatorOptions = SeriesHelper.getAggregationOperatorOptions()
-// @ts-ignore
-const fieldValidationSchema = {
+const { validate: validateDisplayName } = useDebouncedValidator(
+  (value) => isValidDisplayName(value)
+)
+
+const fieldValidationSchema: Record<string, TypedSchema> = {
   name: toTypedSchema(
     zod
       .string()
-      .nonempty(requiredErrorMessage)
-      .min(3)
+      .min(3, requiredErrorMessage)
       .max(200)
       .nullable()
       .refine(
         (value: string | null) => {
-          if (nameValidationTimer) clearTimeout(nameValidationTimer)
+          if (value?.trim() === props.dataSeries?.displayName) return true
 
-          return new Promise((resolve) => {
-            nameValidationTimer = setTimeout(async () => {
-              if (value && value.trim() !== props.dataSeries?.displayName) {
-                const isValid = await isValidDisplayName(value.trim())
-                resolve(isValid)
-              }
-
-              resolve(true)
-            }, 200)
-          })
+          return validateDisplayName(value)
         },
         {
           message: 'This name has been reserved already',
-        }
-      )
+        },
+      ),
   ),
   sharingMode: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
   dataType: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
@@ -254,50 +236,54 @@ const fieldValidationSchema = {
         (value) => {
           if (values.aggregationOperation === QueryAggregationOperatorConstant.COUNT) return true
 
-          return value ? true : false
+          return Boolean(value)
         },
         {
           message: requiredErrorMessage,
-        }
-      )
+        },
+      ),
   ),
   aggregationOperation: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
   timeframeValue: toTypedSchema(
     zod.coerce
       .number({ invalid_type_error: 'You must specify a number' })
-      .min(0)
-      .nullable()
-      .refine((value) => (value ? true : false), {
-        message: 'Number is required',
-      })
+      .min(1, requiredErrorMessage)
+      .nullable(),
   ),
   timeframeUnit: toTypedSchema(zod.string().nullable()),
   color: toTypedSchema(
     zod
       .string()
       .nullable()
-      .refine((value) => ColorHelper.isValidHexCode(value as string))
+      .refine((value) => value !== null && ColorHelper.isValidHexCode(value)),
   ),
   colorOpacity: toTypedSchema(
     zod.coerce
       .number({ invalid_type_error: 'You must specify a number' })
       .min(1)
       .max(100, 'Value must be between 1 and 100.')
-      .nullable()
+      .nullable(),
   ),
 }
 
-let dataFields: DataField[] = []
-let nameValidationTimer: Timer = null
-const valueNameOptions = ref<FormMenuOption[]>([])
-const fieldNameOptions = ref<FormMenuOption[]>([])
+const { data: tagMap, isFetched: hasTagFetched, fetch: _prepareTagMap } = useAsyncField(fetchTags)
+
+const { data: valueNameOptions, isFetched: hasValueNameFetched, fetch: _prepareValueNameFieldOptions } = useAsyncField(
+  async (dataType: DataType) => {
+    const valueNames = await fetchValueNames(dataType)
+
+    return valueNames.map((valueName) => ({ label: valueName, value: valueName }))
+  }
+)
+
+const { data: rawFields, isFetched: hasFieldNameFetched, fetch: _prepareFieldOptions } = useAsyncField(fetchFields)
+const fieldNameOptions = computed(() =>
+  (rawFields.value ?? []).map((field) => ({ label: field.name, value: field.name }))
+)
+
 const enrichedColorHexCode = ref(ColorHelper.enrichHexCodeWithOpacity(values.color, values.colorOpacity))
 const aggregationOperationFieldDisabled = ref(false)
-const tagMap = ref<{ [key: string]: string[] }>({})
 const colorPickerOpen = ref(false)
-const hasTagFetched = ref(false)
-const hasValueNameFetched = ref(false)
-const hasFieldNameFetched = ref(false)
 
 const title = computed(() => (props.dataSeries ? 'Update a series' : 'Create a series'))
 const confirmBtnText = computed(() => (props.dataSeries ? 'Save changes' : 'Create'))
@@ -312,17 +298,15 @@ onMounted(async () => {
   _shouldAggregationOperationFieldDisabled(values.fieldName)
 })
 
-onBeforeUnmount(() => {
-  if (nameValidationTimer) clearTimeout(nameValidationTimer)
-})
-
 const handleFieldNameSearch = async (query: string) => {
-   try {
+  try {
     const valueNames = await fetchValueNames(values.dataType, query)
-    valueNameOptions.value = valueNames.map((valueName) => ({
-      label: valueName,
-      value: valueName,
-    }))
+    if (valueNameOptions.value) {
+      valueNameOptions.value = valueNames.map((valueName) => ({
+        label: valueName,
+        value: valueName,
+      }))
+    }
   } catch (error) {
     toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
@@ -344,8 +328,8 @@ const handleColorChange = (enrichedHexCodeWithOpacity: string) => {
  *
  * @param selectedFieldName The selected field name from the field options.
  */
-const handleFieldNameChange = (selectedFieldName: string) => {
-  _shouldAggregationOperationFieldDisabled(selectedFieldName)
+const handleFieldNameChange = (selectedFieldName: string | string[]) => {
+  _shouldAggregationOperationFieldDisabled(selectedFieldName as string)
 }
 
 const handleDataTypeChange = (newDataType: string) => {
@@ -416,48 +400,11 @@ const _createDataSeries = async (formValues: DataSeriesForm) => {
 }
 
 const _shouldAggregationOperationFieldDisabled = (fieldName: string) => {
-  const selectedFieldOption = dataFields.find((f) => f.name === fieldName)
+  const selectedFieldOption = (rawFields.value ?? []).find((f) => f.name === fieldName)
   if (!fieldName || selectedFieldOption?.type !== DataFieldTypeConstant.NUMBER) {
     setFieldValue('aggregationOperation', QueryAggregationOperatorConstant.COUNT)
   }
   aggregationOperationFieldDisabled.value = selectedFieldOption?.type !== DataFieldTypeConstant.NUMBER ? true : false
 }
 
-const _prepareTagMap = async (dataType: DataType) => {
-  hasTagFetched.value = false
-  try {
-    tagMap.value = await fetchTags(dataType)
-    hasTagFetched.value = true
-  } catch (error) {
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
-  }
-}
-
-const _prepareValueNameFieldOptions = async (dataType: DataType) => {
-  hasValueNameFetched.value = false
-  try {
-    const valueNames = await fetchValueNames(dataType)
-    valueNameOptions.value = valueNames.map((valueName) => ({
-      label: valueName,
-      value: valueName,
-    }))
-    hasValueNameFetched.value = true
-  } catch (error) {
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
-  }
-}
-
-const _prepareFieldOptions = async (dataType: DataType) => {
-  hasFieldNameFetched.value = false
-  try {
-    dataFields = await fetchFields(dataType)
-    fieldNameOptions.value = dataFields.map((field) => ({
-      label: field.name,
-      value: field.name,
-    }))
-    hasFieldNameFetched.value = true
-  } catch (error) {
-    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
-  }
-}
 </script>

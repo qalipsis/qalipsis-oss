@@ -17,54 +17,64 @@
  *
  */
 
+import { fileURLToPath } from 'node:url'
+import { resolve, dirname } from 'node:path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-    devtools: {enabled: true},
-    ssr: false,
-    spaLoadingTemplate: false,
+  devtools: { enabled: true },
+  ssr: false,
+  spaLoadingTemplate: false,
 
-    app: {
-        head: {
-            title: 'QALIPSIS',
-            htmlAttrs: {
-                lang: 'en'
-            },
-            meta: [
-                {
-                    name: 'description',
-                    content: 'Load and performance test tool',
-                },
-                {
-                    name: 'format-detection',
-                    content: 'telephone=no',
-                },
-            ]
-        }
-    },
-
-    modules: [
-        "@vueuse/nuxt",
-        "@pinia/nuxt",
-        'nuxt-headlessui'
-    ],
-
-    runtimeConfig: {
-        // Public keys that are exposed to the client
-        public: {
-            projectName: 'webapp-oss',
-            apiBaseUrl: process.env.API_BASE_URL || 'localhost:3000',
-        }
-    },
-
-    css: [
-        '~/assets/scss/main.scss'
-    ],
-
-    postcss: {
-        plugins: {
-            tailwindcss: {},
-            autoprefixer: {},
+  app: {
+    head: {
+      title: 'QALIPSIS',
+      htmlAttrs: {
+        lang: 'en',
+      },
+      meta: [
+        {
+          name: 'description',
+          content: 'Load and performance test tool',
         },
+        {
+          name: 'format-detection',
+          content: 'telephone=no',
+        },
+      ],
     },
-    compatibilityDate: '2025-04-21',
+  },
+
+  modules: ['@vueuse/nuxt', '@pinia/nuxt', 'nuxt-headlessui'],
+
+  imports: {
+    dirs: ['types', 'types/api', 'utils/helpers', 'utils/configs', 'composables/apis', 'stores'],
+  },
+
+  runtimeConfig: {
+    // Public keys that are exposed to the client
+    public: {
+      projectName: 'webapp-oss',
+      apiBaseUrl: process.env.API_BASE_URL || 'localhost:3000',
+    },
+  },
+
+  css: [resolve(__dirname, 'assets/scss/main.scss')],
+
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
+  },
+
+  typescript: {
+    tsConfig: {
+      exclude: ['../.output', '../.gradle', '../build', '../src'],
+    },
+  },
+
+  compatibilityDate: '2025-04-21',
 })

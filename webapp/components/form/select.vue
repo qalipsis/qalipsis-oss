@@ -11,7 +11,7 @@
     >
       <div
         class="w-full"
-        :class="TailwindClassHelper.formDropdownClass"
+        :class="TailwindClassConfig.formDropdownClass"
       >
         <ListboxButton
           :disabled="disabled"
@@ -20,20 +20,20 @@
           <template v-if="multipleEnabled">
             <div
               :class="[
-                TailwindClassHelper.formInputWrapperClass,
+                TailwindClassConfig.formInputWrapperClass,
                 hasError
-                  ? TailwindClassHelper.formInputWrapperErrorClass
-                  : TailwindClassHelper.formInputWrapperActiveClass,
+                  ? TailwindClassConfig.formInputWrapperErrorClass
+                  : TailwindClassConfig.formInputWrapperActiveClass,
+                '!h-auto min-h-10 py-1',
               ]"
             >
-              <div class="flex items-center">
+              <div class="flex flex-wrap items-center gap-1">
                 <div
                   v-for="selectedOption in selectedOptions"
-                  :key="selectedOption[optionValueKey]"
-                  :value="selectedOption[optionValueKey]"
-                  class="flex items-center px-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 mr-2 last:mr-0"
+                  :key="selectedOption.value"
+                  class="flex items-center px-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800"
                 >
-                  <span class="pr-2">{{ selectedOption[optionLabelKey] }}</span>
+                  <span class="pr-2">{{ selectedOption.label }}</span>
                   <div @click="handleDeleteButtonClick(selectedOption)">
                     <BaseIcon
                       class="text-xl hover:text-primary-500"
@@ -47,10 +47,10 @@
           <template v-else>
             <div
               :class="[
-                TailwindClassHelper.formInputWrapperClass,
+                TailwindClassConfig.formInputWrapperClass,
                 hasError
-                  ? TailwindClassHelper.formInputWrapperErrorClass
-                  : TailwindClassHelper.formInputWrapperActiveClass,
+                  ? TailwindClassConfig.formInputWrapperErrorClass
+                  : TailwindClassConfig.formInputWrapperActiveClass,
               ]"
             >
               <input
@@ -58,7 +58,7 @@
                 type="text"
                 class="cursor-pointer"
                 autocomplete="off"
-                :class="TailwindClassHelper.formInputClass"
+                :class="TailwindClassConfig.formInputClass"
                 :value="selectedOptionLabel"
                 :placeholder="placeholder"
                 :disabled="disabled"
@@ -69,47 +69,43 @@
                   icon="qls-icon-close"
                   class="hover:text-primary-500"
                   :class="disabled ? 'text-gray-500' : ''"
-                  :width="20"
-                  :height="20"
                   @click="handleClearButtonClick($event)"
                 />
                 <BaseIcon
                   icon="qls-icon-arrow-down"
                   :class="disabled ? 'text-gray-500' : ''"
-                  :width="20"
-                  :height="20"
                 />
               </div>
             </div>
           </template>
         </ListboxButton>
         <transition
-          :enter-active-class="TailwindClassHelper.formDropdownTransitionEnterActiveClass"
-          :enter-from-class="TailwindClassHelper.formDropdownTransitionEnterFromClass"
-          :enter-to-class="TailwindClassHelper.formDropdownTransitionEnterToClass"
-          :leave-active-class="TailwindClassHelper.formDropdownTransitionLeaveActiveClass"
-          :leave-from-class="TailwindClassHelper.formDropdownTransitionLeaveFromClass"
-          :leave-to-class="TailwindClassHelper.formDropdownTransitionLeaveToClass"
+          :enter-active-class="TailwindClassConfig.formDropdownTransitionEnterActiveClass"
+          :enter-from-class="TailwindClassConfig.formDropdownTransitionEnterFromClass"
+          :enter-to-class="TailwindClassConfig.formDropdownTransitionEnterToClass"
+          :leave-active-class="TailwindClassConfig.formDropdownTransitionLeaveActiveClass"
+          :leave-from-class="TailwindClassConfig.formDropdownTransitionLeaveFromClass"
+          :leave-to-class="TailwindClassConfig.formDropdownTransitionLeaveToClass"
         >
           <ListboxOptions
             class="w-full"
-            :class="[TailwindClassHelper.formDropdownPanelClass, !options.length ? 'invisible' : 'visible']"
+            :class="[TailwindClassConfig.formDropdownPanelClass, !options.length ? 'invisible' : 'visible']"
           >
             <ListboxOption
               v-for="option in options"
-              :key="option[optionValueKey]"
-              :value="option[optionValueKey]"
+              :key="option.value"
+              :value="option.value"
               :disabled="option.disabled"
               v-slot="{ active, selected }"
               as="template"
             >
-              <div @click="emit('change', option[optionValueKey])">
+              <div>
                 <slot
                   name="optionContent"
                   :option="option"
                 >
                   <FormSelectOption
-                    :label="option[optionLabelKey]"
+                    :label="option.label"
                     :active="active"
                     :disabled="option.disabled"
                     :selected="selected"
@@ -132,21 +128,16 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headless
 const props = defineProps<{
   label: string
   formControlName: string
-  /**
-   * The options for the dropdown menu.
-   */
-  options: FormMenuOption[] | any[]
+  options: FormMenuOption[]
   multipleEnabled?: boolean
   clearEnabled?: boolean
-  modelValue?: string
-  labelKey?: string
-  valueKey?: string
+  modelValue?: string | string[]
   fieldValidationSchema?: TypedSchema
   placeholder?: string
   disabled?: boolean
 }>()
 const emit = defineEmits<{
-  (e: 'change', v: string): void
+  (e: 'change', v: string | string[]): void
   (e: 'update:modelValue', v: string | string[]): void
 }>()
 
@@ -155,28 +146,25 @@ const { value: selectedFormControlValue, errorMessage } = useField<string | stri
   props.fieldValidationSchema,
   {
     initialValue: props.modelValue,
-  }
+  },
 )
 
-const optionLabelKey = computed(() => props.labelKey ?? 'label')
-const optionValueKey = computed(() => props.valueKey ?? 'value')
-
-const hasError = computed(() => (errorMessage.value ? true : false))
+const hasError = computed(() => !!errorMessage.value)
 
 const selectedOptions = computed(() =>
-  props.options.filter((option) => (selectedFormControlValue.value as string[])?.includes(option[optionValueKey.value]))
+  props.options.filter((option) => (selectedFormControlValue.value as string[])?.includes(option.value)),
 )
 
-const selectedOptionLabel = computed(() => {
-  return props.options.find((option) => option[optionValueKey.value] === selectedFormControlValue.value)?.[
-    optionLabelKey.value
-  ]
-})
+const selectedOptionLabel = computed(
+  () => props.options.find((option) => option.value === selectedFormControlValue.value)?.label,
+)
 
-const handleDeleteButtonClick = (option: any | FormMenuOption) => {
+const handleDeleteButtonClick = (option: FormMenuOption) => {
   selectedFormControlValue.value = (selectedFormControlValue.value as string[]).filter(
-    (value) => value !== option[optionValueKey.value]
+    (value) => value !== option.value,
   )
+  emit('change', selectedFormControlValue.value)
+  emit('update:modelValue', selectedFormControlValue.value)
 }
 
 const handleClearButtonClick = (event: MouseEvent) => {
@@ -187,6 +175,7 @@ const handleClearButtonClick = (event: MouseEvent) => {
 }
 
 const handleValueUpdate = () => {
+  emit('change', selectedFormControlValue.value)
   emit('update:modelValue', selectedFormControlValue.value)
 }
 </script>

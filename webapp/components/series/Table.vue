@@ -1,33 +1,29 @@
 <template>
   <BaseTable
-      :data-source="dataSource"
-      :table-column-configs="SeriesTableConfig.TABLE_COLUMNS"
-      :totalElements="totalElements"
-      :current-page-index="currentPageIndex"
-      :page-size="pageSize"
-      :disable-row="disableRow"
-      :row-selection-enabled="true"
-      :row-all-selection-enabled="true"
-      :selected-row-keys="selectedRowKeys"
-      row-key="reference"
-      row-class="group"
-      @sorter-change="handleSorterChange"
-      @page-change="handlePaginationChange"
-      @selectionChange="handleSelectionChange"
-      @refresh="handleRefreshBtnClick"
+    :data-source="dataSource"
+    :table-column-configs="SeriesTableConfig.TABLE_COLUMNS"
+    :totalElements="totalElements"
+    :current-page-index="currentPageIndex"
+    :page-size="pageSize"
+    :disable-row="disableRow"
+    :row-selection-enabled="true"
+    :row-all-selection-enabled="true"
+    :selected-row-keys="selectedRowKeys"
+    :row-click-enabled="canClickDataSeriesName"
+    row-key="reference"
+    row-class="group"
+    @sorter-change="handleSorterChange"
+    @page-change="handlePaginationChange"
+    @selectionChange="handleSelectionChange"
+    @refresh="handleRefreshBtnClick"
+    @row-click="handleEditBtnClick"
   >
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'displayName'">
-        <div
-            class="flex items-center"
-            :class="{
-            'cursor-pointer hover:text-primary-500': canClickDataSeriesName,
-          }"
-            @click="canClickDataSeriesName && handleEditBtnClick(record as DataSeriesTableData)"
-        >
+        <div class="flex items-center">
           <div
-              class="w-2 h-2 rounded-full mr-2"
-              :style="{ backgroundColor: `${record.color || 'transparent'}` }"
+            class="w-2 h-2 rounded-full mr-2"
+            :style="{ backgroundColor: `${record.color || 'transparent'}` }"
           ></div>
           <span>{{ record.displayName }}</span>
         </div>
@@ -38,58 +34,58 @@
     </template>
     <template #actionCell="{ record }">
       <div
-          v-if="!tableActionsHidden"
-          class="cursor-pointer"
+        v-if="!tableActionsHidden"
+        class="cursor-pointer"
       >
         <BasePermission :permissions="[PermissionConstant.WRITE_SERIES]">
           <Popover class="relative">
             <PopoverButton class="outline-none">
               <div class="flex items-center invisible group-hover:visible">
                 <BaseIcon
-                    icon="qls-icon-menu"
-                    class="text-2xl hover:text-primary-500 text-gray-700"
+                  icon="qls-icon-menu"
+                  class="text-2xl hover:text-primary-500 text-gray-700 dark:text-gray-200"
                 />
               </div>
             </PopoverButton>
-            <PopoverPanel :class="TailwindClassHelper.menuPanelBaseClass">
+            <PopoverPanel :class="TailwindClassConfig.menuPanelBaseClass">
               <div
-                  v-if="!record.disabled"
-                  :class="TailwindClassHelper.menuWrapperBaseClass"
+                v-if="!record.disabled"
+                :class="TailwindClassConfig.menuWrapperBaseClass"
               >
                 <div
-                    :class="TailwindClassHelper.menuItemBaseClass"
-                    @click="handleDeleteBtnClick(record as DataSeriesTableData)"
+                  :class="TailwindClassConfig.menuItemBaseClass"
+                  @click="handleDeleteBtnClick(record as DataSeriesTableData)"
                 >
                   <BaseIcon
-                      icon="qls-icon-delete"
-                      class="text-xl"
+                    icon="qls-icon-delete"
+                    class="text-xl"
                   />
                   <span class="pl-2"> Delete </span>
                 </div>
               </div>
               <div
-                  v-if="!record.disabled"
-                  :class="TailwindClassHelper.menuWrapperBaseClass"
+                v-if="!record.disabled"
+                :class="TailwindClassConfig.menuWrapperBaseClass"
               >
                 <div
-                    :class="TailwindClassHelper.menuItemBaseClass"
-                    @click="handleEditBtnClick(record as DataSeriesTableData)"
+                  :class="TailwindClassConfig.menuItemBaseClass"
+                  @click="handleEditBtnClick(record as DataSeriesTableData)"
                 >
                   <BaseIcon
-                      icon="qls-icon-edit"
-                      class="text-xl"
+                    icon="qls-icon-edit"
+                    class="text-xl"
                   />
                   <span class="pl-2"> Edit </span>
                 </div>
               </div>
-              <div :class="TailwindClassHelper.menuWrapperBaseClass">
+              <div :class="TailwindClassConfig.menuWrapperBaseClass">
                 <div
-                    :class="TailwindClassHelper.menuItemBaseClass"
-                    @click="handleDuplicateBtnClick(record as DataSeriesTableData)"
+                  :class="TailwindClassConfig.menuItemBaseClass"
+                  @click="handleDuplicateBtnClick(record as DataSeriesTableData)"
                 >
                   <BaseIcon
-                      icon="qls-icon-duplicate"
-                      class="text-xl"
+                    icon="qls-icon-duplicate"
+                    class="text-xl"
                   />
                   <span class="pl-2"> Duplicate </span>
                 </div>
@@ -101,20 +97,20 @@
     </template>
   </BaseTable>
   <SeriesDeleteConfirmationModal
-      v-model:open="modalOpen"
-      :dataSeriesReferences="dataSeriesReferences"
-      :modalContent="deleteModalContent"
+    v-model:open="modalOpen"
+    :dataSeriesReferences="dataSeriesReferences"
+    :modalContent="deleteModalContent"
   />
   <SeriesFormDrawer
-      v-if="formDrawerOpen"
-      v-model:open="formDrawerOpen"
-      :data-series="selectedDataSeries"
-      @dataSeriesUpdated="seriesTableStore.fetchDataSeriesTableDataSource()"
+    v-if="formDrawerOpen"
+    v-model:open="formDrawerOpen"
+    :data-series="selectedDataSeries"
+    @dataSeriesUpdated="seriesTableStore.fetchDataSeriesTableDataSource()"
   />
 </template>
 
 <script setup lang="ts">
-import {Popover, PopoverButton, PopoverPanel} from '@headlessui/vue'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 
 const props = defineProps<{
   tableActionsHidden?: boolean
@@ -126,7 +122,7 @@ const userStore = useUserStore()
 const seriesTableStore = useSeriesTableStore()
 const toastStore = useToastStore()
 
-const {dataSource, totalElements, currentPageIndex, pageSize} = storeToRefs(seriesTableStore)
+const { dataSource, totalElements, currentPageIndex, pageSize } = storeToRefs(seriesTableStore)
 
 const selectedRowKeys = computed(() => seriesTableStore.selectedRowKeys)
 
@@ -139,18 +135,18 @@ const dataSeriesReferences = ref<string[]>([])
 const deleteModalContent = ref('')
 const modalOpen = ref(false)
 
-onMounted(() => {
-  if (props.selectedDataSeriesReferences) {
-    seriesTableStore.$patch({
-      selectedRowKeys: props.selectedDataSeriesReferences,
-    })
-  }
-  _fetchTableData()
-})
+const { handlePaginationChange, handleSorterChange, refresh } = useTableLifecycle(
+  seriesTableStore,
+  () => {
+    if (props.selectedDataSeriesReferences) {
+      seriesTableStore.$patch({
+        selectedRowKeys: props.selectedDataSeriesReferences,
+      })
+    }
 
-onBeforeUnmount(() => {
-  seriesTableStore.$reset()
-})
+    return seriesTableStore.fetchDataSeriesTableDataSource()
+  }
+)
 
 const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
   /**
@@ -163,28 +159,13 @@ const disableRow = (dataSeriesTableData: DataSeriesTableData): boolean => {
   if (props.maxSelectedRows) {
     // When the max number of row selection is specified, the row is disabled when it is not yet selected.
     disabled =
-        selectedRowKeys.value.length >= props.maxSelectedRows &&
-        !selectedRowKeys.value.includes(dataSeriesTableData.reference)
+      selectedRowKeys.value.length >= props.maxSelectedRows &&
+      !selectedRowKeys.value.includes(dataSeriesTableData.reference)
   } else {
     disabled = dataSeriesTableData.disabled
   }
 
   return disabled
-}
-
-const handleSorterChange = (tableSorter: TableSorter | null) => {
-  const sort = tableSorter ? `${tableSorter.key}:${tableSorter.direction}` : ''
-  seriesTableStore.$patch({
-    sort: sort,
-  })
-  _fetchTableData()
-}
-
-const handlePaginationChange = (pageIndex: number) => {
-  seriesTableStore.$patch({
-    currentPageIndex: pageIndex,
-  })
-  _fetchTableData()
 }
 
 const handleSelectionChange = (tableSelection: TableSelection) => {
@@ -200,31 +181,23 @@ const handleEditBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
 }
 
 const handleRefreshBtnClick = () => {
-  _fetchTableData()
+  refresh()
 }
 
 const handleDuplicateBtnClick = async (dataSeriesTableData: DataSeriesTableData) => {
   try {
-    const {duplicateDataSeries} = useDataSeriesApi()
+    const { duplicateDataSeries } = useDataSeriesApi()
     await duplicateDataSeries(dataSeriesTableData)
-    toastStore.success({text: `The data series ${dataSeriesTableData.displayName} has been successfully copied`})
+    toastStore.success({ text: `The data series ${dataSeriesTableData.displayName} has been successfully copied` })
   } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
+    toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
   }
-  _fetchTableData()
+  refresh()
 }
 
 const handleDeleteBtnClick = (dataSeriesTableData: DataSeriesTableData) => {
   dataSeriesReferences.value = [dataSeriesTableData.key]
   deleteModalContent.value = dataSeriesTableData.displayName
   modalOpen.value = true
-}
-
-const _fetchTableData = async () => {
-  try {
-    await seriesTableStore.fetchDataSeriesTableDataSource()
-  } catch (error) {
-    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
-  }
 }
 </script>

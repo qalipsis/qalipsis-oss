@@ -1,6 +1,6 @@
-import tinycolor from "tinycolor2";
+import tinycolor from "tinycolor2"
 
-export class ColorHelper {
+export const ColorHelper = {
     /**
      * Checks if the hex code is valid
      *
@@ -8,9 +8,9 @@ export class ColorHelper {
      *
      * @returns a flag to indicates if the hex code is valid
      */
-    static isValidHexCode(hexCode: string): boolean {
+    isValidHexCode(hexCode: string): boolean {
         return tinycolor(hexCode).isValid()
-    }
+    },
 
     /**
      * Enriches the hex code with opacity
@@ -20,30 +20,24 @@ export class ColorHelper {
      *
      * @returns The hex code with opacity E.g., #41c9caa2
      */
-    static enrichHexCodeWithOpacity(hexCode?: string, opacity?: number): string {
+    enrichHexCodeWithOpacity(hexCode?: string, opacity?: number): string {
         if (!hexCode) return ColorsConfig.PRIMARY_COLOR_HEX_CODE
 
-        try {
-            const color = tinycolor(hexCode);
-
-            if (opacity) {
-                color.setAlpha(opacity / 100);
-            }
-
-            return `#${color.toHex8()}`;
-        } catch (error) {
-            console.error(`Cannot parse hex code ${hexCode} and opacity ${opacity}`)
-            throw error;
+        const color = tinycolor(hexCode)
+        if (opacity !== undefined) {
+            color.setAlpha(opacity / 100)
         }
-    }
 
-    static getHexCode(enrichedHexCode: string): string {
+        return `#${color.toHex8()}`
+    },
+
+    getHexCode(enrichedHexCode: string): string {
         return `#${tinycolor(enrichedHexCode).toHex().toUpperCase()}`
-    }
+    },
 
-    static getOpacity(enrichedHexCode: string): number {
-        const opacity = tinycolor(enrichedHexCode).getAlpha() * 100;
-        return Math.round(opacity);
-    }
+    getOpacity(enrichedHexCode: string): number {
+        const opacity = tinycolor(enrichedHexCode).getAlpha() * 100
 
+        return Math.round(opacity)
+    },
 }

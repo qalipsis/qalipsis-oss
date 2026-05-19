@@ -4,7 +4,6 @@
 
 <script setup lang="ts">
 defineProps<{
-  icon: string;
-  customClass?: string;
+  icon: string
 }>()
 </script>

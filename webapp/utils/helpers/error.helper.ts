@@ -1,27 +1,28 @@
-export class ErrorHelper {
-    static getErrorMessage(error: any): string {
-        let errorMessage = '';
-        switch (error?.response?.status) {
+export const ErrorHelper = {
+    getErrorMessage(error: any): string {
+        const status = error?.response?.status ?? error?.status ?? error?.statusCode
+        switch (status) {
             case 401:
-                errorMessage = error.data.message;
-                break;
+                return error?.data?.message ?? 'Your session has expired. Please log in again.'
             case 403:
-                errorMessage = 'You don\'t have the permission';
-                break;
+                return 'You don\'t have the permission'
             case 400:
-                if (error.data?.errors?.[0] && typeof error.data.errors[0] === 'string') {
-                    errorMessage = error.data.errors[0]
-                } else if (error.data?.errors?.[0]?.message) {
-                    errorMessage = error.data.errors[0].message
-                } else {
-                    errorMessage = error.data?.message ?? 'Bad Request';
+                if (error?.data?.errors?.[0] && typeof error.data.errors[0] === 'string') {
+                    return error.data.errors[0]
                 }
-                break;
-            default:
-                errorMessage = 'Unknown Error';
-                break;
-        }
+                if (error?.data?.errors?.[0]?.message) {
+                    return error.data.errors[0].message
+                }
 
-        return errorMessage;
-    }
+                return error?.data?.message ?? 'Bad Request'
+            case 404:
+                return 'The requested resource was not found'
+            default:
+                if (status >= 500) {
+                    return 'A server error occurred. Please try again.'
+                }
+
+                return error?.data?.message ?? error?.message ?? 'Unknown Error'
+        }
+    },
 }

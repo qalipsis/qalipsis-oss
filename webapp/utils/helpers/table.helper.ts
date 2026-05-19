@@ -1,7 +1,7 @@
-export class TableHelper {
-    static defaultPageSize = 10;
+export const TableHelper = {
+    defaultPageSize: 10,
 
-    static getSanitizedQuery = (query: string): string => {
+    getSanitizedQuery(query: string): string {
         /**
          * Steps for sanitizing the query
          * 1. trims the spaces
@@ -20,5 +20,5 @@ export class TableHelper {
             .map(text => text.trim())
             .filter(text => text)
             .join(',')
-    }
+    },
 }

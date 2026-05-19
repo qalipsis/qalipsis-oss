@@ -5,13 +5,13 @@
   />
   <div
     :class="[
-      TailwindClassHelper.formInputWrapperClass,
-      hasError ? TailwindClassHelper.formInputWrapperErrorClass : TailwindClassHelper.formInputWrapperActiveClass,
+      TailwindClassConfig.formInputWrapperClass,
+      hasError ? TailwindClassConfig.formInputWrapperErrorClass : TailwindClassConfig.formInputWrapperActiveClass,
     ]"
   >
     <input
       type="text"
-      :class="TailwindClassHelper.formInputClass"
+      :class="TailwindClassConfig.formInputClass"
       :id="formInputControlName"
       :value="inputValue"
       :placeholder="inputPlaceholder"
@@ -22,12 +22,12 @@
       v-model="selectValue"
       :disabled="selectDisabled"
     >
-      <div :class="TailwindClassHelper.formDropdownClass">
+      <div :class="TailwindClassConfig.formDropdownClass">
         <ListboxButton>
           <div
             class="flex items-center justify-between border-l border-solid p-2 border-gray-200 w-20 h-10"
             :class="{
-              'border-red-500': hasError,
+              'border-red-600 dark:border-red-400': hasError,
             }"
           >
             <input
@@ -35,7 +35,7 @@
               type="text"
               class="cursor-pointer outline-none"
               :id="formSelectControlName"
-              :class="TailwindClassHelper.formInputClass"
+              :class="TailwindClassConfig.formInputClass"
               :value="selectedOptionLabel"
               :placeholder="selectPlaceholder"
               :disabled="selectDisabled"
@@ -49,12 +49,12 @@
         </ListboxButton>
         <ListboxOptions
           class="w-fit"
-          :class="TailwindClassHelper.formDropdownPanelClass"
+          :class="TailwindClassConfig.formDropdownPanelClass"
         >
           <ListboxOption
             v-for="option in options"
-            :key="option[optionValueKey]"
-            :value="option[optionValueKey]"
+            :key="option.value"
+            :value="option.value"
             :disabled="option.disabled"
             v-slot="{ active, selected }"
             as="template"
@@ -65,7 +65,7 @@
                 :option="option"
               >
                 <FormSelectOption
-                  :label="option[optionLabelKey]"
+                  :label="option.label"
                   :active="active"
                   :disabled="option.disabled"
                   :selected="selected"
@@ -91,12 +91,7 @@ const props = defineProps<{
   formInputModelValue?: string
   formSelectControlName: string
   formSelectModelValue?: string
-  /**
-   * The options for the dropdown menu.
-   */
-  options: FormMenuOption[] | any[]
-  labelKey?: string
-  valueKey?: string
+  options: FormMenuOption[]
   inputFieldValidationSchema?: TypedSchema
   inputPlaceholder?: string
   inputDisabled?: boolean
@@ -109,29 +104,27 @@ const emit = defineEmits<{
   (e: 'update:formSelectModelValue', v: string): void
 }>()
 
+const inputFieldValidationSchema = toRef(props, 'inputFieldValidationSchema')
+const selectFieldValidationSchema = toRef(props, 'selectFieldValidationSchema')
+
 const { value: inputValue, errorMessage: inputErrorMessage } = useField<string>(
   () => props.formInputControlName,
-  props.inputFieldValidationSchema,
+  inputFieldValidationSchema,
   {
     initialValue: props.formInputModelValue,
-  }
+  },
 )
 const { value: selectValue, errorMessage: selectErrorMessage } = useField<string>(
   () => props.formSelectControlName,
-  props.selectFieldValidationSchema,
+  selectFieldValidationSchema,
   {
     initialValue: props.formSelectModelValue,
-  }
+  },
 )
 
-const optionLabelKey = computed(() => props.labelKey ?? 'label')
-const optionValueKey = computed(() => props.valueKey ?? 'value')
+const hasError = computed(() => !!(inputErrorMessage.value || selectErrorMessage.value))
 
-const hasError = computed(() => (inputErrorMessage.value || selectErrorMessage.value ? true : false))
-
-const selectedOptionLabel = computed(
-  () => props.options.find((option) => option[optionValueKey.value] === selectValue.value)?.label
-)
+const selectedOptionLabel = computed(() => props.options.find((option) => option.value === selectValue.value)?.label)
 
 const debouncedInputChange = debounce((newValue: string) => {
   inputValue.value = newValue
@@ -142,8 +135,8 @@ const handleInputChange = (newValue: string) => {
   debouncedInputChange(newValue)
 }
 
-const handleSelectChange = (option: FormMenuOption | any) => {
-  selectValue.value = option[optionValueKey.value]
+const handleSelectChange = (option: FormMenuOption) => {
+  selectValue.value = option.value
   emit('update:formSelectModelValue', option.value)
 }
 </script>

@@ -1,17 +1,16 @@
 export const useScenarioApi = () => {
-    const {get$} = baseApi()
+  const { get$ } = baseApi()
 
-    /**
-     * Fetches the scenarios
-     *
-     * @param pageQueryParams The query parameters
-     * @returns The page list of data series
-     */
-    const fetchScenarios = async (): Promise<ScenarioSummary[]> => {
-        return get$<ScenarioSummary[], unknown>('/scenarios')
-    }
+  /**
+   * Fetches the scenarios
+   *
+   * @returns The list of scenarios
+   */
+  const fetchScenarios = (): Promise<ScenarioSummary[]> => {
+    return get$<ScenarioSummary[]>('/scenarios')
+  }
 
-    return {
-        fetchScenarios,
-    }
+  return {
+    fetchScenarios,
+  }
 }

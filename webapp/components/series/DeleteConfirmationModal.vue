@@ -37,7 +37,7 @@ const handleConfirmButtonClick = async () => {
 
   // When the selected data reference are greater or equal to the current display data
   let pageIndex = seriesTableStore.currentPageIndex;
-  if (props.dataSeriesReferences.length > seriesTableStore.dataSource?.length) {
+  if (props.dataSeriesReferences.length > (seriesTableStore.dataSource?.length ?? 0)) {
     // Sets the current page index to the previous one.
     pageIndex = seriesTableStore.currentPageIndex - 1 >= 0 ? seriesTableStore.currentPageIndex - 1 : 0;
   }
@@ -48,7 +48,7 @@ const handleConfirmButtonClick = async () => {
     selectedRowKeys: []
   })
 
-  seriesTableStore.fetchDataSeriesTableDataSource();
+  await seriesTableStore.fetchDataSeriesTableDataSource();
 }
 
 </script>

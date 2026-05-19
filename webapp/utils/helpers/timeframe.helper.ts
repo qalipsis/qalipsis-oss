@@ -3,15 +3,17 @@ import { Duration } from 'luxon'
 
 type DurationKey = 'years' | 'months' | 'weeks' | 'days' | 'hours' | 'minutes' | 'seconds'
 
-export class TimeframeHelper {
+const UNIT_MAP = { MS: 1, SEC: 1_000, MIN: 60_000, HR: 3_600_000 } as const
+
+export const TimeframeHelper = {
   /**
    * Returns number with ordinal number suffix.
-   * 
+   *
    * @param number The number to add suffix.
    *
    * @example nthNumber(1) returns 1st, nthNumber(2) returns 2nd
    */
-  static getOrdinalNumberSuffix = (number: number): string => {
+  getOrdinalNumberSuffix(number: number): string {
     if (number > 3 && number < 21) return 'th'
 
     switch (number % 10) {
@@ -24,9 +26,9 @@ export class TimeframeHelper {
       default:
         return 'th'
     }
-  }
+  },
 
-  static toIsoStringDuration = (value: number, unit: TimeframeUnit): string => {
+  toIsoStringDuration(value: number, unit: TimeframeUnit): string {
     switch (unit) {
       case 'MS':
         return Duration.fromObject({ milliseconds: value }).toISO()
@@ -37,35 +39,31 @@ export class TimeframeHelper {
       case 'HR':
         return Duration.fromObject({ hours: value }).toISO()
     }
-  }
+  },
 
-  static getTimezoneOptions = (): FormMenuOption[] => {
+  toMs(value: number, unit: TimeframeUnit): number {
+    return value * UNIT_MAP[unit]
+  },
+
+  fromMs(ms: number, unit: TimeframeUnit): number {
+    return ms / UNIT_MAP[unit]
+  },
+
+  getTimezoneOptions(): FormMenuOption[] {
     return Intl.supportedValuesOf('timeZone').map((timezone) => ({
       label: timezone,
       value: timezone,
     }))
-  }
+  },
 
-  static getTimeframeUnitOptions = (): FormMenuOption[] => {
+  getTimeframeUnitOptions(): FormMenuOption[] {
     return [
-      {
-        value: TimeframeUnitConstant.MS,
-        label: 'ms',
-      },
-      {
-        value: TimeframeUnitConstant.SEC,
-        label: 'sec',
-      },
-      {
-        value: TimeframeUnitConstant.MIN,
-        label: 'min',
-      },
-      {
-        value: TimeframeUnitConstant.HR,
-        label: 'hr',
-      },
+      { value: TimeframeUnitConstant.MS, label: 'ms' },
+      { value: TimeframeUnitConstant.SEC, label: 'sec' },
+      { value: TimeframeUnitConstant.MIN, label: 'min' },
+      { value: TimeframeUnitConstant.HR, label: 'hr' },
     ]
-  }
+  },
 
   /**
    * Formats the date time by the given format
@@ -74,9 +72,9 @@ export class TimeframeHelper {
    * @param timeFormat The format
    * @returns The formatted time text
    */
-  static toSpecificFormat(dateTime: Date, timeFormat: string): string {
+  toSpecificFormat(dateTime: Date, timeFormat: string): string {
     return format(dateTime, timeFormat)
-  }
+  },
 
   /**
    * Calculates elapsed time based on passed time intervals.
@@ -87,7 +85,7 @@ export class TimeframeHelper {
    * @remark `duration` - API - https://date-fns.org/v2.29.1/docs/intervalToDuration
    * @remark `days` - API - https://date-fns.org/v2.29.1/docs/differenceInCalendarDays
    */
-  static elapsedTime(start: Date, end: Date): string {
+  elapsedTime(start: Date, end: Date): string {
     const duration = intervalToDuration({ start, end })
     const days = differenceInCalendarDays(end, start)
 
@@ -96,13 +94,13 @@ export class TimeframeHelper {
       const durationKey = cur as DurationKey
       if (validTimePeriods.includes(durationKey) && duration[durationKey]) {
         return durationKey === 'days'
-          ? (acc += `${days}${durationKey[0]} `) // output: "2d "
-          : (acc += `${duration[durationKey]}${durationKey[0]} `) // output: "1d 4h 3m 2s"
+          ? (acc += `${days}${durationKey[0]} `)
+          : (acc += `${duration[durationKey]}${durationKey[0]} `)
       }
 
       return acc
     }, '')
-  }
+  },
 
   /**
    * Converts the milliseconds to hh:mm:ss format.
@@ -110,33 +108,18 @@ export class TimeframeHelper {
    * @param milliSeconds milliseconds.
    * @returns the milliseconds in hh:mm:ss format.
    * @example 36,000 ms = 00:00:36.
-   *
    */
-  static milliSecondsInHHMMSSFormat(milliSeconds: number): string {
-    // Returns if the seconds is not a number
+  milliSecondsInHHMMSSFormat(milliSeconds: number): string {
     if (isNaN(milliSeconds)) return ''
 
     let diff = Math.round(milliSeconds / 1000)
-    // The value of seconds.
-    let s = diff % 60
+    const s = diff % 60
     diff = (diff - s) / 60
-    // The value of minutes.
-    let m = diff % 60
-    diff = (diff - m) / 60
-    // The value of hours.
-    let h = diff
+    const m = diff % 60
+    const h = (diff - m) / 60
 
-    // Seconds with 2 digits format.
-    let ss = s <= 9 && s >= 0 ? `0${s}` : s
-
-    // Minutes with 2 digits format.
-    let mm = m <= 9 && m >= 0 ? `0${m}` : m
-
-    // Hours with 2 digits format.
-    let hh = h <= 9 && h >= 0 ? `0${h}` : h
-
-    return hh + ':' + mm + ':' + ss
-  }
+    return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':')
+  },
 
   /**
    * Converts the timeframe to the formatted timeframe.
@@ -145,7 +128,7 @@ export class TimeframeHelper {
    * @returns The formatted timeframe.
    * @see FormattedTimeframe
    */
-  static toFormattedTimeframe = (timeframeInIsoStringFormat: string | undefined): FormattedTimeframe => {
+  toFormattedTimeframe(timeframeInIsoStringFormat: string | undefined): FormattedTimeframe {
     if (!timeframeInIsoStringFormat)
       return {
         value: null,
@@ -157,23 +140,27 @@ export class TimeframeHelper {
 
     if (formattedTimeframeValue % 3_600_000 === 0) {
       formattedTimeframeUnit = TimeframeUnitConstant.HR
-      formattedTimeframeValue = formattedTimeframeValue / 3600000
+      formattedTimeframeValue = formattedTimeframeValue / 3_600_000
     } else if (formattedTimeframeValue % 60_000 === 0) {
       formattedTimeframeUnit = TimeframeUnitConstant.MIN
-      formattedTimeframeValue = formattedTimeframeValue / 60000
+      formattedTimeframeValue = formattedTimeframeValue / 60_000
     } else if (formattedTimeframeValue % 1_000 === 0) {
       formattedTimeframeUnit = TimeframeUnitConstant.SEC
-      formattedTimeframeValue = formattedTimeframeValue / 1000
-    } else {
-      formattedTimeframeUnit = TimeframeUnitConstant.MS
-      formattedTimeframeValue = formattedTimeframeValue
+      formattedTimeframeValue = formattedTimeframeValue / 1_000
     }
 
     return {
       unit: formattedTimeframeUnit,
       value: formattedTimeframeValue,
     }
-  }
+  },
+
+  /**
+   * Converts a millisecond value directly to a FormattedTimeframe with its largest exact unit.
+   */
+  msToFormattedTimeframe(ms: number): FormattedTimeframe {
+    return TimeframeHelper.toFormattedTimeframe(TimeframeHelper.toIsoStringDuration(ms, 'MS'))
+  },
 
   /**
    * Converts the timeframe to the target unit.
@@ -182,10 +169,10 @@ export class TimeframeHelper {
    * @param unit The unit of the timeframe.
    * @returns The timeframe in the target unit (default: milliseconds).
    */
-  static isoStringToTargetTimeframeUnit = (
+  isoStringToTargetTimeframeUnit(
     timeframeInIsoStringFormat: string | undefined,
-    unit: TimeframeUnit = 'MS'
-  ): number => {
+    unit: TimeframeUnit = 'MS',
+  ): number {
     if (!timeframeInIsoStringFormat) return 0
 
     let valueInMilliseconds: number
@@ -195,17 +182,10 @@ export class TimeframeHelper {
       return 0
     }
 
-    const UNIT_MAP = {
-      MS: 1,
-      SEC: 1_000,
-      MIN: 60_000,
-      HR: 3_600_000,
-    } as const
-
     if (!(unit in UNIT_MAP)) {
       throw new Error(`Unsupported timeframe unit: ${unit}`)
     }
 
     return valueInMilliseconds / UNIT_MAP[unit]
-  }
+  },
 }

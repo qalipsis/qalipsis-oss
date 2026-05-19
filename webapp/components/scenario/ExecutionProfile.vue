@@ -7,29 +7,36 @@
         :form-control-name="`executionProfileStages[${index}].minionsCount`"
         :field-validation-schema="executionProfileSchema.minionsCount"
         :disabled="disabled"
-        @input="emit('executionProfileChange', fields[index].value)"
-      />
-    </div>
-    <div class="col-span-4">
-      <FormInput
-        label="Duration"
-        suffix="ms"
-        :form-control-name="`executionProfileStages[${index}].duration`"
-        :field-validation-schema="executionProfileSchema.duration"
-        :disabled="disabled"
-        @input="emit('executionProfileChange', fields[index].value)"
       />
     </div>
     <div class="col-span-4">
       <div class="flex items-center">
         <div class="flex-grow">
-          <FormInput
-            label="Start"
-            suffix="ms"
-            :form-control-name="`executionProfileStages[${index}].startDuration`"
-            :field-validation-schema="executionProfileSchema.startDuration"
-            :disabled="disabled"
-            @input="emit('executionProfileChange', fields[index].value)"
+          <FormInputSelect
+            label="Ramp Up"
+            :form-input-control-name="`executionProfileStages[${index}].rampUpDuration`"
+            :form-select-control-name="`executionProfileStages[${index}].rampUpDurationUnit`"
+            :input-field-validation-schema="executionProfileSchema.rampUpDuration"
+            :select-field-validation-schema="executionProfileSchema.rampUpDurationUnit"
+            :options="timeframeUnitOptions"
+            :input-disabled="disabled"
+            :select-disabled="disabled"
+          />
+        </div>
+      </div>
+    </div>
+    <div class="col-span-4">
+      <div class="flex items-center">
+        <div class="flex-grow">
+          <FormInputSelect
+            label="Duration"
+            :form-input-control-name="`executionProfileStages[${index}].duration`"
+            :form-select-control-name="`executionProfileStages[${index}].durationUnit`"
+            :input-field-validation-schema="executionProfileSchema.duration"
+            :select-field-validation-schema="executionProfileSchema.durationUnit"
+            :options="timeframeUnitOptions"
+            :input-disabled="disabled"
+            :select-disabled="disabled"
           />
         </div>
         <div
@@ -58,11 +65,10 @@ const props = defineProps<{
   deleteHidden?: boolean
   disabled?: boolean
 }>()
-const emit = defineEmits<{
-  (e: 'executionProfileChange', v: ExecutionProfileStage | null): void
-}>()
 
 const invalidNumberErrorMessage = 'You must specify a number'
+
+const timeframeUnitOptions = TimeframeHelper.getTimeframeUnitOptions()
 
 const { remove, fields } = useFieldArray<ExecutionProfileStage>('executionProfileStages')
 
@@ -70,47 +76,62 @@ const stageValidation = computed(() => {
   return {
     ...props.configuration.validation.stage,
     maxDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
-      props.configuration.validation.stage.maxDuration
+      props.configuration.validation.stage.maxDuration,
     ),
     minDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
-      props.configuration.validation.stage.minDuration
+      props.configuration.validation.stage.minDuration,
     ),
     maxStartDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
-      props.configuration.validation.stage.maxStartDuration
+      props.configuration.validation.stage.maxStartDuration,
     ),
     minStartDurationInMilliSeconds: TimeframeHelper.isoStringToTargetTimeframeUnit(
-      props.configuration.validation.stage.minStartDuration
+      props.configuration.validation.stage.minStartDuration,
     ),
   }
 })
 
-const {
-  maxMinionsCount,
-  minMinionsCount,
-  maxDurationInMilliSeconds,
-  minDurationInMilliSeconds,
-  maxStartDurationInMilliSeconds,
-  minStartDurationInMilliSeconds,
-} = stageValidation.value
-
 const _getNumberValidationSchema = (min: number, max: number) => {
+  const rangeErrorMessage = `Value must be between ${min} and ${max}.`
   return zod.coerce
     .number({ invalid_type_error: invalidNumberErrorMessage })
-    .min(min)
-    .max(max, `Value must be between ${min} and ${max}.`)
+    .min(min, rangeErrorMessage)
+    .max(max, rangeErrorMessage)
     .nullable()
 }
 
-const executionProfileSchema = {
-  minionsCount: toTypedSchema(_getNumberValidationSchema(minMinionsCount, maxMinionsCount)),
-  duration: toTypedSchema(_getNumberValidationSchema(minDurationInMilliSeconds, maxDurationInMilliSeconds)),
-  startDuration: toTypedSchema(
-    _getNumberValidationSchema(minStartDurationInMilliSeconds, maxStartDurationInMilliSeconds)
-  ),
-}
+const executionProfileSchema = computed(() => {
+  const {
+    maxMinionsCount,
+    minMinionsCount,
+    maxDurationInMilliSeconds,
+    minDurationInMilliSeconds,
+    maxStartDurationInMilliSeconds,
+    minStartDurationInMilliSeconds,
+  } = stageValidation.value
+
+  const startUnit = (fields.value[props.index]?.value?.rampUpDurationUnit ?? TimeframeUnitConstant.SEC) as TimeframeUnit
+  const durUnit = (fields.value[props.index]?.value?.durationUnit ?? TimeframeUnitConstant.SEC) as TimeframeUnit
+
+  return {
+    minionsCount: toTypedSchema(_getNumberValidationSchema(minMinionsCount, maxMinionsCount)),
+    rampUpDuration: toTypedSchema(
+      _getNumberValidationSchema(
+        TimeframeHelper.fromMs(minStartDurationInMilliSeconds, startUnit),
+        TimeframeHelper.fromMs(maxStartDurationInMilliSeconds, startUnit),
+      ),
+    ),
+    rampUpDurationUnit: toTypedSchema(zod.string().nullable()),
+    duration: toTypedSchema(
+      _getNumberValidationSchema(
+        TimeframeHelper.fromMs(minDurationInMilliSeconds, durUnit),
+        TimeframeHelper.fromMs(maxDurationInMilliSeconds, durUnit),
+      ),
+    ),
+    durationUnit: toTypedSchema(zod.string().nullable()),
+  }
+})
 
 const handleDeleteBtnClick = () => {
   remove(props.index)
-  emit('executionProfileChange', null)
 }
 </script>
