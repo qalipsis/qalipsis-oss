@@ -1,0 +1,1322 @@
+[
+  {
+    "id": "home-welcome",
+    "priority": 0,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "text/plain"
+        ]
+      },
+      "body": "Welcome to QALIPSIS"
+    }
+  },
+  {
+    "id": "configuration-security",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/configuration/security"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "strategy": "disabled"
+      }
+    }
+  },
+  {
+    "id": "configuration-campaign",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/configuration/campaign"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "validation": {
+          "maxMinionsCount": 10000,
+          "maxExecutionDuration": "PT1H",
+          "maxScenariosCount": 4,
+          "stage": {
+            "minMinionsCount": 1,
+            "maxMinionsCount": 10000,
+            "minResolution": "PT0.5S",
+            "maxResolution": "PT5M",
+            "minDuration": "PT5S",
+            "maxDuration": "PT2H",
+            "minStartDuration": "PT5S",
+            "maxStartDuration": "PT2H"
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "users-profile",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "user": {
+          "username": "mock-user",
+          "email": "mock-user@qalipsis.io",
+          "displayName": "Mock User"
+        },
+        "tenants": [
+          {
+            "reference": "mock-tenant",
+            "displayName": "Mock Tenant"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "users-permissions",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/users/permissions"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": [
+        "read:campaign",
+        "write:campaign",
+        "read:scenario",
+        "read:report",
+        "write:report",
+        "read:data-series",
+        "write:data-series",
+        "read:factory",
+        "read:zone",
+        "read:user",
+        "read:time-series"
+      ]
+    }
+  },
+  {
+    "id": "zones-list",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/zones"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": [
+        {
+          "key": "EU",
+          "title": "Europe — Frankfurt",
+          "description": "Primary EU region, GDPR-resident workers",
+          "imagePath": "https://qalipsis.io/zones/eu.png",
+          "enabled": true
+        },
+        {
+          "key": "US",
+          "title": "Americas — Virginia",
+          "description": "North America region, low-latency to East Coast services",
+          "imagePath": "https://qalipsis.io/zones/us.png",
+          "enabled": true
+        },
+        {
+          "key": "AP",
+          "title": "Asia-Pacific — Singapore",
+          "description": "APAC region, ideal for SEA & ANZ targets",
+          "imagePath": "https://qalipsis.io/zones/ap.png",
+          "enabled": true
+        },
+        {
+          "key": "SA",
+          "title": "South America — São Paulo",
+          "description": "LATAM region for ride-hailing and e-commerce workloads",
+          "imagePath": "https://qalipsis.io/zones/sa.png",
+          "enabled": true
+        }
+      ]
+    }
+  },
+  {
+    "id": "factories-states",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/factories/states"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "idle": 2,
+        "registered": 3,
+        "unhealthy": 0,
+        "offline": 1
+      }
+    }
+  },
+  {
+    "id": "scenarios-list",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/scenarios"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": [
+        {
+          "name": "checkout-flow-black-friday",
+          "description": "End-to-end e-commerce checkout under Black Friday peak traffic: browse, cart, payment, order confirmation",
+          "version": "2.4.0",
+          "builtAt": "2026-05-12T09:15:00Z",
+          "minionsCount": 250000
+        },
+        {
+          "name": "payments-api-stress",
+          "description": "PCI-DSS payment gateway stress test: tokenization, 3DS challenge, capture, refund",
+          "version": "1.8.2",
+          "builtAt": "2026-05-14T14:32:00Z",
+          "minionsCount": 75000
+        },
+        {
+          "name": "iot-fleet-telemetry-1m",
+          "description": "1 million connected vehicles streaming MQTT telemetry every 5 seconds",
+          "version": "3.1.0",
+          "builtAt": "2026-05-10T08:00:00Z",
+          "minionsCount": 1000000
+        },
+        {
+          "name": "graphql-mobile-feed",
+          "description": "Social mobile app feed: GraphQL queries, image CDN fetch, push notification ack",
+          "version": "1.3.5",
+          "builtAt": "2026-05-15T11:45:00Z",
+          "minionsCount": 180000
+        },
+        {
+          "name": "banking-open-api-soak",
+          "description": "PSD2 Open Banking 24h soak test: account info, balance, SCA, payment initiation",
+          "version": "2.0.1",
+          "builtAt": "2026-05-08T07:20:00Z",
+          "minionsCount": 40000
+        },
+        {
+          "name": "kafka-event-pipeline",
+          "description": "Event-driven order pipeline through Kafka: producer burst, consumer lag measurement, DLQ recovery",
+          "version": "1.6.0",
+          "builtAt": "2026-05-13T16:10:00Z",
+          "minionsCount": 120000
+        },
+        {
+          "name": "live-streaming-concurrent-viewers",
+          "description": "HLS live event with 500K concurrent viewers, ABR switching, ad-break insertion",
+          "version": "1.2.0",
+          "builtAt": "2026-05-16T19:00:00Z",
+          "minionsCount": 500000
+        },
+        {
+          "name": "ride-hailing-surge",
+          "description": "Ride-hailing dispatch surge: geo search, ETA, driver assignment, real-time tracking",
+          "version": "2.7.1",
+          "builtAt": "2026-05-11T12:00:00Z",
+          "minionsCount": 90000
+        },
+        {
+          "name": "ai-inference-llm-serving",
+          "description": "LLM inference endpoint benchmark: token streaming, KV-cache reuse, p99 TTFT",
+          "version": "0.9.0",
+          "builtAt": "2026-05-17T10:30:00Z",
+          "minionsCount": 8000
+        },
+        {
+          "name": "healthcare-fhir-burst",
+          "description": "FHIR R4 burst test: patient lookup, observation write, bulk export under HIPAA constraints",
+          "version": "1.4.0",
+          "builtAt": "2026-05-09T13:15:00Z",
+          "minionsCount": 25000
+        }
+      ]
+    }
+  },
+  {
+    "id": "campaigns-search",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/campaigns"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "page": 0,
+        "pageSize": 20,
+        "totalPages": 1,
+        "totalElements": 10,
+        "elements": [
+          {
+            "version": "2026-05-19T08:42:00Z",
+            "key": "CMP-2026-BFCM-PEAK",
+            "creation": "2026-05-19T06:00:00Z",
+            "name": "Black Friday 2026 — Production readiness rehearsal",
+            "speedFactor": 1.5,
+            "scheduledMinions": 250000,
+            "softTimeout": "2026-05-19T08:00:00Z",
+            "hardTimeout": "2026-05-19T08:30:00Z",
+            "start": "2026-05-19T06:05:00Z",
+            "end": "2026-05-19T08:12:00Z",
+            "status": "SUCCESSFUL",
+            "failureReason": null,
+            "configurerName": "sarah.kim",
+            "aborterName": null,
+            "scenarios": [
+              {
+                "name": "checkout-flow-black-friday",
+                "minionsCount": 250000,
+                "version": "2.4.0"
+              }
+            ],
+            "zones": [
+              "EU",
+              "US",
+              "AP"
+            ]
+          },
+          {
+            "version": "2026-05-18T22:11:00Z",
+            "key": "CMP-PAYMENTS-NIGHTLY-042",
+            "creation": "2026-05-18T22:00:00Z",
+            "name": "Payments gateway — nightly regression",
+            "speedFactor": 1.0,
+            "scheduledMinions": 75000,
+            "softTimeout": null,
+            "hardTimeout": "2026-05-19T00:30:00Z",
+            "start": "2026-05-18T22:05:00Z",
+            "end": "2026-05-18T23:48:00Z",
+            "status": "SUCCESSFUL",
+            "failureReason": null,
+            "configurerName": "ci-bot",
+            "aborterName": null,
+            "scenarios": [
+              {
+                "name": "payments-api-stress",
+                "minionsCount": 75000,
+                "version": "1.8.2"
+              }
+            ],
+            "zones": [
+              "EU"
+            ]
+          },
+          {
+            "version": "2026-05-18T16:35:00Z",
+            "key": "CMP-IOT-FLEET-1M",
+            "creation": "2026-05-18T14:00:00Z",
+            "name": "Connected fleet — 1M vehicles telemetry",
+            "speedFactor": 1.0,
+            "scheduledMinions": 1000000,
+            "softTimeout": null,
+            "hardTimeout": null,
+            "start": "2026-05-18T14:05:00Z",
+            "end": "2026-05-18T16:35:00Z",
+            "status": "SUCCESSFUL",
+            "failureReason": null,
+            "configurerName": "miguel.santos",
+            "aborterName": null,
+            "scenarios": [
+              {
+                "name": "iot-fleet-telemetry-1m",
+                "minionsCount": 1000000,
+                "version": "3.1.0"
+              }
+            ],
+            "zones": [
+              "EU",
+              "US",
+              "AP",
+              "SA"
+            ]
+          },
+          {
+            "version": "2026-05-19T10:15:00Z",
+            "key": "CMP-LIVE-STREAM-FINAL",
+            "creation": "2026-05-19T09:30:00Z",
+            "name": "Champions League final — viewer surge simulation",
+            "speedFactor": 2.0,
+            "scheduledMinions": 500000,
+            "softTimeout": null,
+            "hardTimeout": "2026-05-19T13:00:00Z",
+            "start": "2026-05-19T10:00:00Z",
+            "end": null,
+            "status": "IN_PROGRESS",
+            "failureReason": null,
+            "configurerName": "aisha.rahman",
+            "aborterName": null,
+            "scenarios": [
+              {
+                "name": "live-streaming-concurrent-viewers",
+                "minionsCount": 500000,
+                "version": "1.2.0"
+              }
+            ],
+            "zones": [
+              "EU",
+              "US"
+            ]
+          },
+          {
+            "version": "2026-05-17T18:20:00Z",
+            "key": "CMP-BANK-PSD2-SOAK",
+            "creation": "2026-05-16T18:00:00Z",
+            "name": "Open Banking — 24h soak before audit",
+            "speedFactor": 1.0,
+            "scheduledMinions": 40000,
+            "softTimeout": null,
+            "hardTimeout": null,
+            "start": "2026-05-16T18:05:00Z",
+            "end": "2026-05-17T18:05:00Z",
+            "status": "SUCCESSFUL",
+            "failureReason": null,
+            "configurerName": "thomas.berger",
+            "aborterName": null,
+            "scenarios": [
+              {
+                "name": "banking-open-api-soak",
+                "minionsCount": 40000,
+                "version": "2.0.1"
+              }
+            ],
+            "zones": [
+              "EU"
+            ]
+          },
+          {
+            "version": "2026-05-15T11:00:00Z",
+            "key": "CMP-MOBILE-FEED-RELEASE",
+            "creation": "2026-05-15T09:00:00Z",
+            "name": "Mobile feed — v4.2 release validation",
+            "speedFactor": 1.25,
+            "scheduledMinions": 180000,
+            "softTimeout": null,
+            "hardTimeout": null,
+            "start": "2026-05-15T09:05:00Z",
+            "end": "2026-05-15T10:48:00Z",
+            "status": "WARNING",
+            "failureReason": "p99 latency exceeded SLO on /feed for 4 min during ramp-up",
+            "configurerName": "yuki.tanaka",
+            "aborterName": null,
+            "scenarios": [
+              {
+                "name": "graphql-mobile-feed",
+                "minionsCount": 180000,
+                "version": "1.3.5"
+              }
+            ],
+            "zones": [
+              "AP",
+              "US"
+            ]
+          },
+          {
+            "version": "2026-05-14T20:30:00Z",
+            "key": "CMP-RIDE-SURGE-NYE-REH",
+            "creation": "2026-05-14T19:00:00Z",
+            "name": "New Year's Eve dispatch surge rehearsal",
+            "speedFactor": 3.0,
+            "scheduledMinions": 90000,
+            "softTimeout": null,
+            "hardTimeout": "2026-05-14T22:00:00Z",
+            "start": "2026-05-14T19:05:00Z",
+            "end": "2026-05-14T20:25:00Z",
+            "status": "FAILED",
+            "failureReason": "Dispatcher service circuit-breaker opened at 62k concurrent rides",
+            "configurerName": "olivia.brown",
+            "aborterName": null,
+            "scenarios": [
+              {
+                "name": "ride-hailing-surge",
+                "minionsCount": 90000,
+                "version": "2.7.1"
+              }
+            ],
+            "zones": [
+              "US",
+              "SA"
+            ]
+          },
+          {
+            "version": "2026-05-13T17:45:00Z",
+            "key": "CMP-KAFKA-PIPELINE-BURST",
+            "creation": "2026-05-13T17:00:00Z",
+            "name": "Order pipeline — Kafka burst & DLQ recovery",
+            "speedFactor": 1.0,
+            "scheduledMinions": 120000,
+            "softTimeout": null,
+            "hardTimeout": null,
+            "start": "2026-05-13T17:05:00Z",
+            "end": "2026-05-13T17:38:00Z",
+            "status": "SUCCESSFUL",
+            "failureReason": null,
+            "configurerName": "raphael.diaz",
+            "aborterName": null,
+            "scenarios": [
+              {
+                "name": "kafka-event-pipeline",
+                "minionsCount": 120000,
+                "version": "1.6.0"
+              }
+            ],
+            "zones": [
+              "EU",
+              "US"
+            ]
+          },
+          {
+            "version": "2026-05-17T15:00:00Z",
+            "key": "CMP-LLM-INFERENCE-BENCH",
+            "creation": "2026-05-17T14:30:00Z",
+            "name": "LLM inference — p99 TTFT benchmark on new GPU pool",
+            "speedFactor": 1.0,
+            "scheduledMinions": 8000,
+            "softTimeout": null,
+            "hardTimeout": null,
+            "start": "2026-05-17T14:35:00Z",
+            "end": "2026-05-17T15:00:00Z",
+            "status": "SUCCESSFUL",
+            "failureReason": null,
+            "configurerName": "priya.nair",
+            "aborterName": null,
+            "scenarios": [
+              {
+                "name": "ai-inference-llm-serving",
+                "minionsCount": 8000,
+                "version": "0.9.0"
+              }
+            ],
+            "zones": [
+              "US"
+            ]
+          },
+          {
+            "version": "2026-05-19T07:55:00Z",
+            "key": "CMP-FHIR-BURST-Q2",
+            "creation": "2026-05-19T07:00:00Z",
+            "name": "Hospital integration — FHIR Q2 burst test",
+            "speedFactor": 1.0,
+            "scheduledMinions": 25000,
+            "softTimeout": null,
+            "hardTimeout": null,
+            "start": "2026-05-19T07:05:00Z",
+            "end": null,
+            "status": "SCHEDULED",
+            "failureReason": null,
+            "configurerName": "elena.popescu",
+            "aborterName": null,
+            "scenarios": [
+              {
+                "name": "healthcare-fhir-burst",
+                "minionsCount": 25000,
+                "version": "1.4.0"
+              }
+            ],
+            "zones": [
+              "EU"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "campaigns-configuration",
+    "priority": 20,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/campaigns/.+/configuration"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "name": "Black Friday 2026 — Production readiness rehearsal",
+        "speedFactor": 1.5,
+        "startOffsetMs": 5000,
+        "timeout": "PT2H",
+        "hardTimeout": true,
+        "scenarios": {
+          "checkout-flow-black-friday": {
+            "minionsCount": 250000,
+            "zones": {
+              "EU": 40,
+              "US": 40,
+              "AP": 20
+            }
+          }
+        },
+        "scheduledAt": null,
+        "scheduling": null
+      }
+    }
+  },
+  {
+    "id": "campaigns-details",
+    "priority": 15,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/campaigns/[^/]+"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": [
+        {
+          "version": "2026-05-19T08:42:00Z",
+          "key": "CMP-2026-BFCM-PEAK",
+          "creation": "2026-05-19T06:00:00Z",
+          "name": "Black Friday 2026 — Production readiness rehearsal",
+          "speedFactor": 1.5,
+          "scheduledMinions": 250000,
+          "softTimeout": "2026-05-19T08:00:00Z",
+          "hardTimeout": "2026-05-19T08:30:00Z",
+          "start": "2026-05-19T06:05:00Z",
+          "end": "2026-05-19T08:12:00Z",
+          "status": "SUCCESSFUL",
+          "failureReason": null,
+          "configurerName": "sarah.kim",
+          "aborterName": null,
+          "scenarios": [
+            {
+              "name": "checkout-flow-black-friday",
+              "minionsCount": 250000,
+              "version": "2.4.0"
+            }
+          ],
+          "zones": [
+            "EU",
+            "US",
+            "AP"
+          ],
+          "startedMinions": 250000,
+          "completedMinions": 249874,
+          "successfulExecutions": 12489731,
+          "failedExecutions": 18452,
+          "scenariosReports": [
+            {
+              "name": "checkout-flow-black-friday",
+              "start": "2026-05-19T06:05:00Z",
+              "end": "2026-05-19T08:12:00Z",
+              "startedMinions": 250000,
+              "completedMinions": 249874,
+              "successfulExecutions": 12489731,
+              "failedExecutions": 18452,
+              "status": "SUCCESSFUL",
+              "messages": [
+                {
+                  "stepName": "payment.capture",
+                  "severity": "INFO",
+                  "message": "p99 latency 187ms — well below 500ms SLO"
+                },
+                {
+                  "stepName": "cart.checkout",
+                  "severity": "WARN",
+                  "message": "0.14% error rate during peak ramp-up window (T+34min)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "data-series-search",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/data-series"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "page": 0,
+        "pageSize": 20,
+        "totalPages": 1,
+        "totalElements": 12,
+        "elements": [
+          {
+            "reference": "ds-active-vus",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "sarah.kim",
+            "displayName": "Active virtual users",
+            "sharingMode": "WRITE",
+            "dataType": "METERS",
+            "valueName": "minions.active",
+            "color": "#0066FF",
+            "filters": [],
+            "fieldName": "value",
+            "aggregationOperation": "MAX",
+            "timeframeUnit": "PT10S",
+            "displayFormat": "#,##0",
+            "colorOpacity": 100
+          },
+          {
+            "reference": "ds-rps",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "sarah.kim",
+            "displayName": "Requests per second",
+            "sharingMode": "WRITE",
+            "dataType": "METERS",
+            "valueName": "http.requests.rate",
+            "color": "#00C896",
+            "filters": [],
+            "fieldName": "value",
+            "aggregationOperation": "AVERAGE",
+            "timeframeUnit": "PT5S",
+            "displayFormat": "#,##0 rps",
+            "colorOpacity": 100
+          },
+          {
+            "reference": "ds-p99-latency",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "sarah.kim",
+            "displayName": "p99 response time",
+            "sharingMode": "WRITE",
+            "dataType": "EVENTS",
+            "valueName": "http.response.duration",
+            "color": "#FF3B30",
+            "filters": [
+              {
+                "name": "status",
+                "operator": "IS",
+                "value": "2xx"
+              }
+            ],
+            "fieldName": "duration",
+            "aggregationOperation": "PERCENTILE_99",
+            "timeframeUnit": "PT10S",
+            "displayFormat": "#,##0 ms",
+            "colorOpacity": 100
+          },
+          {
+            "reference": "ds-p95-latency",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "sarah.kim",
+            "displayName": "p95 response time",
+            "sharingMode": "WRITE",
+            "dataType": "EVENTS",
+            "valueName": "http.response.duration",
+            "color": "#FF9500",
+            "filters": [],
+            "fieldName": "duration",
+            "aggregationOperation": "PERCENTILE_95",
+            "timeframeUnit": "PT10S",
+            "displayFormat": "#,##0 ms",
+            "colorOpacity": 100
+          },
+          {
+            "reference": "ds-error-rate",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "thomas.berger",
+            "displayName": "Error rate (%)",
+            "sharingMode": "WRITE",
+            "dataType": "METERS",
+            "valueName": "http.requests.error.ratio",
+            "color": "#D70015",
+            "filters": [],
+            "fieldName": "value",
+            "aggregationOperation": "AVERAGE",
+            "timeframeUnit": "PT10S",
+            "displayFormat": "0.00 %",
+            "colorOpacity": 100
+          },
+          {
+            "reference": "ds-throughput-mb",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "miguel.santos",
+            "displayName": "Network throughput",
+            "sharingMode": "READONLY",
+            "dataType": "METERS",
+            "valueName": "network.bytes.sent",
+            "color": "#5856D6",
+            "filters": [],
+            "fieldName": "value",
+            "aggregationOperation": "SUM",
+            "timeframeUnit": "PT5S",
+            "displayFormat": "#,##0.0 MB/s",
+            "colorOpacity": 80
+          },
+          {
+            "reference": "ds-checkout-conversion",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "sarah.kim",
+            "displayName": "Checkout conversion rate",
+            "sharingMode": "WRITE",
+            "dataType": "EVENTS",
+            "valueName": "business.checkout.success.ratio",
+            "color": "#34C759",
+            "filters": [
+              {
+                "name": "step",
+                "operator": "IS",
+                "value": "order.confirmed"
+              }
+            ],
+            "fieldName": "value",
+            "aggregationOperation": "AVERAGE",
+            "timeframeUnit": "PT30S",
+            "displayFormat": "0.0 %",
+            "colorOpacity": 100
+          },
+          {
+            "reference": "ds-payment-decline",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "thomas.berger",
+            "displayName": "Payment decline rate",
+            "sharingMode": "WRITE",
+            "dataType": "EVENTS",
+            "valueName": "business.payment.declined",
+            "color": "#FF2D55",
+            "filters": [
+              {
+                "name": "reason",
+                "operator": "IS_NOT",
+                "value": "user_cancelled"
+              }
+            ],
+            "fieldName": "count",
+            "aggregationOperation": "COUNT",
+            "timeframeUnit": "PT30S",
+            "displayFormat": "#,##0",
+            "colorOpacity": 100
+          },
+          {
+            "reference": "ds-kafka-consumer-lag",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "raphael.diaz",
+            "displayName": "Kafka consumer lag",
+            "sharingMode": "READONLY",
+            "dataType": "METERS",
+            "valueName": "kafka.consumer.lag",
+            "color": "#AF52DE",
+            "filters": [
+              {
+                "name": "topic",
+                "operator": "IS",
+                "value": "orders.events"
+              }
+            ],
+            "fieldName": "value",
+            "aggregationOperation": "MAX",
+            "timeframeUnit": "PT5S",
+            "displayFormat": "#,##0 msg",
+            "colorOpacity": 100
+          },
+          {
+            "reference": "ds-llm-ttft",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "priya.nair",
+            "displayName": "LLM time-to-first-token (p99)",
+            "sharingMode": "WRITE",
+            "dataType": "EVENTS",
+            "valueName": "llm.inference.ttft",
+            "color": "#FFCC00",
+            "filters": [
+              {
+                "name": "model",
+                "operator": "IS",
+                "value": "claude-haiku-4-5"
+              }
+            ],
+            "fieldName": "duration",
+            "aggregationOperation": "PERCENTILE_99",
+            "timeframeUnit": "PT10S",
+            "displayFormat": "#,##0 ms",
+            "colorOpacity": 100
+          },
+          {
+            "reference": "ds-iot-msgs",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "miguel.santos",
+            "displayName": "MQTT messages ingested",
+            "sharingMode": "READONLY",
+            "dataType": "METERS",
+            "valueName": "mqtt.messages.in",
+            "color": "#32ADE6",
+            "filters": [],
+            "fieldName": "value",
+            "aggregationOperation": "SUM",
+            "timeframeUnit": "PT1S",
+            "displayFormat": "#,##0 msg/s",
+            "colorOpacity": 100
+          },
+          {
+            "reference": "ds-cpu-saturation",
+            "version": "2026-05-19T08:00:00Z",
+            "creator": "ci-bot",
+            "displayName": "CPU saturation",
+            "sharingMode": "READONLY",
+            "dataType": "METERS",
+            "valueName": "system.cpu.utilization",
+            "color": "#A2845E",
+            "filters": [],
+            "fieldName": "value",
+            "aggregationOperation": "AVERAGE",
+            "timeframeUnit": "PT15S",
+            "displayFormat": "0.0 %",
+            "colorOpacity": 70
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "data-series-names",
+    "priority": 20,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/data-series/[^/]+/names"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": [
+        "minions.active",
+        "minions.started",
+        "minions.completed",
+        "http.requests.rate",
+        "http.requests.count",
+        "http.response.duration",
+        "http.requests.error.ratio",
+        "network.bytes.sent",
+        "network.bytes.received",
+        "business.checkout.success.ratio",
+        "business.payment.declined",
+        "business.cart.abandoned",
+        "kafka.consumer.lag",
+        "kafka.producer.throughput",
+        "mqtt.messages.in",
+        "mqtt.connections.active",
+        "llm.inference.ttft",
+        "llm.inference.tokens.per.second",
+        "db.query.duration",
+        "cache.hit.ratio",
+        "system.cpu.utilization",
+        "system.memory.used"
+      ]
+    }
+  },
+  {
+    "id": "data-series-fields",
+    "priority": 20,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/data-series/[^/]+/fields"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": [
+        {
+          "name": "value",
+          "type": "NUMBER"
+        },
+        {
+          "name": "count",
+          "type": "NUMBER"
+        },
+        {
+          "name": "duration",
+          "type": "DURATION"
+        }
+      ]
+    }
+  },
+  {
+    "id": "data-series-tags",
+    "priority": 20,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/data-series/[^/]+/tags"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "scenario": [
+          "checkout-flow-black-friday",
+          "payments-api-stress",
+          "iot-fleet-telemetry-1m",
+          "graphql-mobile-feed",
+          "banking-open-api-soak",
+          "kafka-event-pipeline",
+          "live-streaming-concurrent-viewers",
+          "ride-hailing-surge",
+          "ai-inference-llm-serving",
+          "healthcare-fhir-burst"
+        ],
+        "campaign": [
+          "CMP-2026-BFCM-PEAK",
+          "CMP-PAYMENTS-NIGHTLY-042",
+          "CMP-IOT-FLEET-1M",
+          "CMP-LIVE-STREAM-FINAL",
+          "CMP-BANK-PSD2-SOAK",
+          "CMP-MOBILE-FEED-RELEASE",
+          "CMP-RIDE-SURGE-NYE-REH",
+          "CMP-KAFKA-PIPELINE-BURST",
+          "CMP-LLM-INFERENCE-BENCH",
+          "CMP-FHIR-BURST-Q2"
+        ],
+        "zone": [
+          "EU",
+          "US",
+          "AP",
+          "SA"
+        ],
+        "status": [
+          "2xx",
+          "3xx",
+          "4xx",
+          "5xx"
+        ],
+        "step": [
+          "auth.login",
+          "catalog.search",
+          "cart.add",
+          "cart.checkout",
+          "payment.tokenize",
+          "payment.capture",
+          "order.confirmed"
+        ]
+      }
+    }
+  },
+  {
+    "id": "data-series-by-reference",
+    "priority": 15,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/data-series/[^/]+"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "reference": "ds-p99-latency",
+        "version": "2026-05-19T08:00:00Z",
+        "creator": "sarah.kim",
+        "displayName": "p99 response time",
+        "sharingMode": "WRITE",
+        "dataType": "EVENTS",
+        "valueName": "http.response.duration",
+        "color": "#FF3B30",
+        "filters": [
+          {
+            "name": "status",
+            "operator": "IS",
+            "value": "2xx"
+          }
+        ],
+        "fieldName": "duration",
+        "aggregationOperation": "PERCENTILE_99",
+        "timeframeUnit": "PT10S",
+        "displayFormat": "#,##0 ms",
+        "colorOpacity": 100
+      }
+    }
+  },
+  {
+    "id": "time-series-aggregate",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/time-series/aggregate"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "ds-1": [
+          {
+            "start": "2026-05-19T11:00:00Z",
+            "value": 100.0,
+            "campaign": "campaign-1"
+          },
+          {
+            "start": "2026-05-19T11:01:00Z",
+            "value": 150.0,
+            "campaign": "campaign-1"
+          },
+          {
+            "start": "2026-05-19T11:02:00Z",
+            "value": 200.0,
+            "campaign": "campaign-1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "time-series-search",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/time-series/search"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "ds-1": {
+          "page": 0,
+          "pageSize": 500,
+          "totalPages": 1,
+          "totalElements": 2,
+          "elements": [
+            {
+              "name": "minions.count",
+              "timestamp": "2026-05-19T11:00:00Z",
+              "value": 100.0,
+              "campaign": "campaign-1",
+              "scenario": "scenario-1",
+              "type": "METER"
+            },
+            {
+              "name": "minions.count",
+              "timestamp": "2026-05-19T11:01:00Z",
+              "value": 150.0,
+              "campaign": "campaign-1",
+              "scenario": "scenario-1",
+              "type": "METER"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "time-series-campaign-status",
+    "priority": 20,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/time-series/summary/campaign-status"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": [
+        {
+          "seriesStart": "2026-05-18T00:00:00Z",
+          "seriesEnd": "2026-05-19T00:00:00Z",
+          "successful": 12,
+          "failed": 1,
+          "inProgress": 0
+        },
+        {
+          "seriesStart": "2026-05-19T00:00:00Z",
+          "seriesEnd": "2026-05-20T00:00:00Z",
+          "successful": 5,
+          "failed": 0,
+          "inProgress": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "reports-search",
+    "priority": 10,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/reports"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "page": 0,
+        "pageSize": 20,
+        "totalPages": 1,
+        "totalElements": 1,
+        "elements": [
+          {
+            "reference": "report-1",
+            "version": "2026-05-19T12:00:00Z",
+            "creator": "mock-user",
+            "displayName": "Mock report",
+            "description": "A demo report",
+            "sharingMode": "READONLY",
+            "campaignKeys": [
+              "campaign-1"
+            ],
+            "campaignNamesPatterns": [],
+            "resolvedCampaigns": [
+              {
+                "key": "campaign-1",
+                "name": "Mock campaign 1"
+              }
+            ],
+            "scenarioNamesPatterns": [],
+            "resolvedScenarioNames": [
+              "scenario-1"
+            ],
+            "dataComponents": []
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "reports-file-download",
+    "priority": 25,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/reports/file/[^/]+"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/octet-stream"
+        ],
+        "Content-Disposition": [
+          "attachment; filename=mock-report.bin"
+        ]
+      },
+      "body": {
+        "type": "BINARY",
+        "base64Bytes": "TU9DSyBSRVBPUlQgQ09OVEVOVA=="
+      }
+    }
+  },
+  {
+    "id": "reports-by-reference",
+    "priority": 15,
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/reports/[^/]+"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "reference": "report-1",
+        "version": "2026-05-19T12:00:00Z",
+        "creator": "mock-user",
+        "displayName": "Mock report",
+        "description": "A demo report",
+        "sharingMode": "READONLY",
+        "campaignKeys": [
+          "campaign-1"
+        ],
+        "campaignNamesPatterns": [],
+        "resolvedCampaigns": [
+          {
+            "key": "campaign-1",
+            "name": "Mock campaign 1"
+          }
+        ],
+        "scenarioNamesPatterns": [],
+        "resolvedScenarioNames": [
+          "scenario-1"
+        ],
+        "dataComponents": []
+      }
+    }
+  }
+]
