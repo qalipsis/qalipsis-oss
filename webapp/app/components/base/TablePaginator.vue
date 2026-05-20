@@ -58,19 +58,23 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
-  totalElements: number
-  pageSize: number
-  currentPageIndex: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    totalElements: number
+    pageSize: number
+    currentPageIndex: number
+    /** Maximum visible page numbers in the paginator. Defaults to 5. */
+    maxVisiblePages?: number
+  }>(),
+  {
+    maxVisiblePages: 5,
+  },
+)
 const emit = defineEmits<{
   (e: 'pageChange', v: number): void
 }>()
 
 const targetPage = ref('')
-
-/** Maximum visible page numbers in the paginator. */
-const maxVisiblePages = 5
 
 /* total pages */
 const totalPages = computed(() => Math.ceil(props.totalElements / props.pageSize))
@@ -117,17 +121,18 @@ const endItemNumber = computed(() => Math.min((props.currentPageIndex + 1) * pro
 const pages = computed(() => {
   const total = totalPages.value
   const current = props.currentPageIndex
+  const maxVisible = props.maxVisiblePages
 
   // Total pages is less than maximum visible pages. Show all pages.
-  if (total <= maxVisiblePages) {
+  if (total <= maxVisible) {
     return Array.from({ length: total }, (_, i) => i)
   }
 
   // Always try to keep the selected page on the middle.
-  const half = Math.floor(maxVisiblePages / 2)
+  const half = Math.floor(maxVisible / 2)
 
   let start = Math.max(current - half, 0)
-  let end = Math.min(start + maxVisiblePages - 1, total - 1)
+  let end = Math.min(start + maxVisible - 1, total - 1)
 
   /**
    * When the current page is close to the last page.
@@ -145,8 +150,8 @@ const pages = computed(() => {
    * if the number of pages in the window is less than the maximum page,
    * the start page is changed to make sure there are always 5 pages displayed.
    */
-  if (end - start + 1 < maxVisiblePages) {
-    start = Math.max(end - maxVisiblePages + 1, 0)
+  if (end - start + 1 < maxVisible) {
+    start = Math.max(end - maxVisible + 1, 0)
   }
 
   return Array.from({ length: end - start + 1 }, (_, i) => start + i)

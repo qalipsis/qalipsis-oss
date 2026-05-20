@@ -54,7 +54,7 @@ export const ReportHelper = {
         options.xaxis!.type = 'numeric'
         options.xaxis!.tooltip!.enabled = false
         options.xaxis!.labels!.formatter = (value) => {
-          const sec = Number(value)
+          const sec = Math.floor(Number(value))
           const h = Math.floor(sec / 3600)
           const m = Math.floor((sec % 3600) / 60)
           const s = sec % 60
