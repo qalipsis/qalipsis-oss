@@ -9,5 +9,12 @@ services:
       MOCKSERVER_WATCH_INITIALIZATION_JSON: "true"
       MOCKSERVER_LOG_LEVEL: INFO
       MOCKSERVER_SERVER_PORT: 1080
+      MOCKSERVER_ENABLE_CORS_FOR_ALL_RESPONSES: "true"
+      MOCKSERVER_ENABLE_CORS_FOR_API: "true"
+      MOCKSERVER_CORS_ALLOW_ORIGIN: "http://localhost:3000"
+      MOCKSERVER_CORS_ALLOW_METHODS: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD"
+      MOCKSERVER_CORS_ALLOW_HEADERS: "Content-Type,Authorization,Accept,Origin,X-Requested-With,X-Tenant"
+      MOCKSERVER_CORS_ALLOW_CREDENTIALS: "true"
+      MOCKSERVER_CORS_MAX_AGE_IN_SECONDS: "300"
     volumes:
       - ./initializer.json:/config/initializer.json:ro
