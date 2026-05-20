@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "build": "nuxt ../build",
+    "mock": "npx nuxi dev --dotenv .env.mock",
+    "mock-server": "npm --prefix mock-server run start",
     "local": "npx nuxi dev --dotenv .env.local",
     "test": "npx nuxi dev --dotenv .env.test",
     "generate-dev": "npx nuxi generate --dotenv .env.test",
