@@ -170,6 +170,7 @@ interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long>
                         (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
                         AND (
                          data_series_entity_.field_name ILIKE any (array[:filters]) 
+                         OR data_series_entity_.value_name ILIKE any (array[:filters])
                          OR data_series_entity_.data_type ILIKE any (array[:filters])
                          OR data_series_entity_.display_name ILIKE any (array[:filters])
                          OR u.username ILIKE any (array[:filters]) 
@@ -187,6 +188,7 @@ interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long>
             (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
             AND (
              data_series_entity_.field_name ILIKE any (array[:filters])
+             OR data_series_entity_.value_name ILIKE any (array[:filters])
              OR data_series_entity_.data_type ILIKE any (array[:filters]) 
              OR data_series_entity_.display_name ILIKE any (array[:filters])
              OR u.username ILIKE any (array[:filters]) 
@@ -288,14 +290,15 @@ interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long>
                         (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
                         AND (
                          data_series_entity_.field_name ILIKE any (array[:filters]) 
+                         OR data_series_entity_.value_name ILIKE any (array[:filters])
                          OR data_series_entity_.data_type ILIKE any (array[:filters])
                          OR data_series_entity_.display_name ILIKE any (array[:filters])
                          OR u.username ILIKE any (array[:filters]) 
                          OR u.display_name ILIKE any (array[:filters])
                         )
                         AND (
-                            (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.field_name IN (:eventNames))
-                            OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.field_name IN (:meterNames))
+                            (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.value_name IN (:eventNames))
+                            OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.value_name IN (:meterNames))
                         )
                         AND t.reference IN (:tenant, '${Defaults.TENANT}')
         """,
@@ -309,14 +312,15 @@ interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long>
             (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
             AND (
              data_series_entity_.field_name ILIKE any (array[:filters])
+             OR data_series_entity_.value_name ILIKE any (array[:filters])
              OR data_series_entity_.data_type ILIKE any (array[:filters]) 
              OR data_series_entity_.display_name ILIKE any (array[:filters])
              OR u.username ILIKE any (array[:filters]) 
              OR u.display_name ILIKE any (array[:filters])
             )
             AND (
-                (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.field_name IN (:eventNames))
-                OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.field_name IN (:meterNames))
+                (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.value_name IN (:eventNames))
+                OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.value_name IN (:meterNames))
             )
             AND t.reference IN (:tenant, '${Defaults.TENANT}')""",
         nativeQuery = true
@@ -364,8 +368,8 @@ interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long>
                 WHERE 
                 (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
                 AND (
-                    (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.field_name IN (:eventNames))
-                    OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.field_name IN (:meterNames))
+                    (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.value_name IN (:eventNames))
+                    OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.value_name IN (:meterNames))
                 )
                 AND t.reference IN (:tenant, '${Defaults.TENANT}')""",
         countQuery = """
@@ -377,8 +381,8 @@ interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long>
             WHERE 
             (u.username = :username OR data_series_entity_.sharing_mode <> 'NONE')
             AND (
-                (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.field_name IN (:eventNames))
-                OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.field_name IN (:meterNames))
+                (data_series_entity_.data_type = 'EVENTS' AND data_series_entity_.value_name IN (:eventNames))
+                OR (data_series_entity_.data_type = 'METERS' AND data_series_entity_.value_name IN (:meterNames))
             )
             AND t.reference IN (:tenant, '${Defaults.TENANT}')""",
         nativeQuery = true

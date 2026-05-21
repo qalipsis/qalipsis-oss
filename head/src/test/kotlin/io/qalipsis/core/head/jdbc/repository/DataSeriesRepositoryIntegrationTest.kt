@@ -657,6 +657,47 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
     }
 
     @Test
+    fun `should find all the data series with filter on valueName`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val creator = userRepository.save(userPrototype.copy())
+        val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+
+        dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = creator.id,
+                sharingMode = SharingMode.NONE
+            )
+        )
+        val dataSeriesWithFieldName = dataSeriesRepository.save(
+            dataSeriesPrototype.copy(
+                tenantId = tenant.id,
+                creatorId = anotherCreator.id,
+                displayName = "my-display-name",
+                reference = "my-series-2",
+                valueName = "value-1",
+            )
+        )
+        assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+        //when
+        val dataSeriesEntities = dataSeriesRepository.searchDataSeries(
+            tenant = tenant.reference,
+            username = creator.username,
+            filters = listOf("%A_u%1%"),
+            pageable = Pageable.from(0, 2, Sort.of(Sort.Order("displayName")))
+        ).content
+
+        //then
+        assertThat(dataSeriesEntities).all {
+            hasSize(1)
+            index(0).prop(DataSeriesEntity::id).isEqualTo(dataSeriesWithFieldName.id)
+            index(0).prop(DataSeriesEntity::fieldName).isEqualTo(dataSeriesWithFieldName.fieldName)
+        }
+    }
+
+    @Test
     fun `should find all the data series with filter on data type`() = testDispatcherProvider.run {
         // given
         val tenant = tenantRepository.save(tenantPrototype.copy())
@@ -1698,7 +1739,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1"
+                    valueName = "meter-field-1"
                 )
             )
             dataSeriesRepository.save(
@@ -1706,7 +1747,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-2",
+                    valueName = "meter-field-2",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -1726,7 +1767,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             assertThat(dataSeriesEntities).all {
                 hasSize(1)
                 index(0).prop(DataSeriesEntity::id).isEqualTo(meterSeries.id)
-                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("meter-field-1")
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("meter-field-1")
             }
         }
 
@@ -1741,7 +1782,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1"
+                    valueName = "event-field-1"
                 )
             )
             dataSeriesRepository.save(
@@ -1749,7 +1790,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-2",
+                    valueName = "event-field-2",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -1769,7 +1810,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             assertThat(dataSeriesEntities).all {
                 hasSize(1)
                 index(0).prop(DataSeriesEntity::id).isEqualTo(eventSeries.id)
-                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("event-field-1")
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("event-field-1")
             }
         }
 
@@ -1784,7 +1825,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1"
+                    valueName = "meter-field-1"
                 )
             )
             val eventSeries = dataSeriesRepository.save(
@@ -1792,7 +1833,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1",
+                    valueName = "event-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -1802,7 +1843,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-other",
+                    valueName = "meter-field-other",
                     displayName = "my-name-3",
                     reference = "my-series-3"
                 )
@@ -1837,7 +1878,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1"
+                    valueName = "meter-field-1"
                 )
             )
             dataSeriesRepository.save(
@@ -1845,7 +1886,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1",
+                    valueName = "event-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -1876,7 +1917,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "matching-meter"
                 )
             )
@@ -1885,7 +1926,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1",
+                    valueName = "event-field-1",
                     displayName = "matching-event",
                     reference = "my-series-2"
                 )
@@ -1917,7 +1958,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1"
+                    valueName = "meter-field-1"
                 )
             )
             dataSeriesRepository.save(
@@ -1925,7 +1966,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1",
+                    valueName = "event-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -1957,7 +1998,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     sharingMode = SharingMode.NONE
                 )
             )
@@ -1966,7 +2007,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2",
                     sharingMode = SharingMode.WRITE
@@ -1977,7 +2018,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "my-name-3",
                     reference = "my-series-3",
                     sharingMode = SharingMode.NONE
@@ -2015,7 +2056,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1"
+                    valueName = "meter-field-1"
                 )
             )
             val otherTenantSeries = dataSeriesRepository.save(
@@ -2023,7 +2064,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = otherTenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -2063,7 +2104,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1"
+                    valueName = "meter-field-1"
                 )
             )
             val defaultSeries = dataSeriesRepository.save(
@@ -2071,7 +2112,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = defaultTenant.id,
                     creatorId = defaultCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "default-meter",
                     reference = "my-series-2",
                     sharingMode = SharingMode.WRITE
@@ -2111,7 +2152,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "shared-field"
+                    valueName = "shared-field"
                 )
             )
             val eventSeries = dataSeriesRepository.save(
@@ -2119,7 +2160,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "shared-field",
+                    valueName = "shared-field",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -2153,7 +2194,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1"
+                    valueName = "meter-field-1"
                 )
             )
             dataSeriesRepository.save(
@@ -2161,7 +2202,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1",
+                    valueName = "event-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -2171,7 +2212,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-other",
+                    valueName = "meter-field-other",
                     displayName = "my-name-3",
                     reference = "my-series-3"
                 )
@@ -2203,7 +2244,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "matching-display"
                 )
             )
@@ -2212,7 +2253,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "other-display",
                     reference = "my-series-2"
                 )
@@ -2249,7 +2290,8 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    fieldName = "the-field-1",
+                    valueName = "meter-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -2259,7 +2301,55 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1",
+                    fieldName = "the-field-2",
+                    valueName = "event-field-1",
+                    displayName = "my-name-3",
+                    reference = "my-series-3"
+                )
+            )
+            assertThat(dataSeriesRepository.findAll().count()).isEqualTo(2)
+
+            //when
+            val dataSeriesEntities = dataSeriesRepository.searchDataSeriesForDataNames(
+                tenant = tenant.reference,
+                username = creator.username,
+                eventNames = listOf("event-field-1"),
+                meterNames = listOf("meter-field-1"),
+                filters = listOf("th%fie%1%"),
+                pageable = Pageable.from(0, 10, Sort.of(Sort.Order("displayName")))
+            ).content
+
+            //then
+            assertThat(dataSeriesEntities).all {
+                hasSize(1)
+                index(0).prop(DataSeriesEntity::id).isEqualTo(matchingSeries.id)
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("meter-field-1")
+            }
+        }
+
+    @Test
+    fun `should fetch data series for data names with filter on valueName`() =
+        testDispatcherProvider.run {
+            // given
+            val tenant = tenantRepository.save(tenantPrototype.copy())
+            val creator = userRepository.save(userPrototype.copy())
+            val anotherCreator = userRepository.save(userPrototype.copy(username = "another-user"))
+            val matchingSeries = dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.METERS,
+                    valueName = "meter-field-1",
+                    displayName = "my-name-2",
+                    reference = "my-series-2"
+                )
+            )
+            dataSeriesRepository.save(
+                dataSeriesPrototype.copy(
+                    tenantId = tenant.id,
+                    creatorId = anotherCreator.id,
+                    dataType = DataType.EVENTS,
+                    valueName = "event-field-1",
                     displayName = "my-name-3",
                     reference = "my-series-3"
                 )
@@ -2280,7 +2370,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             assertThat(dataSeriesEntities).all {
                 hasSize(1)
                 index(0).prop(DataSeriesEntity::id).isEqualTo(matchingSeries.id)
-                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("meter-field-1")
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("meter-field-1")
             }
         }
 
@@ -2296,7 +2386,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -2306,7 +2396,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1",
+                    valueName = "event-field-1",
                     displayName = "my-name-3",
                     reference = "my-series-3"
                 )
@@ -2342,7 +2432,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "special-display"
                 )
             )
@@ -2351,7 +2441,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "other-name",
                     reference = "my-series-2"
                 )
@@ -2388,7 +2478,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     sharingMode = SharingMode.NONE
                 )
             )
@@ -2397,7 +2487,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -2434,7 +2524,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1"
+                    valueName = "meter-field-1"
                 )
             )
             val matchingSeries = dataSeriesRepository.save(
@@ -2442,7 +2532,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -2477,7 +2567,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1"
+                    valueName = "meter-field-1"
                 )
             )
             dataSeriesRepository.save(
@@ -2485,7 +2575,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1",
+                    valueName = "event-field-1",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -2517,7 +2607,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "matching-display"
                 )
             )
@@ -2549,7 +2639,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     sharingMode = SharingMode.NONE,
                     displayName = "matching-own"
                 )
@@ -2559,7 +2649,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "matching-shared",
                     reference = "my-series-2",
                     sharingMode = SharingMode.WRITE
@@ -2570,7 +2660,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "matching-none",
                     reference = "my-series-3",
                     sharingMode = SharingMode.NONE
@@ -2614,7 +2704,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "matching-tenant"
                 )
             )
@@ -2623,7 +2713,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = defaultTenant.id,
                     creatorId = defaultCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "matching-default",
                     reference = "my-series-2",
                     sharingMode = SharingMode.WRITE
@@ -2670,7 +2760,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "matching-tenant"
                 )
             )
@@ -2679,7 +2769,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = defaultTenant.id,
                     creatorId = defaultCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "purple-series",
                     reference = "my-series-2",
                     sharingMode = SharingMode.WRITE
@@ -2719,7 +2809,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-no-match",
+                    valueName = "meter-no-match",
                 )
             )
             val dataSeriesWithIdealUser = dataSeriesRepository.save(
@@ -2728,7 +2818,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     creatorId = anotherCreator.id,
                     reference = "my-series-2",
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1",
+                    valueName = "event-field-1",
                     sharingMode = SharingMode.WRITE,
                     displayName = "my-display-name"
                 )
@@ -2740,7 +2830,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     displayName = "ds-with-user",
                     reference = "my-series-3",
                     dataType = DataType.METERS,
-                    fieldName = "foo"
+                    valueName = "foo"
                 )
             )
             assertThat(dataSeriesRepository.findAll().count()).isEqualTo(3)
@@ -2780,7 +2870,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "matching-1"
                 )
             )
@@ -2789,7 +2879,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-field-1",
+                    valueName = "event-field-1",
                     displayName = "matching-2",
                     reference = "my-series-2"
                 )
@@ -2799,7 +2889,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-field-1",
+                    valueName = "meter-field-1",
                     displayName = "other-name",
                     reference = "my-series-3"
                 )
@@ -2832,7 +2922,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "cpu-usage",
+                    valueName = "cpu-usage",
                     displayName = "CPU Usage"
                 )
             )
@@ -2841,7 +2931,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "memory-usage",
+                    valueName = "memory-usage",
                     displayName = "Memory Usage",
                     reference = "my-series-2"
                 )
@@ -2851,7 +2941,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "disk-io",
+                    valueName = "disk-io",
                     displayName = "Disk IO",
                     reference = "my-series-3"
                 )
@@ -2861,7 +2951,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "network-latency",
+                    valueName = "network-latency",
                     displayName = "Network Latency",
                     reference = "my-series-4"
                 )
@@ -2881,11 +2971,11 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             assertThat(dataSeriesEntities).all {
                 hasSize(3)
                 index(0).prop(DataSeriesEntity::id).isEqualTo(meter1.id)
-                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("cpu-usage")
                 index(1).prop(DataSeriesEntity::id).isEqualTo(meter3.id)
-                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("disk-io")
+                index(1).prop(DataSeriesEntity::valueName).isEqualTo("disk-io")
                 index(2).prop(DataSeriesEntity::id).isEqualTo(meter2.id)
-                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("memory-usage")
+                index(2).prop(DataSeriesEntity::valueName).isEqualTo("memory-usage")
             }
         }
 
@@ -2900,7 +2990,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "user-login",
+                    valueName = "user-login",
                     displayName = "User Login"
                 )
             )
@@ -2909,7 +2999,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "user-logout",
+                    valueName = "user-logout",
                     displayName = "User Logout",
                     reference = "my-series-2"
                 )
@@ -2919,7 +3009,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "page-view",
+                    valueName = "page-view",
                     displayName = "Page View",
                     reference = "my-series-3"
                 )
@@ -2929,7 +3019,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "error-thrown",
+                    valueName = "error-thrown",
                     displayName = "Error Thrown",
                     reference = "my-series-4"
                 )
@@ -2949,11 +3039,11 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             assertThat(dataSeriesEntities).all {
                 hasSize(3)
                 index(0).prop(DataSeriesEntity::id).isEqualTo(event3.id)
-                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("page-view")
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("page-view")
                 index(1).prop(DataSeriesEntity::id).isEqualTo(event1.id)
-                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+                index(1).prop(DataSeriesEntity::valueName).isEqualTo("user-login")
                 index(2).prop(DataSeriesEntity::id).isEqualTo(event2.id)
-                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("user-logout")
+                index(2).prop(DataSeriesEntity::valueName).isEqualTo("user-logout")
             }
         }
 
@@ -2968,7 +3058,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "cpu-usage",
+                    valueName = "cpu-usage",
                     displayName = "CPU Usage"
                 )
             )
@@ -2977,7 +3067,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "memory-usage",
+                    valueName = "memory-usage",
                     displayName = "Memory Usage",
                     reference = "my-series-2"
                 )
@@ -2987,7 +3077,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "user-login",
+                    valueName = "user-login",
                     displayName = "User Login",
                     reference = "my-series-3"
                 )
@@ -2997,7 +3087,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "page-view",
+                    valueName = "page-view",
                     displayName = "Page View",
                     reference = "my-series-4"
                 )
@@ -3007,7 +3097,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "network-latency",
+                    valueName = "network-latency",
                     displayName = "Network Latency",
                     reference = "my-series-5"
                 )
@@ -3017,7 +3107,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "error-thrown",
+                    valueName = "error-thrown",
                     displayName = "Error Thrown",
                     reference = "my-series-6"
                 )
@@ -3038,16 +3128,16 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                 hasSize(4)
                 index(0).prop(DataSeriesEntity::id).isEqualTo(meter1.id)
                 index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
-                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("cpu-usage")
                 index(1).prop(DataSeriesEntity::id).isEqualTo(meter2.id)
                 index(1).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
-                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("memory-usage")
+                index(1).prop(DataSeriesEntity::valueName).isEqualTo("memory-usage")
                 index(2).prop(DataSeriesEntity::id).isEqualTo(event2.id)
                 index(2).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
-                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("page-view")
+                index(2).prop(DataSeriesEntity::valueName).isEqualTo("page-view")
                 index(3).prop(DataSeriesEntity::id).isEqualTo(event1.id)
                 index(3).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
-                index(3).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+                index(3).prop(DataSeriesEntity::valueName).isEqualTo("user-login")
             }
         }
 
@@ -3063,7 +3153,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "cpu-usage",
+                    valueName = "cpu-usage",
                     displayName = "CPU Avg",
                     aggregationOperation = QueryAggregationOperator.AVERAGE
                 )
@@ -3073,7 +3163,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "cpu-usage",
+                    valueName = "cpu-usage",
                     displayName = "CPU Max",
                     reference = "my-series-2",
                     aggregationOperation = QueryAggregationOperator.MAX,
@@ -3085,7 +3175,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "user-login",
+                    valueName = "user-login",
                     displayName = "Login Count",
                     reference = "my-series-3"
                 )
@@ -3095,7 +3185,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "user-login",
+                    valueName = "user-login",
                     displayName = "Login Rate",
                     reference = "my-series-4",
                     sharingMode = SharingMode.READONLY
@@ -3116,13 +3206,13 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             assertThat(dataSeriesEntities).all {
                 hasSize(4)
                 index(0).prop(DataSeriesEntity::id).isEqualTo(meterA1.id)
-                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("cpu-usage")
                 index(1).prop(DataSeriesEntity::id).isEqualTo(meterA2.id)
-                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(1).prop(DataSeriesEntity::valueName).isEqualTo("cpu-usage")
                 index(2).prop(DataSeriesEntity::id).isEqualTo(eventB1.id)
-                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+                index(2).prop(DataSeriesEntity::valueName).isEqualTo("user-login")
                 index(3).prop(DataSeriesEntity::id).isEqualTo(eventB2.id)
-                index(3).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+                index(3).prop(DataSeriesEntity::valueName).isEqualTo("user-login")
             }
         }
 
@@ -3137,7 +3227,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "cpu-usage",
+                    valueName = "cpu-usage",
                     displayName = "CPU Usage"
                 )
             )
@@ -3146,7 +3236,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "memory-usage",
+                    valueName = "memory-usage",
                     displayName = "Memory Usage",
                     reference = "my-series-2"
                 )
@@ -3156,7 +3246,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "disk-io",
+                    valueName = "disk-io",
                     displayName = "Disk IO",
                     reference = "my-series-3"
                 )
@@ -3177,9 +3267,9 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             assertThat(dataSeriesEntities).all {
                 hasSize(2)
                 index(0).prop(DataSeriesEntity::id).isEqualTo(meter1.id)
-                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("cpu-usage")
                 index(1).prop(DataSeriesEntity::id).isEqualTo(meter2.id)
-                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("memory-usage")
+                index(1).prop(DataSeriesEntity::valueName).isEqualTo("memory-usage")
             }
         }
 
@@ -3194,7 +3284,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "cpu-usage",
+                    valueName = "cpu-usage",
                     displayName = "CPU Usage"
                 )
             )
@@ -3203,7 +3293,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "memory-usage",
+                    valueName = "memory-usage",
                     displayName = "Memory Usage",
                     reference = "my-series-2"
                 )
@@ -3213,7 +3303,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "user-login",
+                    valueName = "user-login",
                     displayName = "User Login",
                     reference = "my-series-3"
                 )
@@ -3223,7 +3313,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "page-view",
+                    valueName = "page-view",
                     displayName = "Page View",
                     reference = "my-series-4"
                 )
@@ -3233,7 +3323,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "network-latency",
+                    valueName = "network-latency",
                     displayName = "Network Latency",
                     reference = "my-series-5"
                 )
@@ -3255,13 +3345,13 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                 hasSize(3)
                 index(0).prop(DataSeriesEntity::id).isEqualTo(meter1.id)
                 index(0).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
-                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("cpu-usage")
                 index(1).prop(DataSeriesEntity::id).isEqualTo(meter2.id)
                 index(1).prop(DataSeriesEntity::dataType).isEqualTo(DataType.METERS)
-                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("memory-usage")
+                index(1).prop(DataSeriesEntity::valueName).isEqualTo("memory-usage")
                 index(2).prop(DataSeriesEntity::id).isEqualTo(event1.id)
                 index(2).prop(DataSeriesEntity::dataType).isEqualTo(DataType.EVENTS)
-                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+                index(2).prop(DataSeriesEntity::valueName).isEqualTo("user-login")
             }
         }
 
@@ -3277,7 +3367,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "cpu-usage",
+                    valueName = "cpu-usage",
                     displayName = "CPU Avg",
                     aggregationOperation = QueryAggregationOperator.AVERAGE
                 )
@@ -3287,7 +3377,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.METERS,
-                    fieldName = "cpu-usage",
+                    valueName = "cpu-usage",
                     displayName = "CPU Max",
                     reference = "my-series-2",
                     aggregationOperation = QueryAggregationOperator.MAX,
@@ -3299,7 +3389,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "user-login",
+                    valueName = "user-login",
                     displayName = "Login Count",
                     reference = "my-series-3"
                 )
@@ -3309,7 +3399,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = anotherCreator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "user-login",
+                    valueName = "user-login",
                     displayName = "Login Rate",
                     reference = "my-series-4",
                     sharingMode = SharingMode.READONLY
@@ -3331,13 +3421,13 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             assertThat(dataSeriesEntities).all {
                 hasSize(3)
                 index(0).prop(DataSeriesEntity::id).isEqualTo(meterA1.id)
-                index(0).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(0).prop(DataSeriesEntity::valueName).isEqualTo("cpu-usage")
                 index(0).prop(DataSeriesEntity::displayName).isEqualTo("CPU Avg")
                 index(1).prop(DataSeriesEntity::id).isEqualTo(meterA2.id)
-                index(1).prop(DataSeriesEntity::fieldName).isEqualTo("cpu-usage")
+                index(1).prop(DataSeriesEntity::valueName).isEqualTo("cpu-usage")
                 index(1).prop(DataSeriesEntity::displayName).isEqualTo("CPU Max")
                 index(2).prop(DataSeriesEntity::id).isEqualTo(eventB1.id)
-                index(2).prop(DataSeriesEntity::fieldName).isEqualTo("user-login")
+                index(2).prop(DataSeriesEntity::valueName).isEqualTo("user-login")
                 index(2).prop(DataSeriesEntity::displayName).isEqualTo("Login Count")
             }
         }
@@ -3353,7 +3443,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "shared-name"
+                    valueName = "shared-name"
                 )
             )
             val eventSeries = dataSeriesRepository.save(
@@ -3361,7 +3451,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "shared-name",
+                    valueName = "shared-name",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -3397,7 +3487,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "shared-name"
+                    valueName = "shared-name"
                 )
             )
             val eventSeries = dataSeriesRepository.save(
@@ -3405,7 +3495,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "shared-name",
+                    valueName = "shared-name",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -3441,7 +3531,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "shared-name"
+                    valueName = "shared-name"
                 )
             )
             val eventSeries = dataSeriesRepository.save(
@@ -3449,7 +3539,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "shared-name",
+                    valueName = "shared-name",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -3486,7 +3576,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-only-name"
+                    valueName = "meter-only-name"
                 )
             )
             dataSeriesRepository.save(
@@ -3494,7 +3584,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-only-name",
+                    valueName = "event-only-name",
                     displayName = "my-name-2",
                     reference = "my-series-2"
                 )
@@ -3525,7 +3615,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "shared-name",
+                    valueName = "shared-name",
                     displayName = "matching-meter"
                 )
             )
@@ -3534,7 +3624,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "shared-name",
+                    valueName = "shared-name",
                     displayName = "matching-event",
                     reference = "my-series-2"
                 )
@@ -3571,7 +3661,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "shared-name",
+                    valueName = "shared-name",
                     displayName = "matching-meter"
                 )
             )
@@ -3580,7 +3670,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "shared-name",
+                    valueName = "shared-name",
                     displayName = "matching-event",
                     reference = "my-series-2"
                 )
@@ -3617,7 +3707,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "shared-name",
+                    valueName = "shared-name",
                     displayName = "matching-meter"
                 )
             )
@@ -3626,7 +3716,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "shared-name",
+                    valueName = "shared-name",
                     displayName = "matching-event",
                     reference = "my-series-2"
                 )
@@ -3664,7 +3754,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.METERS,
-                    fieldName = "meter-only-name",
+                    valueName = "meter-only-name",
                     displayName = "matching-meter"
                 )
             )
@@ -3673,7 +3763,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                     tenantId = tenant.id,
                     creatorId = creator.id,
                     dataType = DataType.EVENTS,
-                    fieldName = "event-only-name",
+                    valueName = "event-only-name",
                     displayName = "matching-event",
                     reference = "my-series-2"
                 )
