@@ -43,6 +43,7 @@ import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesEvent
 import io.qalipsis.api.report.TimeSeriesMeter
 import io.qalipsis.api.report.TimeSeriesRecord
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.report.AggregationQueryExecutionRequest
@@ -127,7 +128,7 @@ internal class TimeSeriesControllerIntegrationTest {
                     1234.432323.toBigDecimal()
                 ),
             )
-        )
+        ).mapValues { TimeSeriesValues(values = it.value) }
         coEvery { timeSeriesDataQueryService.render(any(), any(), any()) } returns aggregationResult
 
         val request =
@@ -136,9 +137,9 @@ internal class TimeSeriesControllerIntegrationTest {
             )
 
         // when
-        val response: HttpResponse<Map<String, List<TimeSeriesAggregationResult>>> = httpClient.toBlocking().exchange(
+        val response: HttpResponse<Map<String, TimeSeriesValues>> = httpClient.toBlocking().exchange(
             request,
-            Argument.mapOf(Argument.of(String::class.java), Argument.listOf(TimeSeriesAggregationResult::class.java))
+            Argument.mapOf(Argument.of(String::class.java), Argument.of(TimeSeriesValues::class.java))
         )
 
         // then
@@ -200,7 +201,7 @@ internal class TimeSeriesControllerIntegrationTest {
                     1234.432323.toBigDecimal()
                 ),
             )
-        )
+        ).mapValues { TimeSeriesValues(values = it.value) }
         coEvery { timeSeriesDataQueryService.render(any(), any(), any()) } returns aggregationResult
 
         val request =
@@ -209,9 +210,9 @@ internal class TimeSeriesControllerIntegrationTest {
             )
 
         // when
-        val response: HttpResponse<Map<String, List<TimeSeriesAggregationResult>>> = httpClient.toBlocking().exchange(
+        val response: HttpResponse<Map<String, TimeSeriesValues>> = httpClient.toBlocking().exchange(
             request,
-            Argument.mapOf(Argument.of(String::class.java), Argument.listOf(TimeSeriesAggregationResult::class.java))
+            Argument.mapOf(Argument.of(String::class.java), Argument.of(TimeSeriesValues::class.java))
         )
 
         // then

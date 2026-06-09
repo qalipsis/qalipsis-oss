@@ -25,9 +25,9 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.query.AggregationQueryExecutionContext
 import io.qalipsis.api.query.DataRetrievalQueryExecutionContext
 import io.qalipsis.api.query.Page
-import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesDataProvider
 import io.qalipsis.api.report.TimeSeriesRecord
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignsInstantsAndDuration
@@ -53,7 +53,7 @@ class TimeSeriesDataQueryServiceImpl(
         tenant: String,
         dataSeriesReferences: Set<String>,
         queryExecutionRequest: AggregationQueryExecutionRequest
-    ): Map<String, List<TimeSeriesAggregationResult>> {
+    ): Map<String, TimeSeriesValues> {
         val dataSeries =
             dataSeriesRepository.findAllByTenantAndReferences(tenant, dataSeriesReferences)
                 .filterNot { it.query.isNullOrBlank() }

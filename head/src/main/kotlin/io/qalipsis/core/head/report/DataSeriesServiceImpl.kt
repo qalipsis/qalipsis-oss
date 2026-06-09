@@ -27,6 +27,7 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.exceptions.HttpStatusException
 import io.qalipsis.api.Executors
 import io.qalipsis.api.lang.IdGenerator
+import io.qalipsis.api.lang.supplyUnless
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.api.query.QueryClause
@@ -80,8 +81,11 @@ class DataSeriesServiceImpl(
         require(!dataSeriesRepository.existsByTenantReferenceAndDisplayNameAndIdNot(tenant, dataSeries.displayName)) {
             "A data series named ${dataSeries.displayName} already exists in your organization"
         }
-        val aggregationOperation = dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT
-        require(aggregationOperation == QueryAggregationOperator.COUNT || !dataSeries.fieldName.isNullOrBlank()) {
+        // Meters are not aggregated; the operation is null for meters.
+        val aggregationOperation: QueryAggregationOperator? = supplyUnless(dataSeries.dataType == DataType.METERS) {
+            dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT
+        }
+        require(dataSeries.dataType == DataType.METERS || aggregationOperation == QueryAggregationOperator.COUNT || !dataSeries.fieldName.isNullOrBlank()) {
             "The field name should be set when the aggregation is not count"
         }
         val createdDataSeries = dataSeriesRepository.save(
@@ -96,14 +100,14 @@ class DataSeriesServiceImpl(
                 color = dataSeries.color?.uppercase(),
                 filters = dataSeries.filters.map { it.toEntity() },
                 fieldName = dataSeries.fieldName,
-                aggregationOperation = dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT,
+                aggregationOperation = aggregationOperation,
                 timeframeUnitMs = dataSeries.timeframeUnit?.toMillis(),
                 displayFormat = dataSeries.displayFormat,
                 query = dataProvider.createQuery(
                     tenant, dataSeries.dataType, QueryDescription(
                         filters = convertFilters(dataSeries.filters, dataSeries.valueName),
                         fieldName = dataSeries.fieldName,
-                        aggregationOperation = dataSeries.aggregationOperation ?: QueryAggregationOperator.COUNT,
+                        aggregationOperation = aggregationOperation ?: QueryAggregationOperator.COUNT,
                         timeframeUnit = dataSeries.timeframeUnit
                     )
                 ).takeUnless(String::isNullOrBlank),
@@ -129,12 +133,16 @@ class DataSeriesServiceImpl(
             throw HttpStatusException(HttpStatus.FORBIDDEN, "You do not have the permission to update this data series")
         }
         val dataSeriesWasUpdated = patches.map { it.apply(dataSeriesEntity) }.any { it }
+        // Meters are not aggregated; ensure the stored operation stays null regardless of patches.
+        if (dataSeriesEntity.dataType == DataType.METERS) {
+            dataSeriesEntity.aggregationOperation = null
+        }
         val updatedDataSeries = if (dataSeriesWasUpdated) {
             dataSeriesEntity.query = dataProvider.createQuery(
                 tenant, dataSeriesEntity.dataType, QueryDescription(
                     filters = convertFiltersEntity(dataSeriesEntity.filters, dataSeriesEntity.valueName),
                     fieldName = dataSeriesEntity.fieldName,
-                    aggregationOperation = dataSeriesEntity.aggregationOperation,
+                    aggregationOperation = dataSeriesEntity.aggregationOperation ?: QueryAggregationOperator.COUNT,
                     timeframeUnit = dataSeriesEntity.timeframeUnitAsDuration
                 )
             ).takeUnless(String::isNullOrBlank)
@@ -267,7 +275,7 @@ class DataSeriesServiceImpl(
                     tenant, dataSeriesEntity.dataType, QueryDescription(
                         filters = convertFiltersEntity(dataSeriesEntity.filters, dataSeriesEntity.valueName),
                         fieldName = dataSeriesEntity.fieldName,
-                        aggregationOperation = dataSeriesEntity.aggregationOperation,
+                        aggregationOperation = dataSeriesEntity.aggregationOperation ?: QueryAggregationOperator.COUNT,
                         timeframeUnit = dataSeriesEntity.timeframeUnitAsDuration
                     )
                 ).takeUnless(String::isNullOrBlank)

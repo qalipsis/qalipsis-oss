@@ -22,7 +22,7 @@ package io.qalipsis.core.head.report.chart
 import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.lang.alsoWhenNull
 import io.qalipsis.api.logging.LoggerHelper.logger
-import io.qalipsis.api.report.TimeSeriesAggregationResult
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import jakarta.inject.Singleton
 import org.jfree.chart.ChartFactory
@@ -59,7 +59,7 @@ import java.util.Random
 class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : ChartService {
 
     override fun buildChart(
-        data: Map<String, List<TimeSeriesAggregationResult>>,
+        data: Map<String, TimeSeriesValues>,
         dataSeries: Collection<DataSeriesEntity>,
         index: Int,
         reportTempDir: Path,
@@ -111,7 +111,7 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
      */
     @KTestable
     private fun buildDataSet(
-        data: Map<String, List<TimeSeriesAggregationResult>>,
+        data: Map<String, TimeSeriesValues>,
         campaignKeyToLineMap: MutableMap<String, Int>,
         dataSeriesDrawingConfigurations: MutableMap<String, DataSeriesDrawingConfiguration>,
         campaignReferenceToName: Map<String, String>,
@@ -120,7 +120,7 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
         logger.info { "Starting chart generation" }
         var colorIndex = 0
         var campaignLineIndex = 0
-        data.forEach { (dataSeriesKey, timeSeriesAggregationResults) ->
+        data.forEach { (dataSeriesKey, timeSeriesValues) ->
             // Save the index of each data series entry keyed by the data series reference.
             // Build the xySeriesMap which stores xySeries keyed to their concatenated campaignKey and data series references.
             // The key is used in setting a renderer on a particular index for each dataSeries.
@@ -133,7 +133,7 @@ class ChartServiceImpl(private val lineStyleGenerator: LineStyleGenerator) : Cha
             dataSeriesDrawingConfigurations[dataSeriesKey] = dataSeriesDrawingConfiguration
             // Map of unique time series sets, used in further generation of the dataset collection.
             val xySeriesMap = mutableMapOf<PlotCompositeKey, XYSeries>()
-            timeSeriesAggregationResults.forEach { timeSeriesAggregationResult ->
+            timeSeriesValues.values.forEach { timeSeriesAggregationResult ->
                 val campaignKey = timeSeriesAggregationResult.campaign!!
                 // Create a key identifier for each unique series.
                 val plotCompositeKey = PlotCompositeKey(campaignKey, dataSeriesKey)

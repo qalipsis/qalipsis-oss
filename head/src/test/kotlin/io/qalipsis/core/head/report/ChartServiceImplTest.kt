@@ -31,6 +31,7 @@ import io.mockk.unmockkStatic
 import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.api.report.TimeSeriesAggregationResult
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.report.chart.ChartServiceImpl
@@ -210,7 +211,7 @@ internal class ChartServiceImplTest {
                 campaign = "campaign-5"
             ),
         )
-    )
+    ).mapValues { TimeSeriesValues(values = it.value) }
     private val dataSeriesEntity = DataSeriesEntity(
         reference = "data-series-1",
         tenantId = -1,

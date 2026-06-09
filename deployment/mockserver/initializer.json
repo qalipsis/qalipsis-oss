@@ -117,8 +117,8 @@
         "read:scenario",
         "read:report",
         "write:report",
-        "read:data-series",
-        "write:data-series",
+        "read:series",
+        "write:series",
         "read:factory",
         "read:zone",
         "read:user",
@@ -248,70 +248,70 @@
           "name": "checkout-flow-black-friday",
           "description": "End-to-end e-commerce checkout under Black Friday peak traffic: browse, cart, payment, order confirmation",
           "version": "2.4.0",
-          "builtAt": "2026-05-15T09:15:00Z",
+          "builtAt": "2026-06-01T09:15:00Z",
           "minionsCount": 250000
         },
         {
           "name": "payments-api-stress",
           "description": "PCI-DSS payment gateway stress test: tokenization, 3DS challenge, capture, refund",
           "version": "1.8.2",
-          "builtAt": "2026-05-17T14:32:00Z",
+          "builtAt": "2026-06-03T14:32:00Z",
           "minionsCount": 75000
         },
         {
           "name": "iot-fleet-telemetry",
           "description": "1 million connected vehicles streaming MQTT telemetry every 5 seconds",
           "version": "3.1.0",
-          "builtAt": "2026-05-13T08:00:00Z",
+          "builtAt": "2026-05-30T08:00:00Z",
           "minionsCount": 1000000
         },
         {
           "name": "graphql-mobile-feed",
           "description": "Social mobile app feed: GraphQL queries, image CDN fetch, push notification ack",
           "version": "1.3.5",
-          "builtAt": "2026-05-18T11:45:00Z",
+          "builtAt": "2026-06-04T11:45:00Z",
           "minionsCount": 180000
         },
         {
           "name": "banking-open-api-soak",
           "description": "PSD2 Open Banking 24h soak test: account info, balance, SCA, payment initiation",
           "version": "2.0.1",
-          "builtAt": "2026-05-11T07:20:00Z",
+          "builtAt": "2026-05-28T07:20:00Z",
           "minionsCount": 40000
         },
         {
           "name": "kafka-event-pipeline",
           "description": "Event-driven order pipeline through Kafka: producer burst, consumer lag measurement, DLQ recovery",
           "version": "1.6.0",
-          "builtAt": "2026-05-16T16:10:00Z",
+          "builtAt": "2026-06-02T16:10:00Z",
           "minionsCount": 120000
         },
         {
           "name": "live-streaming-concurrent-viewers",
           "description": "HLS live event with 500K concurrent viewers, ABR switching, ad-break insertion",
           "version": "1.2.0",
-          "builtAt": "2026-05-19T19:00:00Z",
+          "builtAt": "2026-06-05T19:00:00Z",
           "minionsCount": 500000
         },
         {
           "name": "ride-hailing-surge",
           "description": "Ride-hailing dispatch surge: geo search, ETA, driver assignment, real-time tracking",
           "version": "2.7.1",
-          "builtAt": "2026-05-14T12:00:00Z",
+          "builtAt": "2026-05-31T12:00:00Z",
           "minionsCount": 90000
         },
         {
           "name": "ai-inference-llm-serving",
           "description": "LLM inference endpoint benchmark: token streaming, KV-cache reuse, p99 TTFT",
           "version": "0.9.0",
-          "builtAt": "2026-05-20T10:30:00Z",
+          "builtAt": "2026-06-06T10:30:00Z",
           "minionsCount": 8000
         },
         {
           "name": "healthcare-fhir-burst",
           "description": "FHIR R4 burst test: patient lookup, observation write, bulk export under HIPAA constraints",
           "version": "1.4.0",
-          "builtAt": "2026-05-12T13:15:00Z",
+          "builtAt": "2026-05-29T13:15:00Z",
           "minionsCount": 25000
         }
       ]
@@ -338,15 +338,15 @@
         "totalElements": 113,
         "elements": [
           {
-            "version": "2026-05-26T09:00:00Z",
+            "version": "2026-06-12T09:00:00Z",
             "key": "CMP-FHIR-BURST-Q2",
-            "creation": "2026-05-23T09:00:00Z",
+            "creation": "2026-06-09T09:00:00Z",
             "name": "CRM integration — FHIR Q2 burst test",
             "speedFactor": 1.0,
             "scheduledMinions": 25000,
             "softTimeout": null,
             "hardTimeout": null,
-            "start": "2026-05-23T14:00:00Z",
+            "start": "2026-06-09T14:00:00Z",
             "end": null,
             "status": "SCHEDULED",
             "failureReason": null,
@@ -364,16 +364,16 @@
             ]
           },
           {
-            "version": "2026-05-22T06:56:00Z",
+            "version": "2026-06-08T06:56:00Z",
             "key": "CMP-2026-BFCM-PEAK",
-            "creation": "2026-05-22T06:00:00Z",
+            "creation": "2026-06-08T06:00:00Z",
             "name": "Black Friday 2026 — Production readiness rehearsal",
             "speedFactor": 1.5,
             "scheduledMinions": 250000,
-            "softTimeout": "2026-05-22T06:50:00Z",
-            "hardTimeout": "2026-05-22T07:00:00Z",
-            "start": "2026-05-22T06:05:00Z",
-            "end": "2026-05-22T06:55:00Z",
+            "softTimeout": "2026-06-08T06:50:00Z",
+            "hardTimeout": "2026-06-08T07:00:00Z",
+            "start": "2026-06-08T06:05:00Z",
+            "end": "2026-06-08T06:55:00Z",
             "status": "SUCCESSFUL",
             "failureReason": null,
             "configurerName": "sarah.kim",
@@ -392,16 +392,16 @@
             ]
           },
           {
-            "version": "2026-05-21T22:53:00Z",
+            "version": "2026-06-07T22:53:00Z",
             "key": "CMP-PAYMENTS-NIGHTLY-042",
-            "creation": "2026-05-21T22:00:00Z",
+            "creation": "2026-06-07T22:00:00Z",
             "name": "Payments gateway — nightly regression",
             "speedFactor": 1.0,
             "scheduledMinions": 75000,
             "softTimeout": null,
-            "hardTimeout": "2026-05-21T23:00:00Z",
-            "start": "2026-05-21T22:05:00Z",
-            "end": "2026-05-21T22:52:00Z",
+            "hardTimeout": "2026-06-07T23:00:00Z",
+            "start": "2026-06-07T22:05:00Z",
+            "end": "2026-06-07T22:52:00Z",
             "status": "SUCCESSFUL",
             "failureReason": null,
             "configurerName": "ci-bot",
@@ -418,16 +418,16 @@
             ]
           },
           {
-            "version": "2026-05-21T14:56:00Z",
+            "version": "2026-06-07T14:56:00Z",
             "key": "CMP-IOT-FLEET-1M",
-            "creation": "2026-05-21T14:00:00Z",
+            "creation": "2026-06-07T14:00:00Z",
             "name": "Connected fleet — 1M vehicles telemetry burst",
             "speedFactor": 1.0,
             "scheduledMinions": 1000000,
             "softTimeout": null,
-            "hardTimeout": "2026-05-21T15:00:00Z",
-            "start": "2026-05-21T14:05:00Z",
-            "end": "2026-05-21T14:55:00Z",
+            "hardTimeout": "2026-06-07T15:00:00Z",
+            "start": "2026-06-07T14:05:00Z",
+            "end": "2026-06-07T14:55:00Z",
             "status": "SUCCESSFUL",
             "failureReason": null,
             "configurerName": "miguel.santos",
@@ -447,16 +447,16 @@
             ]
           },
           {
-            "version": "2026-05-22T10:43:00Z",
+            "version": "2026-06-08T10:43:00Z",
             "key": "CMP-LIVE-STREAM-FINAL",
-            "creation": "2026-05-22T09:30:00Z",
+            "creation": "2026-06-08T09:30:00Z",
             "name": "Champions League final — viewer surge simulation",
             "speedFactor": 2.0,
             "scheduledMinions": 500000,
             "softTimeout": null,
-            "hardTimeout": "2026-05-22T10:55:00Z",
-            "start": "2026-05-22T10:00:00Z",
-            "end": "2026-05-22T10:42:00Z",
+            "hardTimeout": "2026-06-08T10:55:00Z",
+            "start": "2026-06-08T10:00:00Z",
+            "end": "2026-06-08T10:42:00Z",
             "status": "FAILED",
             "failureReason": "Edge CDN saturation at 412k concurrent viewers — origin egress capped before ad-break insertion",
             "configurerName": "aisha.rahman",
@@ -474,16 +474,16 @@
             ]
           },
           {
-            "version": "2026-05-20T18:56:00Z",
+            "version": "2026-06-06T18:56:00Z",
             "key": "CMP-BANK-PSD2-SOAK",
-            "creation": "2026-05-20T18:00:00Z",
+            "creation": "2026-06-06T18:00:00Z",
             "name": "Open Banking — pre-audit endurance window",
             "speedFactor": 1.0,
             "scheduledMinions": 40000,
             "softTimeout": null,
-            "hardTimeout": "2026-05-20T19:10:00Z",
-            "start": "2026-05-20T18:05:00Z",
-            "end": "2026-05-20T18:55:00Z",
+            "hardTimeout": "2026-06-06T19:10:00Z",
+            "start": "2026-06-06T18:05:00Z",
+            "end": "2026-06-06T18:55:00Z",
             "status": "SUCCESSFUL",
             "failureReason": null,
             "configurerName": "thomas.berger",
@@ -500,16 +500,16 @@
             ]
           },
           {
-            "version": "2026-05-18T09:53:00Z",
+            "version": "2026-06-04T09:53:00Z",
             "key": "CMP-MOBILE-FEED-RELEASE",
-            "creation": "2026-05-18T09:00:00Z",
+            "creation": "2026-06-04T09:00:00Z",
             "name": "Mobile feed — v4.2 release validation",
             "speedFactor": 1.25,
             "scheduledMinions": 180000,
             "softTimeout": null,
-            "hardTimeout": "2026-05-18T10:05:00Z",
-            "start": "2026-05-18T09:05:00Z",
-            "end": "2026-05-18T09:52:00Z",
+            "hardTimeout": "2026-06-04T10:05:00Z",
+            "start": "2026-06-04T09:05:00Z",
+            "end": "2026-06-04T09:52:00Z",
             "status": "WARNING",
             "failureReason": "p99 latency exceeded SLO on /feed for 4 min during ramp-up",
             "configurerName": "yuki.tanaka",
@@ -527,16 +527,16 @@
             ]
           },
           {
-            "version": "2026-05-17T19:13:00Z",
+            "version": "2026-06-03T19:13:00Z",
             "key": "CMP-RIDE-SURGE-NYE-REH",
-            "creation": "2026-05-17T19:00:00Z",
+            "creation": "2026-06-03T19:00:00Z",
             "name": "New Year's Eve dispatch surge rehearsal",
             "speedFactor": 3.0,
             "scheduledMinions": 90000,
             "softTimeout": null,
-            "hardTimeout": "2026-05-17T19:15:00Z",
-            "start": "2026-05-17T19:05:00Z",
-            "end": "2026-05-17T19:12:00Z",
+            "hardTimeout": "2026-06-03T19:15:00Z",
+            "start": "2026-06-03T19:05:00Z",
+            "end": "2026-06-03T19:12:00Z",
             "status": "FAILED",
             "failureReason": "Dispatcher service circuit-breaker opened at 62k concurrent rides",
             "configurerName": "olivia.brown",
@@ -554,16 +554,16 @@
             ]
           },
           {
-            "version": "2026-05-16T17:09:00Z",
+            "version": "2026-06-02T17:09:00Z",
             "key": "CMP-KAFKA-PIPELINE-BURST",
-            "creation": "2026-05-16T17:00:00Z",
+            "creation": "2026-06-02T17:00:00Z",
             "name": "Order pipeline — Kafka burst & DLQ recovery",
             "speedFactor": 1.0,
             "scheduledMinions": 120000,
             "softTimeout": null,
-            "hardTimeout": "2026-05-16T17:15:00Z",
-            "start": "2026-05-16T17:05:00Z",
-            "end": "2026-05-16T17:13:00Z",
+            "hardTimeout": "2026-06-02T17:15:00Z",
+            "start": "2026-06-02T17:05:00Z",
+            "end": "2026-06-02T17:13:00Z",
             "status": "SUCCESSFUL",
             "failureReason": null,
             "configurerName": "raphael.diaz",
@@ -581,16 +581,16 @@
             ]
           },
           {
-            "version": "2026-05-20T14:53:00Z",
+            "version": "2026-06-06T14:53:00Z",
             "key": "CMP-LLM-INFERENCE-BENCH",
-            "creation": "2026-05-20T14:30:00Z",
+            "creation": "2026-06-06T14:30:00Z",
             "name": "LLM inference — p99 TTFT benchmark on new GPU pool",
             "speedFactor": 1.0,
             "scheduledMinions": 8000,
             "softTimeout": null,
-            "hardTimeout": "2026-05-20T15:00:00Z",
-            "start": "2026-05-20T14:35:00Z",
-            "end": "2026-05-20T14:52:00Z",
+            "hardTimeout": "2026-06-06T15:00:00Z",
+            "start": "2026-06-06T14:35:00Z",
+            "end": "2026-06-06T14:52:00Z",
             "status": "SUCCESSFUL",
             "failureReason": null,
             "configurerName": "priya.nair",
@@ -661,16 +661,16 @@
       },
       "body": [
         {
-          "version": "2026-05-22T06:56:00Z",
+          "version": "2026-06-08T06:56:00Z",
           "key": "CMP-2026-BFCM-PEAK",
-          "creation": "2026-05-22T06:00:00Z",
+          "creation": "2026-06-08T06:00:00Z",
           "name": "Black Friday 2026 — Production readiness rehearsal",
           "speedFactor": 1.5,
           "scheduledMinions": 250000,
-          "softTimeout": "2026-05-22T06:50:00Z",
-          "hardTimeout": "2026-05-22T07:00:00Z",
-          "start": "2026-05-22T06:05:00Z",
-          "end": "2026-05-22T06:55:00Z",
+          "softTimeout": "2026-06-08T06:50:00Z",
+          "hardTimeout": "2026-06-08T07:00:00Z",
+          "start": "2026-06-08T06:05:00Z",
+          "end": "2026-06-08T06:55:00Z",
           "status": "SUCCESSFUL",
           "failureReason": null,
           "configurerName": "sarah.kim",
@@ -694,8 +694,8 @@
           "scenariosReports": [
             {
               "name": "checkout-flow-black-friday",
-              "start": "2026-05-22T06:05:00Z",
-              "end": "2026-05-22T06:55:00Z",
+              "start": "2026-06-08T06:05:00Z",
+              "end": "2026-06-08T06:55:00Z",
               "startedMinions": 250000,
               "completedMinions": 249874,
               "successfulExecutions": 12489731,
@@ -741,7 +741,7 @@
         "elements": [
           {
             "reference": "minions.count",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "sarah.kim",
             "displayName": "Active minions",
             "sharingMode": "WRITE",
@@ -757,7 +757,7 @@
           },
           {
             "reference": "ds-rps",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "sarah.kim",
             "displayName": "Requests per second",
             "sharingMode": "WRITE",
@@ -773,7 +773,7 @@
           },
           {
             "reference": "ds-p99-latency",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "sarah.kim",
             "displayName": "p99 response time",
             "sharingMode": "WRITE",
@@ -795,7 +795,7 @@
           },
           {
             "reference": "ds-p95-latency",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "sarah.kim",
             "displayName": "p95 response time",
             "sharingMode": "WRITE",
@@ -811,7 +811,7 @@
           },
           {
             "reference": "ds-error-rate",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "thomas.berger",
             "displayName": "Error rate (%)",
             "sharingMode": "WRITE",
@@ -827,7 +827,7 @@
           },
           {
             "reference": "ds-throughput-mb",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "miguel.santos",
             "displayName": "Network throughput",
             "sharingMode": "READONLY",
@@ -843,7 +843,7 @@
           },
           {
             "reference": "ds-checkout-conversion",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "sarah.kim",
             "displayName": "Checkout conversion rate",
             "sharingMode": "WRITE",
@@ -865,7 +865,7 @@
           },
           {
             "reference": "ds-payment-decline",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "thomas.berger",
             "displayName": "Payment decline rate",
             "sharingMode": "WRITE",
@@ -887,7 +887,7 @@
           },
           {
             "reference": "ds-kafka-consumer-lag",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "raphael.diaz",
             "displayName": "Kafka consumer lag",
             "sharingMode": "READONLY",
@@ -909,7 +909,7 @@
           },
           {
             "reference": "ds-llm-ttft",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "priya.nair",
             "displayName": "LLM time-to-first-token (p99)",
             "sharingMode": "WRITE",
@@ -931,7 +931,7 @@
           },
           {
             "reference": "ds-iot-msgs",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "miguel.santos",
             "displayName": "MQTT messages ingested",
             "sharingMode": "READONLY",
@@ -947,7 +947,7 @@
           },
           {
             "reference": "ds-cpu-saturation",
-            "version": "2026-05-22T08:00:00Z",
+            "version": "2026-06-08T08:00:00Z",
             "creator": "ci-bot",
             "displayName": "CPU saturation",
             "sharingMode": "READONLY",
@@ -1120,7 +1120,7 @@
       },
       "body": {
         "reference": "ds-p99-latency",
-        "version": "2026-05-22T08:00:00Z",
+        "version": "2026-06-08T08:00:00Z",
         "creator": "sarah.kim",
         "displayName": "p99 response time",
         "sharingMode": "WRITE",
@@ -1157,614 +1157,640 @@
         ]
       },
       "body": {
-        "minions.count": [
-          {
-            "start": "2026-05-22T06:05:00Z",
-            "elapsed": "PT0S",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0
-          },
-          {
-            "start": "2026-05-22T06:07:00Z",
-            "elapsed": "PT2M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 25000
-          },
-          {
-            "start": "2026-05-22T06:09:00Z",
-            "elapsed": "PT4M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 75000
-          },
-          {
-            "start": "2026-05-22T06:11:00Z",
-            "elapsed": "PT6M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 150000
-          },
-          {
-            "start": "2026-05-22T06:13:00Z",
-            "elapsed": "PT8M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 220000
-          },
-          {
-            "start": "2026-05-22T06:15:00Z",
-            "elapsed": "PT10M",
+        "minions.count": {
+          "values": [
+            {
+              "start": "2026-06-08T06:05:00Z",
+              "elapsed": "PT0S",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0
+            },
+            {
+              "start": "2026-06-08T06:07:00Z",
+              "elapsed": "PT2M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 25000
+            },
+            {
+              "start": "2026-06-08T06:09:00Z",
+              "elapsed": "PT4M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 75000
+            },
+            {
+              "start": "2026-06-08T06:11:00Z",
+              "elapsed": "PT6M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 150000
+            },
+            {
+              "start": "2026-06-08T06:13:00Z",
+              "elapsed": "PT8M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 220000
+            },
+            {
+              "start": "2026-06-08T06:15:00Z",
+              "elapsed": "PT10M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:17:00Z",
+              "elapsed": "PT12M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:19:00Z",
+              "elapsed": "PT14M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:21:00Z",
+              "elapsed": "PT16M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:23:00Z",
+              "elapsed": "PT18M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:25:00Z",
+              "elapsed": "PT20M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:27:00Z",
+              "elapsed": "PT22M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:29:00Z",
+              "elapsed": "PT24M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:31:00Z",
+              "elapsed": "PT26M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:33:00Z",
+              "elapsed": "PT28M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:35:00Z",
+              "elapsed": "PT30M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:37:00Z",
+              "elapsed": "PT32M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:39:00Z",
+              "elapsed": "PT34M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:41:00Z",
+              "elapsed": "PT36M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:43:00Z",
+              "elapsed": "PT38M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:45:00Z",
+              "elapsed": "PT40M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:47:00Z",
+              "elapsed": "PT42M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:49:00Z",
+              "elapsed": "PT44M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:51:00Z",
+              "elapsed": "PT46M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "2026-06-08T06:53:00Z",
+              "elapsed": "PT48M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 249874
+            }
+          ],
+          "summary": {
+            "start": "2026-06-08T06:05:00Z",
+            "elapsed": "PT50M",
             "campaign": "CMP-2026-BFCM-PEAK",
             "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:17:00Z",
-            "elapsed": "PT12M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:19:00Z",
-            "elapsed": "PT14M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:21:00Z",
-            "elapsed": "PT16M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:23:00Z",
-            "elapsed": "PT18M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:25:00Z",
-            "elapsed": "PT20M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:27:00Z",
-            "elapsed": "PT22M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:29:00Z",
-            "elapsed": "PT24M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:31:00Z",
-            "elapsed": "PT26M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:33:00Z",
-            "elapsed": "PT28M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:35:00Z",
-            "elapsed": "PT30M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:37:00Z",
-            "elapsed": "PT32M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:39:00Z",
-            "elapsed": "PT34M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:41:00Z",
-            "elapsed": "PT36M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:43:00Z",
-            "elapsed": "PT38M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:45:00Z",
-            "elapsed": "PT40M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:47:00Z",
-            "elapsed": "PT42M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:49:00Z",
-            "elapsed": "PT44M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:51:00Z",
-            "elapsed": "PT46M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "2026-05-22T06:53:00Z",
-            "elapsed": "PT48M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 249874
           }
-        ],
-        "ds-p99-latency": [
-          {
-            "start": "2026-05-22T06:05:00Z",
-            "elapsed": "PT0S",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50
-          },
-          {
-            "start": "2026-05-22T06:07:00Z",
-            "elapsed": "PT2M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 80
-          },
-          {
-            "start": "2026-05-22T06:09:00Z",
-            "elapsed": "PT4M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 120
-          },
-          {
-            "start": "2026-05-22T06:11:00Z",
-            "elapsed": "PT6M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 160
-          },
-          {
-            "start": "2026-05-22T06:13:00Z",
-            "elapsed": "PT8M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 180
-          },
-          {
-            "start": "2026-05-22T06:15:00Z",
-            "elapsed": "PT10M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 187
-          },
-          {
-            "start": "2026-05-22T06:17:00Z",
-            "elapsed": "PT12M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 192
-          },
-          {
-            "start": "2026-05-22T06:19:00Z",
-            "elapsed": "PT14M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 195
-          },
-          {
-            "start": "2026-05-22T06:21:00Z",
-            "elapsed": "PT16M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 198
-          },
-          {
-            "start": "2026-05-22T06:23:00Z",
-            "elapsed": "PT18M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 192
-          },
-          {
-            "start": "2026-05-22T06:25:00Z",
-            "elapsed": "PT20M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 187
-          },
-          {
-            "start": "2026-05-22T06:27:00Z",
-            "elapsed": "PT22M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 185
-          },
-          {
-            "start": "2026-05-22T06:29:00Z",
-            "elapsed": "PT24M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 182
-          },
-          {
-            "start": "2026-05-22T06:31:00Z",
-            "elapsed": "PT26M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 180
-          },
-          {
-            "start": "2026-05-22T06:33:00Z",
-            "elapsed": "PT28M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 178
-          },
-          {
-            "start": "2026-05-22T06:35:00Z",
-            "elapsed": "PT30M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 180
-          },
-          {
-            "start": "2026-05-22T06:37:00Z",
-            "elapsed": "PT32M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 178
-          },
-          {
-            "start": "2026-05-22T06:39:00Z",
-            "elapsed": "PT34M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 175
-          },
-          {
-            "start": "2026-05-22T06:41:00Z",
-            "elapsed": "PT36M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 170
-          },
-          {
-            "start": "2026-05-22T06:43:00Z",
-            "elapsed": "PT38M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 168
-          },
-          {
-            "start": "2026-05-22T06:45:00Z",
-            "elapsed": "PT40M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 165
-          },
-          {
-            "start": "2026-05-22T06:47:00Z",
-            "elapsed": "PT42M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 162
-          },
-          {
-            "start": "2026-05-22T06:49:00Z",
-            "elapsed": "PT44M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 160
-          },
-          {
-            "start": "2026-05-22T06:51:00Z",
-            "elapsed": "PT46M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 158
-          },
-          {
-            "start": "2026-05-22T06:53:00Z",
-            "elapsed": "PT48M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 155
-          }
-        ],
-        "ds-error-rate": [
-          {
-            "start": "2026-05-22T06:05:00Z",
-            "elapsed": "PT0S",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.00
-          },
-          {
-            "start": "2026-05-22T06:07:00Z",
-            "elapsed": "PT2M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.02
-          },
-          {
-            "start": "2026-05-22T06:09:00Z",
-            "elapsed": "PT4M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.05
-          },
-          {
-            "start": "2026-05-22T06:11:00Z",
-            "elapsed": "PT6M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.08
-          },
-          {
-            "start": "2026-05-22T06:13:00Z",
-            "elapsed": "PT8M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.12
-          },
-          {
-            "start": "2026-05-22T06:15:00Z",
-            "elapsed": "PT10M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.14
-          },
-          {
-            "start": "2026-05-22T06:17:00Z",
-            "elapsed": "PT12M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.12
-          },
-          {
-            "start": "2026-05-22T06:19:00Z",
-            "elapsed": "PT14M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.08
-          },
-          {
-            "start": "2026-05-22T06:21:00Z",
-            "elapsed": "PT16M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.05
-          },
-          {
-            "start": "2026-05-22T06:23:00Z",
-            "elapsed": "PT18M",
+        },
+        "ds-p99-latency": {
+          "values": [
+            {
+              "start": "2026-06-08T06:05:00Z",
+              "elapsed": "PT0S",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50
+            },
+            {
+              "start": "2026-06-08T06:07:00Z",
+              "elapsed": "PT2M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 80
+            },
+            {
+              "start": "2026-06-08T06:09:00Z",
+              "elapsed": "PT4M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 120
+            },
+            {
+              "start": "2026-06-08T06:11:00Z",
+              "elapsed": "PT6M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 160
+            },
+            {
+              "start": "2026-06-08T06:13:00Z",
+              "elapsed": "PT8M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 180
+            },
+            {
+              "start": "2026-06-08T06:15:00Z",
+              "elapsed": "PT10M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 187
+            },
+            {
+              "start": "2026-06-08T06:17:00Z",
+              "elapsed": "PT12M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 192
+            },
+            {
+              "start": "2026-06-08T06:19:00Z",
+              "elapsed": "PT14M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 195
+            },
+            {
+              "start": "2026-06-08T06:21:00Z",
+              "elapsed": "PT16M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 198
+            },
+            {
+              "start": "2026-06-08T06:23:00Z",
+              "elapsed": "PT18M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 192
+            },
+            {
+              "start": "2026-06-08T06:25:00Z",
+              "elapsed": "PT20M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 187
+            },
+            {
+              "start": "2026-06-08T06:27:00Z",
+              "elapsed": "PT22M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 185
+            },
+            {
+              "start": "2026-06-08T06:29:00Z",
+              "elapsed": "PT24M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 182
+            },
+            {
+              "start": "2026-06-08T06:31:00Z",
+              "elapsed": "PT26M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 180
+            },
+            {
+              "start": "2026-06-08T06:33:00Z",
+              "elapsed": "PT28M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 178
+            },
+            {
+              "start": "2026-06-08T06:35:00Z",
+              "elapsed": "PT30M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 180
+            },
+            {
+              "start": "2026-06-08T06:37:00Z",
+              "elapsed": "PT32M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 178
+            },
+            {
+              "start": "2026-06-08T06:39:00Z",
+              "elapsed": "PT34M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 175
+            },
+            {
+              "start": "2026-06-08T06:41:00Z",
+              "elapsed": "PT36M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 170
+            },
+            {
+              "start": "2026-06-08T06:43:00Z",
+              "elapsed": "PT38M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 168
+            },
+            {
+              "start": "2026-06-08T06:45:00Z",
+              "elapsed": "PT40M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 165
+            },
+            {
+              "start": "2026-06-08T06:47:00Z",
+              "elapsed": "PT42M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 162
+            },
+            {
+              "start": "2026-06-08T06:49:00Z",
+              "elapsed": "PT44M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 160
+            },
+            {
+              "start": "2026-06-08T06:51:00Z",
+              "elapsed": "PT46M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 158
+            },
+            {
+              "start": "2026-06-08T06:53:00Z",
+              "elapsed": "PT48M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 155
+            }
+          ]
+        },
+        "ds-error-rate": {
+          "values": [
+            {
+              "start": "2026-06-08T06:05:00Z",
+              "elapsed": "PT0S",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.00
+            },
+            {
+              "start": "2026-06-08T06:07:00Z",
+              "elapsed": "PT2M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.02
+            },
+            {
+              "start": "2026-06-08T06:09:00Z",
+              "elapsed": "PT4M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.05
+            },
+            {
+              "start": "2026-06-08T06:11:00Z",
+              "elapsed": "PT6M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.08
+            },
+            {
+              "start": "2026-06-08T06:13:00Z",
+              "elapsed": "PT8M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.12
+            },
+            {
+              "start": "2026-06-08T06:15:00Z",
+              "elapsed": "PT10M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.14
+            },
+            {
+              "start": "2026-06-08T06:17:00Z",
+              "elapsed": "PT12M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.12
+            },
+            {
+              "start": "2026-06-08T06:19:00Z",
+              "elapsed": "PT14M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.08
+            },
+            {
+              "start": "2026-06-08T06:21:00Z",
+              "elapsed": "PT16M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.05
+            },
+            {
+              "start": "2026-06-08T06:23:00Z",
+              "elapsed": "PT18M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.03
+            },
+            {
+              "start": "2026-06-08T06:25:00Z",
+              "elapsed": "PT20M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.02
+            },
+            {
+              "start": "2026-06-08T06:27:00Z",
+              "elapsed": "PT22M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "2026-06-08T06:29:00Z",
+              "elapsed": "PT24M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "2026-06-08T06:31:00Z",
+              "elapsed": "PT26M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.02
+            },
+            {
+              "start": "2026-06-08T06:33:00Z",
+              "elapsed": "PT28M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "2026-06-08T06:35:00Z",
+              "elapsed": "PT30M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "2026-06-08T06:37:00Z",
+              "elapsed": "PT32M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.02
+            },
+            {
+              "start": "2026-06-08T06:39:00Z",
+              "elapsed": "PT34M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.03
+            },
+            {
+              "start": "2026-06-08T06:41:00Z",
+              "elapsed": "PT36M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.02
+            },
+            {
+              "start": "2026-06-08T06:43:00Z",
+              "elapsed": "PT38M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "2026-06-08T06:45:00Z",
+              "elapsed": "PT40M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "2026-06-08T06:47:00Z",
+              "elapsed": "PT42M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.00
+            },
+            {
+              "start": "2026-06-08T06:49:00Z",
+              "elapsed": "PT44M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.00
+            },
+            {
+              "start": "2026-06-08T06:51:00Z",
+              "elapsed": "PT46M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.00
+            },
+            {
+              "start": "2026-06-08T06:53:00Z",
+              "elapsed": "PT48M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.00
+            }
+          ],
+          "summary": {
+            "start": "2026-06-08T06:05:00Z",
+            "elapsed": "PT50M",
             "campaign": "CMP-2026-BFCM-PEAK",
             "value": 0.03
-          },
-          {
-            "start": "2026-05-22T06:25:00Z",
-            "elapsed": "PT20M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.02
-          },
-          {
-            "start": "2026-05-22T06:27:00Z",
-            "elapsed": "PT22M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "2026-05-22T06:29:00Z",
-            "elapsed": "PT24M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "2026-05-22T06:31:00Z",
-            "elapsed": "PT26M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.02
-          },
-          {
-            "start": "2026-05-22T06:33:00Z",
-            "elapsed": "PT28M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "2026-05-22T06:35:00Z",
-            "elapsed": "PT30M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "2026-05-22T06:37:00Z",
-            "elapsed": "PT32M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.02
-          },
-          {
-            "start": "2026-05-22T06:39:00Z",
-            "elapsed": "PT34M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.03
-          },
-          {
-            "start": "2026-05-22T06:41:00Z",
-            "elapsed": "PT36M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.02
-          },
-          {
-            "start": "2026-05-22T06:43:00Z",
-            "elapsed": "PT38M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "2026-05-22T06:45:00Z",
-            "elapsed": "PT40M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "2026-05-22T06:47:00Z",
-            "elapsed": "PT42M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.00
-          },
-          {
-            "start": "2026-05-22T06:49:00Z",
-            "elapsed": "PT44M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.00
-          },
-          {
-            "start": "2026-05-22T06:51:00Z",
-            "elapsed": "PT46M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.00
-          },
-          {
-            "start": "2026-05-22T06:53:00Z",
-            "elapsed": "PT48M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.00
           }
-        ],
-        "ds-rps": [
-          {
-            "start": "2026-05-22T06:05:00Z",
-            "elapsed": "PT0S",
+        },
+        "ds-rps": {
+          "values": [
+            {
+              "start": "2026-06-08T06:05:00Z",
+              "elapsed": "PT0S",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0
+            },
+            {
+              "start": "2026-06-08T06:07:00Z",
+              "elapsed": "PT2M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 5000
+            },
+            {
+              "start": "2026-06-08T06:09:00Z",
+              "elapsed": "PT4M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 15000
+            },
+            {
+              "start": "2026-06-08T06:11:00Z",
+              "elapsed": "PT6M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 30000
+            },
+            {
+              "start": "2026-06-08T06:13:00Z",
+              "elapsed": "PT8M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 42000
+            },
+            {
+              "start": "2026-06-08T06:15:00Z",
+              "elapsed": "PT10M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 48000
+            },
+            {
+              "start": "2026-06-08T06:17:00Z",
+              "elapsed": "PT12M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50000
+            },
+            {
+              "start": "2026-06-08T06:19:00Z",
+              "elapsed": "PT14M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50500
+            },
+            {
+              "start": "2026-06-08T06:21:00Z",
+              "elapsed": "PT16M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 51000
+            },
+            {
+              "start": "2026-06-08T06:23:00Z",
+              "elapsed": "PT18M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50800
+            },
+            {
+              "start": "2026-06-08T06:25:00Z",
+              "elapsed": "PT20M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50500
+            },
+            {
+              "start": "2026-06-08T06:27:00Z",
+              "elapsed": "PT22M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50300
+            },
+            {
+              "start": "2026-06-08T06:29:00Z",
+              "elapsed": "PT24M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50200
+            },
+            {
+              "start": "2026-06-08T06:31:00Z",
+              "elapsed": "PT26M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50100
+            },
+            {
+              "start": "2026-06-08T06:33:00Z",
+              "elapsed": "PT28M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50300
+            },
+            {
+              "start": "2026-06-08T06:35:00Z",
+              "elapsed": "PT30M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50500
+            },
+            {
+              "start": "2026-06-08T06:37:00Z",
+              "elapsed": "PT32M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50400
+            },
+            {
+              "start": "2026-06-08T06:39:00Z",
+              "elapsed": "PT34M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50200
+            },
+            {
+              "start": "2026-06-08T06:41:00Z",
+              "elapsed": "PT36M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50100
+            },
+            {
+              "start": "2026-06-08T06:43:00Z",
+              "elapsed": "PT38M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 49800
+            },
+            {
+              "start": "2026-06-08T06:45:00Z",
+              "elapsed": "PT40M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 47000
+            },
+            {
+              "start": "2026-06-08T06:47:00Z",
+              "elapsed": "PT42M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 42000
+            },
+            {
+              "start": "2026-06-08T06:49:00Z",
+              "elapsed": "PT44M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 35000
+            },
+            {
+              "start": "2026-06-08T06:51:00Z",
+              "elapsed": "PT46M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 28000
+            },
+            {
+              "start": "2026-06-08T06:53:00Z",
+              "elapsed": "PT48M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 22000
+            }
+          ],
+          "summary": {
+            "start": "2026-06-08T06:05:00Z",
+            "elapsed": "PT50M",
             "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0
-          },
-          {
-            "start": "2026-05-22T06:07:00Z",
-            "elapsed": "PT2M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 5000
-          },
-          {
-            "start": "2026-05-22T06:09:00Z",
-            "elapsed": "PT4M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 15000
-          },
-          {
-            "start": "2026-05-22T06:11:00Z",
-            "elapsed": "PT6M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 30000
-          },
-          {
-            "start": "2026-05-22T06:13:00Z",
-            "elapsed": "PT8M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 42000
-          },
-          {
-            "start": "2026-05-22T06:15:00Z",
-            "elapsed": "PT10M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 48000
-          },
-          {
-            "start": "2026-05-22T06:17:00Z",
-            "elapsed": "PT12M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50000
-          },
-          {
-            "start": "2026-05-22T06:19:00Z",
-            "elapsed": "PT14M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50500
-          },
-          {
-            "start": "2026-05-22T06:21:00Z",
-            "elapsed": "PT16M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 51000
-          },
-          {
-            "start": "2026-05-22T06:23:00Z",
-            "elapsed": "PT18M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50800
-          },
-          {
-            "start": "2026-05-22T06:25:00Z",
-            "elapsed": "PT20M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50500
-          },
-          {
-            "start": "2026-05-22T06:27:00Z",
-            "elapsed": "PT22M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50300
-          },
-          {
-            "start": "2026-05-22T06:29:00Z",
-            "elapsed": "PT24M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50200
-          },
-          {
-            "start": "2026-05-22T06:31:00Z",
-            "elapsed": "PT26M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50100
-          },
-          {
-            "start": "2026-05-22T06:33:00Z",
-            "elapsed": "PT28M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50300
-          },
-          {
-            "start": "2026-05-22T06:35:00Z",
-            "elapsed": "PT30M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50500
-          },
-          {
-            "start": "2026-05-22T06:37:00Z",
-            "elapsed": "PT32M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50400
-          },
-          {
-            "start": "2026-05-22T06:39:00Z",
-            "elapsed": "PT34M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50200
-          },
-          {
-            "start": "2026-05-22T06:41:00Z",
-            "elapsed": "PT36M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50100
-          },
-          {
-            "start": "2026-05-22T06:43:00Z",
-            "elapsed": "PT38M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 49800
-          },
-          {
-            "start": "2026-05-22T06:45:00Z",
-            "elapsed": "PT40M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 47000
-          },
-          {
-            "start": "2026-05-22T06:47:00Z",
-            "elapsed": "PT42M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 42000
-          },
-          {
-            "start": "2026-05-22T06:49:00Z",
-            "elapsed": "PT44M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 35000
-          },
-          {
-            "start": "2026-05-22T06:51:00Z",
-            "elapsed": "PT46M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 28000
-          },
-          {
-            "start": "2026-05-22T06:53:00Z",
-            "elapsed": "PT48M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 22000
+            "value": 39188
           }
-        ]
+        }
       }
     }
   },
@@ -1791,7 +1817,7 @@
           "elements": [
             {
               "name": "minions.count",
-              "timestamp": "2026-05-22T11:00:00Z",
+              "timestamp": "2026-06-08T11:00:00Z",
               "value": 100.0,
               "campaign": "campaign-1",
               "scenario": "scenario-1",
@@ -1799,7 +1825,7 @@
             },
             {
               "name": "minions.count",
-              "timestamp": "2026-05-22T11:01:00Z",
+              "timestamp": "2026-06-08T11:01:00Z",
               "value": 150.0,
               "campaign": "campaign-1",
               "scenario": "scenario-1",
@@ -1826,37 +1852,37 @@
       },
       "body": [
         {
-          "start": "2026-05-16T00:00:00Z",
+          "start": "2026-06-02T00:00:00Z",
           "successful": 1,
           "failed": 0
         },
         {
-          "start": "2026-05-17T00:00:00Z",
+          "start": "2026-06-03T00:00:00Z",
           "successful": 0,
           "failed": 1
         },
         {
-          "start": "2026-05-18T00:00:00Z",
+          "start": "2026-06-04T00:00:00Z",
           "successful": 1,
           "failed": 0
         },
         {
-          "start": "2026-05-19T00:00:00Z",
+          "start": "2026-06-05T00:00:00Z",
           "successful": 1,
           "failed": 0
         },
         {
-          "start": "2026-05-20T00:00:00Z",
+          "start": "2026-06-06T00:00:00Z",
           "successful": 1,
           "failed": 0
         },
         {
-          "start": "2026-05-21T00:00:00Z",
+          "start": "2026-06-07T00:00:00Z",
           "successful": 2,
           "failed": 0
         },
         {
-          "start": "2026-05-22T00:00:00Z",
+          "start": "2026-06-08T00:00:00Z",
           "successful": 1,
           "failed": 0
         }
@@ -1885,7 +1911,7 @@
         "elements": [
           {
             "reference": "report-1",
-            "version": "2026-05-22T12:00:00Z",
+            "version": "2026-06-08T12:00:00Z",
             "creator": "mock-user",
             "displayName": "Black Friday Readiness",
             "description": "Readiness test for coming Black Friday",
@@ -1949,7 +1975,7 @@
       },
       "body": {
         "reference": "report-1",
-        "version": "2026-05-22T12:00:00Z",
+        "version": "2026-06-08T12:00:00Z",
         "creator": "mock-user",
         "displayName": "Black Friday Readiness",
         "description": "Readiness check for coming Black Friday",

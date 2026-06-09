@@ -1,5 +1,6 @@
-import type { ApexOptions } from 'apexcharts'
+import type {ApexOptions} from 'apexcharts'
 import tinycolor from 'tinycolor2'
+import {SeriesDetailsConfig} from '~/utils/configs/series-details.config'
 
 /**
  * Renders the outer panel and header bar shared by chart tooltips.
@@ -33,11 +34,12 @@ export interface BuildAggregationChartContext {
 }
 
 export interface BuildAggregationChartParams {
-  aggregationResult: { [key: string]: TimeSeriesAggregationResult[] }
+  aggregationResult: { [key: string]: TimeSeriesValues }
   dataSeries: DataSeries[]
   /** Used by the empty-state y-axis. */
   scheduledMinions?: number
-  tooltip?: (options: any) => string
+  /** Factory receiving the summary map; returns the tooltip renderer. */
+  tooltip?: (summaryBySeriesName: { [name: string]: string }) => (options: any) => string
   /** Runs once after defaults — for x-axis tweaks, etc. */
   customizeOptions?: (options: ApexOptions) => void
   /** Invoked per aggregation entry; push any series/stroke dashes via `ctx`. */
@@ -145,13 +147,13 @@ export const ChartHelper = {
    * or x-axis tweaks via `tooltip` / `customizeOptions`.
    */
   buildAggregationChart(params: BuildAggregationChartParams): ChartData {
-    const aggregations = Object.entries(params.aggregationResult).filter(([, values]) => values.length)
+    const aggregations = Object.entries(params.aggregationResult).filter(([, tsv]) => tsv.values.length)
     const chartOptions: ApexOptions = ChartsConfig.getDefaultChartOptions()
 
-    if (params.tooltip) chartOptions.tooltip!.custom = params.tooltip
     params.customizeOptions?.(chartOptions)
 
     if (aggregations.length === 0) {
+      if (params.tooltip) chartOptions.tooltip!.custom = params.tooltip({})
       chartOptions.yaxis = ChartHelper.getEmptyChartYAxisOptions(params.scheduledMinions)
 
       return { chartOptions, chartDataSeries: [] }
@@ -160,16 +162,42 @@ export const ChartHelper = {
     const chartDataSeries: ApexAxisChartSeries = []
     const yAxisConfigs: ApexYAxis[] = []
     const strokeDashArray: number[] = []
+    const summaryBySeriesName: { [name: string]: string } = {}
+    const yAxisAnnotations: any[] = []
     const ctx: BuildAggregationChartContext = {
       pushSeries: (series) => chartDataSeries.push(series),
       pushStrokeDash: (value) => strokeDashArray.push(value),
     }
 
-    aggregations.forEach(([key, values]) => {
+    aggregations.forEach(([key, timeSeriesValues], idx) => {
       const chartOptionData = ChartHelper.toChartOptionData(key, params.dataSeries)
-      params.buildSeries(chartOptionData, values, ctx)
+      params.buildSeries(chartOptionData, timeSeriesValues.values, ctx)
       yAxisConfigs.push(ChartHelper.getYAxisOptions(chartOptionData))
+
+      if (timeSeriesValues.summary && key !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE) {
+        const rawY = timeSeriesValues.summary.value
+        summaryBySeriesName[chartOptionData.dataSeriesName] = chartOptionData.format(rawY)
+        yAxisAnnotations.push({
+          y: rawY,
+          yAxisIndex: idx,
+          borderColor: chartOptionData.dataSeriesColor,
+          borderWidth: 1,
+          strokeDashArray: 4,
+          label: {text: ''},
+        })
+      }
     })
+
+    if (params.tooltip) chartOptions.tooltip!.custom = params.tooltip(summaryBySeriesName)
+
+    // Add annotations after chart mounts so Y-axis scales are fully computed.
+    if (yAxisAnnotations.length > 0) {
+      chartOptions.chart!.events = {
+        mounted: (chart: any) => {
+          yAxisAnnotations.forEach((anno) => chart.addYaxisAnnotation(anno))
+        },
+      }
+    }
 
     chartOptions.yaxis = yAxisConfigs
     if (strokeDashArray.length) chartOptions.stroke!.dashArray = strokeDashArray

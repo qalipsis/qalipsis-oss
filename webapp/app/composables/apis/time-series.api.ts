@@ -9,8 +9,8 @@ export const useTimeSeriesApi = () => {
    */
   const fetchTimeSeriesAggregation = (
     queryParam: TimeSeriesAggregationQueryParam,
-  ): Promise<{ [key: string]: TimeSeriesAggregationResult[] }> => {
-    return get$<{ [key: string]: TimeSeriesAggregationResult[] }, TimeSeriesAggregationQueryParam>(
+  ): Promise<{ [key: string]: TimeSeriesValues }> => {
+      return get$<{ [key: string]: TimeSeriesValues }, TimeSeriesAggregationQueryParam>(
       '/time-series/aggregate',
       queryParam,
     )

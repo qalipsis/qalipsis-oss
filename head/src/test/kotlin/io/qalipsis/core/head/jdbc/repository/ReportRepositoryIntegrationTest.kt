@@ -38,7 +38,6 @@ import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
 import com.qalipsis.core.head.jdbc.entity.UserEntityForTest
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
-import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
@@ -266,7 +265,7 @@ internal class ReportRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                             prop(DataSeriesEntity::filters).isEmpty()
                             prop(DataSeriesEntity::color).isNull()
                             prop(DataSeriesEntity::fieldName).isNull()
-                            prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.COUNT)
+                            prop(DataSeriesEntity::aggregationOperation).isNull()
                             prop(DataSeriesEntity::timeframeUnitMs).isNull()
                             prop(DataSeriesEntity::displayFormat).isNull()
                             prop(DataSeriesEntity::query).isNull()
@@ -513,7 +512,7 @@ internal class ReportRepositoryIntegrationTest : AbstractPostgreSQLTest() {
                             prop(DataSeriesEntity::filters).isEmpty()
                             prop(DataSeriesEntity::color).isNull()
                             prop(DataSeriesEntity::fieldName).isNull()
-                            prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.COUNT)
+                            prop(DataSeriesEntity::aggregationOperation).isNull()
                             prop(DataSeriesEntity::timeframeUnitMs).isNull()
                             prop(DataSeriesEntity::displayFormat).isNull()
                             prop(DataSeriesEntity::query).isNull()
@@ -2284,7 +2283,7 @@ internal class ReportRepositoryIntegrationTest : AbstractPostgreSQLTest() {
         val tenant = tenantRepository.save(tenantPrototype.copy())
         val creator = userRepository.save(userPrototype.copy())
         val creator2 = userRepository.save(userPrototype.copy(username = "other-user"))
-        val saved = reportRepository.save(
+        reportRepository.save(
             ReportEntity(
                 reference = "report-ref",
                 tenantId = tenant.id,

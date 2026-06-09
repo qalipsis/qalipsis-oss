@@ -61,7 +61,7 @@ export interface DataSeries {
    * Aggregation operation to perform on the values pointed out by the field name,
    * "*" in order to scale the values with the time, defaults to count
    */
-  aggregationOperation?: QueryAggregationOperator
+  aggregationOperation?: QueryAggregationOperator | null
 
   /**
    * Duration to aggregate the values for scaling,
@@ -259,9 +259,9 @@ export class FilterDataSeriesPatch implements DataSeriesPatch {
  */
 export class AggregationDataSeriesPatch implements DataSeriesPatch {
   type: DataSeriesPatchType
-  operation: QueryAggregationOperator
+  operation: QueryAggregationOperator | null
 
-  constructor(operation: QueryAggregationOperator) {
+  constructor(operation: QueryAggregationOperator | null) {
     this.type = DataSeriesPatchTypeConstant.AGGREGATION
     this.operation = operation
   }

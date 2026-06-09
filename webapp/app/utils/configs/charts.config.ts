@@ -12,7 +12,7 @@ export const ChartsConfig = {
             },
             stroke: {
                 curve: 'straight',
-                width: 1
+                width: 1.5
             },
             chart: {
                 type: 'line',

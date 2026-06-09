@@ -19,7 +19,7 @@ const patchBuilders: Record<string, (form: DataSeriesForm) => DataSeriesPatch> =
     sharingMode: (f) => new SharingModeDataSeriesPatch(f.sharingMode!),
     fieldName: (f) => new FieldNameDataSeriesPatch(f.fieldName),
     valueName: (f) => new ValueNameDataSeriesPatch(f.valueName),
-    aggregationOperation: (f) => new AggregationDataSeriesPatch(f.aggregationOperation!),
+    aggregationOperation: (f) => new AggregationDataSeriesPatch(f.dataType === DataTypeConstant.METERS ? null : f.aggregationOperation!),
     timeframeValue: buildTimeframePatch,
     timeframeUnit: buildTimeframePatch,
     color: buildColorPatch,
@@ -55,7 +55,7 @@ export const SeriesHelper = {
             color: form.color ?? null,
             colorOpacity: form.colorOpacity,
             timeframeUnit: TimeframeHelper.toIsoStringDuration(form.timeframeValue!, form.timeframeUnit),
-            aggregationOperation: form.aggregationOperation!,
+            aggregationOperation: form.dataType === DataTypeConstant.METERS ? null : form.aggregationOperation!,
         }
     },
 

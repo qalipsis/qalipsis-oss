@@ -19,7 +19,7 @@
 
 package io.qalipsis.core.head.report.chart
 
-import io.qalipsis.api.report.TimeSeriesAggregationResult
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import java.nio.file.Path
 
@@ -39,7 +39,7 @@ interface ChartService {
      *
      */
     fun buildChart(
-        data: Map<String, List<TimeSeriesAggregationResult>>,
+        data: Map<String, TimeSeriesValues>,
         dataSeries: Collection<DataSeriesEntity>,
         index: Int,
         reportTempDir: Path,

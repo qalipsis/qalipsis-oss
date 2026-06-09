@@ -1,6 +1,6 @@
-import type { ApexOptions } from 'apexcharts'
-import { eachDayOfInterval, format, isSameDay, sub } from 'date-fns'
-import { DateTime } from 'luxon'
+import type {ApexOptions} from 'apexcharts'
+import {eachDayOfInterval, format, isSameDay, sub} from 'date-fns'
+import {DateTime} from 'luxon'
 
 const defaultTagClass: TagStyleClass = {
   backgroundCssClass: 'bg-gray-100 dark:bg-gray-700',
@@ -75,29 +75,35 @@ const renderCampaignStaticTooltip: (options: any) => any = ({ series, seriesInde
   `
 }
 
-const renderCampaignDetailsChartTooltip: (options: any) => any = ({ seriesIndex, dataPointIndex, w }): string => {
-  const dt =
-    w.config.series[seriesIndex].data[dataPointIndex]?.x ||
-    w.globals.initialSeries.filter((serie: any) => !!serie.data[dataPointIndex]?.x)[0].data[dataPointIndex].x
-  const day = format(new Date(dt), 'yy-MM-dd')
-  const time = format(new Date(dt), 'HH:mm:ss')
-  const rows: string[] = []
+const createCampaignDetailsChartTooltip =
+    (summaryBySeriesName: { [name: string]: string }) =>
+        ({seriesIndex, dataPointIndex, w}: any): string => {
+          const dt =
+              w.config.series[seriesIndex].data[dataPointIndex]?.x ||
+              w.globals.initialSeries.filter((serie: any) => !!serie.data[dataPointIndex]?.x)[0].data[dataPointIndex].x
+          const day = format(new Date(dt), 'yy-MM-dd')
+          const time = format(new Date(dt), 'HH:mm:ss')
+          const rows: string[] = []
 
-  w.globals.initialSeries.forEach((series: { data: any[]; color: any; name: any }) =>
-    series.data.forEach((point) => {
-      if (point?.x !== dt) return
-      const label =
-        series.name === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE ? 'Minions count' : series.name
-      rows.push(
-        renderChartTooltipRow(series.color, `<div class="pr-1">${label}:</div><div class="ml-2">${point.y}</div>`),
-      )
-    }),
-  )
+          w.globals.initialSeries.forEach((series: { data: any[]; color: any; name: any }) =>
+              series.data.forEach((point) => {
+                if (point?.x !== dt) return
+                const label =
+                    series.name === SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE ? 'Minions count' : series.name
+                const summaryVal = summaryBySeriesName[series.name]
+                rows.push(
+                    renderChartTooltipRow(
+                        series.color,
+                        `<div class="pr-1">${label}:</div><div class="ml-2">${point.y}${series.name !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE && summaryVal !== undefined ? ` (${summaryVal})` : ''}</div>`,
+                    ),
+                )
+              }),
+          )
 
-  const header = `<div class="text-sm font-normal">${day}</div><div class="text-sm font-normal">${time}</div>`
+          const header = `<div class="text-sm font-normal">${day}</div><div class="text-sm font-normal">${time}</div>`
 
-  return renderChartTooltipShell(header, rows)
-}
+          return renderChartTooltipShell(header, rows)
+        }
 
 export const CampaignHelper = {
   toCampaignConfigForm(campaignConfig: CampaignConfiguration): CampaignConfigurationForm {
@@ -266,7 +272,7 @@ export const CampaignHelper = {
   },
 
   toChartData(
-    aggregationResult: { [key: string]: TimeSeriesAggregationResult[] },
+      aggregationResult: { [key: string]: TimeSeriesValues },
     dataSeries: DataSeries[],
     campaignExecutionDetails: CampaignExecutionDetails,
   ): ChartData {
@@ -274,7 +280,7 @@ export const CampaignHelper = {
       aggregationResult,
       dataSeries,
       scheduledMinions: campaignExecutionDetails.scheduledMinions,
-      tooltip: renderCampaignDetailsChartTooltip,
+      tooltip: createCampaignDetailsChartTooltip,
       buildSeries: (chartOptionData, values, ctx) => {
         ctx.pushSeries(ChartHelper.getDataSeries(chartOptionData, values))
       },

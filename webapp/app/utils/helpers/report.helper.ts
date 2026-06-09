@@ -1,31 +1,34 @@
-import { format } from 'date-fns'
+import {format} from 'date-fns'
 
-const renderReportChartTooltip: (options: any) => any = ({ seriesIndex, dataPointIndex, w }): string => {
-  const elapsedTime = w.config.series[seriesIndex].data[dataPointIndex]?.x
-  const rows: string[] = []
+const createReportChartTooltip =
+    (summaryBySeriesName: { [name: string]: string }) =>
+        ({seriesIndex, dataPointIndex, w}: any): string => {
+          const elapsedTime = w.config.series[seriesIndex].data[dataPointIndex]?.x
+          const rows: string[] = []
 
-  w.globals.initialSeries.forEach((series: { data: any[]; name: string; color: any }) =>
-    series.data.forEach((point) => {
-      if (point?.x !== elapsedTime) return
-      const day = format(new Date(point.meta), 'yy-MM-dd')
-      const time = format(new Date(point.meta), 'HH:mm:ss')
-      const campaignName = series.name.substring(series.name.indexOf('{') + 1, series.name.lastIndexOf('}'))
-      const seriesName = series.name.replace(`{${campaignName}}`, '')
-      rows.push(
-        renderChartTooltipRow(
-          series.color,
-          `<div>
-                        <div>${day}, ${time}:</div>
-                        <div class="pr-1">${campaignName} - ${seriesName}</div>
-                    </div>
-                    <div class="ml-2">${point.y}</div>`,
-        ),
-      )
-    }),
-  )
+          w.globals.initialSeries.forEach((series: { data: any[]; name: string; color: any }) =>
+              series.data.forEach((point) => {
+                if (point?.x !== elapsedTime) return
+                const day = format(new Date(point.meta), 'yy-MM-dd')
+                const time = format(new Date(point.meta), 'HH:mm:ss')
+                const campaignName = series.name.substring(series.name.indexOf('{') + 1, series.name.lastIndexOf('}'))
+                const seriesName = series.name.replace(`{${campaignName}}`, '')
+                const summaryVal = summaryBySeriesName[seriesName]
+                rows.push(
+                    renderChartTooltipRow(
+                        series.color,
+                        `<div>
+                          <div>${day}, ${time}:</div>
+                          <div class="pr-1">${campaignName} - ${seriesName}</div>
+                      </div>
+                      <div class="ml-2">${point.y}${summaryVal !== undefined ? ` [${summaryVal}]` : ''}</div>`,
+                    ),
+                )
+              }),
+          )
 
-  return renderChartTooltipShell(`<span>Elapsed time: ${elapsedTime} s</span>`, rows)
-}
+          return renderChartTooltipShell(`<span>Elapsed time: ${elapsedTime} s</span>`, rows)
+        }
 
 export const ReportHelper = {
   toReportTableData(reports: DataReport[]): ReportTableData[] {
@@ -38,7 +41,7 @@ export const ReportHelper = {
   },
 
   toReportChartData(
-    timeSeriesAggregationResult: { [seriesReference: string]: TimeSeriesAggregationResult[] },
+      timeSeriesAggregationResult: { [seriesReference: string]: TimeSeriesValues },
     dataSeries: DataSeries[],
     campaignOptions: CampaignOption[],
   ): ChartData {
@@ -49,7 +52,7 @@ export const ReportHelper = {
       aggregationResult: timeSeriesAggregationResult,
       dataSeries,
       scheduledMinions: maxScheduledMinions,
-      tooltip: renderReportChartTooltip,
+      tooltip: createReportChartTooltip,
       customizeOptions: (options) => {
         options.xaxis!.type = 'numeric'
         options.xaxis!.tooltip!.enabled = false
@@ -87,7 +90,7 @@ export const ReportHelper = {
   },
 
   toReportDetailsTableData(
-    timeSeriesAggregationResult: { [seriesReference: string]: TimeSeriesAggregationResult[] },
+      timeSeriesAggregationResult: { [seriesReference: string]: TimeSeriesValues },
     dataSeries: DataSeries[],
     campaigns: CampaignOption[],
   ): ReportDetailsTableData[] {
@@ -97,7 +100,7 @@ export const ReportHelper = {
     return Object.keys(timeSeriesAggregationResult).reduce<ReportDetailsTableData[]>((acc, cur) => {
       const reportTableDataComponents: ReportDetailsTableData[] = timeSeriesAggregationResult[
         cur
-      ]!.map<ReportDetailsTableData>((res) => {
+          ]!.values.map<ReportDetailsTableData>((res) => {
         const formattedAggregatedValue = TimeSeriesHelper.toComposedValue(
           dataSeriesReferenceToDataSeries[cur]!,
           res.value,

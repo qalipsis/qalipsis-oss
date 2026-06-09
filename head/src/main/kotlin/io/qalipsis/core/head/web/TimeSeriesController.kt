@@ -28,8 +28,8 @@ import io.micronaut.security.annotation.Secured
 import io.micronaut.validation.Validated
 import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.api.query.Page
-import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesRecord
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.cluster.security.Permissions
 import io.qalipsis.cluster.security.Tenant
 import io.qalipsis.core.annotations.LogInput
@@ -132,7 +132,7 @@ class TimeSeriesController(
             `in` = ParameterIn.QUERY
         )
         @Nullable @PositiveDuration @QueryValue("timeframe") timeframe: Duration?
-    ): Map<String, List<TimeSeriesAggregationResult>> {
+    ): Map<String, TimeSeriesValues> {
         require(from == null || until == null || from < until) { "Start instant must be before end instant; check 'from' and 'until'." }
         return timeSeriesDataQueryService.render(
             tenant, dataSeriesReferences, AggregationQueryExecutionRequest(

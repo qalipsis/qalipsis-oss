@@ -21,9 +21,9 @@ package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.query.Page
-import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesDataProvider
 import io.qalipsis.api.report.TimeSeriesRecord
+import io.qalipsis.api.report.TimeSeriesValues
 import jakarta.inject.Singleton
 
 /**
@@ -39,7 +39,7 @@ class NoOpTimeSeriesDataQueryServiceImpl : TimeSeriesDataQueryService {
         tenant: String,
         dataSeriesReferences: Set<String>,
         queryExecutionRequest: AggregationQueryExecutionRequest
-    ): Map<String, List<TimeSeriesAggregationResult>> = emptyMap()
+    ): Map<String, TimeSeriesValues> = emptyMap()
 
     override suspend fun search(
         tenant: String,
