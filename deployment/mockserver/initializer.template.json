@@ -117,8 +117,8 @@
         "read:scenario",
         "read:report",
         "write:report",
-        "read:data-series",
-        "write:data-series",
+        "read:series",
+        "write:series",
         "read:factory",
         "read:zone",
         "read:user",
@@ -1157,614 +1157,640 @@
         ]
       },
       "body": {
-        "minions.count": [
-          {
+        "minions.count": {
+          "values": [
+            {
+              "start": "{{T@06:05:00}}",
+              "elapsed": "PT0S",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0
+            },
+            {
+              "start": "{{T@06:07:00}}",
+              "elapsed": "PT2M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 25000
+            },
+            {
+              "start": "{{T@06:09:00}}",
+              "elapsed": "PT4M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 75000
+            },
+            {
+              "start": "{{T@06:11:00}}",
+              "elapsed": "PT6M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 150000
+            },
+            {
+              "start": "{{T@06:13:00}}",
+              "elapsed": "PT8M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 220000
+            },
+            {
+              "start": "{{T@06:15:00}}",
+              "elapsed": "PT10M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:17:00}}",
+              "elapsed": "PT12M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:19:00}}",
+              "elapsed": "PT14M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:21:00}}",
+              "elapsed": "PT16M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:23:00}}",
+              "elapsed": "PT18M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:25:00}}",
+              "elapsed": "PT20M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:27:00}}",
+              "elapsed": "PT22M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:29:00}}",
+              "elapsed": "PT24M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:31:00}}",
+              "elapsed": "PT26M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:33:00}}",
+              "elapsed": "PT28M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:35:00}}",
+              "elapsed": "PT30M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:37:00}}",
+              "elapsed": "PT32M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:39:00}}",
+              "elapsed": "PT34M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:41:00}}",
+              "elapsed": "PT36M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:43:00}}",
+              "elapsed": "PT38M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:45:00}}",
+              "elapsed": "PT40M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:47:00}}",
+              "elapsed": "PT42M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:49:00}}",
+              "elapsed": "PT44M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:51:00}}",
+              "elapsed": "PT46M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 250000
+            },
+            {
+              "start": "{{T@06:53:00}}",
+              "elapsed": "PT48M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 249874
+            }
+          ],
+          "summary": {
             "start": "{{T@06:05:00}}",
-            "elapsed": "PT0S",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0
-          },
-          {
-            "start": "{{T@06:07:00}}",
-            "elapsed": "PT2M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 25000
-          },
-          {
-            "start": "{{T@06:09:00}}",
-            "elapsed": "PT4M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 75000
-          },
-          {
-            "start": "{{T@06:11:00}}",
-            "elapsed": "PT6M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 150000
-          },
-          {
-            "start": "{{T@06:13:00}}",
-            "elapsed": "PT8M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 220000
-          },
-          {
-            "start": "{{T@06:15:00}}",
-            "elapsed": "PT10M",
+            "elapsed": "PT50M",
             "campaign": "CMP-2026-BFCM-PEAK",
             "value": 250000
-          },
-          {
-            "start": "{{T@06:17:00}}",
-            "elapsed": "PT12M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:19:00}}",
-            "elapsed": "PT14M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:21:00}}",
-            "elapsed": "PT16M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:23:00}}",
-            "elapsed": "PT18M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:25:00}}",
-            "elapsed": "PT20M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:27:00}}",
-            "elapsed": "PT22M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:29:00}}",
-            "elapsed": "PT24M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:31:00}}",
-            "elapsed": "PT26M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:33:00}}",
-            "elapsed": "PT28M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:35:00}}",
-            "elapsed": "PT30M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:37:00}}",
-            "elapsed": "PT32M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:39:00}}",
-            "elapsed": "PT34M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:41:00}}",
-            "elapsed": "PT36M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:43:00}}",
-            "elapsed": "PT38M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:45:00}}",
-            "elapsed": "PT40M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:47:00}}",
-            "elapsed": "PT42M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:49:00}}",
-            "elapsed": "PT44M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:51:00}}",
-            "elapsed": "PT46M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 250000
-          },
-          {
-            "start": "{{T@06:53:00}}",
-            "elapsed": "PT48M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 249874
           }
-        ],
-        "ds-p99-latency": [
-          {
+        },
+        "ds-p99-latency": {
+          "values": [
+            {
+              "start": "{{T@06:05:00}}",
+              "elapsed": "PT0S",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50
+            },
+            {
+              "start": "{{T@06:07:00}}",
+              "elapsed": "PT2M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 80
+            },
+            {
+              "start": "{{T@06:09:00}}",
+              "elapsed": "PT4M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 120
+            },
+            {
+              "start": "{{T@06:11:00}}",
+              "elapsed": "PT6M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 160
+            },
+            {
+              "start": "{{T@06:13:00}}",
+              "elapsed": "PT8M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 180
+            },
+            {
+              "start": "{{T@06:15:00}}",
+              "elapsed": "PT10M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 187
+            },
+            {
+              "start": "{{T@06:17:00}}",
+              "elapsed": "PT12M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 192
+            },
+            {
+              "start": "{{T@06:19:00}}",
+              "elapsed": "PT14M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 195
+            },
+            {
+              "start": "{{T@06:21:00}}",
+              "elapsed": "PT16M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 198
+            },
+            {
+              "start": "{{T@06:23:00}}",
+              "elapsed": "PT18M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 192
+            },
+            {
+              "start": "{{T@06:25:00}}",
+              "elapsed": "PT20M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 187
+            },
+            {
+              "start": "{{T@06:27:00}}",
+              "elapsed": "PT22M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 185
+            },
+            {
+              "start": "{{T@06:29:00}}",
+              "elapsed": "PT24M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 182
+            },
+            {
+              "start": "{{T@06:31:00}}",
+              "elapsed": "PT26M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 180
+            },
+            {
+              "start": "{{T@06:33:00}}",
+              "elapsed": "PT28M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 178
+            },
+            {
+              "start": "{{T@06:35:00}}",
+              "elapsed": "PT30M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 180
+            },
+            {
+              "start": "{{T@06:37:00}}",
+              "elapsed": "PT32M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 178
+            },
+            {
+              "start": "{{T@06:39:00}}",
+              "elapsed": "PT34M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 175
+            },
+            {
+              "start": "{{T@06:41:00}}",
+              "elapsed": "PT36M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 170
+            },
+            {
+              "start": "{{T@06:43:00}}",
+              "elapsed": "PT38M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 168
+            },
+            {
+              "start": "{{T@06:45:00}}",
+              "elapsed": "PT40M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 165
+            },
+            {
+              "start": "{{T@06:47:00}}",
+              "elapsed": "PT42M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 162
+            },
+            {
+              "start": "{{T@06:49:00}}",
+              "elapsed": "PT44M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 160
+            },
+            {
+              "start": "{{T@06:51:00}}",
+              "elapsed": "PT46M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 158
+            },
+            {
+              "start": "{{T@06:53:00}}",
+              "elapsed": "PT48M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 155
+            }
+          ]
+        },
+        "ds-error-rate": {
+          "values": [
+            {
+              "start": "{{T@06:05:00}}",
+              "elapsed": "PT0S",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.00
+            },
+            {
+              "start": "{{T@06:07:00}}",
+              "elapsed": "PT2M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.02
+            },
+            {
+              "start": "{{T@06:09:00}}",
+              "elapsed": "PT4M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.05
+            },
+            {
+              "start": "{{T@06:11:00}}",
+              "elapsed": "PT6M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.08
+            },
+            {
+              "start": "{{T@06:13:00}}",
+              "elapsed": "PT8M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.12
+            },
+            {
+              "start": "{{T@06:15:00}}",
+              "elapsed": "PT10M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.14
+            },
+            {
+              "start": "{{T@06:17:00}}",
+              "elapsed": "PT12M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.12
+            },
+            {
+              "start": "{{T@06:19:00}}",
+              "elapsed": "PT14M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.08
+            },
+            {
+              "start": "{{T@06:21:00}}",
+              "elapsed": "PT16M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.05
+            },
+            {
+              "start": "{{T@06:23:00}}",
+              "elapsed": "PT18M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.03
+            },
+            {
+              "start": "{{T@06:25:00}}",
+              "elapsed": "PT20M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.02
+            },
+            {
+              "start": "{{T@06:27:00}}",
+              "elapsed": "PT22M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "{{T@06:29:00}}",
+              "elapsed": "PT24M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "{{T@06:31:00}}",
+              "elapsed": "PT26M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.02
+            },
+            {
+              "start": "{{T@06:33:00}}",
+              "elapsed": "PT28M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "{{T@06:35:00}}",
+              "elapsed": "PT30M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "{{T@06:37:00}}",
+              "elapsed": "PT32M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.02
+            },
+            {
+              "start": "{{T@06:39:00}}",
+              "elapsed": "PT34M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.03
+            },
+            {
+              "start": "{{T@06:41:00}}",
+              "elapsed": "PT36M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.02
+            },
+            {
+              "start": "{{T@06:43:00}}",
+              "elapsed": "PT38M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "{{T@06:45:00}}",
+              "elapsed": "PT40M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.01
+            },
+            {
+              "start": "{{T@06:47:00}}",
+              "elapsed": "PT42M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.00
+            },
+            {
+              "start": "{{T@06:49:00}}",
+              "elapsed": "PT44M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.00
+            },
+            {
+              "start": "{{T@06:51:00}}",
+              "elapsed": "PT46M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.00
+            },
+            {
+              "start": "{{T@06:53:00}}",
+              "elapsed": "PT48M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0.00
+            }
+          ],
+          "summary": {
             "start": "{{T@06:05:00}}",
-            "elapsed": "PT0S",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50
-          },
-          {
-            "start": "{{T@06:07:00}}",
-            "elapsed": "PT2M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 80
-          },
-          {
-            "start": "{{T@06:09:00}}",
-            "elapsed": "PT4M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 120
-          },
-          {
-            "start": "{{T@06:11:00}}",
-            "elapsed": "PT6M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 160
-          },
-          {
-            "start": "{{T@06:13:00}}",
-            "elapsed": "PT8M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 180
-          },
-          {
-            "start": "{{T@06:15:00}}",
-            "elapsed": "PT10M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 187
-          },
-          {
-            "start": "{{T@06:17:00}}",
-            "elapsed": "PT12M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 192
-          },
-          {
-            "start": "{{T@06:19:00}}",
-            "elapsed": "PT14M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 195
-          },
-          {
-            "start": "{{T@06:21:00}}",
-            "elapsed": "PT16M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 198
-          },
-          {
-            "start": "{{T@06:23:00}}",
-            "elapsed": "PT18M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 192
-          },
-          {
-            "start": "{{T@06:25:00}}",
-            "elapsed": "PT20M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 187
-          },
-          {
-            "start": "{{T@06:27:00}}",
-            "elapsed": "PT22M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 185
-          },
-          {
-            "start": "{{T@06:29:00}}",
-            "elapsed": "PT24M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 182
-          },
-          {
-            "start": "{{T@06:31:00}}",
-            "elapsed": "PT26M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 180
-          },
-          {
-            "start": "{{T@06:33:00}}",
-            "elapsed": "PT28M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 178
-          },
-          {
-            "start": "{{T@06:35:00}}",
-            "elapsed": "PT30M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 180
-          },
-          {
-            "start": "{{T@06:37:00}}",
-            "elapsed": "PT32M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 178
-          },
-          {
-            "start": "{{T@06:39:00}}",
-            "elapsed": "PT34M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 175
-          },
-          {
-            "start": "{{T@06:41:00}}",
-            "elapsed": "PT36M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 170
-          },
-          {
-            "start": "{{T@06:43:00}}",
-            "elapsed": "PT38M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 168
-          },
-          {
-            "start": "{{T@06:45:00}}",
-            "elapsed": "PT40M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 165
-          },
-          {
-            "start": "{{T@06:47:00}}",
-            "elapsed": "PT42M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 162
-          },
-          {
-            "start": "{{T@06:49:00}}",
-            "elapsed": "PT44M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 160
-          },
-          {
-            "start": "{{T@06:51:00}}",
-            "elapsed": "PT46M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 158
-          },
-          {
-            "start": "{{T@06:53:00}}",
-            "elapsed": "PT48M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 155
-          }
-        ],
-        "ds-error-rate": [
-          {
-            "start": "{{T@06:05:00}}",
-            "elapsed": "PT0S",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.00
-          },
-          {
-            "start": "{{T@06:07:00}}",
-            "elapsed": "PT2M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.02
-          },
-          {
-            "start": "{{T@06:09:00}}",
-            "elapsed": "PT4M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.05
-          },
-          {
-            "start": "{{T@06:11:00}}",
-            "elapsed": "PT6M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.08
-          },
-          {
-            "start": "{{T@06:13:00}}",
-            "elapsed": "PT8M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.12
-          },
-          {
-            "start": "{{T@06:15:00}}",
-            "elapsed": "PT10M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.14
-          },
-          {
-            "start": "{{T@06:17:00}}",
-            "elapsed": "PT12M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.12
-          },
-          {
-            "start": "{{T@06:19:00}}",
-            "elapsed": "PT14M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.08
-          },
-          {
-            "start": "{{T@06:21:00}}",
-            "elapsed": "PT16M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.05
-          },
-          {
-            "start": "{{T@06:23:00}}",
-            "elapsed": "PT18M",
+            "elapsed": "PT50M",
             "campaign": "CMP-2026-BFCM-PEAK",
             "value": 0.03
-          },
-          {
-            "start": "{{T@06:25:00}}",
-            "elapsed": "PT20M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.02
-          },
-          {
-            "start": "{{T@06:27:00}}",
-            "elapsed": "PT22M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "{{T@06:29:00}}",
-            "elapsed": "PT24M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "{{T@06:31:00}}",
-            "elapsed": "PT26M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.02
-          },
-          {
-            "start": "{{T@06:33:00}}",
-            "elapsed": "PT28M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "{{T@06:35:00}}",
-            "elapsed": "PT30M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "{{T@06:37:00}}",
-            "elapsed": "PT32M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.02
-          },
-          {
-            "start": "{{T@06:39:00}}",
-            "elapsed": "PT34M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.03
-          },
-          {
-            "start": "{{T@06:41:00}}",
-            "elapsed": "PT36M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.02
-          },
-          {
-            "start": "{{T@06:43:00}}",
-            "elapsed": "PT38M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "{{T@06:45:00}}",
-            "elapsed": "PT40M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.01
-          },
-          {
-            "start": "{{T@06:47:00}}",
-            "elapsed": "PT42M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.00
-          },
-          {
-            "start": "{{T@06:49:00}}",
-            "elapsed": "PT44M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.00
-          },
-          {
-            "start": "{{T@06:51:00}}",
-            "elapsed": "PT46M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.00
-          },
-          {
-            "start": "{{T@06:53:00}}",
-            "elapsed": "PT48M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0.00
           }
-        ],
-        "ds-rps": [
-          {
+        },
+        "ds-rps": {
+          "values": [
+            {
+              "start": "{{T@06:05:00}}",
+              "elapsed": "PT0S",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 0
+            },
+            {
+              "start": "{{T@06:07:00}}",
+              "elapsed": "PT2M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 5000
+            },
+            {
+              "start": "{{T@06:09:00}}",
+              "elapsed": "PT4M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 15000
+            },
+            {
+              "start": "{{T@06:11:00}}",
+              "elapsed": "PT6M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 30000
+            },
+            {
+              "start": "{{T@06:13:00}}",
+              "elapsed": "PT8M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 42000
+            },
+            {
+              "start": "{{T@06:15:00}}",
+              "elapsed": "PT10M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 48000
+            },
+            {
+              "start": "{{T@06:17:00}}",
+              "elapsed": "PT12M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50000
+            },
+            {
+              "start": "{{T@06:19:00}}",
+              "elapsed": "PT14M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50500
+            },
+            {
+              "start": "{{T@06:21:00}}",
+              "elapsed": "PT16M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 51000
+            },
+            {
+              "start": "{{T@06:23:00}}",
+              "elapsed": "PT18M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50800
+            },
+            {
+              "start": "{{T@06:25:00}}",
+              "elapsed": "PT20M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50500
+            },
+            {
+              "start": "{{T@06:27:00}}",
+              "elapsed": "PT22M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50300
+            },
+            {
+              "start": "{{T@06:29:00}}",
+              "elapsed": "PT24M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50200
+            },
+            {
+              "start": "{{T@06:31:00}}",
+              "elapsed": "PT26M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50100
+            },
+            {
+              "start": "{{T@06:33:00}}",
+              "elapsed": "PT28M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50300
+            },
+            {
+              "start": "{{T@06:35:00}}",
+              "elapsed": "PT30M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50500
+            },
+            {
+              "start": "{{T@06:37:00}}",
+              "elapsed": "PT32M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50400
+            },
+            {
+              "start": "{{T@06:39:00}}",
+              "elapsed": "PT34M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50200
+            },
+            {
+              "start": "{{T@06:41:00}}",
+              "elapsed": "PT36M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 50100
+            },
+            {
+              "start": "{{T@06:43:00}}",
+              "elapsed": "PT38M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 49800
+            },
+            {
+              "start": "{{T@06:45:00}}",
+              "elapsed": "PT40M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 47000
+            },
+            {
+              "start": "{{T@06:47:00}}",
+              "elapsed": "PT42M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 42000
+            },
+            {
+              "start": "{{T@06:49:00}}",
+              "elapsed": "PT44M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 35000
+            },
+            {
+              "start": "{{T@06:51:00}}",
+              "elapsed": "PT46M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 28000
+            },
+            {
+              "start": "{{T@06:53:00}}",
+              "elapsed": "PT48M",
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "value": 22000
+            }
+          ],
+          "summary": {
             "start": "{{T@06:05:00}}",
-            "elapsed": "PT0S",
+            "elapsed": "PT50M",
             "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 0
-          },
-          {
-            "start": "{{T@06:07:00}}",
-            "elapsed": "PT2M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 5000
-          },
-          {
-            "start": "{{T@06:09:00}}",
-            "elapsed": "PT4M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 15000
-          },
-          {
-            "start": "{{T@06:11:00}}",
-            "elapsed": "PT6M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 30000
-          },
-          {
-            "start": "{{T@06:13:00}}",
-            "elapsed": "PT8M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 42000
-          },
-          {
-            "start": "{{T@06:15:00}}",
-            "elapsed": "PT10M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 48000
-          },
-          {
-            "start": "{{T@06:17:00}}",
-            "elapsed": "PT12M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50000
-          },
-          {
-            "start": "{{T@06:19:00}}",
-            "elapsed": "PT14M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50500
-          },
-          {
-            "start": "{{T@06:21:00}}",
-            "elapsed": "PT16M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 51000
-          },
-          {
-            "start": "{{T@06:23:00}}",
-            "elapsed": "PT18M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50800
-          },
-          {
-            "start": "{{T@06:25:00}}",
-            "elapsed": "PT20M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50500
-          },
-          {
-            "start": "{{T@06:27:00}}",
-            "elapsed": "PT22M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50300
-          },
-          {
-            "start": "{{T@06:29:00}}",
-            "elapsed": "PT24M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50200
-          },
-          {
-            "start": "{{T@06:31:00}}",
-            "elapsed": "PT26M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50100
-          },
-          {
-            "start": "{{T@06:33:00}}",
-            "elapsed": "PT28M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50300
-          },
-          {
-            "start": "{{T@06:35:00}}",
-            "elapsed": "PT30M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50500
-          },
-          {
-            "start": "{{T@06:37:00}}",
-            "elapsed": "PT32M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50400
-          },
-          {
-            "start": "{{T@06:39:00}}",
-            "elapsed": "PT34M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50200
-          },
-          {
-            "start": "{{T@06:41:00}}",
-            "elapsed": "PT36M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 50100
-          },
-          {
-            "start": "{{T@06:43:00}}",
-            "elapsed": "PT38M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 49800
-          },
-          {
-            "start": "{{T@06:45:00}}",
-            "elapsed": "PT40M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 47000
-          },
-          {
-            "start": "{{T@06:47:00}}",
-            "elapsed": "PT42M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 42000
-          },
-          {
-            "start": "{{T@06:49:00}}",
-            "elapsed": "PT44M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 35000
-          },
-          {
-            "start": "{{T@06:51:00}}",
-            "elapsed": "PT46M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 28000
-          },
-          {
-            "start": "{{T@06:53:00}}",
-            "elapsed": "PT48M",
-            "campaign": "CMP-2026-BFCM-PEAK",
-            "value": 22000
+            "value": 39188
           }
-        ]
+        }
       }
     }
   },

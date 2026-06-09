@@ -27,6 +27,7 @@ import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesEvent
 import io.qalipsis.api.report.TimeSeriesMeter
 import io.qalipsis.api.report.TimeSeriesRecord
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
@@ -36,17 +37,6 @@ import io.qalipsis.core.head.report.DataType
 import io.qalipsis.core.head.report.SharingMode
 import io.qalipsis.core.head.report.chart.ChartServiceImpl
 import io.qalipsis.core.head.report.chart.LineStyleGenerator
-import java.io.FileWriter
-import java.io.IOException
-import java.math.BigDecimal
-import java.net.URL
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Duration
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Base64
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -59,6 +49,17 @@ import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect
 import org.thymeleaf.templatemode.TemplateMode
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
 import java.io.File
+import java.io.FileWriter
+import java.io.IOException
+import java.math.BigDecimal
+import java.net.URL
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Base64
 
 
 @MicronautTest(startApplication = false)
@@ -621,7 +622,7 @@ internal class ReportTemplateFragmentTest {
                     campaign = "campaign-5"
                 ),
             )
-        )
+        ).mapValues { TimeSeriesValues(values = it.value) }
 
         val dataSeries = listOf(
             dataSeriesEntity,
@@ -835,7 +836,7 @@ internal class ReportTemplateFragmentTest {
                     campaign = "campaign-5"
                 ),
             )
-        )
+        ).mapValues { TimeSeriesValues(values = it.value) }
         val aggregationResult2 = mapOf(
             "data-series-5" to listOf
                 (
@@ -975,7 +976,7 @@ internal class ReportTemplateFragmentTest {
                     campaign = "campaign-5"
                 ),
             )
-        )
+        ).mapValues { TimeSeriesValues(values = it.value) }
         val dataSeries = listOf(
             dataSeriesEntity,
             dataSeriesEntity.copy(reference = "data-series-2", color = "#800080", colorOpacity = 23),
@@ -1241,7 +1242,7 @@ internal class ReportTemplateFragmentTest {
                     campaign = "campaign-5"
                 ),
             )
-        )
+        ).mapValues { TimeSeriesValues(values = it.value) }
         val aggregationResult2 = mapOf(
             "data-series-5" to listOf
                 (
@@ -1381,7 +1382,7 @@ internal class ReportTemplateFragmentTest {
                     campaign = "campaign-5"
                 ),
             )
-        )
+        ).mapValues { TimeSeriesValues(values = it.value) }
         val dataSeries = listOf(
             dataSeriesEntity,
             dataSeriesEntity.copy(reference = "data-series-2", color = "#800080", colorOpacity = 23),

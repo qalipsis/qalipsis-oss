@@ -55,6 +55,21 @@ export interface TimeSeriesAggregationResult {
   value: number
 }
 
+/**
+ * Aggregation result for a data series, containing time-ordered values and an optional campaign-scope summary.
+ */
+export interface TimeSeriesValues {
+  /**
+   * Time-ordered aggregation results (step scope).
+   */
+  values: TimeSeriesAggregationResult[]
+
+  /**
+   * Campaign-scope aggregate (meters only).
+   */
+  summary?: TimeSeriesAggregationResult
+}
+
 export interface CampaignSummaryResultQueryParams {
   /**
    * Beginning of the aggregation window

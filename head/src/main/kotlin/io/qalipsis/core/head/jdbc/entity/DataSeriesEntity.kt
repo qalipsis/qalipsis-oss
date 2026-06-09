@@ -108,7 +108,7 @@ data class DataSeriesEntity(
     @field:Size(max = 60)
     var fieldName: String?,
 
-    var aggregationOperation: QueryAggregationOperator,
+    var aggregationOperation: QueryAggregationOperator?,
 
     @field:Positive
     var timeframeUnitMs: Long?,
@@ -140,7 +140,7 @@ data class DataSeriesEntity(
         colorOpacity: Int? = null,
         filters: Collection<DataSeriesFilterEntity> = emptySet(),
         fieldName: String? = null,
-        aggregationOperation: QueryAggregationOperator = QueryAggregationOperator.COUNT,
+        aggregationOperation: QueryAggregationOperator? = null,
         timeframeUnitMs: Long? = null,
         displayFormat: String? = null,
         query: String? = null

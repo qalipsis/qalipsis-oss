@@ -21,8 +21,8 @@ package io.qalipsis.core.head.report
 
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.report.ExecutionStatus
-import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesRecord
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.head.model.Zone
 import java.time.Duration
 import java.time.Instant
@@ -42,7 +42,7 @@ data class CampaignReportDetail(
     val reportName: String,
     val campaignReportData: Collection<CampaignReportData>,
     val tableData: Collection<Collection<TimeSeriesRecord>>,
-    val chartData: Collection<Map<String, List<TimeSeriesAggregationResult>>>
+    val chartData: Collection<Map<String, TimeSeriesValues>>
 )
 
 

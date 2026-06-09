@@ -48,7 +48,7 @@ interface TimeSeriesDataProvider {
     suspend fun executeAggregations(
         preparedQueries: Map<String, String>,
         context: AggregationQueryExecutionContext
-    ): Map<String, List<TimeSeriesAggregationResult>>
+    ): Map<String, TimeSeriesValues>
 
     /**
      * Execute the data retrieval statement of the prepared queries passed as [preparedQueries].

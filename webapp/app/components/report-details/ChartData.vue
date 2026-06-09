@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ApexOptions } from 'apexcharts'
+import type {ApexOptions} from 'apexcharts'
 
 const props = defineProps<{
   componentIndex: number
@@ -88,7 +88,7 @@ const _updateChartData = async (dataSeriesOptions: DataSeriesOption[]) => {
   try {
     isLoadingChart.value = true
     const timeSeriesAggregationResult: {
-      [key: string]: TimeSeriesAggregationResult[]
+      [key: string]: TimeSeriesValues
     } = await fetchTimeSeriesAggregation(queryParam)
     const chartData: ChartData = ReportHelper.toReportChartData(
       timeSeriesAggregationResult,

@@ -70,7 +70,7 @@
             label="Aggregation"
             form-control-name="aggregationOperation"
             :options="aggregationOperatorOptions"
-            :disabled="aggregationOperationFieldDisabled || dataSeries?.disabled"
+            :disabled="isMetersType || aggregationOperationFieldDisabled || dataSeries?.disabled"
             :field-validation-schema="fieldValidationSchema.aggregationOperation"
           />
         </div>
@@ -156,8 +156,8 @@
 </template>
 
 <script setup lang="ts">
-import { type TypedSchema, useFieldArray, useForm } from 'vee-validate'
-import { toTypedSchema } from '@vee-validate/zod'
+import {type TypedSchema, useFieldArray, useForm} from 'vee-validate'
+import {toTypedSchema} from '@vee-validate/zod'
 import * as zod from 'zod'
 
 const WEBAPP_OSS_PROJECT_NAME = 'webapp-oss'
@@ -243,7 +243,15 @@ const fieldValidationSchema: Record<string, TypedSchema> = {
         },
       ),
   ),
-  aggregationOperation: toTypedSchema(zod.string().nonempty(requiredErrorMessage).nullable()),
+  aggregationOperation: toTypedSchema(
+      zod.string().nullable().refine(
+          (value) => {
+            if (values.dataType === DataTypeConstant.METERS) return true
+            return Boolean(value)
+          },
+          {message: requiredErrorMessage},
+      ),
+  ),
   timeframeValue: toTypedSchema(
     zod.coerce
       .number({ invalid_type_error: 'You must specify a number' })
@@ -288,6 +296,7 @@ const colorPickerOpen = ref(false)
 const title = computed(() => (props.dataSeries ? 'Update a series' : 'Create a series'))
 const confirmBtnText = computed(() => (props.dataSeries ? 'Save changes' : 'Create'))
 const dataTypeOptionDisabled = computed(() => (props.dataSeries ? true : false))
+const isMetersType = computed(() => values.dataType === DataTypeConstant.METERS)
 const valueNameLabel = computed(() => (values.dataType === DataTypeConstant.EVENTS ? 'Event name' : 'Meter name'))
 
 onMounted(async () => {
@@ -295,7 +304,11 @@ onMounted(async () => {
   _prepareValueNameFieldOptions(dataType)
   _prepareTagMap(dataType)
   await _prepareFieldOptions(dataType)
-  _shouldAggregationOperationFieldDisabled(values.fieldName)
+  if (dataType === DataTypeConstant.METERS) {
+    setFieldValue('aggregationOperation', null)
+  } else {
+    _shouldAggregationOperationFieldDisabled(values.fieldName)
+  }
 })
 
 const handleFieldNameSearch = async (query: string) => {
@@ -361,11 +374,15 @@ const handleConfirmBtnClick = handleSubmit(async (values: DataSeriesForm) => {
 })
 
 const _resetFieldsWhenDataTypeChange = () => {
-  // Resets event name, field, aggregation
   setFieldValue('valueName', '')
   setFieldValue('fieldName', '')
-  setFieldValue('aggregationOperation', 'COUNT')
-  aggregationOperationFieldDisabled.value = true
+  if (values.dataType === DataTypeConstant.METERS) {
+    setFieldValue('aggregationOperation', null)
+    aggregationOperationFieldDisabled.value = false
+  } else {
+    setFieldValue('aggregationOperation', 'COUNT')
+    aggregationOperationFieldDisabled.value = true
+  }
 }
 
 const _updateDataSeries = async (formValues: DataSeriesForm) => {

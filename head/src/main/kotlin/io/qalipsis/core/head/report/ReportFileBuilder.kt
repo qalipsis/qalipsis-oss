@@ -20,8 +20,8 @@
 package io.qalipsis.core.head.report
 
 import io.aerisconsulting.catadioptre.KTestable
-import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesRecord
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
@@ -61,7 +61,7 @@ class ReportFileBuilder(
             campaign.apply { resolvedZones = zones }
         }
         val tableData = mutableListOf<Collection<TimeSeriesRecord>>()
-        val chartData = mutableListOf<Map<String, List<TimeSeriesAggregationResult>>>()
+        val chartData = mutableListOf<Map<String, TimeSeriesValues>>()
         report.dataComponents.forEach { fetchDataByComponentType(tenant, report, it, tableData, chartData) }
 
         return CampaignReportDetail(
@@ -87,7 +87,7 @@ class ReportFileBuilder(
         report: ReportEntity,
         reportDataComponentEntity: ReportDataComponentEntity,
         tableData: MutableCollection<Collection<TimeSeriesRecord>>,
-        chartData: MutableCollection<Map<String, List<TimeSeriesAggregationResult>>>
+        chartData: MutableCollection<Map<String, TimeSeriesValues>>
     ) {
         val campaignReferences = report.campaignKeys.ifEmpty { report.campaignNamesPatterns }
         val dataSeries = reportDataComponentEntity.dataSeries.map { it.reference }.toSet()
@@ -149,7 +149,7 @@ class ReportFileBuilder(
         report: ReportEntity,
         dataSeries: Set<String>,
         campaignRange: CampaignsInstantsAndDuration
-    ): Map<String, List<TimeSeriesAggregationResult>> {
+    ): Map<String, TimeSeriesValues> {
         val aggregationQueryRequest = AggregationQueryExecutionRequest(
             tenant = tenant,
             campaignsReferences = campaignReferences.toSet(),

@@ -31,6 +31,7 @@ import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesMeter
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
@@ -181,7 +182,7 @@ internal class ReportFileBuilderTest {
                     campaign = "campaign-2"
                 ),
             )
-        )
+        ).mapValues { TimeSeriesValues(values = it.value) }
         val tableData = mapOf(
             "data-series-1" to Page(
                 page = 1, totalPages = 1, totalElements = 2, elements = listOf(
@@ -279,7 +280,8 @@ internal class ReportFileBuilderTest {
             prop(CampaignReportDetail::chartData).isEqualTo(
                 listOf(
                     mapOf(
-                        "data-series-1" to listOf(
+                        "data-series-1" to TimeSeriesValues(
+                            values = listOf(
                             TimeSeriesAggregationResult(
                                 start = Instant.parse("2023-03-18T16:31:47.445312Z"),
                                 campaign = "campaign-1",
@@ -292,8 +294,10 @@ internal class ReportFileBuilderTest {
                                 campaign = "campaign-2",
                                 value = BigDecimal(431),
                             )
+                            )
                         ),
-                        "data-series-2" to listOf(
+                        "data-series-2" to TimeSeriesValues(
+                            values = listOf(
                             TimeSeriesAggregationResult(
                                 start = Instant.parse("2023-03-18T16:31:47.445312Z"),
                                 campaign = "campaign-1",
@@ -305,6 +309,7 @@ internal class ReportFileBuilderTest {
                                 campaign = "campaign-2",
                                 value = BigDecimal(2100),
                                 elapsed = Duration.parse("PT59S"),
+                            )
                             )
                         )
                     ),

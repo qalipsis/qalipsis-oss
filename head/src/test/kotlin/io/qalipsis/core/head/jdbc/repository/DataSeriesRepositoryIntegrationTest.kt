@@ -140,7 +140,7 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             prop(DataSeriesEntity::filters).isEmpty()
             prop(DataSeriesEntity::color).isNull()
             prop(DataSeriesEntity::fieldName).isNull()
-            prop(DataSeriesEntity::aggregationOperation).isEqualTo(QueryAggregationOperator.COUNT)
+            prop(DataSeriesEntity::aggregationOperation).isNull()
             prop(DataSeriesEntity::timeframeUnitMs).isNull()
             prop(DataSeriesEntity::displayFormat).isNull()
             prop(DataSeriesEntity::query).isNull()

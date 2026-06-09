@@ -37,9 +37,9 @@ import io.mockk.mockk
 import io.qalipsis.api.query.AggregationQueryExecutionContext
 import io.qalipsis.api.query.DataRetrievalQueryExecutionContext
 import io.qalipsis.api.query.Page
-import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesDataProvider
 import io.qalipsis.api.report.TimeSeriesRecord
+import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignsInstantsAndDuration
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
@@ -157,7 +157,7 @@ internal class TimeSeriesDataQueryServiceImplTest {
                     setOf("camp-1", "camp-2")
                 )
             } returns campaignsInstantsAndDuration
-            val aggregationResult = mockk<Map<String, List<TimeSeriesAggregationResult>>>()
+            val aggregationResult = mockk<Map<String, TimeSeriesValues>>()
             coEvery { timeSeriesDataProvider.executeAggregations(any(), any()) } returns aggregationResult
             val providedRequest = mockk<AggregationQueryExecutionRequest> {
                 every { campaignsReferences } returns setOf("camp-1", "camp-2")

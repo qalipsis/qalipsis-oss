@@ -20,8 +20,8 @@
 package io.qalipsis.core.head.report
 
 import io.qalipsis.api.query.Page
-import io.qalipsis.api.report.TimeSeriesAggregationResult
 import io.qalipsis.api.report.TimeSeriesRecord
+import io.qalipsis.api.report.TimeSeriesValues
 
 /**
  * Service in charge of executing prepared queries of [io.qalipsis.core.head.model.DataSeries].
@@ -37,13 +37,13 @@ interface TimeSeriesDataQueryService {
      * @param dataSeriesReferences references of data-series to use for the aggregation
      * @param queryExecutionRequest context of execution of the query
      *
-     * @return a map of lists of [TimeSeriesAggregationResult], keyed by the corresponding item of [dataSeriesReferences].
+     * @return a map of [TimeSeriesValues] keyed by the corresponding item of [dataSeriesReferences].
      */
     suspend fun render(
         tenant: String,
         dataSeriesReferences: Set<String>,
         queryExecutionRequest: AggregationQueryExecutionRequest
-    ): Map<String, List<TimeSeriesAggregationResult>>
+    ): Map<String, TimeSeriesValues>
 
     /**
      * Retrieve the time-series records to draw diagrams.
