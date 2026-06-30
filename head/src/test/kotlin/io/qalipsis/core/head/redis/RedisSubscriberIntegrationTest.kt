@@ -34,15 +34,18 @@ import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.configuration.ExecutionConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
+import io.qalipsis.core.feedbacks.CampaignMetersFeedback
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.head.campaign.CampaignService
+import io.qalipsis.core.head.communication.CampaignMeterFeedbackListener
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.communication.HandshakeRequestListener
 import io.qalipsis.core.head.communication.HeartbeatListener
 import io.qalipsis.core.heartbeat.Heartbeat
+import io.qalipsis.core.meters.CampaignMeterSnapshot
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.core.serialization.DistributionSerializer
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -67,7 +70,7 @@ import java.time.temporal.ChronoUnit
     Property(name = "head.heartbeat-channel", value = RedisSubscriberIntegrationTest.HEARTBEAT_CHANNEL)
 )
 @MicronautTest(
-    environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD],
+    environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD, ExecutionEnvironments.TRANSIENT],
     startApplication = false
 )
 internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
@@ -95,6 +98,12 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
 
     @RelaxedMockK(name = "heartbeatRequestListener2")
     private lateinit var heartbeatRequestListener2: HeartbeatListener
+
+    @RelaxedMockK(name = "meterFeedbackListener1")
+    private lateinit var meterFeedbackListener1: CampaignMeterFeedbackListener
+
+    @RelaxedMockK(name = "meterFeedbackListener2")
+    private lateinit var meterFeedbackListener2: CampaignMeterFeedbackListener
 
     @Inject
     private lateinit var redisHeadChannel: RedisHeadChannel
@@ -135,6 +144,10 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
                 "heartbeatListeners",
                 listOf(heartbeatRequestListener1, heartbeatRequestListener2)
             )
+            redisSubscriber.setProperty(
+                "meterFeedbackListeners",
+                listOf(meterFeedbackListener1, meterFeedbackListener2)
+            )
         }
         redisSubscriber.init()
     }
@@ -143,6 +156,7 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
     internal fun tearDown() {
         redisSubscriber.subscribedHandshakeRequestsChannels.clear()
         redisSubscriber.subscribedFeedbackChannels.clear()
+        redisSubscriber.subscribedMeterFeedbackChannels.clear()
         redisSubscriber.close()
         subscriberCommands.quit().toFuture().get()
         connection.sync().flushdb()
@@ -182,7 +196,9 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
             handshakeRequestListener1,
             handshakeRequestListener2,
             heartbeatRequestListener1,
-            heartbeatRequestListener2
+            heartbeatRequestListener2,
+            meterFeedbackListener1,
+            meterFeedbackListener2
         )
     }
 
@@ -217,7 +233,47 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
             handshakeRequestListener1,
             handshakeRequestListener2,
             heartbeatRequestListener1,
-            heartbeatRequestListener2
+            heartbeatRequestListener2,
+            meterFeedbackListener1,
+            meterFeedbackListener2
+        )
+    }
+
+    @Test
+    @Timeout(5)
+    internal fun `should receive the meter feedback`() = testDispatcherProvider.run {
+        // given
+        val countLatch = SuspendedCountLatch(2)
+        coEvery { meterFeedbackListener1.notify(any()) } coAnswers { countLatch.decrement() }
+        coEvery { meterFeedbackListener2.notify(any()) } coAnswers { countLatch.decrement() }
+
+        // when
+        val snapshot = CampaignMeterSnapshot(
+            name = "my-meter",
+            timestampEpochMs = 1_000_000L,
+            type = "counter",
+            count = 42.0,
+            campaign = "campaign-1"
+        )
+        val feedback = CampaignMetersFeedback(meters = listOf(snapshot))
+        publisherCommands.publish(METERS_CHANNEL, serializer.serialize(feedback)).subscribe()
+        countLatch.await()
+
+        // then
+        coVerifyOnce {
+            meterFeedbackListener1.notify(eq(feedback))
+            meterFeedbackListener2.notify(eq(feedback))
+        }
+        confirmVerified(
+            feedbackListener1,
+            feedbackListener2,
+            feedbackListener3,
+            handshakeRequestListener1,
+            handshakeRequestListener2,
+            heartbeatRequestListener1,
+            heartbeatRequestListener2,
+            meterFeedbackListener1,
+            meterFeedbackListener2
         )
     }
 
@@ -250,7 +306,9 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
             handshakeRequestListener1,
             handshakeRequestListener2,
             heartbeatRequestListener1,
-            heartbeatRequestListener2
+            heartbeatRequestListener2,
+            meterFeedbackListener1,
+            meterFeedbackListener2
         )
     }
 
@@ -261,5 +319,7 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
         const val HANDSHAKE_REQUEST_CHANNEL = "the-handshake-request-channel"
 
         const val HEARTBEAT_CHANNEL = "the-heartbeat-request-channel"
+
+        const val METERS_CHANNEL = "meters"
     }
 }

@@ -37,35 +37,6 @@
         </div>
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center flex-wrap">
-            <template
-              v-for="campaignOption in campaignOptions"
-              :key="campaignOption.key"
-            >
-              <div
-                :class="{
-                  'border-purple-600': campaignOption.isActive,
-                  'border-gray-300': !campaignOption.isActive,
-                }"
-                class="h-10 px-3 py-2 text-base rounded-md min-w-32 flex items-center justify-center border border-solid cursor-pointer mr-2 mb-1"
-                @click="handleCampaignOptionClick(campaignOption)"
-              >
-                <svg
-                  height="24"
-                  width="40"
-                >
-                  <polyline
-                    :class="{
-                      'stroke-gray-400': !campaignOption.isActive,
-                      'stroke-purple-600': campaignOption.isActive,
-                    }"
-                    :stroke-dasharray="campaignOption.strokeDashArray"
-                    class="fill-none stroke-2"
-                    points="0,12 8,0 16,24 24,0 32,24 40,0"
-                  />
-                </svg>
-                <span class="pl-2">{{ campaignOption.name }}</span>
-              </div>
-            </template>
             <BaseButton
               text="Select campaigns"
               btn-style="outlined"
@@ -84,20 +55,38 @@
           </div>
         </div>
         <template
-          v-for="activeCampaignOption in activeCampaignOptions"
-          :key="activeCampaignOption.key"
+            v-for="campaignOption in campaignOptions"
+            :key="campaignOption.key"
         >
           <div
-            v-if="activeCampaignOption.isActive && activeCampaignOption.enrichedScenarioReports.length > 0"
+              v-if="campaignOption.enrichedScenarioReports.length > 0"
             class="px-6 py-2 bg-gray-50 dark:bg-gray-950 rounded-md mb-4"
           >
-            <div class="flex items-center h-8 text-xl font-medium">
-              <span>{{ activeCampaignOption.name }}</span>
+            <div
+                class="flex items-center h-8 text-xl font-medium cursor-pointer select-none"
+                @click="handleCampaignOptionClick(campaignOption)"
+            >
+              <svg
+                  height="24"
+                  width="40"
+                  class="mr-2 flex-shrink-0"
+              >
+                <polyline
+                    :class="campaignOption.isActive ? 'stroke-purple-600' : 'stroke-gray-300 dark:stroke-gray-600'"
+                    :stroke-dasharray="campaignOption.svgDashPattern === 'none' ? undefined : campaignOption.svgDashPattern"
+                    :stroke-width="campaignOption.strokeWidth"
+                    class="fill-none"
+                    points="0,12 8,0 16,24 24,0 32,24 40,0"
+                />
+              </svg>
+              <span :class="campaignOption.isActive ? '' : 'text-gray-400 dark:text-gray-600'">
+                {{ campaignOption.name }}
+              </span>
             </div>
-            <div class="flex items-center">
+            <div v-if="campaignOption.isActive" class="w-full">
               <ScenarioDetails
-                :scenario-reports="activeCampaignOption.enrichedScenarioReports"
-                :status="activeCampaignOption.status"
+                  :scenario-reports="campaignOption.enrichedScenarioReports"
+                  :status="campaignOption.status"
               />
             </div>
           </div>
@@ -178,7 +167,6 @@ const {
   description,
 } = storeToRefs(reportDetailsStore)
 
-const activeCampaignOptions = computed(() => campaignOptions.value.filter((campaignOption) => campaignOption.isActive))
 const campaignSelectDrawerOpen = ref(false)
 
 const { modalOpen, confirmDiscard, markSaved } = useUnsavedChanges(() => reportDetailsStore.hasUnsavedChanges)
@@ -219,7 +207,9 @@ const _fetchReport = async () => {
               reportDetails.resolvedScenarioNames!,
               campaignDetail,
             ),
-            strokeDashArray: index + 1,
+            strokeDashArray: LINE_STYLES[index % LINE_STYLES.length].chartDash,
+            svgDashPattern: LINE_STYLES[index % LINE_STYLES.length].svgDash,
+            strokeWidth: index < LINE_STYLES.length ? 2 : 1,
             isActive: true,
           }))
         : []

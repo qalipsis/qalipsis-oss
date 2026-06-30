@@ -24,6 +24,7 @@ import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
+import io.qalipsis.core.feedbacks.CampaignMetersFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.head.configuration.HeadConfiguration
@@ -45,12 +46,15 @@ abstract class ChannelSubscriber(
     private val heartbeatListeners: Collection<HeartbeatListener>,
     private val feedbackListeners: Collection<FeedbackListener<*>>,
     private val handshakeRequestListeners: Collection<HandshakeRequestListener>,
+    protected val meterFeedbackListeners: Collection<CampaignMeterFeedbackListener>,
     @Named(ORCHESTRATION_EXECUTOR_NAME) private val orchestrationCoroutineScope: CoroutineScope
 ) {
 
     val subscribedHandshakeRequestsChannels: MutableSet<DispatcherChannel> = concurrentSet()
 
     val subscribedFeedbackChannels: MutableSet<DispatcherChannel> = concurrentSet()
+
+    val subscribedMeterFeedbackChannels: MutableSet<DispatcherChannel> = concurrentSet()
 
     /**
      * Dispatches the [Feedback], [HandshakeRequest] or the [Heartbeat] in isolated coroutines.
@@ -59,6 +63,8 @@ abstract class ChannelSubscriber(
         try {
             when (channel) {
                 in subscribedFeedbackChannels -> serializer.deserialize<Feedback>(message)?.let { dispatch(it) }
+                in subscribedMeterFeedbackChannels -> serializer.deserialize<CampaignMetersFeedback>(message)
+                    ?.let { dispatch(it) }
                 in subscribedHandshakeRequestsChannels -> serializer.deserialize<HandshakeRequest>(message)
                     ?.let { dispatch(it) }
 
@@ -91,6 +97,20 @@ abstract class ChannelSubscriber(
             }
         } catch (e: Exception) {
             log.error(e) { "An error occurred while processing a feedback: $feedback" }
+        }
+    }
+
+    /**
+     * Dispatches the [CampaignMetersFeedback] to the relevant [CampaignMeterFeedbackListener] in isolated coroutines.
+     */
+    private fun dispatch(feedback: CampaignMetersFeedback) {
+        try {
+            log.trace { "Dispatching the meter feedback of type ${feedback::class}" }
+            meterFeedbackListeners.forEach { listener ->
+                orchestrationCoroutineScope.launch { listener.notify(feedback) }
+            }
+        } catch (e: Exception) {
+            log.error(e) { "An error occurred while processing a meter feedback: $feedback" }
         }
     }
 

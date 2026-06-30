@@ -98,6 +98,21 @@ export interface ScenarioReport {
      * The list of the report messages for the scenario
      */
     messages: ReportMessageDisplay[];
+
+    /**
+     * Execution details of each step within this scenario.
+     */
+    steps: StepExecutionDetails[];
+
+    /**
+     * Aggregated meters produced by this scenario during the campaign execution.
+     */
+    meters: TimeSeriesMeter[];
+
+    /**
+     * Distribution of load across zones for this scenario (zone key → percentage 0–100).
+     */
+    zoneDistribution: { [key: string]: number };
 }
 
 /**

@@ -163,7 +163,7 @@ internal class CampaignControllerIntegrationTest {
             configurerName = Defaults.USERNAME,
             aborterName = Defaults.USERNAME,
             status = IN_PROGRESS,
-            scenarios = listOf(
+            configuredScenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
             )
@@ -316,7 +316,7 @@ internal class CampaignControllerIntegrationTest {
             end = Instant.now().plusSeconds(1000),
             status = ExecutionStatus.SUCCESSFUL,
             configurerName = Defaults.USERNAME,
-            scenarios = listOf(
+            configuredScenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
             )
@@ -369,7 +369,7 @@ internal class CampaignControllerIntegrationTest {
             end = Instant.now().plusSeconds(1000),
             status = SUCCESSFUL,
             configurerName = Defaults.USERNAME,
-            scenarios = listOf(
+            configuredScenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
             )
@@ -423,7 +423,7 @@ internal class CampaignControllerIntegrationTest {
             status = SUCCESSFUL,
             configurerName = Defaults.USERNAME,
             aborterName = Defaults.USERNAME,
-            scenarios = listOf(
+            configuredScenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
             )
@@ -530,15 +530,11 @@ internal class CampaignControllerIntegrationTest {
                 end = null,
                 configurerName = Defaults.USERNAME,
                 status = ExecutionStatus.SUCCESSFUL,
-                scenarios = listOf(
-                    Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
-                    Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
-                ),
                 startedMinions = 0,
                 completedMinions = 0,
                 successfulExecutions = 0,
                 failedExecutions = 0,
-                scenariosReports = listOf(
+                scenarios = listOf(
                     ScenarioExecutionDetails(
                         id = "my-scenario-1",
                         name = "The scenario 1",
@@ -622,15 +618,11 @@ internal class CampaignControllerIntegrationTest {
                 end = null,
                 configurerName = Defaults.USERNAME,
                 status = ExecutionStatus.SUCCESSFUL,
-                scenarios = listOf(
-                    Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
-                    Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
-                ),
                 startedMinions = 0,
                 completedMinions = 0,
                 successfulExecutions = 0,
                 failedExecutions = 0,
-                scenariosReports = listOf(
+                scenarios = listOf(
                     ScenarioExecutionDetails(
                         id = "my-scenario-1",
                         name = "The scenario 1",
@@ -683,15 +675,11 @@ internal class CampaignControllerIntegrationTest {
                 end = null,
                 configurerName = Defaults.USERNAME,
                 status = ExecutionStatus.SUCCESSFUL,
-                scenarios = listOf(
-                    Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
-                    Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
-                ),
                 startedMinions = 0,
                 completedMinions = 0,
                 successfulExecutions = 0,
                 failedExecutions = 0,
-                scenariosReports = listOf()
+                scenarios = listOf()
             )
         val campaignExecutionDetails3 =
             CampaignExecutionDetails(
@@ -705,15 +693,11 @@ internal class CampaignControllerIntegrationTest {
                 end = null,
                 configurerName = Defaults.USERNAME,
                 status = ExecutionStatus.SUCCESSFUL,
-                scenarios = listOf(
-                    Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
-                    Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
-                ),
                 startedMinions = 0,
                 completedMinions = 0,
                 successfulExecutions = 0,
                 failedExecutions = 0,
-                scenariosReports = listOf(
+                scenarios = listOf(
                     ScenarioExecutionDetails(
                         id = "my-scenario-1",
                         name = "The scenario 1",
@@ -747,15 +731,11 @@ internal class CampaignControllerIntegrationTest {
                 end = null,
                 configurerName = Defaults.USERNAME,
                 status = ExecutionStatus.SUCCESSFUL,
-                scenarios = listOf(
-                    Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
-                    Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
-                ),
                 startedMinions = 0,
                 completedMinions = 0,
                 successfulExecutions = 0,
                 failedExecutions = 0,
-                scenariosReports = listOf(
+                scenarios = listOf(
                     ScenarioExecutionDetails(
                         id = "my-scenario-2",
                         name = "The scenario 2",
@@ -861,7 +841,7 @@ internal class CampaignControllerIntegrationTest {
             end = null,
             configurerName = Defaults.USERNAME,
             status = QUEUED,
-            scenarios = listOf(
+            configuredScenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
             )
@@ -991,7 +971,7 @@ internal class CampaignControllerIntegrationTest {
             configurerName = Defaults.USERNAME,
             aborterName = Defaults.USERNAME,
             status = IN_PROGRESS,
-            scenarios = listOf(
+            configuredScenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
             )
@@ -1091,7 +1071,7 @@ internal class CampaignControllerIntegrationTest {
             configurerName = Defaults.USERNAME,
             aborterName = Defaults.USERNAME,
             status = IN_PROGRESS,
-            scenarios = listOf(
+            configuredScenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
             )
@@ -1179,7 +1159,7 @@ internal class CampaignControllerIntegrationTest {
             end = Instant.now().plusSeconds(1000),
             status = SUCCESSFUL,
             configurerName = Defaults.USERNAME,
-            scenarios = listOf(
+            configuredScenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-1", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-2", minionsCount = 45645)
             )
@@ -1195,7 +1175,7 @@ internal class CampaignControllerIntegrationTest {
             end = Instant.now().plusSeconds(1000),
             status = WARNING,
             configurerName = Defaults.USERNAME,
-            scenarios = listOf(
+            configuredScenarios = listOf(
                 Scenario(version = Instant.now().minusSeconds(3), name = "scenario-3", minionsCount = 2534),
                 Scenario(version = Instant.now().minusSeconds(21312), name = "scenario-4", minionsCount = 45645)
             )

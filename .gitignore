@@ -46,6 +46,7 @@ hs_err_pid*
 /**/id.data
 .DS_Store
 /deployment/volumes/
+/deployment/mockserver/initializer.json
 
 # Node
 /**/.output

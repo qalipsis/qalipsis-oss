@@ -1,0 +1,80 @@
+[# th:each="campaign : ${campaigns}"]
+[# th:with="totalExec=${(campaign.successfulExecutions != null ? campaign.successfulExecutions : 0) + (campaign.failedExecutions != null ? campaign.failedExecutions : 0)},failRate=${totalExec > 0 ? #numbers.formatDecimal((campaign.failedExecutions != null ? campaign.failedExecutions : 0) * 100.0 / totalExec, 1, 'NONE', 1, 'POINT') : null},dur=${campaign.start != null and campaign.end != null ? campaign.end.epochSecond - campaign.start.epochSecond : null},durStr=${dur != null ? ((dur / 3600 > 0 ? dur / 3600 + 'h ' : '') + ((dur % 3600) / 60 > 0 ? (dur % 3600) / 60 + 'm ' : '') + dur % 60 + 's') : '<Running>'}"]
+================================================================
+=================  QALIPSIS | CAMPAIGN REPORT  =================
+================================================================
+
+Campaign...........: [(${campaign.name})]
+Status.............: [(${campaign.status})]
+Start..............: [(${campaign.start != null ? #temporals.format(campaign.start.atZone(UTC), 'yyyy-MM-dd HH:mm:ss') : 'n/a'})]
+End................: [(${campaign.end != null ? #temporals.format(campaign.end.atZone(UTC), 'yyyy-MM-dd HH:mm:ss') : '<Running>'})]
+Duration...........: [(${durStr})]
+Scenarios..........: [(${campaign.scenarios.size()})]
+
+Minions
+  Scheduled........: [(${campaign.scheduledMinions})]
+  Started..........: [(${campaign.startedMinions != null ? campaign.startedMinions : 'n/a'})]
+  Completed........: [(${campaign.completedMinions != null ? campaign.completedMinions : 'n/a'})]
+
+Executions
+  Successful.......: [(${campaign.successfulExecutions != null ? campaign.successfulExecutions : 'n/a'})]
+  Failed...........: [(${campaign.failedExecutions != null ? campaign.failedExecutions : 'n/a'})]
+  Total............: [(${totalExec})]
+  Failure rate.....: [(${failRate != null ? failRate + '%' : '0.0%'})]
+[# th:if="${campaign.resolvedZones != null and !campaign.resolvedZones.isEmpty()}"]
+Zones..............: [# th:each="zone,zStat : ${campaign.resolvedZones}"][(${zone.title != null ? zone.title : zone.key})][(${!zStat.last ? ', ' : ''})][/]
+[/]
+[# th:if="${campaign.meters != null and !campaign.meters.isEmpty()}"]
+
+Campaign Meters:
+[# th:each="meter : ${campaign.meters}"]  - [(${meter.name})][(${meter.type != null ? ' (' + meter.type + ')' : ''})][(${meter.count != null ? '  count=' + meter.count : ''})][(${meter.mean != null ? '  mean=' + meter.mean : meter.meanDuration != null ? '  mean=' + meter.meanDuration.toMillis() + 'ms' : meter.value != null ? '  value=' + meter.value : ''})][(${meter.max != null ? '  max=' + meter.max : meter.maxDuration != null ? '  max=' + meter.maxDuration.toMillis() + 'ms' : ''})][(${meter.other != null and !meter.other.isEmpty() ? '  |' : ''})][# th:if="${meter.other != null}"][# th:each="entry : ${meter.other}"][# th:if="${#strings.startsWith(entry.key,'percentile_')}"]  p[(${entry.key.replace('percentile_','').replaceAll('\\.0$','')})]=[(${meter.type == 'timer' ? #numbers.formatDecimal(entry.value.doubleValue() / 1000.0, 1, 'NONE', 1, 'POINT') + 'ms' : #numbers.formatInteger(entry.value.longValue(), 1, 'DEFAULT')})] [/][/][/]
+[/]
+[/]
+
+---------------------------------------------------------------
+SCENARIOS
+---------------------------------------------------------------
+[# th:each="scenario,scStat : ${campaign.scenarios}"]
+[# th:with="scTotalExec=${(scenario.successfulExecutions != null ? scenario.successfulExecutions : 0) + (scenario.failedExecutions != null ? scenario.failedExecutions : 0)},scFailRate=${scTotalExec > 0 ? #numbers.formatDecimal((scenario.failedExecutions != null ? scenario.failedExecutions : 0) * 100.0 / scTotalExec, 1, 'NONE', 1, 'POINT') : null},scDur=${scenario.start != null and scenario.end != null ? scenario.end.epochSecond - scenario.start.epochSecond : null},scDurStr=${scDur != null ? ((scDur / 3600 > 0 ? scDur / 3600 + 'h ' : '') + ((scDur % 3600) / 60 > 0 ? (scDur % 3600) / 60 + 'm ' : '') + scDur % 60 + 's') : 'n/a'}"]
+
+  [(${scStat.index + 1})]/[(${campaign.scenarios.size()})]  [(${scenario.name})]  [(${scenario.status})]
+  Start......: [(${scenario.start != null ? #temporals.format(scenario.start.atZone(UTC), 'yyyy-MM-dd HH:mm:ss') : 'n/a'})]   End: [(${scenario.end != null ? #temporals.format(scenario.end.atZone(UTC), 'yyyy-MM-dd HH:mm:ss') : 'n/a'})]   Duration: [(${scDurStr})]
+  Minions....: [(${scenario.scheduledMinions})] scheduled   [(${scenario.startedMinions != null ? scenario.startedMinions : 'n/a'})] started   [(${scenario.completedMinions != null ? scenario.completedMinions : 'n/a'})] completed
+  Executions.: [(${scenario.successfulExecutions != null ? scenario.successfulExecutions : 'n/a'})] ok   [(${scenario.failedExecutions != null ? scenario.failedExecutions : 'n/a'})] failed   [(${scTotalExec})] total   [(${scFailRate != null ? scFailRate + '%' : '0.0%'})] failure rate
+[# th:if="${scenario.zoneDistribution != null and !scenario.zoneDistribution.isEmpty()}"]
+  Zones......: [# th:each="entry,eStat : ${scenario.zoneDistribution}"][(${entry.key})]: [(${entry.value})]%[(${!eStat.last ? '   ' : ''})][/]
+[/]
+[# th:if="${!scenario.messages.isEmpty()}"]
+  Messages:
+[# th:each="msg : ${scenario.messages}"]    [(${msg.severity != null ? msg.severity.name() : 'INFO'})] step '[(${msg.stepName})]' - [(${msg.message})]
+[/]
+[/]
+[# th:if="${!scenario.meters.isEmpty()}"]
+  Meters:
+[# th:each="meter : ${scenario.meters}"]    - [(${meter.name})][(${meter.type != null ? ' (' + meter.type + ')' : ''})][(${meter.count != null ? '  count=' + meter.count : ''})][(${meter.mean != null ? '  mean=' + meter.mean : meter.meanDuration != null ? '  mean=' + meter.meanDuration.toMillis() + 'ms' : meter.value != null ? '  value=' + meter.value : ''})][(${meter.max != null ? '  max=' + meter.max : meter.maxDuration != null ? '  max=' + meter.maxDuration.toMillis() + 'ms' : ''})][(${meter.other != null and !meter.other.isEmpty() ? '  |' : ''})][# th:if="${meter.other != null}"][# th:each="entry : ${meter.other}"][# th:if="${#strings.startsWith(entry.key,'percentile_')}"]  p[(${entry.key.replace('percentile_','').replaceAll('\\.0$','')})]=[(${meter.type == 'timer' ? #numbers.formatDecimal(entry.value.doubleValue() / 1000.0, 1, 'NONE', 1, 'POINT') + 'ms' : #numbers.formatInteger(entry.value.longValue(), 1, 'DEFAULT')})] [/][/][/]
+[/]
+[/]
+[# th:if="${!scenario.steps.isEmpty()}"]
+  Steps:
+[# th:each="step : ${scenario.steps}"]
+[# th:if="${step.notExecuted}"]    o [(${step.name})][(${step.type != null ? ' (' + step.type + ')' : ''})]  (not executed)
+[/]
+[# th:unless="${step.notExecuted}"]
+[# th:with="stFailRate=${step.totalExecutions > 0 ? #numbers.formatDecimal((step.failedExecutions != null ? step.failedExecutions : 0) * 100.0 / step.totalExecutions, 1, 'NONE', 1, 'POINT') : null}"]
+    * [(${step.name})][(${step.type != null ? ' (' + step.type + ')' : ''})]  [(${step.successfulExecutions != null ? step.successfulExecutions : 'n/a'})] ok   [(${step.failedExecutions != null ? step.failedExecutions : 'n/a'})] failed   [(${stFailRate != null ? stFailRate + '%' : '0.0%'})] failure   [(${step.status})]
+[# th:each="msg : ${step.messages}"]      [(${msg.severity != null ? msg.severity.name() : 'INFO'})] [(${msg.message})]
+[/]
+[# th:if="${!step.meters.isEmpty()}"]
+[# th:each="meter : ${step.meters}"]      - [(${meter.name})][(${meter.type != null ? ' (' + meter.type + ')' : ''})][(${meter.count != null ? '  count=' + meter.count : ''})][(${meter.mean != null ? '  mean=' + meter.mean : meter.meanDuration != null ? '  mean=' + meter.meanDuration.toMillis() + 'ms' : meter.value != null ? '  value=' + meter.value : ''})][(${meter.max != null ? '  max=' + meter.max : meter.maxDuration != null ? '  max=' + meter.maxDuration.toMillis() + 'ms' : ''})][(${meter.other != null and !meter.other.isEmpty() ? '  |' : ''})][# th:if="${meter.other != null}"][# th:each="entry : ${meter.other}"][# th:if="${#strings.startsWith(entry.key,'percentile_')}"]  p[(${entry.key.replace('percentile_','').replaceAll('\\.0$','')})]=[(${meter.type == 'timer' ? #numbers.formatDecimal(entry.value.doubleValue() / 1000.0, 1, 'NONE', 1, 'POINT') + 'ms' : #numbers.formatInteger(entry.value.longValue(), 1, 'DEFAULT')})] [/][/][/]
+[/]
+[/]
+[/]
+[/]
+[/]
+[/]
+[/]
+[/]
+
+Generated [(${#temporals.format(generatedTime, 'yyyy-MM-dd HH:mm:ss')})] UTC   QALIPSIS [(${version != null ? 'v' + version : ''})]
+[/]
+[/]

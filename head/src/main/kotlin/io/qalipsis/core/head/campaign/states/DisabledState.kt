@@ -39,7 +39,7 @@ open class DisabledState(
 
         if (context.reportPublishers.isNotEmpty()) {
             context.campaignReportStateKeeper.generateReport(campaignKey)?.let { report ->
-                context.reportPublishers.forEach { publisher ->
+                context.reportPublishers.sortedBy { it.order }.forEach { publisher ->
                     tryAndLogOrNull(log) {
                         publisher.publish(campaign.tenant, campaign.key, report)
                     }

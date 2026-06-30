@@ -30,6 +30,7 @@ import io.qalipsis.core.directives.SingleUseDirective
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
+import io.qalipsis.core.feedbacks.CampaignMetersFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
@@ -117,6 +118,13 @@ class StandaloneChannel(
         serializedFeedback: Any
     ) {
         publishFeedback(serializedFeedback as Feedback)
+    }
+
+    @LogInput(level = Level.DEBUG)
+    override suspend fun publishMeterFeedback(feedback: CampaignMetersFeedback) {
+        listeners.get().meterFeedbackListeners.forEach { listener ->
+            orchestrationCoroutineScope.launch { listener.notify(feedback) }
+        }
     }
 
     @LogInput(level = Level.DEBUG)

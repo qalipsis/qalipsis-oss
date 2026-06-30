@@ -77,5 +77,9 @@ data class ScenarioReport(
 
     @field:Schema(description = "The list of the report messages for the scenario")
     @field:Valid
-    val messages: List<ReportMessage>
+    val messages: List<ReportMessage>,
+
+    @field:Schema(description = "The list of step execution details for the scenario")
+    @field:Valid
+    val steps: List<StepReport> = emptyList()
 )

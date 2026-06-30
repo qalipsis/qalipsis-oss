@@ -1,5 +1,5 @@
 export const useCampaignApi = () => {
-  const { get$, post$, put$ } = baseApi()
+    const {api$, get$, post$, put$} = baseApi()
 
   /**
    * Fetches the campaigns
@@ -102,6 +102,26 @@ export const useCampaignApi = () => {
     return post$<CampaignExecutionDetails>(`/campaigns/${key}/replay`)
   }
 
+    /**
+     * Downloads the HTML report for a completed campaign and initiates a browser download.
+     *
+     * @param campaignKey The key of the campaign
+     */
+    const downloadHtmlReport = async (campaignKey: string): Promise<void> => {
+        const blob = await api$<Blob>(`/campaigns/${campaignKey}/report`, {
+            method: 'get',
+            responseType: 'blob',
+        })
+        const url = globalThis.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${campaignKey}.html`
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        globalThis.URL.revokeObjectURL(url)
+    }
+
   return {
     fetchCampaigns,
     fetchCampaignConfiguration,
@@ -112,5 +132,6 @@ export const useCampaignApi = () => {
     fetchMultipleCampaignsDetails,
     abortCampaign,
     replayCampaign,
+      downloadHtmlReport,
   }
 }

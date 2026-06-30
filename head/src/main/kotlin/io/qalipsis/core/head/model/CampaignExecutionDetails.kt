@@ -19,8 +19,10 @@
 
 package io.qalipsis.core.head.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.api.report.TimeSeriesMeter
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
 import javax.validation.constraints.PositiveOrZero
@@ -50,7 +52,6 @@ class CampaignExecutionDetails(
     failureReason: String? = null,
     configurerName: String? = null,
     aborterName: String? = null,
-    scenarios: Collection<Scenario>,
     zones: Set<String> = emptySet(),
 
     @field:Schema(description = "Counts of minions when the campaign started", required = false)
@@ -60,14 +61,17 @@ class CampaignExecutionDetails(
     val completedMinions: Int?,
 
     @field:Schema(description = "Counts of steps that successfully completed", required = false)
-    val successfulExecutions: Int?,
+    val successfulExecutions: Long?,
 
     @field:Schema(description = "Counts of steps that failed", required = false)
     @field:PositiveOrZero
-    val failedExecutions: Int?,
+    val failedExecutions: Long?,
 
     @field:Schema(description = "Individual details of the scenario executed during the campaign")
-    val scenariosReports: List<ScenarioExecutionDetails> = emptyList()
+    val scenarios: List<ScenarioExecutionDetails> = emptyList(),
+
+    @field:Schema(description = "Aggregated meters produced during the campaign execution")
+    val meters: List<TimeSeriesMeter> = emptyList()
 ) : Campaign(
     version = version,
     key = key,
@@ -83,9 +87,15 @@ class CampaignExecutionDetails(
     failureReason = failureReason,
     configurerName = configurerName,
     aborterName = aborterName,
-    scenarios = scenarios,
+    configuredScenarios = emptyList(),
     zones = zones
 ) {
+
+    @get:JsonIgnore
+    override val configuredScenarios: Collection<Scenario>
+        get() = emptyList()
+
+    var resolvedZones: Collection<Zone> = emptyList()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -99,17 +109,19 @@ class CampaignExecutionDetails(
         if (successfulExecutions != other.successfulExecutions) return false
         if (failedExecutions != other.failedExecutions) return false
         if (status != other.status) return false
-        return scenariosReports == other.scenariosReports
+        if (scenarios != other.scenarios) return false
+        return meters == other.meters
     }
 
     override fun hashCode(): Int {
         var result = super.hashCode()
         result = 31 * result + (startedMinions ?: 0)
         result = 31 * result + (completedMinions ?: 0)
-        result = 31 * result + (successfulExecutions ?: 0)
-        result = 31 * result + (failedExecutions ?: 0)
+        result = 31 * result + (successfulExecutions?.hashCode() ?: 0)
+        result = 31 * result + (failedExecutions?.hashCode() ?: 0)
         result = 31 * result + status.hashCode()
-        result = 31 * result + scenariosReports.hashCode()
+        result = 31 * result + scenarios.hashCode()
+        result = 31 * result + meters.hashCode()
         return result
     }
 }

@@ -37,6 +37,7 @@ import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.communication.AbstractFactoryChannel
 import io.qalipsis.core.factory.communication.SubscriberChannelRegistry
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
+import io.qalipsis.core.feedbacks.CampaignMetersFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.heartbeat.Heartbeat
@@ -128,6 +129,12 @@ class RedisFactoryChannel(
     }
 
     @LogInput(Level.DEBUG)
+    override suspend fun publishMeterFeedback(feedback: CampaignMetersFeedback) {
+        publisherCommands.publish(METERS_CHANNEL, subscriberRegistry.serializer.serialize(feedback)).toFuture()
+            .asSuspended().get()
+    }
+
+    @LogInput(Level.DEBUG)
     override suspend fun publishHandshakeRequest(handshakeRequest: HandshakeRequest) {
         publisherCommands.publish(
             subscriberRegistry.factoryConfiguration.handshake.requestChannel,
@@ -144,6 +151,7 @@ class RedisFactoryChannel(
     private companion object {
 
         val log = logger()
+        const val METERS_CHANNEL = "meters"
 
     }
 }

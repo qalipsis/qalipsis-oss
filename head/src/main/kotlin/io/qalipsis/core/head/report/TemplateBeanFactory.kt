@@ -19,6 +19,7 @@
 package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Factory
+import io.micronaut.context.annotation.Primary
 import jakarta.inject.Singleton
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect
@@ -34,18 +35,33 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
 class TemplateBeanFactory {
 
     /**
-     * Returns a singleton instance of thymeleaf [TemplateEngine].
+     * Returns a singleton instance of thymeleaf [TemplateEngine] with resolvers for both HTML and plain-text templates.
+     *
+     * HTML resolver (order 1): resolves `views/[name].html` in [TemplateMode.HTML] — used by [HtmlReportService].
+     * Text resolver (order 2): resolves `views/[name].txt` in [TemplateMode.TEXT] — used by [AsciiReportService].
      */
     @Singleton
+    @Primary
     fun templateEngine(): TemplateEngine {
-        val templateResolver = ClassLoaderTemplateResolver().apply {
+        val htmlResolver = ClassLoaderTemplateResolver().apply {
+            order = 1
             templateMode = TemplateMode.HTML
             characterEncoding = CHARACTER_ENCODING
             prefix = RESOLVER_PREFIX
-            suffix = RESOLVER_SUFFIX
+            suffix = ".html"
+            checkExistence = true
+        }
+        val textResolver = ClassLoaderTemplateResolver().apply {
+            order = 2
+            templateMode = TemplateMode.TEXT
+            characterEncoding = CHARACTER_ENCODING
+            prefix = RESOLVER_PREFIX
+            suffix = ".txt"
+            checkExistence = true
         }
         return TemplateEngine().apply {
-            setTemplateResolver(templateResolver)
+            addTemplateResolver(htmlResolver)
+            addTemplateResolver(textResolver)
             addDialect(Java8TimeDialect())
         }
     }
@@ -53,6 +69,5 @@ class TemplateBeanFactory {
     private companion object {
         const val CHARACTER_ENCODING = "UTF-8"
         const val RESOLVER_PREFIX = "/views/"
-        const val RESOLVER_SUFFIX = ".html"
     }
 }

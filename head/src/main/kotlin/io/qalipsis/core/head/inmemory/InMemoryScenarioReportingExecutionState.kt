@@ -19,11 +19,15 @@
 
 package io.qalipsis.core.head.inmemory
 
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.context.StepName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
+import io.qalipsis.api.report.StepReport
 import io.qalipsis.core.head.report.ScenarioReportingExecutionState
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -44,7 +48,18 @@ data class InMemoryScenarioReportingExecutionState(
 
     val failedStepExecutionsCounter = AtomicInteger()
 
-    val keyedMessages = linkedMapOf<String, ReportMessage>()
+    val keyedMessages = ConcurrentHashMap<String, ReportMessage>()
+
+    private val stepIndexCounter = AtomicInteger()
+
+    /** Maps composite key `"$dagId/$stepName"` → insertion index to restore registration order. */
+    val stepIndices: ConcurrentHashMap<String, Int> = ConcurrentHashMap()
+
+    /** Maps composite key `"$dagId/$stepName"` → step state. Order is tracked via [stepIndices]. */
+    val stepStates: ConcurrentHashMap<String, InMemoryStepExecutionState> = ConcurrentHashMap()
+
+    /** Maps [StepName] → composite key for fast lookup in execution-counter updates that have no dagId. */
+    val stepKeyByName: ConcurrentHashMap<StepName, String> = ConcurrentHashMap()
 
     override var end: Instant? = null
 
@@ -66,4 +81,29 @@ data class InMemoryScenarioReportingExecutionState(
 
     override val failedStepExecutions: Int
         get() = failedStepExecutionsCounter.get()
+
+    override val steps: List<StepReport>
+        get() = stepStates.entries
+            .sortedBy { stepIndices[it.key] ?: Int.MAX_VALUE }
+            .map { (_, s) ->
+                StepReport(
+                    name = s.name,
+                    dagId = s.dagId,
+                    isUnderLoad = s.isUnderLoad,
+                    initialized = s.initialized,
+                    initializationError = s.initializationError,
+                    successfulExecutions = s.successfulExecutionsCounter.get(),
+                    failedExecutions = s.failedExecutionsCounter.get()
+                )
+            }
+
+    fun registerStep(stepName: StepName, dagId: DirectedAcyclicGraphName, state: InMemoryStepExecutionState) {
+        val key = "$dagId/$stepName"
+        stepIndices.computeIfAbsent(key) { stepIndexCounter.getAndIncrement() }
+        stepStates[key] = state
+        stepKeyByName[stepName] = key
+    }
+
+    fun stepByName(stepName: StepName): InMemoryStepExecutionState? =
+        stepKeyByName[stepName]?.let { stepStates[it] }
 }

@@ -21,10 +21,12 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.doesNotContain
 import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import com.qalipsis.core.head.jdbc.entity.TenantEntityForTest
@@ -113,4 +115,64 @@ internal class ZoneRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             }
             assertThat(fetched).doesNotContain(zoneEntity3)
         }
+
+    @Test
+    fun `findByTenantAndKeys should return matching zones accessible to the tenant`() = testDispatcherProvider.run {
+        // given
+        val tenant1 = tenantRepository.save(TenantEntityForTest(reference = "keys-tenant-1"))
+        val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "keys-tenant-2"))
+        val zoneEu = zoneRepository.save(zone)
+        zoneRepository.save(zone.copy(key = "CH"))
+        val zoneAs = zoneRepository.save(zone.copy(key = "AS"))
+        // EU tied to tenant1, AS tied to tenant2 — CH has no restriction
+        zoneTenantRepository.save(ZoneTenantEntity(ZoneTenantId(zoneId = zoneEu.id, tenantId = tenant1.id)))
+        zoneTenantRepository.save(ZoneTenantEntity(ZoneTenantId(zoneId = zoneAs.id, tenantId = tenant2.id)))
+
+        // when
+        val result = zoneRepository.findByTenantAndKeys("keys-tenant-1", listOf("EU", "CH", "AS"))
+
+        // then
+        // EU (tenant1-restricted, accessible) + CH (unrestricted) returned; AS (tenant2-restricted) excluded
+        assertThat(result.map { it.key }).containsExactlyInAnyOrder("EU", "CH")
+    }
+
+    @Test
+    fun `findByTenantAndKeys should return only zones whose keys are in the requested set`() =
+        testDispatcherProvider.run {
+            // given
+            zoneRepository.save(zone)
+            zoneRepository.save(zone.copy(key = "CH"))
+            zoneRepository.save(zone.copy(key = "AS"))
+
+            // when
+            val result = zoneRepository.findByTenantAndKeys("any-tenant", listOf("CH"))
+
+            // then
+            assertThat(result.map { it.key }).containsExactlyInAnyOrder("CH")
+        }
+
+    @Test
+    fun `findByTenantAndKeys should return empty list when no keys match`() = testDispatcherProvider.run {
+        // given
+        zoneRepository.save(zone)
+        zoneRepository.save(zone.copy(key = "CH"))
+
+        // when
+        val result = zoneRepository.findByTenantAndKeys("any-tenant", listOf("XX", "YY"))
+
+        // then
+        assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `findByTenantAndKeys should return empty list for empty keys`() = testDispatcherProvider.run {
+        // given
+        zoneRepository.save(zone)
+
+        // when
+        val result = zoneRepository.findByTenantAndKeys("any-tenant", emptyList())
+
+        // then
+        assertThat(result).isEmpty()
+    }
 }

@@ -27,6 +27,7 @@ package io.qalipsis.api.context
  * @property dagId identifier of the DirectedAcyclicGraph being executed
  * @property stepName identifier of the Step being initialized
  * @property scheduledMinionCount number of minions scheduled to execute the step
+ * @property underLoad whether the DAG owning this step is subject to load injection
  * @property properties contains properties to start the steps
  *
  * @author Eric Jessé
@@ -37,6 +38,7 @@ data class StepStartStopContext(
     val dagId: DirectedAcyclicGraphName,
     val stepName: StepName,
     val scheduledMinionCount: Int,
+    val underLoad: Boolean = false,
     val properties: Map<String, String> = emptyMap()
 ) : MonitoringTags {
 

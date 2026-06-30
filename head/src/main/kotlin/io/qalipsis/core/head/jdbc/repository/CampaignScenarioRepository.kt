@@ -40,6 +40,8 @@ interface CampaignScenarioRepository : CoroutineCrudRepository<CampaignScenarioE
 
     suspend fun findByCampaignId(campaignId: Long): Collection<CampaignScenarioEntity>
 
+    suspend fun findByCampaignIdIn(campaignIds: Collection<Long>): Collection<CampaignScenarioEntity>
+
     /**
      * Marks the not yet started scenario with the specified name [scenarioName] of campaign [campaignKey] as started.
      */

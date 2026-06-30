@@ -132,7 +132,8 @@ internal class ScenarioImpl(
                         scheduledMinionCount = localAssignmentStore.getLocalMinionCount(
                             scenarioName,
                             dag.name
-                        )
+                        ),
+                        underLoad = dag.isUnderLoad
                     )
                 )
 
@@ -179,17 +180,18 @@ internal class ScenarioImpl(
     }
 
     private suspend fun stopAllDags(campaignKey: CampaignKey, scenarioName: ScenarioName) {
-        internalDags.values.map { it.name to it.rootStep.get() }.forEach { (dagName, step) ->
+        internalDags.values.map { it to it.rootStep.get() }.forEach { (dag, step) ->
             stopStepRecursively(
                 step, StepStartStopContext(
                     campaignKey = campaignKey,
                     scenarioName = scenarioName,
-                    dagId = dagName,
+                    dagId = dag.name,
                     stepName = step.name,
                     scheduledMinionCount = localAssignmentStore.getLocalMinionCount(
                         scenarioName,
-                        dagName
-                    )
+                        dag.name
+                    ),
+                    underLoad = dag.isUnderLoad
                 )
             )
         }

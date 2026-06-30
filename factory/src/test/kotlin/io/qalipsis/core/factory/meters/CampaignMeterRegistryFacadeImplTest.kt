@@ -37,6 +37,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.qalipsis.api.meters.Counter
+import io.qalipsis.api.meters.DefaultMeasurementPublisherFactory
 import io.qalipsis.api.meters.DistributionSummary
 import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.meters.MeasurementPublisher
@@ -263,6 +264,87 @@ internal class CampaignMeterRegistryFacadeImplTest {
                 publisher2,
                 campaignMeterRegistry,
                 meterRegistry
+            )
+        }
+
+    @Test
+    internal fun `given only default publisher factories when init then default factories used as publishers`() =
+        testDispatcherProvider.run {
+            // given
+            every { factoryConfiguration.tags } returns emptyMap()
+            every { factoryConfiguration.zone } returns null
+            every { factoryConfiguration.tenant } returns "my-tenant"
+            val defaultFactory1 = mockk<DefaultMeasurementPublisherFactory>()
+            val defaultFactory2 = mockk<DefaultMeasurementPublisherFactory>()
+            val publisher1 = mockk<MeasurementPublisher> { coJustRun { init() } }
+            val publisher2 = mockk<MeasurementPublisher> { coJustRun { init() } }
+            every { defaultFactory1.getPublisher() } returns publisher1
+            every { defaultFactory2.getPublisher() } returns publisher2
+            every { campaign.campaignKey } returns RandomStringUtils.randomAlphanumeric(5)
+
+            val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
+                publisherFactories = listOf(defaultFactory1, defaultFactory2),
+                meterRegistry = meterRegistry,
+                factoryConfiguration = factoryConfiguration,
+                measurementConfiguration = measurementConfiguration,
+                step = Duration.ofSeconds(10),
+                coroutineScope = this
+            )
+
+            // when
+            campaignMeterRegistry.init(campaign)
+
+            // then — both default factories were used; publishers received init()
+            coVerifyOrder {
+                defaultFactory1.getPublisher()
+                defaultFactory2.getPublisher()
+                publisher1.init()
+                publisher2.init()
+            }
+            confirmVerified(defaultFactory1, defaultFactory2, publisher1, publisher2)
+        }
+
+    @Test
+    internal fun `given mix of default and concrete publisher factories when init then only concrete factories used`() =
+        testDispatcherProvider.run {
+            // given
+            every { factoryConfiguration.tags } returns emptyMap()
+            every { factoryConfiguration.zone } returns null
+            every { factoryConfiguration.tenant } returns "my-tenant"
+            val defaultFactory = mockk<DefaultMeasurementPublisherFactory>()
+            val defaultPublisher = mockk<MeasurementPublisher> { coJustRun { init() } }
+            every { defaultFactory.getPublisher() } returns defaultPublisher
+            val concretePublisher1 = mockk<MeasurementPublisher> { coJustRun { init() } }
+            val concretePublisher2 = mockk<MeasurementPublisher> { coJustRun { init() } }
+            every { publisherFactory1.getPublisher() } returns concretePublisher1
+            every { publisherFactory2.getPublisher() } returns concretePublisher2
+            every { campaign.campaignKey } returns RandomStringUtils.randomAlphanumeric(5)
+
+            val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
+                publisherFactories = listOf(defaultFactory, publisherFactory1, publisherFactory2),
+                meterRegistry = meterRegistry,
+                factoryConfiguration = factoryConfiguration,
+                measurementConfiguration = measurementConfiguration,
+                step = Duration.ofSeconds(10),
+                coroutineScope = this
+            )
+
+            // when
+            campaignMeterRegistry.init(campaign)
+
+            // then — only concrete factories used; default factory never called
+            coVerifyOrder {
+                publisherFactory1.getPublisher()
+                publisherFactory2.getPublisher()
+                concretePublisher1.init()
+                concretePublisher2.init()
+            }
+            confirmVerified(
+                publisherFactory1,
+                publisherFactory2,
+                concretePublisher1,
+                concretePublisher2,
+                defaultFactory
             )
         }
 

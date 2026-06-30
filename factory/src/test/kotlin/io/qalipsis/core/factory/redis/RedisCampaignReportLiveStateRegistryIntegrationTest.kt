@@ -192,40 +192,44 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
 
     @Test
     internal fun `should count successful and failed step initializations`() = testDispatcherProvider.run {
-        registry.recordSuccessfulStepInitialization("my-campaign", "my-scenario-1", "my-step-2")
-        registry.recordSuccessfulStepInitialization("my-campaign", "my-scenario-1", "my-step-1")
-        registry.recordSuccessfulStepInitialization("my-campaign", "my-scenario-2", "my-step-1")
+        registry.recordSuccessfulStepInitialization("my-campaign", "my-scenario-1", "my-step-2", "dag-1", true)
+        registry.recordSuccessfulStepInitialization("my-campaign", "my-scenario-1", "my-step-1", "dag-1", true)
+        registry.recordSuccessfulStepInitialization("my-campaign", "my-scenario-2", "my-step-1", "dag-2", false)
 
-        registry.recordFailedStepInitialization("my-campaign", "my-scenario-1", "my-step-3")
+        registry.recordFailedStepInitialization("my-campaign", "my-scenario-1", "my-step-3", "dag-1", true)
         registry.recordFailedStepInitialization(
             "my-campaign",
             "my-scenario-1",
             "my-step-4",
+            "dag-1",
+            true,
             TimeoutException("The process could not be completed in time")
         )
         registry.recordFailedStepInitialization(
             "my-campaign",
             "my-scenario-2",
             "my-step-3",
+            "dag-2",
+            false,
             TimeoutException("The other process could not be completed in time")
         )
 
         assertThat(getList("my-campaign-report:my-scenario-1:successful-step-initializations")).all {
             hasSize(2)
-            containsExactly("my-step-2", "my-step-1")
+            containsExactly("dag-1:true:my-step-2", "dag-1:true:my-step-1")
         }
         assertThat(getList("my-campaign-report:my-scenario-2:successful-step-initializations")).all {
             hasSize(1)
-            containsOnly("my-step-1")
+            containsOnly("dag-2:false:my-step-1")
         }
         assertThat(getValues("my-campaign-report:my-scenario-1:failed-step-initializations")).all {
             hasSize(2)
-            key("my-step-3").isEqualTo("<Unknown>")
-            key("my-step-4").isEqualTo("java.util.concurrent.TimeoutException: The process could not be completed in time")
+            key("dag-1:true:my-step-3").isEqualTo("<Unknown>")
+            key("dag-1:true:my-step-4").isEqualTo("java.util.concurrent.TimeoutException: The process could not be completed in time")
         }
         assertThat(getValues("my-campaign-report:my-scenario-2:failed-step-initializations")).all {
             hasSize(1)
-            key("my-step-3").isEqualTo("java.util.concurrent.TimeoutException: The other process could not be completed in time")
+            key("dag-2:false:my-step-3").isEqualTo("java.util.concurrent.TimeoutException: The other process could not be completed in time")
         }
     }
 

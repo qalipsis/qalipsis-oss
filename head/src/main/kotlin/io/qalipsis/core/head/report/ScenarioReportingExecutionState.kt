@@ -24,6 +24,7 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.api.report.StepReport
 import java.time.Instant
 
 /**
@@ -53,6 +54,9 @@ interface ScenarioReportingExecutionState {
 
     val messages: List<ReportMessage>
 
+    val steps: List<StepReport>
+        get() = emptyList()
+
     fun toReport(campaignKey: String): ScenarioReport {
         val endTimestamp = end
         val abortTimestamp = abort
@@ -78,7 +82,8 @@ interface ScenarioReportingExecutionState {
             successfulStepExecutions,
             failedStepExecutions,
             actualStatus,
-            messages
+            messages,
+            steps
         )
     }
 }

@@ -54,6 +54,7 @@ import io.qalipsis.core.executionprofile.RegularExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.StageExecutionProfileConfiguration
 import io.qalipsis.core.executionprofile.TimeFrameExecutionProfileConfiguration
 import io.qalipsis.core.feedbacks.CampaignAbortFeedback
+import io.qalipsis.core.feedbacks.CampaignMetersFeedback
 import io.qalipsis.core.feedbacks.CampaignScenarioShutdownFeedback
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.CampaignStartedForDagFeedback
@@ -165,6 +166,7 @@ class SerializationFactory {
             NodeExecutionFeedback::class to NodeExecutionFeedback.serializer(),
             CampaignAbortFeedback::class to CampaignAbortFeedback.serializer(),
             CampaignTimeoutFeedback::class to CampaignTimeoutFeedback.serializer(),
+            CampaignMetersFeedback::class to CampaignMetersFeedback.serializer(),
         )
 
     protected open val executionProfileConfigurationClassesAndSerializers =

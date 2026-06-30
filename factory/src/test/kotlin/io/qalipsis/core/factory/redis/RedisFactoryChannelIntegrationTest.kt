@@ -41,12 +41,14 @@ import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.directives.MinionsDeclarationDirectiveReference
 import io.qalipsis.core.directives.TestDescriptiveDirective
+import io.qalipsis.core.feedbacks.CampaignMetersFeedback
 import io.qalipsis.core.feedbacks.EndOfCampaignFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.RegistrationScenario
 import io.qalipsis.core.heartbeat.Heartbeat
+import io.qalipsis.core.meters.CampaignMeterSnapshot
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -261,6 +263,30 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
     }
 
     @Test
+    internal fun `should send the meter feedback`() = testDispatcherProvider.run {
+        // when
+        val snapshot = CampaignMeterSnapshot(
+            name = "my-meter",
+            timestampEpochMs = 1_000_000L,
+            type = "counter",
+            count = 42.0,
+            campaign = "campaign-1",
+            scenario = "scenario-1"
+        )
+        val feedback = CampaignMetersFeedback(meters = listOf(snapshot))
+        redisFactoryChannel.publishMeterFeedback(feedback)
+
+        // then
+        val received = captured.receive()
+        assertThat(received).all {
+            prop(ChannelMessage<String, ByteArray>::getChannel).isEqualTo(METERS_CHANNEL)
+            transform("message") {
+                subscriber.subscriberRegistry.serializer.deserialize<CampaignMetersFeedback>(it.message)
+            }.isNotNull().prop(CampaignMetersFeedback::meters).isEqualTo(listOf(snapshot))
+        }
+    }
+
+    @Test
     internal fun `should send the heartbeat`() = testDispatcherProvider.run {
         // when
         val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
@@ -294,5 +320,7 @@ internal class RedisFactoryChannelIntegrationTest : AbstractRedisIntegrationTest
         const val HANDSHAKE_CHANNEL = "the-handshake-channel"
 
         const val HEARTBEAT_CHANNEL = "the-heartbeat-channel"
+
+        const val METERS_CHANNEL = "meters"
     }
 }

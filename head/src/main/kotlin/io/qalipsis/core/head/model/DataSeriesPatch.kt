@@ -247,7 +247,7 @@ class ValueNameDataSeriesPatch(
 @Introspected
 @Schema(title = "Patch to update the aggregation operation of a data series")
 class AggregationOperationDataSeriesPatch(
-    private val operation: QueryAggregationOperator
+    private val operation: QueryAggregationOperator?
 ) : DataSeriesPatch {
 
     override val type: String = TYPE

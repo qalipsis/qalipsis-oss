@@ -30,7 +30,7 @@ import java.util.Properties
 class VersionProviderWithVariables : CommandLine.IVersionProvider {
 
     override fun getVersion(): Array<String> {
-        return arrayOf("QALIPSIS version ${executionProperties.getProperty("version")}")
+        return arrayOf("QALIPSIS version ${executionProperties.getProperty("qalipsis.version")}")
     }
 
     private companion object {

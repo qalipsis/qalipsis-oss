@@ -21,11 +21,14 @@ package io.qalipsis.core.head.zone
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.hasSize
 import assertk.assertions.index
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
 import io.mockk.impl.annotations.InjectMockKs
@@ -96,4 +99,71 @@ internal class PersistenceZoneServiceImplTest {
         coVerifyOrder { zoneRepository.findZonesByTenant("tenant-1") }
         confirmVerified(zoneRepository)
     }
+
+    @Test
+    internal fun `resolve should return empty list and not call repository when zone keys are empty`() =
+        testDispatcherProvider.runTest {
+            // when
+            val result = zoneService.resolve("tenant-1", emptySet())
+
+            // then
+            assertThat(result).isEmpty()
+            confirmVerified(zoneRepository)
+        }
+
+    @Test
+    internal fun `resolve should return matching zones when all keys are known`() =
+        testDispatcherProvider.runTest {
+            // given
+            val image = URL("https://images.app.goo.gl/9gtthcy5jgLjb6GW9")
+            val zoneEu = ZoneEntity(key = "EU", title = "Europe", description = null, imagePath = image)
+            val zoneDe = ZoneEntity(key = "DE", title = "Germany", description = null, imagePath = image)
+            coEvery {
+                zoneRepository.findByTenantAndKeys("tenant-1", setOf("EU", "DE"))
+            } returns listOf(zoneEu, zoneDe)
+
+            // when
+            val result = zoneService.resolve("tenant-1", setOf("EU", "DE"))
+
+            // then
+            assertThat(result.map { it.key }).containsExactlyInAnyOrder("EU", "DE")
+            coVerify { zoneRepository.findByTenantAndKeys("tenant-1", setOf("EU", "DE")) }
+            confirmVerified(zoneRepository)
+        }
+
+    @Test
+    internal fun `resolve should return empty list when no zone keys match`() =
+        testDispatcherProvider.runTest {
+            // given
+            coEvery {
+                zoneRepository.findByTenantAndKeys("tenant-1", setOf("US", "CN"))
+            } returns emptyList()
+
+            // when
+            val result = zoneService.resolve("tenant-1", setOf("US", "CN"))
+
+            // then
+            assertThat(result).isEmpty()
+            coVerify { zoneRepository.findByTenantAndKeys("tenant-1", setOf("US", "CN")) }
+            confirmVerified(zoneRepository)
+        }
+
+    @Test
+    internal fun `resolve should return only matching zones when keys are mixed known and unknown`() =
+        testDispatcherProvider.runTest {
+            // given
+            val image = URL("https://images.app.goo.gl/9gtthcy5jgLjb6GW9")
+            val zoneFr = ZoneEntity(key = "FR", title = "France", description = null, imagePath = image)
+            coEvery {
+                zoneRepository.findByTenantAndKeys("tenant-1", setOf("FR", "US", "CN"))
+            } returns listOf(zoneFr)
+
+            // when
+            val result = zoneService.resolve("tenant-1", setOf("FR", "US", "CN"))
+
+            // then
+            assertThat(result.map { it.key }).containsExactlyInAnyOrder("FR")
+            coVerify { zoneRepository.findByTenantAndKeys("tenant-1", setOf("FR", "US", "CN")) }
+            confirmVerified(zoneRepository)
+        }
 }

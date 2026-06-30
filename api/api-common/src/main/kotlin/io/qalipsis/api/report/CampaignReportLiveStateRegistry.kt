@@ -20,6 +20,7 @@
 package io.qalipsis.api.report
 
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
 
@@ -108,7 +109,9 @@ interface CampaignReportLiveStateRegistry {
     suspend fun recordSuccessfulStepInitialization(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
-        stepName: StepName
+        stepName: StepName,
+        dagId: DirectedAcyclicGraphName,
+        underLoad: Boolean
     )
 
     /**
@@ -118,6 +121,8 @@ interface CampaignReportLiveStateRegistry {
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
+        dagId: DirectedAcyclicGraphName,
+        underLoad: Boolean,
         cause: Throwable? = null,
     )
 

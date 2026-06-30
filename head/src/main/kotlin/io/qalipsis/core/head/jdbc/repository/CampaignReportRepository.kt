@@ -39,4 +39,7 @@ interface CampaignReportRepository : CoroutineCrudRepository<CampaignReportEntit
     @Join(value = "scenariosReports", type = Join.Type.LEFT_FETCH)
     suspend fun findByCampaignId(campaignId: Long): CampaignReportEntity?
 
+    @Join(value = "scenariosReports", type = Join.Type.LEFT_FETCH)
+    suspend fun findByCampaignIdIn(campaignIds: Collection<Long>): List<CampaignReportEntity>
+
 }

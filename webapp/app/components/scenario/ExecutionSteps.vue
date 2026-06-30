@@ -24,15 +24,15 @@
       <div class="grid grid-cols-3 text-sm gap-x-2 ml-2 text-center">
         <div class="text-green-700 dark:text-green-400 leading-3">
           <div>{{ successfulExecutionText }}</div>
-          <div class="text-xs">Success</div>
+          <div v-if="showLabels" class="text-xs">Successes</div>
         </div>
         <div class="text-red-700 dark:text-red-400 leading-3">
           <div>{{ failedExecutionText }}</div>
-          <div class="text-xs">Failed</div>
+          <div v-if="showLabels" class="text-xs">Failures</div>
         </div>
         <div class="text-gray-700 dark:text-gray-400 leading-3">
           <div>{{ totalExecutionText }}</div>
-          <div class="text-xs">Total</div>
+          <div v-if="showLabels" class="text-xs">Total</div>
         </div>
       </div>
     </div>
@@ -94,6 +94,11 @@ const props = defineProps<{
    * The name of the scenario.
    */
   scenarioName: string
+
+  /**
+   * Whether to show Success / Failed / Total labels below the numbers. Defaults to true.
+   */
+  showLabels?: boolean
 }>()
 
 const executionStepDonutChartOptions = ScenarioDetailsConfig.EXECUTION_STEP_DONUT_CHART_OPTIONS

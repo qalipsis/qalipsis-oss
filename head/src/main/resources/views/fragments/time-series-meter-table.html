@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
-<table class="data-series-section" th:fragment="time-series-meter-table(singleMeterTableData)">
+<table class="data-series-section" th:fragment="time-series-meter-table(singleMeterTableData, UTC)">
   <tr class="header-table-row">
     <th class="data-series-table-head">Timestamp</th>
     <th class="data-series-table-head">Name of the Series</th>
@@ -15,7 +15,7 @@
   </tr>
   <tr th:unless="${singleMeterTableData.empty}" th:each="tableRowData : ${singleMeterTableData}">
     <td class="data-series-table-data" data-th-attr="timestamp=${tableRowData.timestamp}"
-        th:text="${#temporals.format(tableRowData.timestamp, 'HH:mm:ss')}">
+        th:text="${#temporals.format(tableRowData.timestamp.atZone(UTC), 'HH:mm:ss')}">
       13:37:54
     </td>
     <td class="data-series-table-data" th:text="${tableRowData.name}">Requests made</td>

@@ -2190,7 +2190,7 @@ internal class ReportServiceImplTest {
             //then
             assertThat(caught).all {
                 prop(ExitStatusException::exitStatus).isEqualTo(102)
-                prop(ExitStatusException::message).isEqualTo("java.lang.IllegalArgumentException: File still Processing")
+                prop(ExitStatusException::message).isEqualTo("io.micronaut.http.exceptions.HttpStatusException: File still Processing")
             }
             coVerify {
                 reportTaskRepository.findByTenantReferenceAndReference(

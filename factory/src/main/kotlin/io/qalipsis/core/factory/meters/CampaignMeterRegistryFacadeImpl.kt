@@ -28,6 +28,7 @@ import io.qalipsis.api.context.StepName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.Counter
+import io.qalipsis.api.meters.DefaultMeasurementPublisherFactory
 import io.qalipsis.api.meters.DistributionSummary
 import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.meters.MeasurementPublisher
@@ -59,7 +60,7 @@ import java.time.temporal.ChronoUnit
  */
 @Singleton
 class CampaignMeterRegistryFacadeImpl(
-    private val publisherFactories: Collection<MeasurementPublisherFactory>,
+    publisherFactories: Collection<MeasurementPublisherFactory>,
     private val meterRegistry: MeterRegistry,
     factoryConfiguration: FactoryConfiguration,
     private val measurementConfiguration: MeasurementConfiguration,
@@ -77,11 +78,19 @@ class CampaignMeterRegistryFacadeImpl(
     private lateinit var ticker: ReceiveChannel<*>
 
     @KTestable
-    private var publishers = listOf<MeasurementPublisher>()
+    private val publishers = mutableListOf<MeasurementPublisher>()
+
+    private val actualFactories = mutableListOf<MeasurementPublisherFactory>()
 
     init {
         additionalTags.putAll(factoryConfiguration.tags)
         if (publisherFactories.isNotEmpty()) {
+            val (defaultFactories, concreteFactories) = publisherFactories.partition { it is DefaultMeasurementPublisherFactory }
+            if (concreteFactories.isNotEmpty()) {
+                actualFactories.addAll(concreteFactories)
+            } else {
+                actualFactories.addAll(defaultFactories)
+            }
             // Additional tags to force to all the created meters.
             additionalTags.putAll(factoryConfiguration.tags)
             additionalTags[TENANT_KEY] = factoryConfiguration.tenant
@@ -95,7 +104,7 @@ class CampaignMeterRegistryFacadeImpl(
 
     override suspend fun init(campaign: Campaign) {
         currentCampaignKey = campaign.campaignKey
-        publishers = publisherFactories.map { it.getPublisher() }
+        publishers += actualFactories.map { it.getPublisher() }
         publishers.forEach { it.init() }
         startPublishingJob()
     }

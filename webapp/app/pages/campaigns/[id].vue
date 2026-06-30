@@ -29,6 +29,13 @@
               />
             </BasePermission>
           </template>
+          <template v-if="!['IN_PROGRESS', 'QUEUED', 'SCHEDULED'].includes(campaignDetails.status)">
+            <BaseButton
+                text="Download report"
+                :loading="isDownloadingReport"
+                @click="handleDownloadReport"
+            />
+          </template>
           <template v-if="campaignDetails.zones && campaignDetails.zones.length > 0">
             <div
               v-if="firstZoneKey && zoneKeyToZoneModel[firstZoneKey]"
@@ -80,31 +87,47 @@
           <ScenarioDetails
             :scenarioReports="scenarioReports"
             :status="campaignDetails.status"
+            :zones="zoneKeyToZoneModel"
           />
         </BaseCard>
       </div>
       <div class="shadow-md py-4 px-4 flex items-stretch gap-x-4 flex-1 min-h-0">
-        <div class="flex-1 min-h-[600px] h-full py-2">
-          <apexchart
-            v-if="!isUpdatingChart"
-            height="100%"
-            :options="chartOptions"
-            :series="chartDataSeries"
-            @zoomed="handleZoom"
-          />
-          <div
-            v-if="isUpdatingChart"
-            class="h-full bg-white dark:bg-primary-900"
-          ></div>
-        </div>
-        <div class="w-72 py-2 h-full">
-          <SeriesPanel
-            :preselectedDataSeriesReferences="preselectedDataSeriesReferences"
-            :campaignKey="campaignDetails.key"
-            :maximum="8"
-            @selectedDataSeriesChange="handleSelectedDataSeriesChange($event)"
-          />
-        </div>
+        <template v-if="hasDataSeries === false">
+          <div class="flex flex-col items-center justify-center flex-1 gap-y-4 text-center px-8">
+            <BaseIcon icon="qls-icon-chart-bar" class="text-5xl text-gray-300 dark:text-gray-600"/>
+            <p class="text-gray-500 dark:text-gray-400 text-sm max-w-sm">
+              To graphically visualise your campaign data, you need to create at least one data series.
+              Data series define the metrics and events to render and how to display them on the chart.
+            </p>
+            <BaseButton
+                text="Create data series"
+                @click="navigateTo('/series')"
+            />
+          </div>
+        </template>
+        <template v-else>
+          <div class="flex-1 min-h-[600px] h-full py-2">
+            <apexchart
+                v-if="!isUpdatingChart"
+                height="100%"
+                :options="chartOptions"
+                :series="chartDataSeries"
+                @zoomed="handleZoom"
+            />
+            <div
+                v-if="isUpdatingChart"
+                class="h-full bg-white dark:bg-primary-900"
+            ></div>
+          </div>
+          <div class="w-72 py-2 h-full">
+            <SeriesPanel
+                :preselectedDataSeriesReferences="preselectedDataSeriesReferences"
+                :campaignKey="campaignDetails.key"
+                :maximum="8"
+                @selectedDataSeriesChange="handleSelectedDataSeriesChange($event)"
+            />
+          </div>
+        </template>
       </div>
     </BaseContentWrapper>
     <BaseModal
@@ -134,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-const { fetchCampaignDetails, abortCampaign } = useCampaignApi()
+const {fetchCampaignDetails, abortCampaign, downloadHtmlReport} = useCampaignApi()
 const { getCachedDataSeries } = useDataSeriesApi()
 const { fetchZones } = useZonesApi()
 
@@ -153,7 +176,9 @@ const isPageReady = ref(false)
 const name = ref('')
 const scenarioNames = ref<string[]>([])
 const campaignStopModalOpen = ref(false)
+const isDownloadingReport = ref(false)
 const zoneKeyToZoneModel = ref<{ [key: string]: Zone }>({})
+const hasDataSeries = ref<boolean | null>(null)
 
 const scenarioReports = computed(() => {
   if (!campaignDetailsStore.campaignDetails) return []
@@ -173,16 +198,20 @@ const { run: _runPollingCycle } = usePolling(
     await _fetchCampaignDetails()
     campaignDetailsStore.$patch({
       campaignDetails: campaignDetails.value,
-      selectedScenarioNames: campaignDetails.value?.scenarios ? campaignDetails.value.scenarios.map((s) => s.name) : [],
+      selectedScenarioNames: campaignDetails.value?.scenarios?.map((s) => s.name) ?? [],
     })
-    isUpdatingChart.value = true
-    try {
-      await campaignDetailsStore.updateChart()
-    } finally {
-      isUpdatingChart.value = false
+    if (hasDataSeries.value) {
+      isUpdatingChart.value = true
+      try {
+        await campaignDetailsStore.updateChart()
+      } finally {
+        isUpdatingChart.value = false
+      }
     }
   },
   () => campaignDetails.value?.status === 'IN_PROGRESS',
+    5000,
+    false,
 )
 
 onMounted(async () => {
@@ -199,22 +228,35 @@ onMounted(async () => {
     timeRange: { min, max },
   })
 
+  const allCampaignDataSeries = (await getCachedDataSeries({campaign: campaignDetails.value?.key})).filter(
+      (d) => d.reference !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
+  )
+  hasDataSeries.value = allCampaignDataSeries.length > 0
+
   const dataSeriesReferences = route.query?.series ? String(route.query.series).split(',').filter(Boolean) : []
   if (dataSeriesReferences.length > 0) {
-    const allDataSeries = (await getCachedDataSeries({ campaign: campaignDetails.value?.key })).filter(
-      (d) => d.reference !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
-    )
-    const selectedDataSeries = allDataSeries.filter((d) => dataSeriesReferences.includes(d.reference))
+    const selectedDataSeries = allCampaignDataSeries.filter((d) => dataSeriesReferences.includes(d.reference))
     campaignDetailsStore.$patch({ selectedDataSeries })
   }
 
   name.value = campaignDetails.value?.name ?? ''
   scenarioNames.value = campaignDetails.value?.scenarios?.map((s) => s.name) ?? []
 
+  isUpdatingChart.value = true
+  isPageReady.value = true
+
   _runPollingCycle()
   _setZoneKeyToModel()
 
-  isPageReady.value = true
+  if (hasDataSeries.value) {
+    try {
+      await campaignDetailsStore.updateChart()
+    } finally {
+      isUpdatingChart.value = false
+    }
+  } else {
+    isUpdatingChart.value = false
+  }
 })
 
 onBeforeUnmount(() => {
@@ -249,7 +291,7 @@ const handleScenarioChange = async (names: string[]) => {
 
 const handleSelectedDataSeriesChange = async (selectedDataSeriesOptions: DataSeriesOption[]) => {
   if (selectedDataSeriesOptions.length === 0) {
-    const query = Object.assign({}, route.query)
+    const query = {...route.query}
     delete query.series
     router.replace({ query })
   } else {
@@ -284,6 +326,17 @@ const handleZoom = debounce((_: any, { xaxis }: any) => {
   router.push({ query: newQueryParams })
   campaignDetailsStore.$patch({ timeRange: { min: xaxis.min, max: xaxis.max } })
 }, 400)
+
+const handleDownloadReport = async () => {
+  isDownloadingReport.value = true
+  try {
+    await downloadHtmlReport(campaignDetails.value!.key)
+  } catch (error) {
+    toastStore.error({text: ErrorHelper.getErrorMessage(error)})
+  } finally {
+    isDownloadingReport.value = false
+  }
+}
 
 const handleAbortButtonClick = () => {
   _stopCampaign(true)

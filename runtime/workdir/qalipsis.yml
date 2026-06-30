@@ -7,10 +7,10 @@ redis:
 logging:
   console: true
   level:
-    io.qalipsis.runtime.bootstrap.QalipsisApplicationContext: TRACE
-    io.qalipsis.core.factory: TRACE
-    io.qalipsis.core.head.campaign: TRACE
-    io.qalipsis.plugins.timescaledb.dataprovider: TRACE
+    #io.qalipsis.runtime.bootstrap.QalipsisApplicationContext: TRACE
+    #io.qalipsis.core.factory: TRACE
+    #io.qalipsis.core.head.campaign: TRACE
+    io.qalipsis.core.factory.steps: OFF
 
 datasource:
   host: localhost
@@ -28,7 +28,7 @@ r2dbc:
 events:
   export:
     timescaledb:
-      enabled: true
+      enabled: false
       min-level: INFO
       host: localhost
       port: 35432
@@ -41,7 +41,7 @@ events:
       publishers: 1
   provider:
     timescaledb:
-      enabled: true
+      enabled: false
       host: localhost
       port: 35432
       database: qalipsis
@@ -51,6 +51,11 @@ events:
 
 meters:
   export:
+    enabled: true
+    timer:
+      percentiles:
+        - 95.0
+        - 99.9
     timescaledb:
       enabled: true
       host: localhost
@@ -59,7 +64,7 @@ meters:
       schema: meters
       username: qalipsis
       password: qalipsis
-      step: PT10S
+      step: PT2S
 
   provider:
     timescaledb:

@@ -68,7 +68,7 @@ class CampaignConverterImpl(
             zones = campaignEntity.zones,
             configurerName = userProvider.findUsernameById(campaignEntity.configurer),
             aborterName = aborterName,
-            scenarios = scenarioRepository.findByCampaignId(campaignEntity.id).map { scenarioEntity ->
+            configuredScenarios = scenarioRepository.findByCampaignId(campaignEntity.id).map { scenarioEntity ->
                 Scenario(
                     scenarioEntity.version,
                     scenarioEntity.name,

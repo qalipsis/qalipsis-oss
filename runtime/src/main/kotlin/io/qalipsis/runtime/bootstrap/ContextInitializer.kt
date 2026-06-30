@@ -33,9 +33,6 @@ import io.qalipsis.runtime.bootstrap.DeploymentRole.FACTORY
 import io.qalipsis.runtime.bootstrap.DeploymentRole.HEAD
 import io.qalipsis.runtime.bootstrap.DeploymentRole.STANDALONE
 import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
-import java.security.MessageDigest
 import java.util.Properties
 
 /**
@@ -63,7 +60,7 @@ class ContextInitializer(
 
         val properties = mutableMapOf<String, Any>()
         // Adds the build properties to the application context.
-        properties.putAll(BUILD_PROPERTIES.mapKeys { "qalipsis.${it.key}" })
+        BUILD_PROPERTIES.forEach { (k, v) -> properties[k.toString()] = v }
 
         val environments = linkedSetOf<String>()
         when (role) {
@@ -222,20 +219,6 @@ class ContextInitializer(
         } else {
             environments.add(ExecutionEnvironments.TRANSIENT)
         }
-    }
-
-    fun copyPerfectly(input: InputStream, output: OutputStream) {
-        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-        while (true) {
-            val n = input.read(buffer)
-            if (n == -1) break
-            output.write(buffer, 0, n) // ✅ only write actual bytes read
-        }
-    }
-
-    fun md5(bytes: ByteArray): String {
-        val digest = MessageDigest.getInstance("MD5").digest(bytes)
-        return digest.joinToString("") { "%02x".format(it) }
     }
 
     /**

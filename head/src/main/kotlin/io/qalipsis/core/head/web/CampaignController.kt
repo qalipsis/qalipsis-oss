@@ -22,12 +22,15 @@ package io.qalipsis.core.head.web
 import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
+import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Post
+import io.micronaut.http.annotation.Produces
 import io.micronaut.http.annotation.Put
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.http.annotation.Status
@@ -49,6 +52,7 @@ import io.qalipsis.core.head.model.Campaign
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.CampaignExecutionDetails
 import io.qalipsis.core.head.report.CampaignReportProvider
+import io.qalipsis.core.head.report.HtmlReportService
 import io.qalipsis.core.head.web.ControllerUtils.asFilters
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -81,6 +85,7 @@ class CampaignController(
     private val clusterFactoryService: FactoryService,
     private val campaignReportProvider: CampaignReportProvider,
     private val campaignScheduler: CampaignScheduler,
+    private val htmlReportService: HtmlReportService
 ) {
 
     /**
@@ -385,6 +390,47 @@ class CampaignController(
     ): Campaign {
         val campaignKey = campaignScheduler.schedule(tenant, authentication.name, configuration).key
         return campaignService.retrieve(tenant, campaignKey)
+    }
+
+    /**
+     * REST endpoint to download the HTML execution report of a completed campaign.
+     */
+    @Get("/{campaignKey}/report")
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(
+        summary = "Download campaign HTML report",
+        description = "Returns a self-contained HTML execution report for a completed campaign.",
+        responses = [
+            ApiResponse(responseCode = "200", description = "HTML report generated successfully."),
+            ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+            ApiResponse(responseCode = "401", description = "Missing permissions to execute the operation."),
+            ApiResponse(
+                responseCode = "503",
+                description = "Report generation is not available in this deployment mode."
+            ),
+        ],
+        security = [SecurityRequirement(name = "JWT")]
+    )
+    @Secured(Permissions.READ_CAMPAIGN)
+    @Timed("campaigns-html-report")
+    @LogInput
+    suspend fun downloadHtmlReport(
+        @Parameter(
+            name = "X-Tenant",
+            description = "Contextual tenant.",
+            required = true,
+            `in` = ParameterIn.HEADER
+        ) @NotBlank @Tenant tenant: String,
+        @Parameter(
+            description = "Key of the campaign to report.",
+            required = true,
+            `in` = ParameterIn.PATH
+        ) @NotBlank @PathVariable campaignKey: String,
+    ): HttpResponse<String> {
+        val details = campaignReportProvider.retrieve(tenant, campaignKey)
+        val html = htmlReportService.render(details.name, listOf(details))
+        return HttpResponse.ok(html)
+            .header("Content-Disposition", "attachment; filename=\"$campaignKey.html\"")
     }
 
     /**

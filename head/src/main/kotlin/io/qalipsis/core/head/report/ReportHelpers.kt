@@ -23,7 +23,6 @@ import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ScenarioReport
 import io.qalipsis.core.head.model.CampaignExecutionDetails
-import io.qalipsis.core.head.model.Scenario
 import io.qalipsis.core.head.model.ScenarioExecutionDetails
 import java.time.Instant
 
@@ -78,15 +77,15 @@ internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(
         speedFactor = 1.0,
         startedMinions = this.asSequence().mapNotNull { it.startedMinions }.sum(),
         completedMinions = this.asSequence().mapNotNull { it.completedMinions }.sum(),
-        successfulExecutions = this.asSequence().mapNotNull { it.successfulExecutions }.sum(),
-        failedExecutions = this.asSequence().mapNotNull { it.failedExecutions }.sum(),
+        successfulExecutions = this.sumOf { it.successfulExecutions?.toLong() ?: 0L },
+        failedExecutions = this.sumOf { it.failedExecutions?.toLong() ?: 0L },
         status = when {
             knownResult == ExecutionStatus.FAILED -> ExecutionStatus.FAILED
             knownResult == ExecutionStatus.ABORTED -> ExecutionStatus.ABORTED
             any { it.status == ExecutionStatus.ABORTED } -> ExecutionStatus.ABORTED
             any { it.status == ExecutionStatus.FAILED } -> ExecutionStatus.FAILED
             any { it.status == ExecutionStatus.WARNING } -> ExecutionStatus.WARNING
-            none { it.start == null } -> ExecutionStatus.QUEUED
+            none { it.start != null } -> ExecutionStatus.QUEUED
             any { it.end == null } -> ExecutionStatus.IN_PROGRESS
             else -> ExecutionStatus.SUCCESSFUL
         },
@@ -94,16 +93,9 @@ internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(
             failureReason != null -> failureReason
             any { it.status == ExecutionStatus.ABORTED } -> "The campaign was aborted"
             any { it.status == ExecutionStatus.FAILED } -> "At least one scenario failed"
-            else -> ""
+            else -> null
         },
         scenarios = this.map {
-            Scenario(
-                version = Instant.now(),
-                name = it.scenarioName,
-                minionsCount = it.startedMinions ?: 0
-            )
-        },
-        scenariosReports = this.map {
             ScenarioExecutionDetails(
                 id = it.scenarioName,
                 name = it.scenarioName,
@@ -111,8 +103,8 @@ internal fun Collection<ScenarioReport>.toCampaignExecutionDetails(
                 end = it.end,
                 startedMinions = it.startedMinions,
                 completedMinions = it.completedMinions,
-                successfulExecutions = it.successfulExecutions,
-                failedExecutions = it.failedExecutions,
+                successfulExecutions = it.successfulExecutions?.toLong(),
+                failedExecutions = it.failedExecutions?.toLong(),
                 status = when {
                     it.start == null -> ExecutionStatus.QUEUED
                     it.end == null -> ExecutionStatus.IN_PROGRESS

@@ -31,8 +31,14 @@ export interface CampaignTableData extends Campaign {
   disabled?: boolean
 }
 
+/**
+ * Configuration of the rendering of a campaign in detailed view,
+ * including the style of the related lines in the charts.
+ */
 export interface CampaignOption extends CampaignExecutionDetails {
   strokeDashArray: number
+    svgDashPattern: string
+    strokeWidth: number
   isActive: boolean
   enrichedScenarioReports: ScenarioReport[]
 }

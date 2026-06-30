@@ -41,4 +41,9 @@ class PersistenceZoneServiceImpl(private val zoneRepository: ZoneRepository) : Z
     override suspend fun list(tenant: String): Collection<Zone> {
         return zoneRepository.findZonesByTenant(tenant).map { it.toModel() }
     }
+
+    override suspend fun resolve(tenant: String, zoneKeys: Set<String>): Collection<Zone> {
+        if (zoneKeys.isEmpty()) return emptyList()
+        return zoneRepository.findByTenantAndKeys(tenant, zoneKeys).map { it.toModel() }
+    }
 }

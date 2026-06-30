@@ -102,6 +102,8 @@ internal class ReportingStepDecoratorTest {
 
         every { startStopContext.campaignKey } returns "my-campaign"
         every { startStopContext.scenarioName } returns "my-scenario"
+        every { startStopContext.dagId } returns "my-dag"
+        every { startStopContext.underLoad } returns true
 
         every { meterRegistry.gauge(any() , any(), any(), any<Map<String, String>>()) } returns runningStepsGauge
 
@@ -170,7 +172,9 @@ internal class ReportingStepDecoratorTest {
             reportLiveStateRegistry.recordSuccessfulStepInitialization(
                 campaignKey = "my-campaign",
                 scenarioName = "my-scenario",
-                stepName = "the decorated"
+                stepName = "the decorated",
+                dagId = "my-dag",
+                underLoad = true
             )
         }
         confirmVerified(
@@ -204,6 +208,8 @@ internal class ReportingStepDecoratorTest {
                 campaignKey = "my-campaign",
                 scenarioName = "my-scenario",
                 stepName = "the decorated",
+                dagId = "my-dag",
+                underLoad = true,
                 cause = withArg {
                     assertThat(it).isInstanceOf<RuntimeException>().prop(RuntimeException::message)
                         .isEqualTo("An error")
@@ -260,7 +266,9 @@ internal class ReportingStepDecoratorTest {
             reportLiveStateRegistry.recordSuccessfulStepInitialization(
                 campaignKey = "my-campaign",
                 scenarioName = "my-scenario",
-                stepName = "the decorated"
+                stepName = "the decorated",
+                dagId = "my-dag",
+                underLoad = true
             )
             eventsLogger.debug("step.execution.started", timestamp = any(), tagsSupplier = any())
             runningStepsGauge.increment()
@@ -306,7 +314,9 @@ internal class ReportingStepDecoratorTest {
                 reportLiveStateRegistry.recordSuccessfulStepInitialization(
                     campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
-                    stepName = "__the decorated"
+                    stepName = "__the decorated",
+                    dagId = "my-dag",
+                    underLoad = true
                 )
                 decorated.execute(refEq(minion), refEq(context))
             }
@@ -343,7 +353,9 @@ internal class ReportingStepDecoratorTest {
                 reportLiveStateRegistry.recordSuccessfulStepInitialization(
                     campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
-                    stepName = "the decorated"
+                    stepName = "the decorated",
+                    dagId = "my-dag",
+                    underLoad = true
                 )
                 eventsLogger.debug("step.execution.started", timestamp = any(), tagsSupplier = any())
                 runningStepsGauge.increment()
@@ -392,7 +404,9 @@ internal class ReportingStepDecoratorTest {
                 reportLiveStateRegistry.recordSuccessfulStepInitialization(
                     campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
-                    stepName = "the decorated"
+                    stepName = "the decorated",
+                    dagId = "my-dag",
+                    underLoad = true
                 )
                 eventsLogger.debug("step.execution.started", timestamp = any(), tagsSupplier = any())
                 runningStepsGauge.increment()
@@ -442,7 +456,9 @@ internal class ReportingStepDecoratorTest {
                 reportLiveStateRegistry.recordSuccessfulStepInitialization(
                     campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
-                    stepName = "__the decorated"
+                    stepName = "__the decorated",
+                    dagId = "my-dag",
+                    underLoad = true
                 )
                 decorated.execute(refEq(minion), refEq(context))
                 reportLiveStateRegistry.recordFailedStepExecution(

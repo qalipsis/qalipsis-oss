@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<!--
+  QALIPSIS — Standalone HTML Campaign Report
+  Thymeleaf template processed by ThymeleafReportServiceImpl.
+  Context variables expected:
+    - title        (String)                     report name / campaign name
+    - campaigns    (Collection<CampaignExecutionDetails>)
+    - generatedTime (Instant)
+    - version      (String)                     QALIPSIS version, e.g. "0.18.0"
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title} + ' — QALIPSIS Campaign Report'">Campaign Report</title>
+    <link rel="icon" type="image/svg+xml"
+          href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='%2339BABC'%3E%3Cpath d='M30.51 27.194c-0.323-1.964-1.98-3.375-3.893-3.46 2.182-2.516 3.502-5.8 3.502-9.392 0-7.921-6.422-14.343-14.343-14.343s-14.343 6.422-14.343 14.343 6.422 14.343 14.343 14.343c2.377 0 4.619-0.579 6.593-1.603-0.047 0.235-0.074 0.504-0.074 0.78 0 0.237 0.020 0.47 0.058 0.697l-0.003-0.024c0.37 2.253 2.497 3.779 4.75 3.409s3.779-2.497 3.409-4.75zM15.777 22.441c-4.472 0-8.098-3.626-8.098-8.098s3.626-8.098 8.098-8.098 8.098 3.626 8.098 8.098-3.626 8.098-8.098 8.098z'/%3E%3C/svg%3E"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap"
+          rel="stylesheet"/>
+    <style>
+        :root {
+            --font: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+            --mono: 'JetBrains Mono', 'Courier New', monospace;
+            --p50: #EBF9F9;
+            --p100: #D4F1F2;
+            --p200: #ADE5E6;
+            --p500: #39BABC;
+            --p600: #2D9395;
+            --p700: #227071;
+            --p800: #17494A;
+            --g50: #F5F5F5;
+            --g100: #DADDE1;
+            --g200: #C1C6CD;
+            --g300: #A7AFB8;
+            --g400: #919AA6;
+            --g500: #778392;
+            --g600: #626C79;
+            --g700: #505863;
+            --g800: #3B4149;
+            --g900: #272B30;
+            --g950: #1D2024;
+            --gr100: #D9F7EF;
+            --gr500: #28B48F;
+            --gr600: #24A381;
+            --gr700: #208E70;
+            --r100: #FEE7EF;
+            --r500: #F33278;
+            --r600: #E70E5D;
+            --r700: #CF0C54;
+            --y100: #FFF5DB;
+            --y500: #FFBB0F;
+            --y600: #EBA800;
+            --y700: #CC9200;
+            --pu100: #F1E8FD;
+            --pu500: #8C3CEE;
+            --pu600: #8027EC;
+            --pu700: #6E13DD;
+            --surface: #fff;
+            --bg: #F5F5F5;
+            --border: #DADDE1;
+            --border2: #C1C6CD;
+            --text: #1D2024;
+            --ts: #505863;
+            --tt: #778392;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, .1), 0 2px 4px -2px rgba(0, 0, 0, .1);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .06);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.5
+        }
+
+        .rh {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow-sm)
+        }
+
+        .rh-inner {
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-height: 64px
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            white-space: nowrap;
+            flex-shrink: 0
+        }
+
+        .logo-sep {
+            color: var(--g200);
+            margin: 0 14px;
+            font-weight: 300
+        }
+
+        .logo-report {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--tt)
+        }
+
+        .ci {
+            flex: 1;
+            min-width: 0
+        }
+
+        .ci-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .ci-title {
+            font-size: 18px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 12px;
+            border-radius: 12px;
+            height: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .3px;
+            white-space: nowrap;
+            flex-shrink: 0
+        }
+
+        .b-success {
+            background: var(--gr100);
+            color: var(--gr600)
+        }
+
+        .b-warning {
+            background: var(--y100);
+            color: var(--y600)
+        }
+
+        .b-failed {
+            background: var(--r100);
+            color: var(--r600)
+        }
+
+        .b-running {
+            background: var(--pu100);
+            color: var(--pu600)
+        }
+
+        .b-neutral {
+            background: var(--g100);
+            color: var(--g600)
+        }
+
+        .b-info {
+            background: var(--p50);
+            color: var(--p700)
+        }
+
+        .b-partial {
+            background: var(--y100);
+            color: var(--y700)
+        }
+
+        .zone-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--g600);
+            cursor: default
+        }
+
+        .zone-flag-img {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0
+        }
+
+        .zone-item .zone-tip {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            background: var(--g950);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 100;
+            min-width: 180px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, .3)
+        }
+
+        .zone-item:hover .zone-tip {
+            display: block
+        }
+
+        .zone-tip-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 3px 0
+        }
+
+        .zone-tip-row:not(:last-child) {
+            border-bottom: 1px solid rgba(255, 255, 255, .1);
+            margin-bottom: 3px;
+            padding-bottom: 6px
+        }
+
+        .zone-tip-name {
+            font-weight: 600;
+            color: #fff
+        }
+
+        .zone-tip-desc {
+            font-size: 10px;
+            color: var(--g300);
+            margin-top: 1px
+        }
+
+        .content {
+            padding: 20px 32px
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 18px 24px;
+            margin-bottom: 20px
+        }
+
+        .vbar {
+            width: 1px;
+            height: 32px;
+            background: var(--border);
+            margin: 0 14px;
+            flex-shrink: 0
+        }
+
+        .grp-icon {
+            color: var(--g300);
+            flex-shrink: 0
+        }
+
+        .camp-row {
+            display: flex;
+            align-items: center;
+            gap: 0
+        }
+
+        .camp-row .vbar {
+            height: 40px
+        }
+
+        .camp-row .mi-col-v {
+            font-size: 15px
+        }
+
+        .camp-row .ex-col-v {
+            font-size: 15px
+        }
+
+        .camp-row .sc-time-dates {
+            font-size: 12px
+        }
+
+        .camp-row .sc-time-dur {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--p600)
+        }
+
+        .camp-row .sc-frate-v {
+            font-size: 15px
+        }
+
+        .sc-time-grp {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-shrink: 0
+        }
+
+        .sc-time-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px
+        }
+
+        .sc-time-dates {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--g500);
+            white-space: nowrap
+        }
+
+        .sc-time-dur {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--g400);
+            white-space: nowrap
+        }
+
+        .sc-mi-grp {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-shrink: 0
+        }
+
+        .sc-mi-cols {
+            display: flex;
+            gap: 12px
+        }
+
+        .mi-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            min-width: 36px
+        }
+
+        .mi-col-v {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.3
+        }
+
+        .mi-col-l {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            line-height: 1.2
+        }
+
+        .mi-col.start .mi-col-v {
+            color: var(--pu700)
+        }
+
+        .mi-col.start .mi-col-l {
+            color: var(--pu500)
+        }
+
+        .mi-col.comp .mi-col-v {
+            color: var(--gr700)
+        }
+
+        .mi-col.comp .mi-col-l {
+            color: var(--gr600)
+        }
+
+        .sc-ex-grp {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-shrink: 0
+        }
+
+        .sc-ex-cols {
+            display: flex;
+            gap: 12px
+        }
+
+        .ex-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            min-width: 36px
+        }
+
+        .ex-col-v {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.3
+        }
+
+        .ex-col-l {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            line-height: 1.2
+        }
+
+        .ex-col.ok .ex-col-v {
+            color: var(--gr700)
+        }
+
+        .ex-col.ok .ex-col-l {
+            color: var(--gr600)
+        }
+
+        .ex-col.fail .ex-col-v {
+            color: var(--r700)
+        }
+
+        .ex-col.fail .ex-col-l {
+            color: var(--r600)
+        }
+
+        .ex-col.total .ex-col-v {
+            color: var(--g700)
+        }
+
+        .ex-col.total .ex-col-l {
+            color: var(--g400)
+        }
+
+        .sc-frate {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            flex-shrink: 0;
+            align-items: center;
+            min-width: 42px
+        }
+
+        .sc-frate-v {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.3
+        }
+
+        .sc-frate-l {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            line-height: 1.2;
+            color: var(--tt)
+        }
+
+        .sc-frate.zero .sc-frate-v {
+            color: var(--gr600)
+        }
+
+        .sc-frate.low .sc-frate-v {
+            color: var(--y600)
+        }
+
+        .sc-frate.high .sc-frate-v {
+            color: var(--r600)
+        }
+
+        .zones-card-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-top: 12px;
+            margin-top: 14px;
+            border-top: 1px solid var(--border)
+        }
+
+        .zones-card-lbl {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--tt);
+            flex-shrink: 0
+        }
+
+        .sec {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--tt);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .sec::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        .sc {
+            background: var(--surface);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+            overflow: hidden
+        }
+
+        .sc-hd {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid var(--border);
+            transition: background .15s
+        }
+
+        .sc-hd:hover {
+            background: var(--p50)
+        }
+
+        .sc-hd.closed {
+            border-bottom-color: transparent
+        }
+
+        .chev {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            color: var(--g400);
+            transition: transform .2s;
+            margin-right: 10px
+        }
+
+        .sc-hd.closed .chev {
+            transform: rotate(-90deg)
+        }
+
+        .sc-name-section {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            overflow: hidden;
+            margin-right: 10px
+        }
+
+        .sc-name {
+            font-size: 13px;
+            font-weight: 600;
+            font-family: var(--mono);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .sc-ver {
+            font-size: 11px;
+            color: var(--p600);
+            font-family: var(--mono);
+            white-space: nowrap;
+            flex-shrink: 0
+        }
+
+        .sc-desc {
+            font-size: 11px;
+            color: var(--tt);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 10
+        }
+
+        .sc-body {
+            padding: 18px 20px
+        }
+
+        .sc-msgs-hd {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--tt);
+            margin-bottom: 10px
+        }
+
+        .sc-msgs {
+            margin-bottom: 18px
+        }
+
+        .ml {
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        .msg {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            padding: 7px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.4
+        }
+
+        .msg-info {
+            background: var(--p50);
+            border: 1px solid var(--p100)
+        }
+
+        .msg-warn {
+            background: var(--y50, #FFFBF0);
+            border: 1px solid var(--y100)
+        }
+
+        .msg-error {
+            background: var(--r50, #FEF5F9);
+            border: 1px solid var(--r100)
+        }
+
+        .mlv {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .5px;
+            padding: 1px 6px;
+            border-radius: 3px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-top: 1px
+        }
+
+        .msg-info .mlv {
+            background: var(--p100);
+            color: var(--p800)
+        }
+
+        .msg-warn .mlv {
+            background: var(--y100);
+            color: var(--y700)
+        }
+
+        .msg-error .mlv {
+            background: var(--r100);
+            color: var(--r700)
+        }
+
+        .mt2 {
+            color: var(--ts)
+        }
+
+        .steps-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px
+        }
+
+        .steps-ttl {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--ts)
+        }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        .si {
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--border2);
+            border-radius: 8px;
+            overflow: hidden
+        }
+
+        .si.ok {
+            border-left-color: var(--gr500)
+        }
+
+        .si.warn {
+            border-left-color: var(--y500)
+        }
+
+        .si.err {
+            border-left-color: var(--r500)
+        }
+
+        .si.unexec {
+            border-left-color: var(--g300);
+            opacity: .38;
+            pointer-events: none
+        }
+
+        .sr {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            cursor: pointer;
+            transition: background .15s
+        }
+
+        .sr:hover {
+            background: var(--g50)
+        }
+
+        .s-name {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 500;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .s-type {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: var(--p50);
+            color: var(--p700);
+            border: 1px solid var(--p200);
+            flex-shrink: 0;
+            letter-spacing: .3px
+        }
+
+        .s-exec {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--g500);
+            flex-shrink: 0
+        }
+
+        .s-frate {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0
+        }
+
+        .s-frate.zero {
+            color: var(--gr600)
+        }
+
+        .s-frate.low {
+            color: var(--y600)
+        }
+
+        .s-frate.high {
+            color: var(--r600)
+        }
+
+        .s-frate.na {
+            color: var(--g300)
+        }
+
+        .expbtn {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--p600);
+            background: none;
+            border: 1px solid var(--p200);
+            cursor: pointer;
+            padding: 3px 8px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background .12s
+        }
+
+        .expbtn:hover {
+            background: var(--p50)
+        }
+
+        .expicon {
+            display: inline-block;
+            transition: transform .18s
+        }
+
+        .si.open .expicon {
+            transform: rotate(180deg)
+        }
+
+        .sd {
+            display: none;
+            border-top: 1px solid var(--border);
+            padding: 14px;
+            background: var(--g50)
+        }
+
+        .si.open .sd {
+            display: block
+        }
+
+        .mtt {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px
+        }
+
+        .mtt th {
+            text-align: left;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--tt);
+            padding: 5px 10px;
+            border-bottom: 1px solid var(--g100);
+            background: var(--surface)
+        }
+
+        .mtt td {
+            padding: 6px 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, .03);
+            vertical-align: middle
+        }
+
+        .mtt tr:last-child td {
+            border-bottom: none
+        }
+
+        .mtt tr:hover td {
+            background: var(--p50)
+        }
+
+        .mtt-name {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text)
+        }
+
+        .mtt tr {
+            vertical-align: top
+        }
+
+        .mtt-tag-list {
+            margin-top: 2px
+        }
+
+        .mtt-tag {
+            display: block;
+            font-family: var(--mono);
+            font-size: 9px;
+            color: var(--g500)
+        }
+
+        .mtt-pct {
+            display: block;
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--g600)
+        }
+
+        .mtt-pct-lbl {
+            color: var(--g400);
+            margin-right: 2px
+        }
+
+        .mtt-val {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--g900)
+        }
+
+        .mtt-unit {
+            font-size: 10px;
+            color: var(--tt)
+        }
+
+        .tag {
+            font-size: 9px;
+            font-family: var(--mono);
+            background: var(--g100);
+            color: var(--g700);
+            padding: 1px 5px;
+            border-radius: 3px;
+            display: inline-block;
+            margin: 1px
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            padding: 13px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--tt)
+        }
+
+        .ft-brand {
+            font-weight: 700;
+            color: var(--p600);
+            font-size: 12px
+        }
+
+        code {
+            font-family: var(--mono);
+            font-size: 11px
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="rh">
+    <div class="rh-inner">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="var(--p500)" width="22" height="22"
+                 aria-label="QALIPSIS">
+                <path d="M30.51 27.194c-0.323-1.964-1.98-3.375-3.893-3.46 2.182-2.516 3.502-5.8 3.502-9.392 0-7.921-6.422-14.343-14.343-14.343s-14.343 6.422-14.343 14.343 6.422 14.343 14.343 14.343c2.377 0 4.619-0.579 6.593-1.603-0.047 0.235-0.074 0.504-0.074 0.78 0 0.237 0.020 0.47 0.058 0.697l-0.003-0.024c0.37 2.253 2.497 3.779 4.75 3.409s3.779-2.497 3.409-4.75zM15.777 22.441c-4.472 0-8.098-3.626-8.098-8.098s3.626-8.098 8.098-8.098 8.098 3.626 8.098 8.098-3.626 8.098-8.098 8.098z"/>
+            </svg>
+            <span class="logo-name">ALIPSIS</span>
+            <span class="logo-sep">|</span>
+            <span class="logo-report">Campaign Report</span>
+        </div>
+        <div class="ci" th:each="campaign : ${campaigns}">
+            <div class="ci-title-row">
+                <span class="ci-title" th:text="${campaign.name}">Campaign Name</span>
+                <!--/* Status badge — maps ExecutionStatus enum to CSS class */-->
+                <th:block th:with="sn=${campaign.status != null ? campaign.status.name() : null},
+                           sc=${sn == 'SUCCESSFUL' ? 'b-success' : sn == 'WARNING' ? 'b-warning' : (sn == 'FAILED' or sn == 'ABORTED') ? 'b-failed' : (sn == 'IN_PROGRESS' or sn == 'QUEUED') ? 'b-running' : 'b-neutral'}">
+                    <span class="badge" th:classappend="${sc}" th:text="${sn != null ? sn : '—'}">Status</span>
+                </th:block>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ═══ CONTENT ═══ -->
+<main class="content">
+
+    <th:block th:each="campaign : ${campaigns}">
+
+        <!-- ── CAMPAIGN SUMMARY CARD ── -->
+        <div class="card"
+             th:with="totalExec=(${(campaign.successfulExecutions != null ? campaign.successfulExecutions : 0) + (campaign.failedExecutions != null ? campaign.failedExecutions : 0)}),
+                  failRate=${totalExec > 0 ? (campaign.failedExecutions != null ? campaign.failedExecutions : 0) * 100.0 / totalExec : null},
+                  dur=${campaign.start != null and campaign.end != null ? campaign.end.epochSecond - campaign.start.epochSecond : 0},
+                  durHrs=${dur / 3600},
+                  durMins=${(dur % 3600) / 60},
+                  durSecs=${dur % 60}">
+
+            <div class="camp-row">
+
+                <!-- Scenario count badge -->
+                <span class="badge b-info" style="height:24px;padding:0 14px;font-size:12px;margin-right:6px"
+                      th:text="${campaign.scenarios.size()} + (${campaign.scenarios.size() == 1} ? ' Scenario' : ' Scenarios')">N Scenarios</span>
+
+                <div class="vbar"></div>
+
+                <!-- Time: start → end / (duration) -->
+                <div class="sc-time-grp">
+                    <svg class="grp-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <div class="sc-time-info">
+            <span class="sc-time-dates"
+                  th:text="${campaign.start != null ? #temporals.format(campaign.start.atZone(UTC), 'yyyy-MM-dd HH:mm:ss') : '—'} + ' → ' + ${campaign.end != null ? #temporals.format(campaign.end.atZone(UTC), 'HH:mm:ss') : '—'}">start → end</span>
+                        <span class="sc-time-dur"
+                              th:text="'(' + (${durHrs > 0 ? durHrs + 'h ' : ''}) + (${durMins > 0 ? durMins + 'm ' : ''}) + ${durSecs + 's'} + ')'">duration</span>
+                    </div>
+                </div>
+
+                <div class="vbar"></div>
+
+                <!-- Minions: Started / Completed -->
+                <div class="sc-mi-grp">
+                    <svg class="grp-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <div class="sc-mi-cols">
+                        <div class="mi-col sched" th:if="${campaign.scheduledMinions != null}">
+                            <div class="mi-col-v" style="color:var(--g700)"
+                                 th:text="${#numbers.formatInteger(campaign.scheduledMinions, 1, 'DEFAULT')}">0
+                            </div>
+                            <div class="mi-col-l" style="color:var(--g500)">Scheduled</div>
+                        </div>
+                        <div class="mi-col start">
+                            <div class="mi-col-v"
+                                 th:text="${campaign.startedMinions != null ? #numbers.formatInteger(campaign.startedMinions, 1, 'DEFAULT') : '—'}">
+                                0
+                            </div>
+                            <div class="mi-col-l">Started</div>
+                        </div>
+                        <div class="mi-col comp">
+                            <div class="mi-col-v"
+                                 th:text="${campaign.completedMinions != null ? #numbers.formatInteger(campaign.completedMinions, 1, 'DEFAULT') : '—'}">
+                                0
+                            </div>
+                            <div class="mi-col-l">Completed</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vbar"></div>
+
+                <!-- Step executions: Success / Failed / Total -->
+                <div class="sc-ex-grp">
+                    <svg class="grp-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                        <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                    </svg>
+                    <div class="sc-ex-cols">
+                        <div class="ex-col ok">
+                            <div class="ex-col-v"
+                                 th:text="${campaign.successfulExecutions != null ? #numbers.formatInteger(campaign.successfulExecutions, 1, 'DEFAULT') : '—'}">
+                                0
+                            </div>
+                            <div class="ex-col-l">Success</div>
+                        </div>
+                        <div class="ex-col fail">
+                            <div class="ex-col-v"
+                                 th:text="${campaign.failedExecutions != null ? #numbers.formatInteger(campaign.failedExecutions, 1, 'DEFAULT') : '—'}">
+                                0
+                            </div>
+                            <div class="ex-col-l">Failed</div>
+                        </div>
+                        <div class="ex-col total">
+                            <div class="ex-col-v" th:text="${#numbers.formatInteger(totalExec, 1, 'DEFAULT')}">0</div>
+                            <div class="ex-col-l">Total</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vbar"></div>
+
+                <!-- Failure rate -->
+                <div class="sc-frate"
+                     th:classappend="${failRate == null ? 'zero' : failRate > 10 ? 'high' : failRate > 0 ? 'low' : 'zero'}">
+                    <div class="sc-frate-v"
+                         th:text="${failRate != null ? #numbers.formatDecimal(failRate, 1, 'NONE', 1, 'POINT') + '%' : '0.0%'}">
+                        0.0%
+                    </div>
+                    <div class="sc-frate-l">Failure</div>
+                </div>
+
+            </div><!-- /camp-row -->
+
+            <!-- Zones row -->
+            <div class="zones-card-row" th:if="${campaign.resolvedZones != null and !campaign.resolvedZones.isEmpty()}">
+                <span class="zones-card-lbl">Zones</span>
+                <th:block th:each="zone : ${campaign.resolvedZones}">
+                    <div class="zone-item">
+                        <img th:if="${zone.imagePath != null}" class="zone-flag-img" th:src="${zone.imagePath}"
+                             alt="zone flag"/>
+                        <span th:if="${zone.imagePath == null}" th:text="${zone.key}"
+                              style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g700)">KEY</span>
+                        <span th:text="${zone.title}">Zone</span>
+                        <div class="zone-tip" th:if="${zone.title != null or zone.description != null}">
+                            <div class="zone-tip-row">
+                                <img th:if="${zone.imagePath != null}" class="zone-flag-img" th:src="${zone.imagePath}"
+                                     alt=""/>
+                                <div>
+                                    <div class="zone-tip-name" th:text="${zone.title}">Zone Name</div>
+                                    <div class="zone-tip-desc" th:if="${zone.description != null}"
+                                         th:text="${zone.description}">Description
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </th:block>
+            </div><!-- /zones-card-row -->
+
+            <!-- Campaign-level meters -->
+            <th:block th:if="${campaign.meters != null and !campaign.meters.isEmpty()}">
+                <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tt);margin-top:14px;padding-top:12px;border-top:1px solid var(--border);margin-bottom:9px">
+                    Meters
+                </div>
+                <table class="mtt">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Count</th>
+                        <th>Value / Mean</th>
+                        <th>Max</th>
+                        <th>Percentiles</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="meter : ${campaign.meters}">
+                        <td class="mtt-name">
+                            <span th:text="${meter.name}">—</span>
+                            <div th:if="${meter.tags != null and !meter.tags.isEmpty()}" class="mtt-tag-list">
+                                <span th:each="entry : ${meter.tags}"
+                                      th:if="${entry.key != 'scope' and entry.key != 'step' and entry.key != 'dag' and entry.key != 'previous-step'}"
+                                      th:text="${entry.key + '=' + entry.value}"
+                                      class="mtt-tag">k=v</span>
+                            </div>
+                        </td>
+                        <td><span class="tag" th:text="${meter.type != null ? meter.type : '—'}">—</span></td>
+                        <td class="mtt-val" th:text="${meter.count != null ? meter.count : '—'}">—</td>
+                        <td class="mtt-val"
+                            th:text="${meter.mean != null ? meter.mean
+                            : meter.meanDuration != null ? meter.meanDuration.toMillis() + ' ms'
+                            : meter.value != null ? meter.value : '—'}">—
+                        </td>
+                        <td class="mtt-val"
+                            th:text="${meter.max != null ? meter.max
+                            : meter.maxDuration != null ? meter.maxDuration.toMillis() + ' ms' : '—'}">—
+                        </td>
+                        <td>
+                            <th:block th:if="${meter.other != null and !meter.other.isEmpty()}">
+                                <span th:each="entry : ${meter.other}"
+                                      th:if="${#strings.startsWith(entry.key,'percentile_')}"
+                                      class="mtt-pct">
+                                    <span class="mtt-pct-lbl"
+                                          th:text="'p' + ${entry.key.replace('percentile_','').replaceAll('\\.0$','')} + ':'">p95:</span>
+                                    <span th:text="${meter.type == 'timer' ? #numbers.formatDecimal(entry.value.doubleValue() / 1000.0, 1, 'NONE', 1, 'POINT') + ' ms' : #numbers.formatInteger(entry.value.longValue(), 1, 'DEFAULT')}">—</span>
+                                </span>
+                            </th:block>
+                            <span th:if="${meter.other == null or meter.other.isEmpty()}">—</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </th:block>
+
+        </div><!-- /card -->
+
+        <!-- ── SCENARIOS ── -->
+        <div class="sec">Scenarios</div>
+
+        <div th:insert="~{fragments/html-report-scenarios :: scenarios(${campaign}, ${UTC})}"></div>
+
+    </th:block><!-- /th:each campaign -->
+
+</main>
+
+<footer>
+    <span th:text="'Generated ' + ${#temporals.format(generatedTime, 'yyyy-MM-dd HH:mm:ss')} + ' UTC'">Generated …</span>
+    <span class="ft-brand">QALIPSIS
+    <span th:if="${version != null}"
+          th:text="'v' + ${version}"
+          style="font-family:var(--mono);font-size:10px;font-weight:400;color:var(--tt)">v0.0.0</span>
+  </span>
+    <span>Campaign Report · <code th:text="${title}">Campaign Name</code></span>
+</footer>
+
+<script>
+    function toggleSc(el) {
+        const hd = el.closest('.sc-hd') || el;
+        const sc = hd.closest('.sc');
+        const body = sc.querySelector('.sc-body');
+        const closed = hd.classList.toggle('closed');
+        body.style.display = closed ? 'none' : '';
+    }
+
+    function toggleStep(el) {
+        el.closest('.si').classList.toggle('open');
+    }
+</script>
+</body>
+</html>

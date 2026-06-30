@@ -57,7 +57,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Base64
 
@@ -86,6 +86,7 @@ internal class ReportTemplateFragmentTest {
     @BeforeEach
     fun init() {
         context = Context()
+        context.setVariable("UTC", ZoneOffset.UTC)
         createTemplateEngine()
         snapshotDirectory = Files.createTempDirectory("__snapshot__")
 
@@ -284,12 +285,12 @@ internal class ReportTemplateFragmentTest {
         val result = templateEngine.process("fragments/campaign-scenario-summary", context)
 
         //then
-        assertTrue(result.contains("""<span class="title">Campaign Seven</span>"""))
-        assertTrue(result.contains("""<div class="small-muted">28m 11s</div>"""))
-        assertTrue(result.contains("""<span style="font-weight:500; margin-left:6px;">46 started</span>"""))
-        assertTrue(result.contains("""<div class="small-muted">46 (100%) completed</div>"""))
-        assertTrue(result.contains("""<span class="stat-highlight">25 successful (54%)</span>"""))
-        assertTrue(result.contains("""<span class="stat-danger">21 failed (46%)</span>"""))
+        assertTrue(result.contains("""<span class="cmp-name">Campaign Seven</span>"""))
+        assertTrue(result.contains("""<div class="muted-sm">(28m 11s)</div>"""))
+        assertTrue(result.contains("""<span class="stat-inline c-purple">46</span>"""))
+        assertTrue(result.contains("""<span class="stat-inline c-teal">46</span>"""))
+        assertTrue(result.contains("""<span class="stat-inline c-green">25</span>"""))
+        assertTrue(result.contains("""<span class="stat-inline c-red">21</span>"""))
         writeSnapshot(testInfo.displayName, result)
     }
 
@@ -297,11 +298,11 @@ internal class ReportTemplateFragmentTest {
     fun `should render the time series event table`(testInfo: TestInfo) {
         //given
         val timestamp1 =
-            Instant.parse("2023-03-18T16:31:47.445312Z").atZone(ZoneId.systemDefault()).toLocalTime().format(
+            Instant.parse("2023-03-18T16:31:47.445312Z").atZone(ZoneOffset.UTC).toLocalTime().format(
                 DateTimeFormatter.ofPattern("HH:mm:ss")
             )
         val timestamp2 =
-            Instant.parse("2023-03-18T09:21:47.445312Z").atZone(ZoneId.systemDefault()).toLocalTime().format(
+            Instant.parse("2023-03-18T09:21:47.445312Z").atZone(ZoneOffset.UTC).toLocalTime().format(
                 DateTimeFormatter.ofPattern("HH:mm:ss")
             )
         context.setVariable(
@@ -416,11 +417,11 @@ internal class ReportTemplateFragmentTest {
     @Test
     fun `should render the time series meter table`(testInfo: TestInfo) {
         val timestamp1 =
-            Instant.parse("2023-03-18T16:31:47.445312Z").atZone(ZoneId.systemDefault()).toLocalTime().format(
+            Instant.parse("2023-03-18T16:31:47.445312Z").atZone(ZoneOffset.UTC).toLocalTime().format(
                 DateTimeFormatter.ofPattern("HH:mm:ss")
             )
         val timestamp2 =
-            Instant.parse("2023-03-18T13:01:07.445312Z").atZone(ZoneId.systemDefault()).toLocalTime().format(
+            Instant.parse("2023-03-18T13:01:07.445312Z").atZone(ZoneOffset.UTC).toLocalTime().format(
                 DateTimeFormatter.ofPattern("HH:mm:ss")
             )
         //given
@@ -1013,11 +1014,11 @@ internal class ReportTemplateFragmentTest {
             }
         )
         val timestamp1 =
-            Instant.parse("2023-03-16T09:15:22.445312Z").atZone(ZoneId.systemDefault()).toLocalTime().format(
+            Instant.parse("2023-03-16T09:15:22.445312Z").atZone(ZoneOffset.UTC).toLocalTime().format(
                 DateTimeFormatter.ofPattern("HH:mm:ss")
             )
         val timestamp2 =
-            Instant.parse("2023-03-13T15:09:41.445312Z").atZone(ZoneId.systemDefault()).toLocalTime().format(
+            Instant.parse("2023-03-13T15:09:41.445312Z").atZone(ZoneOffset.UTC).toLocalTime().format(
                 DateTimeFormatter.ofPattern("HH:mm:ss")
             )
         val eventTableData1 = setOf(
@@ -1084,12 +1085,12 @@ internal class ReportTemplateFragmentTest {
 
         //then
         assertTrue { result.contains("""<h1>Latest Event Report</h1>""") }
-        assertTrue { result.contains("""<span class="title">Fifth Campaign</span>""") }
-        assertTrue { result.contains("""<div class="button-wrapper ABORTED">""") }
-        assertTrue { result.contains("""<div class="small-muted">5 (83%) completed</div>""") }
-        assertTrue { result.contains("""<span style="font-weight:500; margin-left:6px;">6 started</span>""") }
-        assertTrue { result.contains("""<span class="stat-highlight">5 successful (83%)</span>""") }
-        assertTrue { result.contains("""<span class="stat-danger">1 failed (17%)</span>""") }
+        assertTrue { result.contains("""<span class="cmp-name">Fifth Campaign</span>""") }
+        assertTrue { result.contains("""<span class="badge badge-aborted">ABORTED</span>""") }
+        assertTrue { result.contains("""<span class="stat-inline c-teal">5</span>""") }
+        assertTrue { result.contains("""<span class="stat-inline c-purple">6</span>""") }
+        assertTrue { result.contains("""<span class="stat-inline c-green">5</span>""") }
+        assertTrue { result.contains("""<span class="stat-inline c-red">1</span>""") }
         assertTrue { result.contains("""<td class="data-series-table-data" timestamp="2023-03-16T09:15:22.445312Z">${timestamp1}</td>""") }
         assertTrue { result.contains("""<td class="data-series-table-data">Requests Per second2</td>""") }
         assertTrue { result.contains("""<td class="data-series-table-data">cassandra.save.saving.all2</td>""") }
@@ -1419,11 +1420,11 @@ internal class ReportTemplateFragmentTest {
             }
         )
         val timestamp1 =
-            Instant.parse("2023-03-18T13:01:07.445312Z").atZone(ZoneId.systemDefault()).toLocalTime().format(
+            Instant.parse("2023-03-18T13:01:07.445312Z").atZone(ZoneOffset.UTC).toLocalTime().format(
                 DateTimeFormatter.ofPattern("HH:mm:ss")
             )
         val timestamp2 =
-            Instant.parse("2023-03-18T16:31:47.445312Z").atZone(ZoneId.systemDefault()).toLocalTime().format(
+            Instant.parse("2023-03-18T16:31:47.445312Z").atZone(ZoneOffset.UTC).toLocalTime().format(
                 DateTimeFormatter.ofPattern("HH:mm:ss")
             )
         val meterTableData = setOf(
@@ -1469,10 +1470,10 @@ internal class ReportTemplateFragmentTest {
         //then
         assertTrue { result.contains("""<h1>Latest Meter Report</h1>""") }
         assertTrue { result.contains("""<div class="campaign-container">""") }
-        assertTrue { result.contains("""<span class="title">Fifth Campaign</span>""") }
-        assertTrue { result.contains("""<span style="font-weight:500; margin-left:6px;">6 started</span>""") }
-        assertTrue { result.contains("""<div class="small-muted">5 (83%) completed</div>""") }
-        assertTrue { result.contains("""<span class="stat-highlight">5 successful (83%)</span>""") }
+        assertTrue { result.contains("""<span class="cmp-name">Fifth Campaign</span>""") }
+        assertTrue { result.contains("""<span class="stat-inline c-purple">6</span>""") }
+        assertTrue { result.contains("""<span class="stat-inline c-teal">5</span>""") }
+        assertTrue { result.contains("""<span class="stat-inline c-green">5</span>""") }
         assertTrue { result.contains("""<td class="data-series-table-data" timestamp="2023-03-18T13:01:07.445312Z">${timestamp1}</td>""") }
         assertTrue { result.contains("""<td class="data-series-table-data">Active minions</td>""") }
         assertTrue { result.contains("""<td class="data-series-table-data">cassandra.poll.polling.all</td>""") }

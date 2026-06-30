@@ -141,7 +141,6 @@ export interface CampaignExecutionDetails {
   failureReason?: string
   configurerName?: string
   aborterName?: string
-  scenarios?: Scenario[]
   zones?: string[]
   /**
    * Counts of minions when the campaign started.
@@ -166,7 +165,12 @@ export interface CampaignExecutionDetails {
   /**
    * Individual details of the scenario executed during the campaign.
    */
-  scenariosReports: ScenarioExecutionDetails[]
+  scenarios: ScenarioExecutionDetails[]
+
+    /**
+     * Aggregated meters produced during the campaign execution, at the campaign level.
+     */
+    meters: TimeSeriesMeter[]
 }
 
 export interface CampaignConfiguration {

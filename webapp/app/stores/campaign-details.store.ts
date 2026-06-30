@@ -1,4 +1,4 @@
-import type { ApexOptions } from 'apexcharts'
+import type {ApexOptions} from 'apexcharts'
 
 interface CampaignDetailsStoreState {
   campaignDetails: CampaignExecutionDetails | null
@@ -42,9 +42,7 @@ export const useCampaignDetailsStore = defineStore('CampaignDetails', {
         campaigns: [campaignDetails.key],
         series: this.selectedDataSeriesReferences,
         selectedScenarios: this.selectedScenarioNames,
-        availableScenarios: campaignDetails.scenarios
-          ? campaignDetails.scenarios.map((scenario: Scenario) => scenario.name)
-          : [],
+          availableScenarios: campaignDetails.scenarios?.map((s) => s.name) ?? [],
         from: campaignDetails.start,
         until: campaignDetails.end,
       })

@@ -13,8 +13,8 @@ datasource:
     maxAcquireTime: PT5S
 
 datasources:
-  default: # Required only for Liquibase.
-    url: jdbc:postgresql://${datasource.host}:${datasource.port}/${datasource.database}?ApplicationName=qalipsis_jdbc
+  default: # Required only for Liquibase and campaign meter writes.
+    url: jdbc:postgresql://${datasource.host}:${datasource.port}/${datasource.database}?ApplicationName=qalipsis_jdbc&currentSchema=${datasource.schema}
     username: ${datasource.username}
     password: ${datasource.password}
     maximum-pool-size: 4

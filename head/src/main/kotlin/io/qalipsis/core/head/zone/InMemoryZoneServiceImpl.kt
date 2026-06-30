@@ -34,7 +34,7 @@ import jakarta.inject.Singleton
 @Requirements(Requires(env = [ExecutionEnvironments.TRANSIENT]))
 class InMemoryZoneServiceImpl : ZoneService {
 
-    override suspend fun list(tenant: String): Collection<Zone> {
-        return emptyList()
-    }
+    override suspend fun list(tenant: String): Collection<Zone> = emptyList()
+
+    override suspend fun resolve(tenant: String, zoneKeys: Set<String>): Collection<Zone> = emptyList()
 }

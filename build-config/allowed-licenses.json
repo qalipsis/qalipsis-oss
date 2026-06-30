@@ -71,6 +71,10 @@
     },
     {
       "moduleLicense": ".*",
+      "moduleName": "com.h2database:h2"
+    },
+    {
+      "moduleLicense": ".*",
       "moduleName": "com.oracle.coherence.ce:coherence-bom"
     },
     {

@@ -31,6 +31,7 @@ export function renderChartTooltipRow(color: string, bodyHtml: string): string {
 export interface BuildAggregationChartContext {
   pushSeries: (series: ApexDataSeries) => void
   pushStrokeDash: (value: number) => void
+  pushStrokeWidth: (value: number) => void
 }
 
 export interface BuildAggregationChartParams {
@@ -147,7 +148,9 @@ export const ChartHelper = {
    * or x-axis tweaks via `tooltip` / `customizeOptions`.
    */
   buildAggregationChart(params: BuildAggregationChartParams): ChartData {
-    const aggregations = Object.entries(params.aggregationResult).filter(([, tsv]) => tsv.values.length)
+    const aggregations = Object.entries(params.aggregationResult).filter(
+        ([, tsv]) => tsv.values.length > 0 || tsv.summary != null,
+    )
     const chartOptions: ApexOptions = ChartsConfig.getDefaultChartOptions()
 
     params.customizeOptions?.(chartOptions)
@@ -162,17 +165,25 @@ export const ChartHelper = {
     const chartDataSeries: ApexAxisChartSeries = []
     const yAxisConfigs: ApexYAxis[] = []
     const strokeDashArray: number[] = []
+    const strokeWidthArray: number[] = []
     const summaryBySeriesName: { [name: string]: string } = {}
     const yAxisAnnotations: any[] = []
     const ctx: BuildAggregationChartContext = {
       pushSeries: (series) => chartDataSeries.push(series),
       pushStrokeDash: (value) => strokeDashArray.push(value),
+      pushStrokeWidth: (value) => strokeWidthArray.push(value),
     }
 
     aggregations.forEach(([key, timeSeriesValues], idx) => {
       const chartOptionData = ChartHelper.toChartOptionData(key, params.dataSeries)
       params.buildSeries(chartOptionData, timeSeriesValues.values, ctx)
-      yAxisConfigs.push(ChartHelper.getYAxisOptions(chartOptionData))
+      const yAxisConfig = ChartHelper.getYAxisOptions(chartOptionData)
+      if (timeSeriesValues.values.length === 0 && timeSeriesValues.summary) {
+        const summaryVal = timeSeriesValues.summary.value
+        yAxisConfig.min = 0
+        yAxisConfig.max = summaryVal > 0 ? summaryVal * 1.2 : 1
+      }
+      yAxisConfigs.push(yAxisConfig)
 
       if (timeSeriesValues.summary && key !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE) {
         const rawY = timeSeriesValues.summary.value
@@ -185,22 +196,28 @@ export const ChartHelper = {
           strokeDashArray: 4,
           label: {text: ''},
         })
+
+        // Extend y-axis max so the annotation is within the visible range.
+        // Needed when the campaign summary (e.g. total counter) exceeds any individual period value.
+        const dataMax = timeSeriesValues.values.reduce(
+            (max, v) => (v.value != null && Number(v.value) > max ? Number(v.value) : max),
+            0,
+        )
+        if (rawY > dataMax) {
+          yAxisConfigs[yAxisConfigs.length - 1].max = rawY > 0 ? rawY * 1.05 : 1
+        }
       }
     })
 
     if (params.tooltip) chartOptions.tooltip!.custom = params.tooltip(summaryBySeriesName)
 
-    // Add annotations after chart mounts so Y-axis scales are fully computed.
     if (yAxisAnnotations.length > 0) {
-      chartOptions.chart!.events = {
-        mounted: (chart: any) => {
-          yAxisAnnotations.forEach((anno) => chart.addYaxisAnnotation(anno))
-        },
-      }
+      chartOptions.annotations = {yaxis: yAxisAnnotations}
     }
 
     chartOptions.yaxis = yAxisConfigs
     if (strokeDashArray.length) chartOptions.stroke!.dashArray = strokeDashArray
+    if (strokeWidthArray.length) chartOptions.stroke!.width = strokeWidthArray
 
     return { chartOptions, chartDataSeries }
   },

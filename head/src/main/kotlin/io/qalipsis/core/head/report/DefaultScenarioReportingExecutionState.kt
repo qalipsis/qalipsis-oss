@@ -22,6 +22,7 @@ package io.qalipsis.core.head.report
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
+import io.qalipsis.api.report.StepReport
 import java.time.Instant
 
 /**
@@ -39,5 +40,6 @@ data class DefaultScenarioReportingExecutionState(
     override var end: Instant?,
     override var abort: Instant?,
     override val status: ExecutionStatus?,
-    override val messages: List<ReportMessage>
+    override val messages: List<ReportMessage>,
+    override val steps: List<StepReport> = emptyList()
 ) : ScenarioReportingExecutionState
