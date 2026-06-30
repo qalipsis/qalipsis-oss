@@ -21,7 +21,6 @@ package io.qalipsis.core.head.report
 
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ReportMessageSeverity
-import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.entity.ReportFileEntity
 import io.qalipsis.core.head.jdbc.entity.ReportTaskEntity
@@ -33,9 +32,11 @@ import io.qalipsis.core.head.jdbc.repository.ScenarioReportRepository
 import io.qalipsis.core.head.model.ReportTaskStatus
 import jakarta.inject.Singleton
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.Base64
 
 /**
  * Handles the functionalities of report task generation.
@@ -80,8 +81,9 @@ class ReportGenerator(
             val scenarioReportMessages = scenarioReportMessageRepository.findByScenarioReportIdInOrderById(
                 scenarioReports.map { it.id }
             )
-            val campaignReportData = campaignData.map { campaign ->
+            val campaignReportData = campaignData.mapIndexed { index, campaign ->
                 campaignReferenceToName[campaign.campaignKey] = campaign.name
+                campaign.svgLineIcon = buildLineStyleSvg(index)
                 val associatedScenarioReports =
                     scenarioReports.filter { it.campaignReportId == campaign.campaignReportId }
                 val messagesByScenarioReportId = scenarioReportMessages.groupBy { it.scenarioReportId }
@@ -110,7 +112,7 @@ class ReportGenerator(
                 campaign.error = scenarioReport.sumOf { it.error }
                 campaign.warning = scenarioReport.sumOf { it.warning }
                 campaign.total = campaign.info + campaign.error + campaign.warning
-                return@map campaign
+                return@mapIndexed campaign
             }
             require(campaignReportData.isNotEmpty()) { "No matching campaign for specified campaign keys, campaign name patterns and scenario name patterns" }
             val campaignReportDetail = reportFileBuilder.populateCampaignReportDetail(report, tenant, campaignReportData)
@@ -152,7 +154,31 @@ class ReportGenerator(
         }
     }
 
+    private fun buildLineStyleSvg(index: Int): String {
+        val svgDash = LINE_STYLES[index % LINE_STYLES.size]
+        val strokeWidth = if (index < LINE_STYLES.size) 2 else 1
+        val dashAttr = if (svgDash == "none") "" else """ stroke-dasharray="$svgDash""""
+        val svg =
+            """<svg xmlns="http://www.w3.org/2000/svg" width="40" height="24"><polyline points="0,12 8,0 16,24 24,0 32,24 40,0" fill="none" stroke="#7c3aed" stroke-width="$strokeWidth"$dashAttr/></svg>"""
+        return Base64.getEncoder().encodeToString(svg.toByteArray(StandardCharsets.UTF_8))
+    }
+
     companion object {
         val logger = logger()
+
+        private val LINE_STYLES = listOf(
+            "none",
+            "12 4",
+            "8 4",
+            "4 4",
+            "1.5 4",
+            "12 4 2 4",
+            "8 4 2 4",
+            "8 4 2 4 2 4",
+            "12 3 5 3",
+            "4 3 2 3",
+            "4 3 2 3 2 3",
+            "1.5 2",
+        )
     }
 }

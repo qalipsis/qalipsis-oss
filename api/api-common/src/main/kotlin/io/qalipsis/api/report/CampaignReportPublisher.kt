@@ -19,14 +19,15 @@
 
 package io.qalipsis.api.report
 
+import io.micronaut.core.order.Ordered
 import io.qalipsis.api.context.CampaignKey
 
 /**
- * Service in charge of publishing the campaigns reports.
+ * Service in charge of publishing the campaign reports.
  *
  * @author Palina Bril
  */
-interface CampaignReportPublisher {
+interface CampaignReportPublisher : Ordered {
 
     /**
      * Publishes a report for a completed campaign.

@@ -81,7 +81,7 @@ class InMemoryCampaignService(
                 status = QUEUED,
                 configurerName = null,
                 aborterName = null,
-                scenarios = campaignConfiguration.scenarios.map {
+                configuredScenarios = campaignConfiguration.scenarios.map {
                     Scenario(
                         Instant.now(),
                         it.key,

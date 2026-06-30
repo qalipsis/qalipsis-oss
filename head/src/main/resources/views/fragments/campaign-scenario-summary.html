@@ -1,166 +1,172 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <body>
-<div class="campaign-container" th:fragment="campaign-scenario-summary(campaign, timeImage, userImage, rocket, circleCheck, redTriangle, notification, shield, triangle)">
+<div class="campaign-container"
+     th:fragment="campaign-scenario-summary(campaign, timeImage, userImage, rocket, circleCheck, redTriangle, notification, shield, triangle, UTC)"
+     th:with="
+       cTot=${campaign.successfulExecutions + campaign.failedExecutions},
+       cFailRate=${cTot > 0 ? #numbers.formatDecimal(campaign.failedExecutions * 100.0 / cTot, 1, 'NONE', 1, 'POINT') : '0.0'},
+       cDurStr=${
+         (campaign.executionTime >= 3600 ? (campaign.executionTime / 3600) + 'h ' : '') +
+         ((campaign.executionTime % 3600) >= 60 ? ((campaign.executionTime % 3600) / 60) + 'm ' : '') +
+         (campaign.executionTime % 60) + 's'
+       },
+       cEndTime=${campaign.start != null ? campaign.start.plusSeconds(campaign.executionTime).atZone(UTC) : null}
+     ">
+
     <div class="card">
-        <!-- TOP SUMMARY -->
-        <div class="top clearfix">
-            <div class="col-left">
+
+        <!-- ── CAMPAIGN HEADER ── -->
+        <div class="cmp-hdr clearfix">
+            <div class="cmp-hdr-left">
+                <img th:src="${campaign.svgLineIcon}" alt="pdf-image line style"
+                     style="width:36px; height:22px; vertical-align:middle; margin-right:8px;"/>
+                <span class="cmp-name" th:text="${campaign.name}">Campaign Name</span>
+                <span class="badge"
+                      th:classappend="${campaign.result != null ? 'badge-' + #strings.toLowerCase(campaign.result.name()) : 'badge-unknown'}"
+                      th:text="${campaign.result != null ? campaign.result.name() : '—'}"></span>
+                <span th:if="${campaign.resolvedZones != null and !campaign.resolvedZones.isEmpty()}">
+          <span th:each="zone : ${campaign.resolvedZones}" class="zone-pill"
+                th:text="${zone.title != null ? zone.title : zone.key}"></span>
+        </span>
+            </div>
+            <div class="cmp-hdr-right" style="line-height: normal;">
                 <div>
-                    <span class="color"></span>
-                    <span class="title" th:text="${campaign.name}">New Campaign</span>
+                    <img th:src="${timeImage}" alt="pdf-image time icon"
+                         style="width:11px; height:11px; vertical-align:middle; margin-right:3px;"/>
+                    <span th:text="${#temporals.format(campaign.start.atZone(UTC), 'MM/dd/yy, HH:mm:ss')}"></span>
+                    <span th:if="${cEndTime != null}"> &rarr; <span
+                            th:text="${#temporals.format(cEndTime, 'HH:mm:ss')}"></span></span>
                 </div>
-                <div>
-                    <div class="button-wrapper" th:replace="~{fragments/button :: button (${campaign.result})}"
-                         th:classappend="${campaign.result}">
-                    </div>
-                    <div th:unless="${campaign.resolvedZones == null}" th:each="zone: ${campaign.resolvedZones}"
-                         class="float-left campaign-summary-top-third">
-                        <span th:if="${zone.imagePath != null}" class="zone float-left"
-                        th:style="'background-image: url(' + ${zone.imagePath}+ '); background-repeat: no-repeat, repeat; background-size: cover;'"></span>
-                        <div th:unless="${zone.imagePath != null}" class="zone float-left">
-                            <span class="zone-content" th:text="${zone.key}">KEY</span>
-                        </div>
-                        <div class="float-left">
-                            <p class="text-faint" style="margin-bottom: 2px;">Load zone</p>
-                            <p th:text="${zone.title}">Frankfurt</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-mid">
-                <div class="mid-section">
-                    <div class="stat-title">Duration</div>
-                    <div style="font-size:14px; font-weight:500;" class="stat-row">
-                        <img class="float-left img" style="margin-right: 4px; padding-top: 2px; width: 12px;" th:src="${timeImage}"
-                             alt="pdf-image time icon"/>
-                        <span th:text="${#temporals.format(campaign.start, 'yyyy-MM-dd')}"></span><br/>
-                        <span class="muted" th:text="${#temporals.format(campaign.start, 'HH:mm:ss')}"></span>
-                    </div>
-                    <div class="small-muted"
-                         th:text="${campaign.executionTime / 60} + 'm' + ' ' + ${campaign.executionTime % 60} + 's' "></div>
-                </div>
-
-                <div class="mid-section">
-                    <div class="stat-title">Minion</div>
-                    <div style="font-size:14px; font-weight:500;" class="stat-row">
-                        <img class="float-left img" style="padding-top: 2px; width: 16px;" th:src="${rocket}"
-                             alt="pdf-image rocket icon"/>
-                        <span style="font-weight:500; margin-left:6px;" th:text="${campaign.startedMinions + ' started'}"></span>
-                    </div>
-                    <div class="small-muted" th:text="${campaign.completedMinions + ' (' + #numbers.formatInteger((campaign.completedMinions * 100.0) / campaign.startedMinions, 0) + '%) completed'}"></div>
-                </div>
-
-                <div class="mid-section">
-                    <div class="stat-title">Steps</div>
-                    <div class="stat-item">
-                        <img class="float-left img" style="padding-top: 2px; width: 12px; margin-right: 4px;" th:src="${circleCheck}"
-                             alt="pdf-image success icon"/>
-                        <span class="stat-highlight" th:text="${campaign.successfulExecutions + ' successful ('
-                         + #numbers.formatDecimal(
-                             (campaign.successfulExecutions * 100.0) / (campaign.successfulExecutions + campaign.failedExecutions),
-                             0, 0
-                           ) + '%)'}"></span>
-                    </div>
-                    <div class="stat-item">
-                        <img class="float-left img" style="padding-top: 2px; width: 12px; margin-right: 4px;" th:src="${redTriangle}"
-                             alt="pdf-image error icon"/>
-                        <span class="stat-danger" th:text="${campaign.failedExecutions + ' failed ('
-                         + #numbers.formatDecimal(
-                             (campaign.failedExecutions * 100.0) / (campaign.successfulExecutions + campaign.failedExecutions),
-                             0, 0
-                           ) + '%)'}"></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-right">
-                <div class="icons">
-                    <span><img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${notification}"
-                               alt="pdf-image notification icon"/><span th:text="${campaign.total}">0</span></span>
-                    <span ><img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${shield}"
-                                alt="pdf-image success icon"/><span th:text="${campaign.info}">0</span></span>
-                    <span><img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${triangle}"
-                               alt="pdf-image warning icon"/><span th:text="${campaign.warning}">0</span></span>
-                    <span><img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${redTriangle}"
-                                                      alt="pdf-image error icon"/><span th:text="${campaign.error}">0</span></span>
-                </div>
+                <div class="muted-sm" th:text="'(' + ${cDurStr} + ')'"></div>
             </div>
         </div>
 
-        <div class="divider"></div>
+        <!-- ── CAMPAIGN STATS — single row ── -->
+        <div class="cmp-stats clearfix">
 
-        <!-- TABLE HEADER -->
-        <div class="table-header clearfix">
-            <div class="th-col th-name">Scenario Name</div>
-            <div class="th-col th-start">Start Time</div>
-            <div class="th-col th-duration">Duration</div>
-            <div class="th-col th-minions">Minions</div>
-            <div class="th-col th-exec">Executions</div>
-            <div class="th-col th-msg">Messages</div>
-        </div>
-
-        <!-- SCENARIOS -->
-        <div th:each="scenario : ${campaign.scenarios}">
-            <div class="row clearfix">
-                <div class="cell cell-name">
-                    <div>
-                        <span class="color"></span>
-                        <span style="font-weight:500; font-size:14px;" th:text="${scenario.name}">First Scenario</span>
-                    </div>
-                    <div class="button-wrapper" th:replace="~{fragments/button :: button (${scenario.status})}"
-                         th:classappend="${scenario.status}">
-                        <span></span>
-                    </div>
-                </div>
-
-                <div class="cell cell-time">
-                    <div> <img class="float-left img" style="margin-right: 4px; padding-top: 2px; width: 12px;" th:src="${timeImage}"
-                               alt="pdf-image time icon"/> <span th:text="${#temporals.format(scenario.start, 'yyyy-MM-dd')}"></span></div>
-                    <div class="muted" th:text="${#temporals.format(scenario.start, 'HH:mm:ss')}"></div>
-                </div>
-
-                <div class="cell cell-dur">
-                    <div th:text="${scenario.duration}"></div>
-                </div>
-
-                <div class="cell cell-minions">
-                    <div> <img class="float-left img" style="padding-top: 2px; width: 16px;" th:src="${rocket}"
-                               alt="pdf-image minion icon"/> <span style="font-weight:500;" th:text="${scenario.startedMinions + ' started'}"></span></div>
-                    <div class="small-muted" th:text="${scenario.completedMinions + ' (' + #numbers.formatInteger((scenario.completedMinions * 100.0) / scenario.startedMinions, 0) + '%) completed'}"></div>
-                </div>
-
-                <div class="cell cell-exec">
-                    <div> <img class="float-left img" style="padding-top: 2px; width: 12px; margin-right: 4px; " th:src="${circleCheck}"
-                               alt="pdf-image success icon"/><span style="color:#2fa66e; font-weight:700;" th:text="${scenario.successfulExecutions + ' ('
-                         + #numbers.formatDecimal(
-                             (scenario.successfulExecutions * 100.0) / (scenario.successfulExecutions + scenario.failedExecutions),
-                             0, 0
-                           ) + '%)'}"></span></div>
-                    <div> <img class="float-left img" style="margin-right: 4px; padding-top: 2px; width: 12px;" th:src="${triangle}"
-                               alt="pdf-image error icon"/> <span style="color:#d75b5b; font-weight:700;" th:text="${scenario.failedExecutions + ' ('
-                         + #numbers.formatDecimal(
-                             (scenario.failedExecutions * 100.0) / (scenario.successfulExecutions + scenario.failedExecutions),
-                             0, 0
-                           ) + '%)'}"></span></div>
-                </div>
-
-                <div class="cell cell-msg">
-                    <div class="icons">
-                        <span> <img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${notification}"
-                                    alt="pdf-image notification icon"/> <span th:text="${scenario.info + scenario.warning + scenario.error }">0</span></span>
-                        <span> <img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${shield}"
-                                    alt="pdf-image info icon"/> <span th:text="${scenario.info}">0</span></span>
-                        <span> <img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${triangle}"
-                                    alt="pdf-image warning icon"/> <span th:text="${scenario.warning}">0</span></span>
-                        <span> <img class="float-left img" style="padding-top: 2px; width: 12px;" th:src="${redTriangle}"
-                                    alt="pdf-image error icon"/> <span th:text="${scenario.error}">0</span></span>
-                    </div>
-                </div>
+            <!-- Minions -->
+            <div class="stats-group">
+                <img src="" th:src="${userImage}" alt="pdf-image user icon" class="stat-icon"
+                     style="width:13px; height:13px;"/>
+                <span class="stat-inline c-purple" th:text="${campaign.startedMinions}">0</span>
+                <span class="stat-lbl-inline">started</span>
+                <span class="stat-inline c-teal" th:text="${campaign.completedMinions}">0</span>
+                <span class="stat-lbl-inline">completed</span>
             </div>
+
+            <div class="stats-vdiv"></div>
+
+            <!-- Executions -->
+            <div class="stats-group">
+                <img src="" th:src="${circleCheck}" alt="pdf-image circle icon" class="stat-icon"
+                     style="width:13px; height:13px;"/>
+                <span class="stat-inline c-green" th:text="${campaign.successfulExecutions}">0</span>
+                <span class="stat-lbl-inline">ok</span>
+                <span class="stat-inline c-red" th:text="${campaign.failedExecutions}">0</span>
+                <span class="stat-lbl-inline">failed</span>
+                <span class="stat-inline c-gray" th:text="${cTot}">0</span>
+                <span class="stat-lbl-inline">total</span>
+            </div>
+
+            <div class="stats-vdiv"></div>
+
+            <!-- Failure rate -->
+            <div class="stats-group">
+        <span class="stats-rate-val"
+              th:classappend="${cFailRate != '0.0' ? 'c-red' : 'c-gray'}"
+              th:text="${cFailRate + '%'}">0.0%</span>
+                <span class="stat-lbl-inline">failure rate</span>
+            </div>
+
+            <!-- Messages summary (right-aligned) -->
+            <div class="stats-msgs">
+                <img th:src="${notification}" alt="pdf-image notification icon"
+                     style="width:11px; vertical-align:middle; margin-right:2px;"/>
+                <span class="muted-sm" th:text="${campaign.total}">0</span>
+                <img th:src="${shield}" alt="pdf-image info icon"
+                     style="width:11px; vertical-align:middle; margin-left:8px; margin-right:2px;"/>
+                <span class="muted-sm" th:text="${campaign.info}">0</span>
+                <img th:src="${triangle}" alt="pdf-image warning icon"
+                     style="width:11px; vertical-align:middle; margin-left:8px; margin-right:2px;"/>
+                <span class="muted-sm" th:text="${campaign.warning}">0</span>
+                <img th:src="${redTriangle}" alt="pdf-image error icon"
+                     style="width:11px; vertical-align:middle; margin-left:8px; margin-right:2px;"/>
+                <span class="muted-sm" th:text="${campaign.error}">0</span>
+            </div>
+
         </div>
+
+        <div class="section-divider"></div>
+
+        <!-- ── SCENARIO TABLE HEADER ── -->
+        <div class="scenario-hdr clearfix">
+            <div class="sh-name">Scenario</div>
+            <div class="sh-status">Status</div>
+            <div class="sh-time">Time</div>
+            <div class="sh-minions">Minions</div>
+            <div class="sh-exec">Executions</div>
+            <div class="sh-rate">Failure</div>
+        </div>
+
+        <!-- ── SCENARIO ROWS ── -->
+        <div th:each="scenario : ${campaign.scenarios}"
+             th:with="
+           sTot=${scenario.successfulExecutions + scenario.failedExecutions},
+           sFailRate=${sTot > 0 ? #numbers.formatDecimal(scenario.failedExecutions * 100.0 / sTot, 1, 'NONE', 1, 'POINT') : '0.0'}
+         "
+             class="scenario-row clearfix">
+
+            <!-- Name -->
+            <div class="s-name">
+                <span class="scenario-name" th:text="${scenario.name}">scenario-name</span>
+            </div>
+
+            <!-- Status -->
+            <div class="s-status">
+        <span class="badge"
+              th:classappend="${scenario.status != null ? 'badge-' + #strings.toLowerCase(scenario.status.name()) : 'badge-unknown'}"
+              th:text="${scenario.status != null ? scenario.status.name() : '—'}"></span>
+            </div>
+
+            <!-- Time -->
+            <div class="s-time">
+                <img th:src="${timeImage}" alt="pdf-image time icon"
+                     style="width:11px; height:11px; vertical-align:middle; margin-right:3px;"/>
+                <span th:text="${#temporals.format(scenario.start.atZone(UTC), 'HH:mm:ss')}"></span> &rarr; <span
+                    th:text="${#temporals.format(scenario.end.atZone(UTC), 'HH:mm:ss')}"></span>
+                <div class="muted-sm" th:text="'(' + ${scenario.duration} + ')'"></div>
+            </div>
+
+            <!-- Minions -->
+            <div class="s-minions">
+                <img th:src="${userImage}" alt="pdf-image user icon"
+                     style="width:12px; height:12px; vertical-align:middle; margin-right:4px;"/>
+                <span class="c-purple" th:text="${scenario.startedMinions}">0</span>
+                <span class="muted-sm"> started</span>
+                <span style="margin-left:6px;" class="c-teal" th:text="${scenario.completedMinions}">0</span>
+                <span class="muted-sm"> completed</span>
+            </div>
+
+            <!-- Executions -->
+            <div class="s-exec">
+                <span class="c-green" th:text="${scenario.successfulExecutions}">0</span>
+                <span class="muted-sm"> ok</span>
+                <span style="margin-left:5px;" class="c-red" th:text="${scenario.failedExecutions}">0</span>
+                <span class="muted-sm"> failed</span>
+                <span style="margin-left:5px;" class="c-gray" th:text="${sTot}">0</span>
+                <span class="muted-sm"> total</span>
+            </div>
+
+            <!-- Failure rate -->
+            <div class="s-rate">
+        <span class="s-rate-val"
+              th:classappend="${sFailRate != '0.0' ? 'c-red' : 'c-gray'}"
+              th:text="${sFailRate + '%'}">0.0%</span>
+            </div>
+
+        </div>
+        <!-- end scenarios -->
 
     </div>
 </div>

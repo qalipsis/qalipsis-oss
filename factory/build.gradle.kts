@@ -82,6 +82,9 @@ dependencies {
     implementation("io.micronaut:micronaut-runtime")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     implementation("com.tdunning:t-digest:3.3")
+    implementation("com.h2database:h2")
+
+    runtimeOnly("io.micronaut.sql:micronaut-jdbc-hikari")
 
     kapt(platform(project(":qalipsis-dev-platform")))
     kapt("io.micronaut:micronaut-inject-java")

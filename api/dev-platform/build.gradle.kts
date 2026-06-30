@@ -37,6 +37,7 @@ val caffeineCache = "3.2.0"
 val cuid = "0.1.1"
 val commonsLang = "3.17.0"
 
+val reactor = "2022.0.20"
 val netty = "4.2.1.Final"
 val bouncycastle = "1.70"
 val postgresqlDriver = "42.3.1"
@@ -58,6 +59,7 @@ dependencies {
     api(platform("com.fasterxml.jackson:jackson-bom:$jackson"))
     api(platform("org.testcontainers:testcontainers-bom:$testContainers"))
     api(platform("io.netty:netty-bom:$netty"))
+    api(platform("io.projectreactor:reactor-bom:$reactor"))
     api("org.jetbrains.kotlin:kotlin-stdlib:$kotlin")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$kotlinCoroutines")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:$kotlinCoroutines")

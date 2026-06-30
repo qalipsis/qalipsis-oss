@@ -22,7 +22,9 @@ package io.qalipsis.core.head.model
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
+import io.qalipsis.api.report.TimeSeriesMeter
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.Duration
 import java.time.Instant
 import javax.validation.Valid
 import javax.validation.constraints.NotBlank
@@ -67,16 +69,35 @@ data class ScenarioExecutionDetails(
 
     @field:Schema(description = "Counts of minions that successfully completed their scenario", required = false)
     @field:PositiveOrZero
-    val successfulExecutions: Int?,
+    val successfulExecutions: Long?,
 
     @field:Schema(description = "Counts of minions that failed to execute their scenario", required = false)
     @field:PositiveOrZero
-    val failedExecutions: Int?,
+    val failedExecutions: Long?,
 
     @field:Schema(description = "Overall execution status of the scenario")
     val status: ExecutionStatus,
 
     @field:Schema(description = "The list of the report messages for the scenario")
     @field:Valid
-    val messages: List<ReportMessage>
-)
+    val messages: List<ReportMessage> = emptyList(),
+
+    @field:Schema(description = "Counts of scheduled minions for the scenario", required = false)
+    @field:PositiveOrZero
+    val scheduledMinions: Int? = null,
+
+    @field:Schema(description = "Execution details of each step within this scenario")
+    @field:Valid
+    val steps: List<StepExecutionDetails> = emptyList(),
+
+    @field:Schema(description = "Aggregated meters produced by this scenario during the campaign execution")
+    val meters: List<TimeSeriesMeter> = emptyList(),
+
+    @field:Schema(
+        description = "Distribution of load across zones for this scenario, keyed by zone key with percentage values (0-100)",
+        required = false
+    )
+    val zoneDistribution: Map<String, Int> = emptyMap()
+) {
+    val duration: Duration? get() = if (start != null && end != null) Duration.between(start, end) else null
+}

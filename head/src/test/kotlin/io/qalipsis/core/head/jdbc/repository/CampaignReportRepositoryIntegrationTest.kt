@@ -21,6 +21,8 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotNull
@@ -192,5 +194,76 @@ internal class CampaignReportRepositoryIntegrationTest : AbstractPostgreSQLTest(
 
         // then
         assertThat(fetched).isNull()
+    }
+
+    @Test
+    fun `findByCampaignIdIn should return reports for matching campaign ids`() = testDispatcherProvider.run {
+        // given
+        val user1 = userRepository.save(UserEntityForTest(username = "user-bulk-1"))
+        val user2 = userRepository.save(UserEntityForTest(username = "user-bulk-2"))
+        val user3 = userRepository.save(UserEntityForTest(username = "user-bulk-3"))
+        val tenant1 = tenantRepository.save(TenantEntityForTest(reference = "tenant-bulk-1"))
+        val tenant2 = tenantRepository.save(TenantEntityForTest(reference = "tenant-bulk-2"))
+        val tenant3 = tenantRepository.save(TenantEntityForTest(reference = "tenant-bulk-3"))
+        val campaign1 = campaignRepository.save(
+            CampaignEntity(
+                key = "bulk-camp-1",
+                name = "Bulk 1",
+                scheduledMinions = 1,
+                tenantId = tenant1.id,
+                configurer = user1.id
+            )
+        )
+        val campaign2 = campaignRepository.save(
+            CampaignEntity(
+                key = "bulk-camp-2",
+                name = "Bulk 2",
+                scheduledMinions = 1,
+                tenantId = tenant2.id,
+                configurer = user2.id
+            )
+        )
+        val campaign3 = campaignRepository.save(
+            CampaignEntity(
+                key = "bulk-camp-3",
+                name = "Bulk 3",
+                scheduledMinions = 1,
+                tenantId = tenant3.id,
+                configurer = user3.id
+            )
+        )
+        val report1 = campaignReportRepository.save(campaignReportPrototype.copy(campaignId = campaign1.id))
+        val report2 = campaignReportRepository.save(campaignReportPrototype.copy(campaignId = campaign2.id))
+        campaignReportRepository.save(campaignReportPrototype.copy(campaignId = campaign3.id))
+
+        // when
+        val result = campaignReportRepository.findByCampaignIdIn(listOf(campaign1.id, campaign2.id))
+
+        // then
+        assertThat(result.map { it.id }).containsExactlyInAnyOrder(report1.id, report2.id)
+    }
+
+    @Test
+    fun `findByCampaignIdIn should return empty list when no ids match`() = testDispatcherProvider.run {
+        // given
+        campaignReportRepository.save(campaignReportPrototype.copy())
+
+        // when
+        val result = campaignReportRepository.findByCampaignIdIn(listOf(-1L, -2L))
+
+        // then
+        assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `findByCampaignIdIn should return empty list for empty input`() = testDispatcherProvider.run {
+        // given
+        campaignReportRepository.save(campaignReportPrototype.copy())
+
+        // when
+        val result = campaignReportRepository.findByCampaignIdIn(emptyList())
+
+        // then
+        assertThat(result).isEmpty()
     }
 }

@@ -22,6 +22,8 @@ package io.qalipsis.core.head.report
 import io.micronaut.context.annotation.Requires
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.exceptions.HttpStatusException
 import io.qalipsis.api.Executors
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
@@ -312,7 +314,7 @@ class ReportServiceImpl(
                 }
 
                 else -> {
-                    throw ExitStatusException(IllegalArgumentException("File still Processing"), 102)
+                    throw ExitStatusException(HttpStatusException(HttpStatus.NOT_FOUND, "File still Processing"), 102)
                 }
             }
         } ?: throw IllegalArgumentException("Requested file not found")

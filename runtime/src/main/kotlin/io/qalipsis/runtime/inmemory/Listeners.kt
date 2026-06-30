@@ -23,6 +23,7 @@ import io.micronaut.context.annotation.Requires
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.HandshakeResponseListener
+import io.qalipsis.core.head.communication.CampaignMeterFeedbackListener
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.communication.HandshakeRequestListener
 import io.qalipsis.core.head.communication.HeartbeatListener
@@ -36,7 +37,8 @@ class Listeners(
     val handshakeResponseListeners: Collection<HandshakeResponseListener>,
     val feedbackListeners: Collection<FeedbackListener<*>>,
     val handshakeRequestListeners: Collection<HandshakeRequestListener>,
-    val heartbeatListeners: Collection<HeartbeatListener>
+    val heartbeatListeners: Collection<HeartbeatListener>,
+    val meterFeedbackListeners: Collection<CampaignMeterFeedbackListener>
 ) : HeadStartupComponent {
 
     override fun init() {

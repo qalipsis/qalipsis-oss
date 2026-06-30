@@ -20,11 +20,13 @@
 package io.qalipsis.core.head.inmemory
 
 import io.aerisconsulting.catadioptre.KTestable
+import io.micronaut.context.BeanProvider
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.annotation.Value
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.lang.IdGenerator
@@ -37,17 +39,26 @@ import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.inmemory.consolereporter.ConsoleCampaignProgressionReporter
 import io.qalipsis.core.head.model.CampaignExecutionDetails
+import io.qalipsis.core.head.model.ScenarioExecutionDetails
+import io.qalipsis.core.head.model.StepExecutionDetails
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.head.report.CampaignMeterEnricher
 import io.qalipsis.core.head.report.CampaignReportProvider
+import io.qalipsis.core.head.report.MeterDistribution
 import io.qalipsis.core.head.report.toCampaignExecutionDetails
 import io.qalipsis.core.head.report.toCampaignReport
+import io.qalipsis.core.head.zone.ZoneService
 import io.qalipsis.core.lifetime.ProcessBlocker
 import jakarta.annotation.Nullable
 import jakarta.annotation.PreDestroy
 import jakarta.inject.Named
 import jakarta.inject.Singleton
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import org.slf4j.event.Level
 import java.time.Duration
 import java.time.Instant
@@ -60,6 +71,9 @@ class StandaloneCampaignReportStateKeeperImpl(
     @Nullable private val consoleCampaignProgressionReporter: ConsoleCampaignProgressionReporter?,
     @Value("\${campaign.report.cache.time-to-live:PT10M}") private val cacheExpire: Duration,
     @Named(TaskExecutors.SCHEDULED) private val taskScheduler: TaskScheduler,
+    private val campaignService: BeanProvider<CampaignService>,
+    private val zoneService: ZoneService,
+    private val campaignMeterEnricher: CampaignMeterEnricher
 ) : CampaignReportStateKeeper, CampaignReportLiveStateRegistry, ProcessBlocker, CampaignReportProvider {
 
     @KTestable
@@ -190,16 +204,24 @@ class StandaloneCampaignReportStateKeeperImpl(
         count: Int
     ) {
         consoleCampaignProgressionReporter?.recordSuccessfulStepExecution(scenarioName, stepName, count)
-        campaignStates[campaignKey]!![scenarioName]!!.successfulStepExecutionsCounter.addAndGet(count).toLong()
+        val scenarioState = campaignStates[campaignKey]!![scenarioName]!!
+        scenarioState.successfulStepExecutionsCounter.addAndGet(count)
+        scenarioState.stepByName(stepName)?.successfulExecutionsCounter?.addAndGet(count.toLong())
     }
 
     @LogInputAndOutput
     override suspend fun recordSuccessfulStepInitialization(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
-        stepName: StepName
+        stepName: StepName,
+        dagId: DirectedAcyclicGraphName,
+        underLoad: Boolean
     ) {
         consoleCampaignProgressionReporter?.recordSuccessfulStepInitialization(campaignKey, scenarioName, stepName)
+        campaignStates[campaignKey]!![scenarioName]!!.registerStep(
+            stepName, dagId,
+            InMemoryStepExecutionState(name = stepName, dagId = dagId, isUnderLoad = underLoad, initialized = true)
+        )
     }
 
     @LogInputAndOutput
@@ -207,9 +229,23 @@ class StandaloneCampaignReportStateKeeperImpl(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
+        dagId: DirectedAcyclicGraphName,
+        underLoad: Boolean,
         cause: Throwable?
     ) {
         consoleCampaignProgressionReporter?.recordFailedStepInitialization(campaignKey, scenarioName, stepName, cause)
+        val causeName = cause?.javaClass?.canonicalName?.let { "$it: " } ?: ""
+        val causeMessage = cause?.message ?: "<Unknown>"
+        campaignStates[campaignKey]!![scenarioName]!!.registerStep(
+            stepName, dagId,
+            InMemoryStepExecutionState(
+                name = stepName,
+                dagId = dagId,
+                isUnderLoad = underLoad,
+                initialized = false,
+                initializationError = "$causeName$causeMessage"
+            )
+        )
     }
 
     @LogInput
@@ -221,7 +257,9 @@ class StandaloneCampaignReportStateKeeperImpl(
         cause: Throwable?
     ) {
         consoleCampaignProgressionReporter?.recordFailedStepExecution(scenarioName, stepName, count, cause)
-        campaignStates[campaignKey]!![scenarioName]!!.failedStepExecutionsCounter.addAndGet(count).toLong()
+        val scenarioState = campaignStates[campaignKey]!![scenarioName]!!
+        scenarioState.failedStepExecutionsCounter.addAndGet(count)
+        scenarioState.stepByName(stepName)?.failedExecutionsCounter?.addAndGet(count.toLong())
     }
 
     @LogInputAndOutput
@@ -238,18 +276,123 @@ class StandaloneCampaignReportStateKeeperImpl(
         tenant: String,
         campaignKeys: Collection<CampaignKey>
     ): Collection<CampaignExecutionDetails> {
-        return campaignKeys.mapNotNull { campaignKey ->
+        val knownKeys = campaignKeys.filter { campaignStates.containsKey(it) }
+        if (knownKeys.isEmpty()) return emptyList()
+
+        val configByCampaignKey = coroutineScope {
+            knownKeys.map { campaignKey ->
+                async {
+                    campaignKey to runCatching {
+                        campaignService.get().retrieveConfiguration(
+                            tenant,
+                            campaignKey
+                        )
+                    }.getOrNull()
+                }
+            }.awaitAll()
+        }.toMap()
+
+        // Resolve all zones in one call using the union of all zone keys from all configs.
+        val allZoneKeys = configByCampaignKey.values.filterNotNull()
+            .flatMap { cfg -> cfg.scenarios.values.flatMap { it.zones?.keys ?: emptySet() } }
+            .toSet()
+        val allResolvedZones = zoneService.resolve(tenant, allZoneKeys)
+        val resolvedZonesByKey = allResolvedZones.associateBy { it.key }
+
+        // Bulk-fetch all meters for all campaigns.
+        val scenariosOfAllCampaigns = knownKeys.flatMap { key ->
+            campaignStates[key]?.keys ?: emptyList()
+        }.distinct()
+        val metersByCampaignKey = campaignMeterEnricher.distribute(tenant, knownKeys, scenariosOfAllCampaigns)
+
+        return knownKeys.mapNotNull { campaignKey ->
             val scenariosReports = campaignStates[campaignKey]
-                ?.mapNotNull { (_, runningScenarioCampaign) -> runningScenarioCampaign.toReport(campaignKey) }
-            if (scenariosReports?.isNotEmpty() == true) {
-                scenariosReports.toCampaignExecutionDetails(
-                    knownResult = forcedStatus[campaignKey]?.executionStatus,
-                    failureReason = forcedStatus[campaignKey]?.failureReason
+                ?.mapNotNull { (_, state) -> state.toReport(campaignKey) }
+            if (scenariosReports.isNullOrEmpty()) return@mapNotNull null
+
+            val config = configByCampaignKey[campaignKey]
+            val meterDistribution = metersByCampaignKey[campaignKey]
+                ?: MeterDistribution(emptyList(), emptyMap(), emptyMap())
+
+            val campaignZoneKeysFromConfig = config?.scenarios?.values
+                ?.flatMap { it.zones?.keys ?: emptySet() }?.toSet() ?: emptySet()
+            val campaignResolvedZones = campaignZoneKeysFromConfig.mapNotNull { resolvedZonesByKey[it] }
+
+            val report = scenariosReports.toCampaignExecutionDetails(
+                knownResult = forcedStatus[campaignKey]?.executionStatus,
+                failureReason = forcedStatus[campaignKey]?.failureReason
+            )
+
+            val campaign = runCatching { campaignService.get().retrieve(tenant, campaignKey) }.getOrNull()
+            val campaignName = campaign?.name ?: campaignKey
+
+            val scenariosExecutionDetails = scenariosReports.map { scenarioReport ->
+                val zoneDistribution = config?.scenarios?.get(scenarioReport.scenarioName)?.zones ?: emptyMap()
+                val scheduledMinions =
+                    campaign?.configuredScenarios?.find { it.name == scenarioReport.scenarioName }?.minionsCount
+                val steps = scenarioReport.steps.map { stepReport ->
+                    val stepMessages = scenarioReport.messages.filter { it.stepName == stepReport.name }
+                    val stepStatus = when {
+                        !stepReport.initialized -> ExecutionStatus.FAILED
+                        stepReport.initializationError != null -> ExecutionStatus.FAILED
+                        stepMessages.any { it.severity == ReportMessageSeverity.ERROR } -> ExecutionStatus.FAILED
+                        stepMessages.any { it.severity == ReportMessageSeverity.WARN } -> ExecutionStatus.WARNING
+                        stepReport.failedExecutions > 0 -> ExecutionStatus.WARNING
+                        else -> ExecutionStatus.SUCCESSFUL
+                    }
+                    StepExecutionDetails(
+                        name = stepReport.name,
+                        successfulExecutions = stepReport.successfulExecutions,
+                        failedExecutions = stepReport.failedExecutions,
+                        status = stepStatus,
+                        messages = stepMessages,
+                        meters = meterDistribution.stepMeters(scenarioReport.scenarioName, stepReport.name)
+                    )
+                }
+                ScenarioExecutionDetails(
+                    id = scenarioReport.scenarioName,
+                    name = scenarioReport.scenarioName,
+                    start = scenarioReport.start,
+                    end = scenarioReport.end,
+                    scheduledMinions = scheduledMinions,
+                    startedMinions = scenarioReport.startedMinions,
+                    completedMinions = scenarioReport.completedMinions,
+                    successfulExecutions = scenarioReport.successfulExecutions?.toLong(),
+                    failedExecutions = scenarioReport.failedExecutions?.toLong(),
+                    status = scenarioReport.status,
+                    messages = scenarioReport.messages.filter { msg -> steps.none { it.name == msg.stepName } },
+                    steps = steps,
+                    meters = meterDistribution.scenarioMeters(scenarioReport.scenarioName),
+                    zoneDistribution = zoneDistribution
                 )
-            } else {
-                null
             }
+
+            CampaignExecutionDetails(
+                version = report.end ?: Instant.now(),
+                key = campaignKey,
+                creation = report.start ?: Instant.now(),
+                name = campaignName,
+                speedFactor = 1.0,
+                scheduledMinions = campaign?.scheduledMinions,
+                start = report.start,
+                end = report.end,
+                status = report.status,
+                zones = campaignZoneKeysFromConfig,
+                startedMinions = report.startedMinions,
+                completedMinions = report.completedMinions,
+                successfulExecutions = report.successfulExecutions,
+                failedExecutions = report.failedExecutions,
+                scenarios = scenariosExecutionDetails,
+                meters = meterDistribution.campaignMeters
+            ).also { it.resolvedZones = campaignResolvedZones }
         }
+    }
+
+    @LogInputAndOutput
+    override suspend fun retrieve(tenant: String, campaignKey: CampaignKey): CampaignExecutionDetails {
+        join()
+        return retrieveCampaignsReports(tenant, listOf(campaignKey)).firstOrNull()
+            ?: error("No in-memory campaign report found for campaign $campaignKey")
     }
 
     data class ForcedStatus(val executionStatus: ExecutionStatus, val failureReason: String? = null)

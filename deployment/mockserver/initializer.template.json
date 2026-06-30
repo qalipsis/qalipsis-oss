@@ -675,24 +675,78 @@
           "failureReason": null,
           "configurerName": "sarah.kim",
           "aborterName": null,
-          "scenarios": [
-            {
-              "name": "checkout-flow-black-friday",
-              "minionsCount": 250000,
-              "version": "2.4.0"
-            }
-          ],
           "zones": [
             "de",
             "us",
             "jp"
           ],
           "startedMinions": 250000,
-          "completedMinions": 249874,
+          "completedMinions": 250000,
           "successfulExecutions": 12489731,
           "failedExecutions": 18452,
-          "scenariosReports": [
+          "meters": [
             {
+              "name": "http_response_time",
+              "timestamp": "{{T@06:55:00}}",
+              "type": "TIMER",
+              "tags": null,
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "scenario": null,
+              "count": 12508183,
+              "value": null,
+              "sum": null,
+              "mean": null,
+              "max": null,
+              "activeTasks": null,
+              "duration": null,
+              "sumDuration": "PT498947.200S",
+              "meanDuration": "PT0.143S",
+              "maxDuration": "PT2.847S",
+              "other": null
+            },
+            {
+              "name": "active_minions",
+              "timestamp": "{{T@06:55:00}}",
+              "type": "GAUGE",
+              "tags": null,
+              "campaign": "CMP-2026-BFCM-PEAK",
+              "scenario": null,
+              "count": null,
+              "value": 0,
+              "sum": null,
+              "mean": null,
+              "max": null,
+              "activeTasks": null,
+              "duration": null,
+              "sumDuration": null,
+              "meanDuration": null,
+              "maxDuration": null,
+              "other": null
+            }
+          ],
+          "resolvedZones": [
+            {
+              "key": "de",
+              "title": "Germany",
+              "description": "Frankfurt datacenter — EU-West hub",
+              "enabled": true
+            },
+            {
+              "key": "us",
+              "title": "United States",
+              "description": "Virginia datacenter — US-East hub",
+              "enabled": true
+            },
+            {
+              "key": "jp",
+              "title": "Japan",
+              "description": "Tokyo datacenter — APAC hub",
+              "enabled": true
+            }
+          ],
+          "scenarios": [
+            {
+              "id": "checkout-flow-black-friday",
               "name": "checkout-flow-black-friday",
               "start": "{{T@06:05:00}}",
               "end": "{{T@06:55:00}}",
@@ -701,16 +755,295 @@
               "successfulExecutions": 12489731,
               "failedExecutions": 18452,
               "status": "SUCCESSFUL",
+              "zoneDistribution": {
+                "de": 40,
+                "us": 40,
+                "jp": 20
+              },
               "messages": [
                 {
                   "stepName": "payment.capture",
+                  "messageId": "msg-001",
                   "severity": "INFO",
                   "message": "p99 latency 187ms — well below 500ms SLO"
                 },
                 {
                   "stepName": "cart.checkout",
+                  "messageId": "msg-002",
                   "severity": "WARN",
                   "message": "0.14% error rate during peak ramp-up window (T+34min)"
+                }
+              ],
+              "meters": [
+                {
+                  "name": "http_response_time",
+                  "timestamp": "{{T@06:55:00}}",
+                  "type": "TIMER",
+                  "tags": null,
+                  "campaign": "CMP-2026-BFCM-PEAK",
+                  "scenario": "checkout-flow-black-friday",
+                  "count": 12508183,
+                  "value": null,
+                  "sum": null,
+                  "mean": null,
+                  "max": null,
+                  "activeTasks": null,
+                  "duration": null,
+                  "sumDuration": "PT498947.200S",
+                  "meanDuration": "PT0.143S",
+                  "maxDuration": "PT2.847S",
+                  "other": null
+                },
+                {
+                  "name": "checkout_success_rate",
+                  "timestamp": "{{T@06:55:00}}",
+                  "type": "GAUGE",
+                  "tags": null,
+                  "campaign": "CMP-2026-BFCM-PEAK",
+                  "scenario": "checkout-flow-black-friday",
+                  "count": null,
+                  "value": 99.85,
+                  "sum": null,
+                  "mean": null,
+                  "max": null,
+                  "activeTasks": null,
+                  "duration": null,
+                  "sumDuration": null,
+                  "meanDuration": null,
+                  "maxDuration": null,
+                  "other": null
+                }
+              ],
+              "steps": [
+                {
+                  "name": "auth.login",
+                  "type": "HTTP",
+                  "startedMinions": 250000,
+                  "successfulExecutions": 249998,
+                  "failedExecutions": 2,
+                  "totalExecutions": 250000,
+                  "notExecuted": false,
+                  "status": "SUCCESSFUL",
+                  "messages": [],
+                  "meters": [
+                    {
+                      "name": "http_response_time",
+                      "timestamp": "{{T@06:55:00}}",
+                      "type": "TIMER",
+                      "tags": {
+                        "step": "auth.login"
+                      },
+                      "campaign": "CMP-2026-BFCM-PEAK",
+                      "scenario": "checkout-flow-black-friday",
+                      "count": 250000,
+                      "value": null,
+                      "sum": null,
+                      "mean": null,
+                      "max": null,
+                      "activeTasks": null,
+                      "duration": null,
+                      "sumDuration": "PT9500S",
+                      "meanDuration": "PT0.038S",
+                      "maxDuration": "PT0.312S",
+                      "other": null
+                    }
+                  ]
+                },
+                {
+                  "name": "catalog.search",
+                  "type": "HTTP",
+                  "startedMinions": 249998,
+                  "successfulExecutions": 249991,
+                  "failedExecutions": 7,
+                  "totalExecutions": 249998,
+                  "notExecuted": false,
+                  "status": "SUCCESSFUL",
+                  "messages": [],
+                  "meters": [
+                    {
+                      "name": "http_response_time",
+                      "timestamp": "{{T@06:55:00}}",
+                      "type": "TIMER",
+                      "tags": {
+                        "step": "catalog.search"
+                      },
+                      "campaign": "CMP-2026-BFCM-PEAK",
+                      "scenario": "checkout-flow-black-friday",
+                      "count": 249998,
+                      "value": null,
+                      "sum": null,
+                      "mean": null,
+                      "max": null,
+                      "activeTasks": null,
+                      "duration": null,
+                      "sumDuration": "PT55249.6S",
+                      "meanDuration": "PT0.221S",
+                      "maxDuration": "PT1.904S",
+                      "other": null
+                    }
+                  ]
+                },
+                {
+                  "name": "cart.add",
+                  "type": "HTTP",
+                  "startedMinions": 249991,
+                  "successfulExecutions": 249980,
+                  "failedExecutions": 11,
+                  "totalExecutions": 249991,
+                  "notExecuted": false,
+                  "status": "SUCCESSFUL",
+                  "messages": [],
+                  "meters": [
+                    {
+                      "name": "http_response_time",
+                      "timestamp": "{{T@06:55:00}}",
+                      "type": "TIMER",
+                      "tags": {
+                        "step": "cart.add"
+                      },
+                      "campaign": "CMP-2026-BFCM-PEAK",
+                      "scenario": "checkout-flow-black-friday",
+                      "count": 249991,
+                      "value": null,
+                      "sum": null,
+                      "mean": null,
+                      "max": null,
+                      "activeTasks": null,
+                      "duration": null,
+                      "sumDuration": "PT22249.2S",
+                      "meanDuration": "PT0.089S",
+                      "maxDuration": "PT0.743S",
+                      "other": null
+                    }
+                  ]
+                },
+                {
+                  "name": "cart.checkout",
+                  "type": "HTTP",
+                  "startedMinions": 249980,
+                  "successfulExecutions": 249623,
+                  "failedExecutions": 357,
+                  "totalExecutions": 249980,
+                  "notExecuted": false,
+                  "status": "SUCCESSFUL",
+                  "messages": [
+                    {
+                      "stepName": "cart.checkout",
+                      "messageId": "msg-002",
+                      "severity": "WARN",
+                      "message": "0.14% error rate during peak ramp-up window (T+34min)"
+                    }
+                  ],
+                  "meters": [
+                    {
+                      "name": "http_response_time",
+                      "timestamp": "{{T@06:55:00}}",
+                      "type": "TIMER",
+                      "tags": {
+                        "step": "cart.checkout"
+                      },
+                      "campaign": "CMP-2026-BFCM-PEAK",
+                      "scenario": "checkout-flow-black-friday",
+                      "count": 249980,
+                      "value": null,
+                      "sum": null,
+                      "mean": null,
+                      "max": null,
+                      "activeTasks": null,
+                      "duration": null,
+                      "sumDuration": "PT83493.3S",
+                      "meanDuration": "PT0.334S",
+                      "maxDuration": "PT2.847S",
+                      "other": null
+                    }
+                  ]
+                },
+                {
+                  "name": "payment.tokenize",
+                  "type": "HTTP",
+                  "startedMinions": 249623,
+                  "successfulExecutions": 249619,
+                  "failedExecutions": 4,
+                  "totalExecutions": 249623,
+                  "notExecuted": false,
+                  "status": "SUCCESSFUL",
+                  "messages": [],
+                  "meters": [
+                    {
+                      "name": "http_response_time",
+                      "timestamp": "{{T@06:55:00}}",
+                      "type": "TIMER",
+                      "tags": {
+                        "step": "payment.tokenize"
+                      },
+                      "campaign": "CMP-2026-BFCM-PEAK",
+                      "scenario": "checkout-flow-black-friday",
+                      "count": 249623,
+                      "value": null,
+                      "sum": null,
+                      "mean": null,
+                      "max": null,
+                      "activeTasks": null,
+                      "duration": null,
+                      "sumDuration": "PT38941.2S",
+                      "meanDuration": "PT0.156S",
+                      "maxDuration": "PT1.102S",
+                      "other": null
+                    }
+                  ]
+                },
+                {
+                  "name": "payment.capture",
+                  "type": "HTTP",
+                  "startedMinions": 249619,
+                  "successfulExecutions": 249537,
+                  "failedExecutions": 82,
+                  "totalExecutions": 249619,
+                  "notExecuted": false,
+                  "status": "SUCCESSFUL",
+                  "messages": [
+                    {
+                      "stepName": "payment.capture",
+                      "messageId": "msg-001",
+                      "severity": "INFO",
+                      "message": "p99 latency 187ms — well below 500ms SLO"
+                    }
+                  ],
+                  "meters": [
+                    {
+                      "name": "http_response_time",
+                      "timestamp": "{{T@06:55:00}}",
+                      "type": "TIMER",
+                      "tags": {
+                        "step": "payment.capture"
+                      },
+                      "campaign": "CMP-2026-BFCM-PEAK",
+                      "scenario": "checkout-flow-black-friday",
+                      "count": 249619,
+                      "value": null,
+                      "sum": null,
+                      "mean": null,
+                      "max": null,
+                      "activeTasks": null,
+                      "duration": null,
+                      "sumDuration": "PT46678.8S",
+                      "meanDuration": "PT0.187S",
+                      "maxDuration": "PT1.523S",
+                      "other": null
+                    }
+                  ]
+                },
+                {
+                  "name": "order.confirmed",
+                  "type": "HTTP",
+                  "startedMinions": 0,
+                  "successfulExecutions": 0,
+                  "failedExecutions": 0,
+                  "totalExecutions": 0,
+                  "notExecuted": true,
+                  "status": "SUCCESSFUL",
+                  "messages": [],
+                  "meters": []
                 }
               ]
             }

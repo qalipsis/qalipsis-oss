@@ -21,6 +21,7 @@ package io.qalipsis.core.head.redis
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.hasSize
 import assertk.assertions.index
 import assertk.assertions.isBetween
@@ -39,6 +40,7 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.api.report.StepReport
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
@@ -143,6 +145,11 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                 )
                             }
                         }
+                        prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                            StepReport("my-step-1", "dag-a", true, true, null, 21L, 22L),
+                            StepReport("my-step-2", "dag-a", false, true, null, 43L, 0L),
+                            StepReport("my-step-3", "dag-b", true, false, "Any init failure")
+                        )
                     }
 
                     key("my-scenario-2").all {
@@ -171,6 +178,9 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                 )
                             }
                         }
+                        prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                            StepReport("my-step-2", "dag-a", false, true, null, 0L, 0L)
+                        )
                     }
 
                     key("my-scenario-3").all {
@@ -190,6 +200,9 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                 )
                             )
                         }
+                        prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                            StepReport("my-step-1", "dag-a", true, true, null, 0L, 0L)
+                        )
                     }
                 }
             }
@@ -248,75 +261,86 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                     key("message-1").isDataClassEqualTo(
                                         ReportMessage(
                                             "my-step-1", "message-1", ReportMessageSeverity.INFO,
-                                        "This is the first message"
+                                            "This is the first message"
+                                        )
                                     )
-                                )
-                                key("message-3").isDataClassEqualTo(
-                                    ReportMessage(
-                                        "my-step-2", "message-3", ReportMessageSeverity.INFO,
-                                        "This is the third message"
+                                    key("message-3").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "my-step-2", "message-3", ReportMessageSeverity.INFO,
+                                            "This is the third message"
+                                        )
                                     )
-                                )
-                                key("message-4").isDataClassEqualTo(
-                                    ReportMessage(
-                                        "my-step-2", "message-4", ReportMessageSeverity.INFO,
-                                        "This is the fourth message"
+                                    key("message-4").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "my-step-2", "message-4", ReportMessageSeverity.INFO,
+                                            "This is the fourth message"
+                                        )
                                     )
-                                )
+                                }
                             }
+                            prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                                StepReport("my-step-1", "dag-a", true, true, null, 21L, 0L),
+                                StepReport("my-step-2", "dag-a", false, true, null, 43L, 0L)
+                            )
                         }
-                    }
 
-                    key("my-scenario-2").all {
-                        prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
-                        prop(ScenarioReport::end).isNotNull()
-                            .isBetween(beforeCompleteScenario2, beforeCompleteScenario3)
-                        prop(ScenarioReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
-                        prop(ScenarioReport::startedMinions).isEqualTo(32)
-                        prop(ScenarioReport::completedMinions).isEqualTo(0)
-                        prop(ScenarioReport::successfulExecutions).isEqualTo(32)
-                        prop(ScenarioReport::failedExecutions).isEqualTo(0)
-                        prop(ScenarioReport::messages).all {
-                            hasSize(2)
-                            transform { it.associateBy { it.messageId } }.all {
-                                key("_init").isDataClassEqualTo(
+                        key("my-scenario-2").all {
+                            prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
+                            prop(ScenarioReport::end).isNotNull()
+                                .isBetween(beforeCompleteScenario2, beforeCompleteScenario3)
+                            prop(ScenarioReport::status).isEqualTo(ExecutionStatus.SUCCESSFUL)
+                            prop(ScenarioReport::startedMinions).isEqualTo(32)
+                            prop(ScenarioReport::completedMinions).isEqualTo(0)
+                            prop(ScenarioReport::successfulExecutions).isEqualTo(32)
+                            prop(ScenarioReport::failedExecutions).isEqualTo(0)
+                            prop(ScenarioReport::messages).all {
+                                hasSize(2)
+                                transform { it.associateBy { it.messageId } }.all {
+                                    key("_init").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "_init", "_init", ReportMessageSeverity.INFO,
+                                            "Steps successfully initialized: my-step-2"
+                                        )
+                                    )
+                                    key("message-2").isDataClassEqualTo(
+                                        ReportMessage(
+                                            "my-step-1", "message-2", ReportMessageSeverity.INFO,
+                                            "This is the second message"
+                                        )
+                                    )
+                                }
+                            }
+                            prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                                StepReport("my-step-2", "dag-a", false, true, null, 0L, 0L)
+                            )
+                        }
+
+                        key("my-scenario-3").all {
+                            prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
+                            prop(ScenarioReport::end).isNotNull()
+                                .isBetween(beforeCompleteScenario3, afterCompleteScenario3)
+                            prop(ScenarioReport::status).isEqualTo(ExecutionStatus.ABORTED)
+                            prop(ScenarioReport::startedMinions).isEqualTo(0)
+                            prop(ScenarioReport::completedMinions).isEqualTo(0)
+                            prop(ScenarioReport::successfulExecutions).isEqualTo(0)
+                            prop(ScenarioReport::failedExecutions).isEqualTo(0)
+                            prop(ScenarioReport::messages).all {
+                                hasSize(1)
+                                index(0).isDataClassEqualTo(
                                     ReportMessage(
                                         "_init", "_init", ReportMessageSeverity.INFO,
-                                        "Steps successfully initialized: my-step-2"
-                                    )
-                                )
-                                key("message-2").isDataClassEqualTo(
-                                    ReportMessage(
-                                        "my-step-1", "message-2", ReportMessageSeverity.INFO,
-                                        "This is the second message"
+                                        "Steps successfully initialized: my-step-1"
                                     )
                                 )
                             }
-                        }
-                    }
-
-                    key("my-scenario-3").all {
-                        prop(ScenarioReport::start).isNotNull().isBetween(beforeStart, afterStart)
-                        prop(ScenarioReport::end).isNotNull().isBetween(beforeCompleteScenario3, afterCompleteScenario3)
-                        prop(ScenarioReport::status).isEqualTo(ExecutionStatus.ABORTED)
-                        prop(ScenarioReport::startedMinions).isEqualTo(0)
-                        prop(ScenarioReport::completedMinions).isEqualTo(0)
-                        prop(ScenarioReport::successfulExecutions).isEqualTo(0)
-                        prop(ScenarioReport::failedExecutions).isEqualTo(0)
-                        prop(ScenarioReport::messages).all {
-                            hasSize(1)
-                            index(0).isDataClassEqualTo(
-                                ReportMessage(
-                                    "_init", "_init", ReportMessageSeverity.INFO,
-                                    "Steps successfully initialized: my-step-1"
-                                )
+                            prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                                StepReport("my-step-1", "dag-a", true, true, null, 0L, 0L)
                             )
                         }
                     }
                 }
             }
         }
-    }
 
     @Test
     internal fun `should start and abort, then create a report`() = testDispatcherProvider.run {
@@ -387,6 +411,10 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                 )
                             }
                         }
+                        prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                            StepReport("my-step-1", "dag-a", true, true, null, 21L, 0L),
+                            StepReport("my-step-2", "dag-a", false, true, null, 43L, 0L)
+                        )
                     }
 
                     key("my-scenario-2").all {
@@ -420,6 +448,9 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                 )
                             }
                         }
+                        prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                            StepReport("my-step-2", "dag-a", false, true, null, 0L, 0L)
+                        )
                     }
 
                     key("my-scenario-3").all {
@@ -445,6 +476,9 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                 )
                             )
                         }
+                        prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                            StepReport("my-step-1", "dag-a", true, true, null, 0L, 0L)
+                        )
                     }
                 }
             }
@@ -521,6 +555,10 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                     )
                                 }
                             }
+                            prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                                StepReport("my-step-1", "dag-a", true, true, null, 21L, 0L),
+                                StepReport("my-step-2", "dag-a", false, true, null, 43L, 0L)
+                            )
                         }
 
                         key("my-scenario-2").all {
@@ -554,6 +592,9 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                                     )
                                 }
                             }
+                            prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                                StepReport("my-step-2", "dag-a", false, true, null, 0L, 0L)
+                            )
                         }
 
                         key("my-scenario-3").all {
@@ -566,24 +607,27 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
                             prop(ScenarioReport::failedExecutions).isEqualTo(0)
                             prop(ScenarioReport::messages).all {
                                 hasSize(2)
-                            index(0).isDataClassEqualTo(
-                                ReportMessage(
-                                    "", "", ReportMessageSeverity.ERROR,
-                                    "The campaign failed"
+                                index(0).isDataClassEqualTo(
+                                    ReportMessage(
+                                        "", "", ReportMessageSeverity.ERROR,
+                                        "The campaign failed"
+                                    )
                                 )
-                            )
                                 index(1).isDataClassEqualTo(
                                     ReportMessage(
-                                    "_init", "_init", ReportMessageSeverity.INFO,
-                                    "Steps successfully initialized: my-step-1"
+                                        "_init", "_init", ReportMessageSeverity.INFO,
+                                        "Steps successfully initialized: my-step-1"
+                                    )
                                 )
+                            }
+                            prop(ScenarioReport::steps).containsExactlyInAnyOrder(
+                                StepReport("my-step-1", "dag-a", true, true, null, 0L, 0L)
                             )
                         }
                     }
                 }
             }
         }
-    }
 
     @Test
     internal fun `should start and reset then have no longer data for the reset campaign`() =
@@ -612,12 +656,15 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
         reportStateKeeper.start(campaign, "my-scenario-2")
         reportStateKeeper.start(campaign, "my-scenario-3")
 
-        setSuccessfulInitializedSteps(campaign, "my-scenario-1", "my-step-1", "my-step-2")
+        setSuccessfulInitializedSteps(
+            campaign, "my-scenario-1",
+            Triple("dag-a", true, "my-step-1"), Triple("dag-a", false, "my-step-2")
+        )
         if (withFailures) {
-            setFailedInitializedSteps(campaign, "my-scenario-1", "my-step-3")
+            setFailedInitializedSteps(campaign, "my-scenario-1", Triple("dag-b", true, "my-step-3"), "Any init failure")
         }
-        setSuccessfulInitializedSteps(campaign, "my-scenario-2", "my-step-2")
-        setSuccessfulInitializedSteps(campaign, "my-scenario-3", "my-step-1")
+        setSuccessfulInitializedSteps(campaign, "my-scenario-2", Triple("dag-a", false, "my-step-2"))
+        setSuccessfulInitializedSteps(campaign, "my-scenario-3", Triple("dag-a", true, "my-step-1"))
 
         putMessage(
             campaign,
@@ -652,22 +699,23 @@ internal class RedisCampaignReportStateKeeperIntegrationTest : AbstractRedisInte
     private fun setSuccessfulInitializedSteps(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
-        vararg stepNames: StepName,
+        vararg steps: Triple<String, Boolean, StepName>, // (dagId, isUnderLoad, stepName)
     ) {
         connection.sync().rpush(
             "$campaignKey-report:$scenarioName:successful-step-initializations",
-            *stepNames
+            *steps.map { (dagId, underLoad, stepName) -> "$dagId:$underLoad:$stepName" }.toTypedArray()
         )
     }
 
     private fun setFailedInitializedSteps(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
-        stepName: StepName,
+        step: Triple<String, Boolean, StepName>, // (dagId, isUnderLoad, stepName)
+        errorMessage: String,
     ) {
         connection.sync().hset(
             "$campaignKey-report:$scenarioName:failed-step-initializations",
-            stepName, "Any init failure"
+            "${step.first}:${step.second}:${step.third}", errorMessage
         )
     }
 

@@ -46,4 +46,6 @@
     <include file="changelog/creation/create-report-file.xml" relativeToChangelogFile="true"/>
     <include file="changelog/creation/create-zone.xml" relativeToChangelogFile="true"/>
     <include file="changelog/creation/create-zone-tenant.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/creation/create-campaign-meters.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/creation/create-step-report.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

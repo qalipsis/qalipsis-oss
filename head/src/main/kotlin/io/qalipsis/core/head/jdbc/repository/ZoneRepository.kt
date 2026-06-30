@@ -37,13 +37,25 @@ import io.qalipsis.core.head.jdbc.entity.ZoneEntity
 interface ZoneRepository : CoroutineCrudRepository<ZoneEntity, Long> {
 
     @Query(
-        value = """SELECT * 
+        value = """SELECT *
             FROM zone z
-            WHERE EXISTS (SELECT 1 from zone_tenant zt where z.id = zt.zone_id 
+            WHERE EXISTS (SELECT 1 from zone_tenant zt where z.id = zt.zone_id
                     AND EXISTS (SELECT 1 FROM tenant t WHERE t.id = zt.tenant_id AND t.reference = :tenant))
                 OR NOT EXISTS (SELECT 1 from zone_tenant zt where z.id = zt.zone_id)
         """,
         nativeQuery = true
     )
     suspend fun findZonesByTenant(tenant: String): List<ZoneEntity>
+
+    @Query(
+        value = """SELECT *
+            FROM zone z
+            WHERE z.key IN (:keys)
+                AND (EXISTS (SELECT 1 from zone_tenant zt where z.id = zt.zone_id
+                        AND EXISTS (SELECT 1 FROM tenant t WHERE t.id = zt.tenant_id AND t.reference = :tenant))
+                    OR NOT EXISTS (SELECT 1 from zone_tenant zt where z.id = zt.zone_id))
+        """,
+        nativeQuery = true
+    )
+    suspend fun findByTenantAndKeys(tenant: String, keys: Collection<String>): List<ZoneEntity>
 }

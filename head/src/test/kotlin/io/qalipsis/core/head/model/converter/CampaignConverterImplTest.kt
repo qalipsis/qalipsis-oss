@@ -109,7 +109,7 @@ internal class CampaignConverterImplTest {
                 status = ExecutionStatus.FAILED,
                 configurerName = "my-user",
                 aborterName = "my-aborter",
-                scenarios = listOf(
+                configuredScenarios = listOf(
                     Scenario(version = scenarioVersion1, name = "scenario-1", minionsCount = 2534),
                     Scenario(version = scenarioVersion2, name = "scenario-2", minionsCount = 45645)
                 )
@@ -172,7 +172,7 @@ internal class CampaignConverterImplTest {
                 status = ExecutionStatus.FAILED,
                 configurerName = "my-user",
                 aborterName = null,
-                scenarios = listOf(
+                configuredScenarios = listOf(
                     Scenario(version = scenarioVersion1, name = "scenario-1", minionsCount = 2534),
                     Scenario(version = scenarioVersion2, name = "scenario-2", minionsCount = 45645)
                 )

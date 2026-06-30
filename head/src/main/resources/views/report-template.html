@@ -11,12 +11,13 @@
       <img class="float-left logo img" style="margin-right: 10px; margin-bottom: 3px;" th:src="${logoImage}" alt="pdf-image Qalipsis Logo"/>
       <div style="margin-left: 10px;" class="float-left">
         <h1 th:text="${title}"></h1>
-        <span style="font-size: 10px;" class="text-faint" th:text="${#temporals.format(generatedTime, 'yyyy-MM-dd HH:mm:ss')}"></span>
+        <span style="font-size: 10px; display: block; margin-top: 4px;" class="text-faint"
+              th:text="${#temporals.format(generatedTime, 'yyyy-MM-dd HH:mm:ss') + ' UTC'}"></span>
       </div>
   </section>
   <section>
     <div class="campaign-summary" th:each="campaign: ${campaigns}"
-         th:insert="~{fragments/campaign-scenario-summary :: campaign-scenario-summary(${campaign}, ${timeImage}, ${userImage}, ${rocket}, ${circleCheck}, ${redTriangle}, ${notification}, ${shield}, ${triangle})}"
+         th:insert="~{fragments/campaign-scenario-summary :: campaign-scenario-summary(${campaign}, ${timeImage}, ${userImage}, ${rocket}, ${circleCheck}, ${redTriangle}, ${notification}, ${shield}, ${triangle}, ${UTC})}"
          th:remove="tag"></div>
   </section>
   <section class="chart" th:if="${chartImages == null || chartImages.empty}">
@@ -31,7 +32,7 @@
   <section class="table-section" th:if="${eventTableData != null and !eventTableData.isEmpty()}">
     <div th:each="singleEventTableData: ${eventTableData}">
       <table class="campaign-table"
-             th:insert="~{fragments/time-series-event-table :: time-series-event-table(${singleEventTableData})}"
+             th:insert="~{fragments/time-series-event-table :: time-series-event-table(${singleEventTableData}, ${UTC})}"
              th:remove="tag"></table>
     </div>
   </section>
@@ -41,7 +42,7 @@
   <section class="table-section" th:if="${meterTableData != null and !meterTableData.isEmpty()}">
     <div th:each="singleMeterTableData: ${meterTableData}">
       <table class="campaign-table"
-             th:insert="~{fragments/time-series-meter-table :: time-series-meter-table(${singleMeterTableData})}"
+             th:insert="~{fragments/time-series-meter-table :: time-series-meter-table(${singleMeterTableData}, ${UTC})}"
              th:remove="tag"></table>
     </div>
   </section>

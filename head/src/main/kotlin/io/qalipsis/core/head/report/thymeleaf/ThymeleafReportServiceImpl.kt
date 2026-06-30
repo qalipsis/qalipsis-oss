@@ -45,6 +45,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.Base64
 import kotlin.io.path.absolutePathString
 
@@ -174,7 +175,8 @@ class ThymeleafReportServiceImpl(
             // Configure the report title.
             setVariable("title", campaignReportDetail.reportName)
             // Configure the report generation time.
-            setVariable("generatedTime", Instant.now())
+            setVariable("generatedTime", Instant.now().atZone(ZoneOffset.UTC))
+            setVariable("UTC", ZoneOffset.UTC)
             // Configure data to populate the campaign summary section.
             setVariable("campaigns", campaignReportDetail.campaignReportData)
             val eventTableData = mutableListOf<Collection<TimeSeriesRecord>>()

@@ -30,19 +30,36 @@ import assertk.assertions.isNull
 import assertk.assertions.key
 import assertk.assertions.prop
 import io.micronaut.scheduling.TaskScheduler
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.confirmVerified
+import io.mockk.every
+import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.mockk
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.api.report.StepReport
+import io.qalipsis.api.report.TimeSeriesMeter
+import io.qalipsis.core.head.campaign.CampaignService
 import io.qalipsis.core.head.inmemory.InMemoryScenarioReportingExecutionState
+import io.qalipsis.core.head.inmemory.InMemoryStepExecutionState
 import io.qalipsis.core.head.inmemory.StandaloneCampaignReportStateKeeperImpl
 import io.qalipsis.core.head.inmemory.catadioptre.campaignStates
 import io.qalipsis.core.head.inmemory.consolereporter.ConsoleCampaignProgressionReporter
+import io.qalipsis.core.head.model.Campaign
+import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.CampaignExecutionDetails
 import io.qalipsis.core.head.model.ScenarioExecutionDetails
+import io.qalipsis.core.head.model.ScenarioRequest
+import io.qalipsis.core.head.model.Zone
+import io.qalipsis.core.head.report.CampaignMeterEnricher
+import io.qalipsis.core.head.report.MeterDistribution
+import io.qalipsis.core.head.zone.ZoneService
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.lang.TestIdGenerator
 import io.qalipsis.test.mockk.WithMockk
@@ -73,11 +90,34 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     @RelaxedMockK
     private lateinit var consoleReporter: ConsoleCampaignProgressionReporter
 
+    @MockK
+    private lateinit var campaignService: CampaignService
+
+    @MockK
+    private lateinit var zoneService: ZoneService
+
+    @MockK
+    private lateinit var campaignMeterEnricher: CampaignMeterEnricher
+
+    private val now: Instant = Instant.parse("2024-01-15T10:00:00Z")
+    private val start: Instant = Instant.parse("2024-01-15T09:00:00Z")
+    private val end: Instant = Instant.parse("2024-01-15T09:30:00Z")
+
     @Test
     internal fun `should start the scenario in all the campaigns`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
 
         // when
         campaignStateKeeper.start("the campaign-1", "the scenario-1")
@@ -129,7 +169,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should start the scenario`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
 
         // when
         campaignStateKeeper.start("the campaign", "the scenario")
@@ -158,7 +208,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should complete the started scenario`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -193,7 +253,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should add a message to the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -248,7 +318,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should delete a message from the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignStateKeeper.start("the campaign", "the scenario")
         val messageId = campaignStateKeeper.put(
             "the campaign",
@@ -297,7 +377,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should record started minions to the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -334,7 +424,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should record completed minions to the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -371,7 +471,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should successful steps to the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -410,7 +520,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should record failed steps to the started scenario`() = testDispatcherProvider.runTest {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignStateKeeper.start("the campaign", "the scenario")
 
         // when
@@ -447,11 +567,169 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
+    internal fun `should record successful step initialization`() = testDispatcherProvider.runTest {
+        // given
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
+        campaignStateKeeper.start("the campaign", "the scenario")
+
+        // when
+        campaignStateKeeper.recordSuccessfulStepInitialization("the campaign", "the scenario", "step-1", "dag-1", true)
+        campaignStateKeeper.recordSuccessfulStepInitialization("the campaign", "the scenario", "step-2", "dag-2", false)
+
+        // then
+        assertThat(campaignStateKeeper.campaignStates()["the campaign"]!!["the scenario"]!!.stepStates).all {
+            hasSize(2)
+            key("dag-1/step-1").all {
+                prop(InMemoryStepExecutionState::name).isEqualTo("step-1")
+                prop(InMemoryStepExecutionState::dagId).isEqualTo("dag-1")
+                prop(InMemoryStepExecutionState::isUnderLoad).isEqualTo(true)
+                prop(InMemoryStepExecutionState::initialized).isEqualTo(true)
+                prop(InMemoryStepExecutionState::initializationError).isNull()
+            }
+            key("dag-2/step-2").all {
+                prop(InMemoryStepExecutionState::name).isEqualTo("step-2")
+                prop(InMemoryStepExecutionState::dagId).isEqualTo("dag-2")
+                prop(InMemoryStepExecutionState::isUnderLoad).isEqualTo(false)
+                prop(InMemoryStepExecutionState::initialized).isEqualTo(true)
+                prop(InMemoryStepExecutionState::initializationError).isNull()
+            }
+        }
+    }
+
+    @Test
+    internal fun `should record failed step initialization`() = testDispatcherProvider.runTest {
+        // given
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
+        campaignStateKeeper.start("the campaign", "the scenario")
+
+        // when
+        campaignStateKeeper.recordFailedStepInitialization(
+            "the campaign", "the scenario", "step-1", "dag-1", true,
+            TimeoutException("Connection timed out")
+        )
+        campaignStateKeeper.recordFailedStepInitialization(
+            "the campaign", "the scenario", "step-2", "dag-2", false
+        )
+
+        // then
+        assertThat(campaignStateKeeper.campaignStates()["the campaign"]!!["the scenario"]!!.stepStates).all {
+            hasSize(2)
+            key("dag-1/step-1").all {
+                prop(InMemoryStepExecutionState::initialized).isEqualTo(false)
+                prop(InMemoryStepExecutionState::initializationError)
+                    .isEqualTo("java.util.concurrent.TimeoutException: Connection timed out")
+            }
+            key("dag-2/step-2").all {
+                prop(InMemoryStepExecutionState::initialized).isEqualTo(false)
+                prop(InMemoryStepExecutionState::initializationError).isEqualTo("<Unknown>")
+            }
+        }
+    }
+
+    @Test
+    internal fun `should track per-step execution counters`() = testDispatcherProvider.runTest {
+        // given
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
+        campaignStateKeeper.start("the campaign", "the scenario")
+        campaignStateKeeper.recordSuccessfulStepInitialization("the campaign", "the scenario", "step-1", "dag-1", true)
+        campaignStateKeeper.recordSuccessfulStepInitialization("the campaign", "the scenario", "step-2", "dag-1", true)
+
+        // when
+        campaignStateKeeper.recordSuccessfulStepExecution("the campaign", "the scenario", "step-1", 5)
+        campaignStateKeeper.recordSuccessfulStepExecution("the campaign", "the scenario", "step-1", 3)
+        campaignStateKeeper.recordSuccessfulStepExecution("the campaign", "the scenario", "step-2", 7)
+        campaignStateKeeper.recordFailedStepExecution("the campaign", "the scenario", "step-1", 2)
+        campaignStateKeeper.recordFailedStepExecution("the campaign", "the scenario", "step-2", 4, TimeoutException())
+
+        // then
+        val stepStates = campaignStateKeeper.campaignStates()["the campaign"]!!["the scenario"]!!.stepStates
+        assertThat(stepStates["dag-1/step-1"]!!.successfulExecutionsCounter.get()).isEqualTo(8L)
+        assertThat(stepStates["dag-1/step-1"]!!.failedExecutionsCounter.get()).isEqualTo(2L)
+        assertThat(stepStates["dag-1/step-2"]!!.successfulExecutionsCounter.get()).isEqualTo(7L)
+        assertThat(stepStates["dag-1/step-2"]!!.failedExecutionsCounter.get()).isEqualTo(4L)
+    }
+
+    @Test
+    internal fun `should preserve step initialization order in the steps list`() = testDispatcherProvider.runTest {
+        // given
+        val campaignStateKeeper =
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
+        campaignStateKeeper.start("the campaign", "the scenario")
+
+        // when - register in non-alphabetical order
+        campaignStateKeeper.recordSuccessfulStepInitialization("the campaign", "the scenario", "step-3", "dag-1", true)
+        campaignStateKeeper.recordSuccessfulStepInitialization("the campaign", "the scenario", "step-1", "dag-2", false)
+        campaignStateKeeper.recordFailedStepInitialization("the campaign", "the scenario", "step-2", "dag-1", true)
+
+        // then
+        val state = campaignStateKeeper.campaignStates()["the campaign"]!!["the scenario"]!!
+        assertThat(state.steps).all {
+            hasSize(3)
+            index(0).prop(StepReport::name).isEqualTo("step-3")
+            index(1).prop(StepReport::name).isEqualTo("step-1")
+            index(2).prop(StepReport::name).isEqualTo("step-2")
+        }
+    }
+
+    @Test
     @Timeout(1)
     internal fun `should not generate a report while there are running scenarios`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignStateKeeper.start("the campaign", "the scenario 1")
 
         // when + then
@@ -467,7 +745,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should not generate a report when nothing started`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
 
         // when + then
         assertThrows<NoSuchElementException> {
@@ -480,7 +768,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should allow the report when the campaign started and is aborted`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignStateKeeper.start("the campaign", "the scenario 1")
         campaignStateKeeper.abort("the campaign")
 
@@ -506,7 +804,12 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                     idGenerator,
                     consoleReporter,
                     Duration.ofSeconds(5),
-                    taskScheduler
+                    taskScheduler,
+                    mockk {
+                        every { get() } returns campaignService
+                    },
+                    zoneService,
+                    campaignMeterEnricher
                 )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
@@ -562,7 +865,12 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                     idGenerator,
                     consoleReporter,
                     Duration.ofSeconds(5),
-                    taskScheduler
+                    taskScheduler,
+                    mockk {
+                        every { get() } returns campaignService
+                    },
+                    zoneService,
+                    campaignMeterEnricher
                 )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
@@ -617,7 +925,12 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 idGenerator,
                 consoleReporter,
                 Duration.ofSeconds(5),
-                taskScheduler
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
             )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
@@ -686,7 +999,12 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                     idGenerator,
                     consoleReporter,
                     Duration.ofSeconds(5),
-                    taskScheduler
+                    taskScheduler,
+                    mockk {
+                        every { get() } returns campaignService
+                    },
+                    zoneService,
+                    campaignMeterEnricher
                 )
             campaignStateKeeper.start("the campaign", "the scenario 1")
             campaignStateKeeper.start("the campaign", "the scenario 2")
@@ -738,7 +1056,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should retrieve the report details for a unique campaign`() = testDispatcherProvider.run {
         // given
         val campaignReportProvider =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignReportProvider.start("key-1", "the scenario 1")
         campaignReportProvider.start("key-1", "the scenario 2")
         campaignReportProvider.complete("key-1", "the scenario 1")
@@ -768,6 +1096,11 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
             ReportMessage("step 2", "the id 4", ReportMessageSeverity.WARN, " The message 4")
         campaignReportProvider.complete("key-1")
 
+        coEvery { campaignService.retrieveConfiguration(any(), any()) } throws RuntimeException("no config")
+        coEvery { campaignService.retrieve(any(), any()) } throws RuntimeException("no campaign")
+        coEvery { zoneService.resolve(any(), any()) } returns emptyList()
+        coEvery { campaignMeterEnricher.distribute(any(), any<Collection<String>>(), any()) } returns emptyMap()
+
         // when
         val reports = campaignReportProvider.retrieveCampaignsReports("my-tenant", listOf("key-1"))
 
@@ -782,9 +1115,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.ABORTED)
                 prop(CampaignExecutionDetails::startedMinions).isEqualTo(1231 + 765)
                 prop(CampaignExecutionDetails::completedMinions).isEqualTo(234 + 345)
-                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(7643 + 854)
-                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(2345 + 3567)
-                prop(CampaignExecutionDetails::scenariosReports).all {
+                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(7643L + 854L)
+                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(2345L + 3567L)
+                prop(CampaignExecutionDetails::scenarios).all {
                     hasSize(2)
                     index(0).all {
                         prop(ScenarioExecutionDetails::messages).hasSize(2)
@@ -802,7 +1135,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should retrieve the report details for a collection of campaigns`() = testDispatcherProvider.run {
         // given
         val campaignReportProvider =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                consoleReporter,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignReportProvider.start("key-1", "the scenario 1")
         campaignReportProvider.start("key-1", "the scenario 2")
         campaignReportProvider.start("key-2", "the scenario 1")
@@ -862,6 +1205,11 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
             ReportMessage("step 2", "the id 8", ReportMessageSeverity.ABORT, " The message 8")
         campaignReportProvider.complete("key-3")
 
+        coEvery { campaignService.retrieveConfiguration(any(), any()) } throws RuntimeException("no config")
+        coEvery { campaignService.retrieve(any(), any()) } throws RuntimeException("no campaign")
+        coEvery { zoneService.resolve(any(), any()) } returns emptyList()
+        coEvery { campaignMeterEnricher.distribute(any(), any<Collection<String>>(), any()) } returns emptyMap()
+
         // when
         val reports =
             campaignReportProvider.retrieveCampaignsReports("my-tenant", listOf("key-1", "key-3", "key-2"))
@@ -877,9 +1225,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.ABORTED)
                 prop(CampaignExecutionDetails::startedMinions).isEqualTo(1231 + 765)
                 prop(CampaignExecutionDetails::completedMinions).isEqualTo(234 + 345)
-                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(7643 + 854)
-                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(2345 + 3567)
-                prop(CampaignExecutionDetails::scenariosReports).all {
+                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(7643L + 854L)
+                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(2345L + 3567L)
+                prop(CampaignExecutionDetails::scenarios).all {
                     hasSize(2)
                     index(0).all {
                         prop(ScenarioExecutionDetails::messages).hasSize(2)
@@ -897,9 +1245,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.ABORTED)
                 prop(CampaignExecutionDetails::startedMinions).isEqualTo(765)
                 prop(CampaignExecutionDetails::completedMinions).isEqualTo(345)
-                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(854)
-                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(3567)
-                prop(CampaignExecutionDetails::scenariosReports).all {
+                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(854L)
+                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(3567L)
+                prop(CampaignExecutionDetails::scenarios).all {
                     hasSize(1)
                     index(0).all {
                         prop(ScenarioExecutionDetails::messages).hasSize(2)
@@ -914,9 +1262,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.ABORTED)
                 prop(CampaignExecutionDetails::startedMinions).isEqualTo(765)
                 prop(CampaignExecutionDetails::completedMinions).isEqualTo(345)
-                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(854)
-                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(3567)
-                prop(CampaignExecutionDetails::scenariosReports).all {
+                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(854L)
+                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(3567L)
+                prop(CampaignExecutionDetails::scenarios).all {
                     hasSize(1)
                     index(0).all {
                         prop(ScenarioExecutionDetails::messages).hasSize(2)
@@ -931,7 +1279,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     internal fun `should retrieve the report details when a campaign key is missing`() = testDispatcherProvider.run {
         // given
         val campaignReportProvider =
-            StandaloneCampaignReportStateKeeperImpl(idGenerator, null, Duration.ofSeconds(5), taskScheduler)
+            StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                null,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
         campaignReportProvider.start("key-1", "the scenario 1")
         campaignReportProvider.start("key-1", "the scenario 2")
         campaignReportProvider.start("key-3", "the scenario 2")
@@ -976,6 +1334,11 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
             ReportMessage("step 2", "the id 8", ReportMessageSeverity.ABORT, " The message 8")
         campaignReportProvider.complete("key-3")
 
+        coEvery { campaignService.retrieveConfiguration(any(), any()) } throws RuntimeException("no config")
+        coEvery { campaignService.retrieve(any(), any()) } throws RuntimeException("no campaign")
+        coEvery { zoneService.resolve(any(), any()) } returns emptyList()
+        coEvery { campaignMeterEnricher.distribute(any(), any<Collection<String>>(), any()) } returns emptyMap()
+
         // when
         val report = campaignReportProvider.retrieveCampaignsReports("my-tenant", listOf("keys-1", "key-3", "key-1"))
 
@@ -990,9 +1353,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.ABORTED)
                 prop(CampaignExecutionDetails::startedMinions).isEqualTo(765)
                 prop(CampaignExecutionDetails::completedMinions).isEqualTo(345)
-                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(854)
-                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(3567)
-                prop(CampaignExecutionDetails::scenariosReports).all {
+                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(854L)
+                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(3567L)
+                prop(CampaignExecutionDetails::scenarios).all {
                     hasSize(1)
                     index(0).all {
                         prop(ScenarioExecutionDetails::messages).hasSize(2)
@@ -1007,9 +1370,9 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
                 prop(CampaignExecutionDetails::status).isEqualTo(ExecutionStatus.ABORTED)
                 prop(CampaignExecutionDetails::startedMinions).isEqualTo(1231 + 765)
                 prop(CampaignExecutionDetails::completedMinions).isEqualTo(234 + 345)
-                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(7643 + 854)
-                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(2345 + 3567)
-                prop(CampaignExecutionDetails::scenariosReports).all {
+                prop(CampaignExecutionDetails::successfulExecutions).isEqualTo(7643L + 854L)
+                prop(CampaignExecutionDetails::failedExecutions).isEqualTo(2345L + 3567L)
+                prop(CampaignExecutionDetails::scenarios).all {
                     hasSize(2)
                     index(0).all {
                         prop(ScenarioExecutionDetails::messages).hasSize(2)
@@ -1028,7 +1391,17 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         testDispatcherProvider.run {
             // given
             val campaignReportProvider =
-                StandaloneCampaignReportStateKeeperImpl(idGenerator, null, Duration.ofSeconds(5), taskScheduler)
+                StandaloneCampaignReportStateKeeperImpl(
+                    idGenerator,
+                    null,
+                    Duration.ofSeconds(5),
+                    taskScheduler,
+                    mockk {
+                        every { get() } returns campaignService
+                    },
+                    zoneService,
+                    campaignMeterEnricher
+                )
 
             // when
             val report =
@@ -1037,4 +1410,645 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
             // then
             assertThat(report.toList()).isEmpty()
         }
+
+    // -------------------------------------------------------------------------
+    // retrieve() — tests migrated from InMemoryCampaignExecutionDetailsServiceTest
+    // -------------------------------------------------------------------------
+
+    private fun emptyDistribution(): MeterDistribution = MeterDistribution(
+        campaignMeters = emptyList(),
+        byScenario = emptyMap(),
+        byScenarioAndStep = emptyMap()
+    )
+
+    private fun buildScenarioReport(
+        scenarioName: String = "sc-1",
+        messages: List<ReportMessage> = emptyList(),
+        steps: List<StepReport> = emptyList()
+    ): ScenarioReport = ScenarioReport(
+        campaignKey = "camp-1",
+        scenarioName = scenarioName,
+        start = start,
+        end = end,
+        startedMinions = 5,
+        completedMinions = 4,
+        successfulExecutions = 4,
+        failedExecutions = 0,
+        status = ExecutionStatus.SUCCESSFUL,
+        messages = messages,
+        steps = steps
+    )
+
+    @Test
+    internal fun `should throw an error when no in-memory campaign report is found`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = StandaloneCampaignReportStateKeeperImpl(
+                idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                }, zoneService, campaignMeterEnricher
+            )
+
+            // when / then
+            assertThrows<IllegalStateException> {
+                keeper.retrieve("my-tenant", "camp-missing")
+            }
+        }
+
+    @Test
+    internal fun `should assemble CampaignExecutionDetails from the in-memory report`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = StandaloneCampaignReportStateKeeperImpl(
+                idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                }, zoneService, campaignMeterEnricher
+            )
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            coEvery {
+                campaignService.retrieveConfiguration("my-tenant", "camp-1")
+            } throws RuntimeException("no config")
+            coEvery { zoneService.resolve("my-tenant", emptySet()) } returns emptyList()
+            coEvery {
+                campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+            } returns mapOf("camp-1" to emptyDistribution())
+            coEvery { campaignService.retrieve("my-tenant", "camp-1") } returns Campaign(
+                version = now,
+                key = "camp-1",
+                creation = start,
+                name = "My Campaign",
+                speedFactor = 1.0,
+                scheduledMinions = 10,
+                start = start,
+                end = end,
+                status = ExecutionStatus.SUCCESSFUL,
+                configurerName = "user-1",
+                configuredScenarios = emptyList()
+            )
+
+            // when
+            val result = keeper.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.key).isEqualTo("camp-1")
+            assertThat(result.name).isEqualTo("My Campaign")
+            assertThat(result.status).isEqualTo(ExecutionStatus.SUCCESSFUL)
+            coVerify { campaignService.retrieveConfiguration("my-tenant", "camp-1") }
+            coVerify { campaignService.retrieve("my-tenant", "camp-1") }
+            coVerify { zoneService.resolve("my-tenant", emptySet()) }
+            coVerify { campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1")) }
+            confirmVerified(campaignService, zoneService, campaignMeterEnricher)
+        }
+
+    @Test
+    internal fun `should populate zone distribution from campaign configuration per scenario`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = StandaloneCampaignReportStateKeeperImpl(
+                idGenerator = idGenerator,
+                consoleCampaignProgressionReporter = consoleReporter,
+                cacheExpire = Duration.ofSeconds(5),
+                taskScheduler = taskScheduler,
+                campaignService = mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService = zoneService,
+                campaignMeterEnricher = campaignMeterEnricher
+            )
+            val campaignConfig = CampaignConfiguration(
+                name = "My Campaign",
+                scenarios = mapOf(
+                    "sc-1" to ScenarioRequest(minionsCount = 10, zones = mapOf("fr" to 70, "de" to 30))
+                )
+            )
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            coEvery { campaignService.retrieveConfiguration("my-tenant", "camp-1") } returns campaignConfig
+            coEvery {
+                zoneService.resolve("my-tenant", setOf("fr", "de"))
+            } returns emptyList()
+            coEvery {
+                campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+            } returns mapOf("camp-1" to emptyDistribution())
+            coEvery { campaignService.retrieve("my-tenant", "camp-1") } returns Campaign(
+                version = now,
+                key = "camp-1",
+                creation = start,
+                name = "My Campaign",
+                speedFactor = 1.0,
+                scheduledMinions = null,
+                start = start,
+                end = end,
+                status = ExecutionStatus.SUCCESSFUL,
+                configurerName = null,
+                configuredScenarios = emptyList()
+            )
+
+            // when
+            val result = keeper.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.scenarios[0].zoneDistribution).isEqualTo(mapOf("fr" to 70, "de" to 30))
+            coVerify { campaignService.retrieveConfiguration("my-tenant", "camp-1") }
+            coVerify { campaignService.retrieve("my-tenant", "camp-1") }
+            coVerify { zoneService.resolve("my-tenant", setOf("fr", "de")) }
+            coVerify { campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1")) }
+            confirmVerified(campaignService, zoneService, campaignMeterEnricher)
+        }
+
+    @Test
+    internal fun `should default zone distribution to empty map when no campaign configuration exists`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = StandaloneCampaignReportStateKeeperImpl(
+                idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                }, zoneService, campaignMeterEnricher
+            )
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            coEvery {
+                campaignService.retrieveConfiguration("my-tenant", "camp-1")
+            } throws RuntimeException("no config")
+            coEvery { zoneService.resolve("my-tenant", emptySet()) } returns emptyList()
+            coEvery {
+                campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+            } returns mapOf("camp-1" to emptyDistribution())
+            coEvery { campaignService.retrieve("my-tenant", "camp-1") } returns Campaign(
+                version = now,
+                key = "camp-1",
+                creation = start,
+                name = "My Campaign",
+                speedFactor = 1.0,
+                scheduledMinions = null,
+                start = start,
+                end = end,
+                status = ExecutionStatus.SUCCESSFUL,
+                configurerName = null,
+                configuredScenarios = emptyList()
+            )
+
+            // when
+            val result = keeper.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.scenarios[0].zoneDistribution).isEqualTo(emptyMap())
+            coVerify { campaignService.retrieveConfiguration("my-tenant", "camp-1") }
+            coVerify { campaignService.retrieve("my-tenant", "camp-1") }
+            coVerify { zoneService.resolve("my-tenant", emptySet()) }
+            coVerify { campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1")) }
+            confirmVerified(campaignService, zoneService, campaignMeterEnricher)
+        }
+
+    @Test
+    internal fun `should use campaign name fetched from campaign service`() = testDispatcherProvider.runTest {
+        // given
+        val keeper = StandaloneCampaignReportStateKeeperImpl(
+            idGenerator = idGenerator,
+            consoleCampaignProgressionReporter = consoleReporter,
+            cacheExpire = Duration.ofSeconds(5),
+            taskScheduler = taskScheduler,
+            campaignService = mockk {
+                every { get() } returns campaignService
+            },
+            zoneService = zoneService,
+            campaignMeterEnricher = campaignMeterEnricher
+        )
+        keeper.start("camp-1", "sc-1")
+        keeper.complete("camp-1", "sc-1")
+        keeper.complete("camp-1")
+        coEvery {
+            campaignService.retrieveConfiguration("my-tenant", "camp-1")
+        } throws RuntimeException("no config")
+        coEvery { zoneService.resolve("my-tenant", emptySet()) } returns emptyList()
+        coEvery {
+            campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+        } returns mapOf("camp-1" to emptyDistribution())
+        coEvery { campaignService.retrieve("my-tenant", "camp-1") } returns Campaign(
+            version = now,
+            key = "camp-1",
+            creation = start,
+            name = "Fetched Campaign Name",
+            speedFactor = 1.0,
+            scheduledMinions = null,
+            start = start,
+            end = end,
+            status = ExecutionStatus.SUCCESSFUL,
+            configurerName = null,
+            configuredScenarios = emptyList()
+        )
+
+        // when
+        val result = keeper.retrieve("my-tenant", "camp-1")
+
+        // then
+        assertThat(result.name).isEqualTo("Fetched Campaign Name")
+        coVerify { campaignService.retrieveConfiguration("my-tenant", "camp-1") }
+        coVerify { campaignService.retrieve("my-tenant", "camp-1") }
+        coVerify { zoneService.resolve("my-tenant", emptySet()) }
+        coVerify { campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1")) }
+        confirmVerified(campaignService, zoneService, campaignMeterEnricher)
+    }
+
+    @Test
+    internal fun `should fall back to campaign key as name when campaign service throws`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = StandaloneCampaignReportStateKeeperImpl(
+                idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                }, zoneService, campaignMeterEnricher
+            )
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            coEvery {
+                campaignService.retrieveConfiguration("my-tenant", "camp-1")
+            } throws RuntimeException("no config")
+            coEvery { zoneService.resolve("my-tenant", emptySet()) } returns emptyList()
+            coEvery {
+                campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+            } returns mapOf("camp-1" to emptyDistribution())
+            coEvery { campaignService.retrieve("my-tenant", "camp-1") } throws RuntimeException("not found")
+
+            // when
+            val result = keeper.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.name).isEqualTo("camp-1")
+            coVerify { campaignService.retrieveConfiguration("my-tenant", "camp-1") }
+            coVerify { campaignService.retrieve("my-tenant", "camp-1") }
+            coVerify { zoneService.resolve("my-tenant", emptySet()) }
+            coVerify { campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1")) }
+            confirmVerified(campaignService, zoneService, campaignMeterEnricher)
+        }
+
+    private fun setupRetrieveForStepStatusTest(
+        keeper: StandaloneCampaignReportStateKeeperImpl,
+        step: StepReport,
+        messages: List<ReportMessage> = emptyList()
+    ) {
+        coEvery {
+            campaignService.retrieveConfiguration("my-tenant", "camp-1")
+        } throws RuntimeException("no config")
+        coEvery { zoneService.resolve("my-tenant", emptySet()) } returns emptyList()
+        coEvery {
+            campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+        } returns mapOf("camp-1" to emptyDistribution())
+        coEvery { campaignService.retrieve("my-tenant", "camp-1") } returns Campaign(
+            version = now,
+            key = "camp-1",
+            creation = start,
+            name = "My Campaign",
+            speedFactor = 1.0,
+            scheduledMinions = null,
+            start = start,
+            end = end,
+            status = ExecutionStatus.SUCCESSFUL,
+            configurerName = null,
+            configuredScenarios = emptyList()
+        )
+        keeper.campaignStates()["camp-1"]!!["sc-1"]!!.keyedMessages.putAll(
+            messages.associateBy { it.messageId }
+        )
+        val scenarioState = keeper.campaignStates()["camp-1"]!!["sc-1"]!!
+        scenarioState.registerStep(
+            step.name, step.dagId,
+            InMemoryStepExecutionState(
+                name = step.name,
+                dagId = step.dagId,
+                isUnderLoad = step.isUnderLoad,
+                initialized = step.initialized,
+                initializationError = step.initializationError
+            )
+        )
+        scenarioState.stepByName(step.name)!!.successfulExecutionsCounter.addAndGet(step.successfulExecutions)
+        scenarioState.stepByName(step.name)!!.failedExecutionsCounter.addAndGet(step.failedExecutions)
+    }
+
+    private fun createKeeperWithCampaign(): StandaloneCampaignReportStateKeeperImpl {
+        val keeper = StandaloneCampaignReportStateKeeperImpl(
+            idGenerator, consoleReporter, Duration.ofSeconds(5), taskScheduler,
+            mockk {
+                every { get() } returns campaignService
+            }, zoneService, campaignMeterEnricher
+        )
+        return keeper
+    }
+
+    @Test
+    @Timeout(2)
+    internal fun `retrieve step status should be FAILED when step is not initialized`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = createKeeperWithCampaign()
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            val step = StepReport(name = "step-1", dagId = "dag-1", isUnderLoad = true, initialized = false)
+            setupRetrieveForStepStatusTest(keeper, step)
+
+            // when
+            val result = keeper.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.scenarios[0].steps[0].status).isEqualTo(ExecutionStatus.FAILED)
+        }
+
+    @Test
+    @Timeout(2)
+    internal fun `retrieve step status should be FAILED when step has initialization error`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = createKeeperWithCampaign()
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            val step = StepReport(
+                name = "step-1", dagId = "dag-1", isUnderLoad = true, initialized = true,
+                initializationError = "Connection timeout"
+            )
+            setupRetrieveForStepStatusTest(keeper, step)
+
+            // when
+            val result = keeper.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.scenarios[0].steps[0].status).isEqualTo(ExecutionStatus.FAILED)
+        }
+
+    @Test
+    @Timeout(2)
+    internal fun `retrieve step status should be FAILED when there are ERROR messages for the step`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = createKeeperWithCampaign()
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            val step = StepReport(name = "step-1", dagId = "dag-1", isUnderLoad = true, initialized = true)
+            val messages = listOf(
+                ReportMessage(
+                    stepName = "step-1", messageId = "m1", severity = ReportMessageSeverity.ERROR,
+                    message = "Fatal error"
+                )
+            )
+            setupRetrieveForStepStatusTest(keeper, step, messages)
+
+            // when
+            val result = keeper.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.scenarios[0].steps[0].status).isEqualTo(ExecutionStatus.FAILED)
+        }
+
+    @Test
+    @Timeout(2)
+    internal fun `retrieve step status should be WARNING when there are WARN messages for the step`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = createKeeperWithCampaign()
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            val step = StepReport(name = "step-1", dagId = "dag-1", isUnderLoad = true, initialized = true)
+            val messages = listOf(
+                ReportMessage(
+                    stepName = "step-1", messageId = "m1", severity = ReportMessageSeverity.WARN,
+                    message = "Slow response"
+                )
+            )
+            setupRetrieveForStepStatusTest(keeper, step, messages)
+
+            // when
+            val result = keeper.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.scenarios[0].steps[0].status).isEqualTo(ExecutionStatus.WARNING)
+        }
+
+    @Test
+    @Timeout(2)
+    internal fun `retrieve step status should be WARNING when failedExecutions is greater than zero`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = createKeeperWithCampaign()
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            val step = StepReport(
+                name = "step-1", dagId = "dag-1", isUnderLoad = true, initialized = true,
+                successfulExecutions = 9L, failedExecutions = 1L
+            )
+            setupRetrieveForStepStatusTest(keeper, step)
+
+            // when
+            val result = keeper.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.scenarios[0].steps[0].status).isEqualTo(ExecutionStatus.WARNING)
+        }
+
+    @Test
+    @Timeout(2)
+    internal fun `retrieve step status should be SUCCESSFUL when all checks pass`() =
+        testDispatcherProvider.runTest {
+            // given
+            val keeper = createKeeperWithCampaign()
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            val step = StepReport(
+                name = "step-1", dagId = "dag-1", isUnderLoad = true, initialized = true,
+                successfulExecutions = 10L, failedExecutions = 0L
+            )
+            setupRetrieveForStepStatusTest(keeper, step)
+
+            // when
+            val result = keeper.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.scenarios[0].steps[0].status).isEqualTo(ExecutionStatus.SUCCESSFUL)
+        }
+
+    @Test
+    @Timeout(1)
+    internal fun `retrieveCampaignsReports should populate resolvedZones from zone service`() =
+        testDispatcherProvider.run {
+            // given
+            val keeper = StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                null,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            val campaignConfig = CampaignConfiguration(
+                name = "My Campaign",
+                scenarios = mapOf("sc-1" to ScenarioRequest(minionsCount = 5, zones = mapOf("fr" to 70, "de" to 30)))
+            )
+            val zoneFr = Zone(key = "fr", title = "France")
+            val zoneDe = Zone(key = "de", title = "Germany")
+            coEvery { campaignService.retrieveConfiguration("my-tenant", "camp-1") } returns campaignConfig
+            coEvery { zoneService.resolve("my-tenant", setOf("fr", "de")) } returns listOf(zoneFr, zoneDe)
+            coEvery {
+                campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+            } returns mapOf("camp-1" to emptyDistribution())
+            coEvery { campaignService.retrieve("my-tenant", "camp-1") } throws RuntimeException("not found")
+
+            // when
+            val reports = keeper.retrieveCampaignsReports("my-tenant", listOf("camp-1"))
+
+            // then
+            assertThat(reports.toList()[0].resolvedZones.map { it.key }.toSet()).isEqualTo(setOf("fr", "de"))
+        }
+
+    @Test
+    @Timeout(1)
+    internal fun `retrieveCampaignsReports should populate zones field from campaign configuration`() =
+        testDispatcherProvider.run {
+            // given
+            val keeper = StandaloneCampaignReportStateKeeperImpl(
+                idGenerator,
+                null,
+                Duration.ofSeconds(5),
+                taskScheduler,
+                mockk {
+                    every { get() } returns campaignService
+                },
+                zoneService,
+                campaignMeterEnricher
+            )
+            keeper.start("camp-1", "sc-1")
+            keeper.complete("camp-1", "sc-1")
+            keeper.complete("camp-1")
+            val campaignConfig = CampaignConfiguration(
+                name = "My Campaign",
+                scenarios = mapOf("sc-1" to ScenarioRequest(minionsCount = 5, zones = mapOf("fr" to 70, "de" to 30)))
+            )
+            coEvery { campaignService.retrieveConfiguration("my-tenant", "camp-1") } returns campaignConfig
+            coEvery { zoneService.resolve("my-tenant", setOf("fr", "de")) } returns emptyList()
+            coEvery {
+                campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+            } returns mapOf("camp-1" to emptyDistribution())
+            coEvery { campaignService.retrieve("my-tenant", "camp-1") } throws RuntimeException("not found")
+
+            // when
+            val reports = keeper.retrieveCampaignsReports("my-tenant", listOf("camp-1"))
+
+            // then
+            assertThat(reports.toList()[0].zones).isEqualTo(setOf("fr", "de"))
+        }
+
+    @Test
+    @Timeout(1)
+    internal fun `retrieveCampaignsReports should populate campaign level meters`() = testDispatcherProvider.run {
+        // given
+        val keeper = StandaloneCampaignReportStateKeeperImpl(
+            idGenerator, null, Duration.ofSeconds(5), taskScheduler, mockk {
+                every { get() } returns campaignService
+            }, zoneService, campaignMeterEnricher
+        )
+        keeper.start("camp-1", "sc-1")
+        keeper.complete("camp-1", "sc-1")
+        keeper.complete("camp-1")
+        val campaignMeter = TimeSeriesMeter(name = "throughput", timestamp = now, type = "counter", campaign = "camp-1")
+        val distribution = MeterDistribution(
+            campaignMeters = listOf(campaignMeter),
+            byScenario = emptyMap(),
+            byScenarioAndStep = emptyMap()
+        )
+        coEvery { campaignService.retrieveConfiguration("my-tenant", "camp-1") } throws RuntimeException("no config")
+        coEvery { zoneService.resolve("my-tenant", emptySet()) } returns emptyList()
+        coEvery {
+            campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+        } returns mapOf("camp-1" to distribution)
+        coEvery { campaignService.retrieve("my-tenant", "camp-1") } throws RuntimeException("not found")
+
+        // when
+        val reports = keeper.retrieveCampaignsReports("my-tenant", listOf("camp-1"))
+
+        // then
+        assertThat(reports.toList()[0].meters).isEqualTo(listOf(campaignMeter))
+    }
+
+    @Test
+    @Timeout(1)
+    internal fun `retrieveCampaignsReports should populate scenario level meters`() = testDispatcherProvider.run {
+        // given
+        val keeper = StandaloneCampaignReportStateKeeperImpl(
+            idGenerator, null, Duration.ofSeconds(5), taskScheduler, mockk {
+                every { get() } returns campaignService
+            }, zoneService, campaignMeterEnricher
+        )
+        keeper.start("camp-1", "sc-1")
+        keeper.complete("camp-1", "sc-1")
+        keeper.complete("camp-1")
+        val scenarioMeter = TimeSeriesMeter(name = "rps", timestamp = now, type = "gauge", campaign = "camp-1")
+        val distribution = MeterDistribution(
+            campaignMeters = emptyList(),
+            byScenario = mapOf("sc-1" to listOf(scenarioMeter)),
+            byScenarioAndStep = emptyMap()
+        )
+        coEvery { campaignService.retrieveConfiguration("my-tenant", "camp-1") } throws RuntimeException("no config")
+        coEvery { zoneService.resolve("my-tenant", emptySet()) } returns emptyList()
+        coEvery {
+            campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+        } returns mapOf("camp-1" to distribution)
+        coEvery { campaignService.retrieve("my-tenant", "camp-1") } throws RuntimeException("not found")
+
+        // when
+        val reports = keeper.retrieveCampaignsReports("my-tenant", listOf("camp-1"))
+
+        // then
+        assertThat(reports.toList()[0].scenarios[0].meters).isEqualTo(listOf(scenarioMeter))
+    }
+
+    @Test
+    @Timeout(1)
+    internal fun `retrieveCampaignsReports should populate step level meters`() = testDispatcherProvider.run {
+        // given
+        val keeper = StandaloneCampaignReportStateKeeperImpl(
+            idGenerator, null, Duration.ofSeconds(5), taskScheduler, mockk {
+                every { get() } returns campaignService
+            }, zoneService, campaignMeterEnricher
+        )
+        keeper.start("camp-1", "sc-1")
+        keeper.recordSuccessfulStepInitialization("camp-1", "sc-1", "step-1", "dag-1", true)
+        keeper.complete("camp-1", "sc-1")
+        keeper.complete("camp-1")
+        val stepMeter = TimeSeriesMeter(name = "latency", timestamp = now, type = "timer", campaign = "camp-1")
+        val distribution = MeterDistribution(
+            campaignMeters = emptyList(),
+            byScenario = emptyMap(),
+            byScenarioAndStep = mapOf("sc-1" to mapOf("step-1" to listOf(stepMeter)))
+        )
+        coEvery { campaignService.retrieveConfiguration("my-tenant", "camp-1") } throws RuntimeException("no config")
+        coEvery { zoneService.resolve("my-tenant", emptySet()) } returns emptyList()
+        coEvery {
+            campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), listOf("sc-1"))
+        } returns mapOf("camp-1" to distribution)
+        coEvery { campaignService.retrieve("my-tenant", "camp-1") } throws RuntimeException("not found")
+
+        // when
+        val reports = keeper.retrieveCampaignsReports("my-tenant", listOf("camp-1"))
+
+        // then
+        assertThat(reports.toList()[0].scenarios[0].steps[0].meters).isEqualTo(listOf(stepMeter))
+    }
 }

@@ -21,6 +21,8 @@ package io.qalipsis.core.head.redis
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.contains
+import assertk.assertions.doesNotContain
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
@@ -67,7 +69,7 @@ import java.time.Duration
     Property(name = "head.heartbeat-channel", value = RedisSubscriberIntegrationTest.HEARTBEAT_CHANNEL)
 )
 @MicronautTest(
-    environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD],
+    environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.HEAD, ExecutionEnvironments.SINGLE_HEAD, ExecutionEnvironments.TRANSIENT],
     startApplication = false
 )
 internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() {
@@ -118,6 +120,8 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
 
     @AfterEach
     internal fun tearDown() {
+        subscriber.subscribedFeedbackChannels.clear()
+        subscriber.subscribedHandshakeRequestsChannels.clear()
         subscriberCommands.quit().toFuture().get()
         subscriberCommands.statefulConnection.removeListener(listener)
         captured.cancel()
@@ -189,10 +193,44 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
         }
     }
 
+    @Test
+    internal fun `should subscribe and unsubscribe feedback channel`() = testDispatcherProvider.run {
+        // when - subscribe
+        redisHeadChannel.subscribeFeedback(FEEDBACK_CHANNEL)
+
+        // then
+        assertThat(subscriber.subscribedFeedbackChannels).contains(FEEDBACK_CHANNEL)
+
+        // when - unsubscribe
+        redisHeadChannel.unsubscribeFeedback(FEEDBACK_CHANNEL)
+
+        // then
+        assertThat(subscriber.subscribedFeedbackChannels).doesNotContain(FEEDBACK_CHANNEL)
+    }
+
+    @Test
+    internal fun `should subscribe and unsubscribe handshake request channel`() = testDispatcherProvider.run {
+        // when - subscribe
+        redisHeadChannel.subscribeHandshakeRequest(HANDSHAKE_REQUEST_CHANNEL)
+
+        // then
+        assertThat(subscriber.subscribedHandshakeRequestsChannels).contains(HANDSHAKE_REQUEST_CHANNEL)
+
+        // when - unsubscribe
+        redisHeadChannel.unsubscribeHandshakeRequest(HANDSHAKE_REQUEST_CHANNEL)
+
+        // then
+        assertThat(subscriber.subscribedHandshakeRequestsChannels).doesNotContain(HANDSHAKE_REQUEST_CHANNEL)
+    }
+
     companion object {
 
         const val FACTORY_CHANNEL = "the-factory-channel"
 
         const val HANDSHAKE_CHANNEL = "the-handshake-channel"
+
+        const val FEEDBACK_CHANNEL = "the-feedback-channel"
+
+        const val HANDSHAKE_REQUEST_CHANNEL = "the-handshake-request-channel"
     }
 }

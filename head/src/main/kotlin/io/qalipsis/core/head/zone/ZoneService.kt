@@ -31,4 +31,10 @@ interface ZoneService {
      * Fetches the list of available zones.
      */
     suspend fun list(tenant: String): Collection<Zone>
+
+    /**
+     * Returns the [Zone] objects corresponding to the provided [zoneKeys], filtered to those
+     * accessible to [tenant]. Returns empty when [zoneKeys] is empty.
+     */
+    suspend fun resolve(tenant: String, zoneKeys: Set<String>): Collection<Zone>
 }

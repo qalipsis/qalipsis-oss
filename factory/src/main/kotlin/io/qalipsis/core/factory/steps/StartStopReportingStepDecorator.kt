@@ -58,11 +58,20 @@ class StartStopReportingStepDecorator<I, O>(
         try {
             decorated.start(context)
             eventTags = context.toEventTags()
+            reportLiveStateRegistry.recordSuccessfulStepInitialization(
+                context.campaignKey,
+                context.scenarioName,
+                decorated.name,
+                context.dagId,
+                context.underLoad
+            )
         } catch (t: Throwable) {
             reportLiveStateRegistry.recordFailedStepInitialization(
                 context.campaignKey,
                 context.scenarioName,
                 decorated.name,
+                context.dagId,
+                context.underLoad,
                 t
             )
             throw t

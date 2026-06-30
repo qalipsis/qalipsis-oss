@@ -20,7 +20,10 @@ package io.qalipsis.core.head.report
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.hasSize
+import assertk.assertions.index
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotEmpty
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.prop
@@ -275,43 +278,46 @@ internal class ReportGeneratorTest {
                 mockReportFileBuilder.populateCampaignReportDetail(
                     reportEntity,
                     "my-tenant",
-                    listOf(
-                        CampaignReportData(
-                            name = "campaign-1",
-                            campaignReportId = 1,
-                            zones = setOf("GER", "DM"),
-                            result = ExecutionStatus.ABORTED,
-                            start = null,
-                            executionTime = 15,
-                            startedMinions = 6,
-                            completedMinions = 5,
-                            successfulExecutions = 5,
-                            failedExecutions = 1,
-                            resolvedZones = emptySet(),
-                            total = 0,
-                            info = 0,
-                            warning = 0,
-                            error = 0,
-                            campaignKey = "campaign-key-1",
-                            scenarios = listOf(
-                                ScenarioReportData(
-                                    name = "my-scenario",
-                                    campaignReportId = 1,
-                                    status = ExecutionStatus.SUCCESSFUL,
-                                    start = now,
-                                    end = now.plusSeconds(120),
-                                    startedMinions = 10,
-                                    completedMinions = 10,
-                                    successfulExecutions = 8,
-                                    failedExecutions = 2,
-                                    info = 0,
-                                    warning = 0,
-                                    error = 0,
-                                    duration = Duration.parse("PT2M").toReadableString()
+                    withArg<List<CampaignReportData>> { campaigns ->
+                        assertThat(campaigns).hasSize(1)
+                        assertThat(campaigns).index(0).all {
+                            prop(CampaignReportData::name).isEqualTo("campaign-1")
+                            prop(CampaignReportData::campaignReportId).isEqualTo(1L)
+                            prop(CampaignReportData::campaignKey).isEqualTo("campaign-key-1")
+                            prop(CampaignReportData::zones).isEqualTo(setOf("GER", "DM"))
+                            prop(CampaignReportData::result).isEqualTo(ExecutionStatus.ABORTED)
+                            prop(CampaignReportData::start).isNull()
+                            prop(CampaignReportData::executionTime).isEqualTo(15L)
+                            prop(CampaignReportData::startedMinions).isEqualTo(6)
+                            prop(CampaignReportData::completedMinions).isEqualTo(5)
+                            prop(CampaignReportData::successfulExecutions).isEqualTo(5)
+                            prop(CampaignReportData::failedExecutions).isEqualTo(1)
+                            prop(CampaignReportData::total).isEqualTo(0)
+                            prop(CampaignReportData::info).isEqualTo(0)
+                            prop(CampaignReportData::warning).isEqualTo(0)
+                            prop(CampaignReportData::error).isEqualTo(0)
+                            prop(CampaignReportData::svgLineIcon).isNotEmpty()
+                            prop(CampaignReportData::scenarios).isEqualTo(
+                                listOf(
+                                    ScenarioReportData(
+                                        name = "my-scenario",
+                                        campaignReportId = 1,
+                                        status = ExecutionStatus.SUCCESSFUL,
+                                        start = now,
+                                        end = now.plusSeconds(120),
+                                        startedMinions = 10,
+                                        completedMinions = 10,
+                                        successfulExecutions = 8,
+                                        failedExecutions = 2,
+                                        info = 0,
+                                        warning = 0,
+                                        error = 0,
+                                        duration = Duration.parse("PT2M").toReadableString()
+                                    )
                                 )
                             )
-                        )
-                    )
+                        }
+                    }
                 )
 
 

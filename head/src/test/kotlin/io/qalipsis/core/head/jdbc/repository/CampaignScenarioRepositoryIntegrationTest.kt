@@ -21,6 +21,7 @@ package io.qalipsis.core.head.jdbc.repository
 
 import assertk.all
 import assertk.assertThat
+import assertk.assertions.containsExactlyInAnyOrder
 import assertk.assertions.containsOnly
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
@@ -379,5 +380,51 @@ internal class CampaignScenarioRepositoryIntegrationTest : AbstractPostgreSQLTes
             )
         ).containsOnly("scenario-3")
         assertThat(campaignScenarioRepository.findNameByCampaignKeys(-1, listOf("key-2"))).isEmpty()
+    }
+
+    @Test
+    fun `findByCampaignIdIn should return scenarios for matching campaign ids`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "tenant-bulk"))
+        val campaign1 = campaignRepository.save(campaignPrototype.copy(key = "bulk-1", tenantId = tenant.id))
+        val campaign2 = campaignRepository.save(campaignPrototype.copy(key = "bulk-2", tenantId = tenant.id))
+        val campaign3 = campaignRepository.save(campaignPrototype.copy(key = "bulk-3", tenantId = tenant.id))
+        val scenario1 = campaignScenarioRepository.save(CampaignScenarioEntity(campaign1.id, "sc-1", minionsCount = 10))
+        val scenario2 = campaignScenarioRepository.save(CampaignScenarioEntity(campaign2.id, "sc-2", minionsCount = 20))
+        campaignScenarioRepository.save(CampaignScenarioEntity(campaign3.id, "sc-3", minionsCount = 30))
+
+        // when
+        val result = campaignScenarioRepository.findByCampaignIdIn(listOf(campaign1.id, campaign2.id))
+
+        // then
+        assertThat(result.map { it.id }).containsExactlyInAnyOrder(scenario1.id, scenario2.id)
+    }
+
+    @Test
+    fun `findByCampaignIdIn should return empty collection when no ids match`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "tenant-bulk-empty"))
+        val campaign = campaignRepository.save(campaignPrototype.copy(key = "bulk-empty-1", tenantId = tenant.id))
+        campaignScenarioRepository.save(CampaignScenarioEntity(campaign.id, "sc-1", minionsCount = 10))
+
+        // when
+        val result = campaignScenarioRepository.findByCampaignIdIn(listOf(-1L, -2L))
+
+        // then
+        assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `findByCampaignIdIn should return empty collection for empty input`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(TenantEntityForTest(reference = "tenant-bulk-empty-input"))
+        val campaign = campaignRepository.save(campaignPrototype.copy(key = "bulk-empty-2", tenantId = tenant.id))
+        campaignScenarioRepository.save(CampaignScenarioEntity(campaign.id, "sc-1", minionsCount = 10))
+
+        // when
+        val result = campaignScenarioRepository.findByCampaignIdIn(emptyList())
+
+        // then
+        assertThat(result).isEmpty()
     }
 }

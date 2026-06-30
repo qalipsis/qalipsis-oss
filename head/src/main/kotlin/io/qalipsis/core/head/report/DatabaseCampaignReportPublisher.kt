@@ -21,6 +21,7 @@ package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
+import io.micronaut.core.order.Ordered
 import io.micronaut.core.util.StringUtils
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.report.CampaignReport
@@ -33,10 +34,12 @@ import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
+import io.qalipsis.core.head.jdbc.entity.StepReportEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignReportRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportRepository
+import io.qalipsis.core.head.jdbc.repository.StepReportRepository
 import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.toList
 import org.slf4j.event.Level
@@ -57,8 +60,11 @@ class DatabaseCampaignReportPublisher(
     private val campaignRepository: CampaignRepository,
     private val campaignReportRepository: CampaignReportRepository,
     private val scenarioReportRepository: ScenarioReportRepository,
-    private val scenarioReportMessageRepository: ScenarioReportMessageRepository
+    private val scenarioReportMessageRepository: ScenarioReportMessageRepository,
+    private val stepReportRepository: StepReportRepository
 ) : CampaignReportPublisher {
+
+    override fun getOrder(): Int = Ordered.HIGHEST_PRECEDENCE
 
     @LogInput(Level.DEBUG)
     override suspend fun publish(tenant: String, campaignKey: CampaignKey, report: CampaignReport) {
@@ -79,6 +85,27 @@ class DatabaseCampaignReportPublisher(
         }
         if (scenarioReportMessageEntitiesToSave.isNotEmpty()) {
             scenarioReportMessageRepository.saveAll(scenarioReportMessageEntitiesToSave).toList()
+        }
+        val stepReportEntitiesToSave = mutableListOf<StepReportEntity>()
+        report.scenariosReports.forEach { scenarioReport ->
+            val scenarioReportId = scenariosIdsByName[scenarioReport.scenarioName]!!
+            scenarioReport.steps.forEach { stepReport ->
+                stepReportEntitiesToSave.add(
+                    StepReportEntity(
+                        scenarioReportId = scenarioReportId,
+                        name = stepReport.name,
+                        dagId = stepReport.dagId,
+                        isUnderLoad = stepReport.isUnderLoad,
+                        initialized = stepReport.initialized,
+                        initializationError = stepReport.initializationError,
+                        successfulExecutions = stepReport.successfulExecutions,
+                        failedExecutions = stepReport.failedExecutions
+                    )
+                )
+            }
+        }
+        if (stepReportEntitiesToSave.isNotEmpty()) {
+            stepReportRepository.saveAll(stepReportEntitiesToSave).toList()
         }
     }
 

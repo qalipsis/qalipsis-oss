@@ -29,6 +29,7 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.configuration.ExecutionConfiguration
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.configuration.RedisPubSubConfiguration
+import io.qalipsis.core.head.communication.CampaignMeterFeedbackListener
 import io.qalipsis.core.head.communication.ChannelSubscriber
 import io.qalipsis.core.head.communication.FeedbackListener
 import io.qalipsis.core.head.communication.HandshakeRequestListener
@@ -54,13 +55,14 @@ class RedisSubscriber(
     heartbeatListeners: Collection<HeartbeatListener>,
     feedbackListeners: Collection<FeedbackListener<*>>,
     handshakeRequestListeners: Collection<HandshakeRequestListener>,
+    meterFeedbackListeners: Collection<CampaignMeterFeedbackListener>,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val orchestrationCoroutineScope: CoroutineScope,
     @Named(RedisPubSubConfiguration.SUBSCRIBER_BEAN_NAME) private val subscriberCommands: RedisPubSubReactiveCommands<String, ByteArray>,
     val subscriberRegistry: SubscriberChannelRegistry
 ) : HeadStartupComponent, Closeable, ChannelSubscriber(
     subscriberRegistry.serializer, subscriberRegistry.headConfiguration,
     heartbeatListeners, feedbackListeners,
-    handshakeRequestListeners, orchestrationCoroutineScope
+    handshakeRequestListeners, meterFeedbackListeners, orchestrationCoroutineScope
 ) {
 
     private val pubSubListener = PubSubListener()
@@ -68,6 +70,10 @@ class RedisSubscriber(
     override fun init() {
         factoryChannel.subscribeHandshakeRequest(subscriberRegistry.headConfiguration.handshakeRequestChannel)
         subscriberCommands.subscribe(subscriberRegistry.headConfiguration.heartbeatChannel).toFuture().get()
+        if (meterFeedbackListeners.isNotEmpty()) {
+            subscribedMeterFeedbackChannels += METERS_CHANNEL
+            subscriberCommands.subscribe(METERS_CHANNEL).toFuture().get()
+        }
         subscriberCommands.statefulConnection.addListener(pubSubListener)
     }
 
@@ -106,5 +112,6 @@ class RedisSubscriber(
 
     private companion object {
         val log = logger()
+        const val METERS_CHANNEL = "meters"
     }
 }

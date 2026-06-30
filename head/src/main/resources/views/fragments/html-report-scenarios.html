@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<!--
+  Fragment: html-report-scenarios
+  Renders accordion rows for all scenarios within a single campaign.
+
+  Parameters:
+    - campaign  (CampaignExecutionDetails)  — the campaign whose scenarios to render
+
+  Iterates campaign.scenarios (List<ScenarioExecutionDetails>).
+  Each ScenarioExecutionDetails exposes:
+    - id, name, status
+    - start (Instant?), end (Instant?)
+    - scheduledMinions (Int?), startedMinions (Int?), completedMinions (Int?)
+    - successfulExecutions (Int?), failedExecutions (Int?)
+    - messages (List<ReportMessage>)
+    - steps (List<StepExecutionDetails>)
+    - meters (List<TimeSeriesMeter>)
+    - zoneDistribution (Map<String, Int>)
+  campaign.resolvedZones (List<Zone>) provides icon/title for zone keys.
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<th:block th:fragment="scenarios(campaign, UTC)">
+    <th:block th:each="scenario, scState : ${campaign.scenarios}"
+              th:with="scId='sc-' + ${scState.index},
+                     totalExec=${(scenario.successfulExecutions != null ? scenario.successfulExecutions : 0) + (scenario.failedExecutions != null ? scenario.failedExecutions : 0)},
+                     failRate=${totalExec > 0 ? (scenario.failedExecutions != null ? scenario.failedExecutions : 0) * 100.0 / totalExec : null},
+                     failRateCls=${failRate == null ? 'zero' : failRate > 10 ? 'high' : failRate > 0 ? 'low' : 'zero'},
+                     scenarioSn=${scenario.status != null ? scenario.status.name() : null},
+                     statusCls=${scenarioSn == 'SUCCESSFUL' ? 'b-success' : scenarioSn == 'WARNING' ? 'b-warning' : (scenarioSn == 'FAILED' or scenarioSn == 'ABORTED') ? 'b-failed' : (scenarioSn == 'IN_PROGRESS' or scenarioSn == 'QUEUED') ? 'b-running' : 'b-neutral'},
+                     scDurSecs=${scenario.start != null and scenario.end != null ? scenario.end.epochSecond - scenario.start.epochSecond : 0},
+                     scDurHrs=${scDurSecs / 3600},
+                     scDurMins=${(scDurSecs % 3600) / 60},
+                     scDurSS=${scDurSecs % 60}">
+
+        <div class="sc" th:id="${scId}">
+
+            <!-- ── SCENARIO HEADER ROW ── -->
+            <div class="sc-hd" th:onclick="'toggleSc(this)'">
+
+                <svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4,6 8,10 12,6"/>
+                </svg>
+
+                <!-- Name -->
+                <div class="sc-name-section">
+                    <span class="sc-name" th:text="${scenario.name}">scenario-name</span>
+                </div>
+
+                <span class="badge" th:classappend="${statusCls}"
+                      th:text="${scenarioSn != null ? scenarioSn : '—'}"
+                      style="margin-right:6px">Status</span>
+
+                <div class="vbar"></div>
+
+                <!-- Time group: start → end / (duration) -->
+                <div class="sc-time-grp">
+                    <svg class="grp-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <div class="sc-time-info">
+            <span class="sc-time-dates"
+                  th:text="${scenario.start != null ? #temporals.format(scenario.start.atZone(UTC), 'HH:mm:ss') : '—'} + ' → ' + ${scenario.end != null ? #temporals.format(scenario.end.atZone(UTC), 'HH:mm:ss') : '—'}">HH:mm → HH:mm</span>
+                        <span class="sc-time-dur"
+                              th:text="'(' + (${scDurHrs > 0 ? scDurHrs + 'h ' : ''}) + (${scDurMins > 0 ? scDurMins + 'm ' : ''}) + ${scDurSS + 's'} + ')'">duration</span>
+                    </div>
+                </div>
+
+                <div class="vbar"></div>
+
+                <!-- Minions group: Scheduled / Started / Completed -->
+                <div class="sc-mi-grp">
+                    <svg class="grp-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <div class="sc-mi-cols">
+                        <div class="mi-col sched" th:if="${scenario.scheduledMinions != null}">
+                            <div class="mi-col-v" style="color:var(--g700)"
+                                 th:text="${#numbers.formatInteger(scenario.scheduledMinions, 1, 'DEFAULT')}">0
+                            </div>
+                            <div class="mi-col-l" style="color:var(--g500)">Scheduled</div>
+                        </div>
+                        <div class="mi-col start">
+                            <div class="mi-col-v"
+                                 th:text="${scenario.startedMinions != null ? #numbers.formatInteger(scenario.startedMinions, 1, 'DEFAULT') : '—'}">
+                                0
+                            </div>
+                            <div class="mi-col-l">Started</div>
+                        </div>
+                        <div class="mi-col comp">
+                            <div class="mi-col-v"
+                                 th:text="${scenario.completedMinions != null ? #numbers.formatInteger(scenario.completedMinions, 1, 'DEFAULT') : '—'}">
+                                0
+                            </div>
+                            <div class="mi-col-l">Completed</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vbar"></div>
+
+                <!-- Step executions group: Successes / Failures / Total (with labels) -->
+                <div class="sc-ex-grp">
+                    <svg class="grp-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                        <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                    </svg>
+                    <div class="sc-ex-cols">
+                        <div class="ex-col ok">
+                            <div class="ex-col-v"
+                                 th:text="${scenario.successfulExecutions != null ? #numbers.formatInteger(scenario.successfulExecutions, 1, 'DEFAULT') : '—'}">
+                                0
+                            </div>
+                            <div class="ex-col-l">Successes</div>
+                        </div>
+                        <div class="ex-col fail">
+                            <div class="ex-col-v"
+                                 th:text="${scenario.failedExecutions != null ? #numbers.formatInteger(scenario.failedExecutions, 1, 'DEFAULT') : '—'}">
+                                0
+                            </div>
+                            <div class="ex-col-l">Failures</div>
+                        </div>
+                        <div class="ex-col total">
+                            <div class="ex-col-v" th:text="${#numbers.formatInteger(totalExec, 1, 'DEFAULT')}">0</div>
+                            <div class="ex-col-l">Total</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vbar"></div>
+
+                <!-- Failure rate -->
+                <div class="sc-frate" th:classappend="${failRateCls}">
+                    <div class="sc-frate-v"
+                         th:text="${failRate != null ? #numbers.formatDecimal(failRate, 1, 'NONE', 1, 'POINT') + '%' : '0.0%'}">
+                        0.0%
+                    </div>
+                    <div class="sc-frate-l">Failure</div>
+                </div>
+
+            </div><!-- /sc-hd -->
+
+            <!-- ── SCENARIO BODY ── -->
+            <div class="sc-body">
+
+                <!-- Zone distribution: icon + title resolved from campaign.resolvedZones, no badge bg/border -->
+                <th:block th:if="${scenario.zoneDistribution != null and !scenario.zoneDistribution.isEmpty()}">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+                        <span style="font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tt);flex-shrink:0">Zone distribution</span>
+                        <th:block th:each="entry : ${scenario.zoneDistribution}"
+                                  th:with="rzList=${campaign.resolvedZones != null ? campaign.resolvedZones.?[key == entry.key] : {}}">
+              <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--g800)">
+                <th:block th:if="${not #lists.isEmpty(rzList)}" th:with="rz=${rzList[0]}">
+                  <img th:if="${rz.imagePath != null}" th:src="${rz.imagePath}"
+                       style="width:14px;height:14px;border-radius:50%;object-fit:cover;flex-shrink:0"
+                       th:alt="${rz.title}"/>
+                  <span th:text="${rz.title}">Zone title</span>
+                </th:block>
+                <th:block th:if="${#lists.isEmpty(rzList)}">
+                  <span th:text="${entry.key}">KEY</span>
+                </th:block>
+                <span style="font-family:var(--mono)" th:text="${entry.value + '%'}">0%</span>
+              </span>
+                        </th:block>
+                    </div>
+                </th:block>
+
+                <!-- Scenario-level messages -->
+                <th:block th:if="${!scenario.messages.isEmpty()}">
+                    <div class="sc-msgs">
+                        <div class="sc-msgs-hd">Scenario Messages</div>
+                        <div class="ml">
+                            <th:block th:each="msg : ${scenario.messages}"
+                                      th:with="msgSn=${msg.severity != null ? msg.severity.name() : null},
+                                 msgCls=${msgSn == 'INFO' ? 'msg-info' : msgSn == 'WARN' ? 'msg-warn' : 'msg-error'}">
+                                <div class="msg" th:classappend="${msgCls}">
+                                    <span class="mlv" th:text="${msgSn != null ? msgSn : 'INFO'}">INFO</span>
+                                    <span class="mt2" th:text="${msg.message}">message text</span>
+                                </div>
+                            </th:block>
+                        </div>
+                    </div>
+                </th:block>
+
+                <!-- Scenario-level meters -->
+                <th:block th:if="${!scenario.meters.isEmpty()}">
+                    <div class="dt"
+                         style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tt);margin-bottom:9px">
+                        Meters
+                    </div>
+                    <table class="mtt" style="margin-bottom:18px">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Count</th>
+                            <th>Value / Mean</th>
+                            <th>Max</th>
+                            <th>Percentiles</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="meter : ${scenario.meters}">
+                            <td class="mtt-name">
+                                <span th:text="${meter.name}">—</span>
+                                <div th:if="${meter.tags != null and !meter.tags.isEmpty()}" class="mtt-tag-list">
+                                    <span th:each="entry : ${meter.tags}"
+                                          th:if="${entry.key != 'scope' and entry.key != 'step' and entry.key != 'dag' and entry.key != 'previous-step'}"
+                                          th:text="${entry.key + '=' + entry.value}"
+                                          class="mtt-tag">k=v</span>
+                                </div>
+                            </td>
+                            <td><span class="tag" th:text="${meter.type != null ? meter.type : '—'}">—</span></td>
+                            <td class="mtt-val" th:text="${meter.count != null ? meter.count : '—'}">—</td>
+                            <td class="mtt-val"
+                                th:text="${meter.mean != null ? meter.mean
+                              : meter.meanDuration != null ? meter.meanDuration.toMillis() + ' ms'
+                              : meter.value != null ? meter.value : '—'}">—
+                            </td>
+                            <td class="mtt-val"
+                                th:text="${meter.max != null ? meter.max
+                              : meter.maxDuration != null ? meter.maxDuration.toMillis() + ' ms' : '—'}">—
+                            </td>
+                            <td>
+                                <th:block th:if="${meter.other != null and !meter.other.isEmpty()}">
+                                    <span th:each="entry : ${meter.other}"
+                                          th:if="${#strings.startsWith(entry.key,'percentile_')}"
+                                          class="mtt-pct">
+                                        <span class="mtt-pct-lbl"
+                                              th:text="'p' + ${entry.key.replace('percentile_','').replaceAll('\\.0$','')} + ':'">p95:</span>
+                                        <span th:text="${meter.type == 'timer' ? #numbers.formatDecimal(entry.value.doubleValue() / 1000.0, 1, 'NONE', 1, 'POINT') + ' ms' : #numbers.formatInteger(entry.value.longValue(), 1, 'DEFAULT')}">—</span>
+                                    </span>
+                                </th:block>
+                                <span th:if="${meter.other == null or meter.other.isEmpty()}">—</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </th:block>
+
+                <!-- Steps -->
+                <th:block th:if="${!scenario.steps.isEmpty()}">
+                    <div class="steps-hd">
+                        <span class="steps-ttl">Steps</span>
+                    </div>
+                    <div class="step-list">
+                        <th:block th:each="step, stepState : ${scenario.steps}"
+                                  th:with="stepTotalExec=${(step.successfulExecutions != null ? step.successfulExecutions : 0) + (step.failedExecutions != null ? step.failedExecutions : 0)},
+                               stepFailRate=${stepTotalExec > 0 ? (step.failedExecutions != null ? step.failedExecutions : 0) * 100.0 / stepTotalExec : null},
+                               stepFailRateCls=${stepFailRate == null ? 'na' : stepFailRate > 10 ? 'high' : stepFailRate > 0 ? 'low' : 'zero'},
+                               stepSn=${step.status != null ? step.status.name() : null},
+                               stepBorderCls=${step.notExecuted ? 'unexec' : stepSn == 'SUCCESSFUL' ? 'ok' : stepSn == 'WARNING' ? 'warn' : (stepSn == 'FAILED' or stepSn == 'ABORTED') ? 'err' : 'ok'},
+                               stepStatusCls=${stepSn == 'SUCCESSFUL' ? 'b-success' : stepSn == 'WARNING' ? 'b-warning' : (stepSn == 'FAILED' or stepSn == 'ABORTED') ? 'b-failed' : 'b-neutral'},
+                               stepHasDetail=${!step.messages.isEmpty() or !step.meters.isEmpty()},
+                               stepId='step-' + ${scState.index} + '-' + ${stepState.index}">
+
+                            <div class="si" th:id="${stepId}" th:classappend="${stepBorderCls}">
+                                <div class="sr" th:onclick="'toggleStep(this)'">
+                                    <span class="s-name" th:text="${step.name}">step-name</span>
+                                    <span class="s-type" th:if="${step.type != null}" th:text="${step.type}">TYPE</span>
+
+                                    <!-- Execution counts (no labels) + failure rate — hidden for not-executed steps -->
+                                    <th:block th:if="${!step.notExecuted}">
+                                        <div class="sc-ex-cols">
+                                            <div class="ex-col ok">
+                                                <div class="ex-col-v"
+                                                     th:text="${step.successfulExecutions != null ? #numbers.formatInteger(step.successfulExecutions, 1, 'DEFAULT') : '—'}">
+                                                    0
+                                                </div>
+                                            </div>
+                                            <div class="ex-col fail">
+                                                <div class="ex-col-v"
+                                                     th:text="${step.failedExecutions != null ? #numbers.formatInteger(step.failedExecutions, 1, 'DEFAULT') : '—'}">
+                                                    0
+                                                </div>
+                                            </div>
+                                            <div class="ex-col total">
+                                                <div class="ex-col-v"
+                                                     th:text="${#numbers.formatInteger(stepTotalExec, 1, 'DEFAULT')}">0
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="vbar"></div>
+                                        <span class="s-frate" th:classappend="${stepFailRateCls}"
+                                              th:text="${stepFailRate != null ? #numbers.formatDecimal(stepFailRate, 1, 'NONE', 1, 'POINT') + '%' : '0.0%'}">0.0%</span>
+                                    </th:block>
+
+                                    <!-- Status badge OR "Not executed" badge -->
+                                    <span th:if="${step.notExecuted}"
+                                          style="flex-shrink:0;padding:2px 8px;border-radius:4px;background:var(--g100);color:var(--g500);font-size:11px;font-weight:500">Not executed</span>
+                                    <span th:if="${!step.notExecuted}" class="badge" th:classappend="${stepStatusCls}"
+                                          th:text="${stepSn != null ? stepSn : '—'}">OK</span>
+
+                                    <button class="expbtn" th:if="${!step.notExecuted and stepHasDetail}"
+                                            th:onclick="'event.stopPropagation(); toggleStep(this.closest(&quot;.si&quot;).querySelector(&quot;.sr&quot;))'">
+                                        Details <i class="expicon">&#x25BE;</i>
+                                    </button>
+                                </div>
+
+                                <!-- Step detail panel -->
+                                <div class="sd" th:if="${!step.notExecuted and stepHasDetail}">
+
+                                    <!-- Step messages -->
+                                    <th:block th:if="${!step.messages.isEmpty()}">
+                                        <div class="dt"
+                                             style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tt);margin-bottom:9px">
+                                            Messages
+                                        </div>
+                                        <div class="ml" style="margin-bottom:12px">
+                                            <th:block th:each="msg : ${step.messages}"
+                                                      th:with="stepMsgSn=${msg.severity != null ? msg.severity.name() : null},
+                                         msgCls=${stepMsgSn == 'INFO' ? 'msg-info' : stepMsgSn == 'WARN' ? 'msg-warn' : 'msg-error'}">
+                                                <div class="msg" th:classappend="${msgCls}">
+                                                    <span class="mlv"
+                                                          th:text="${stepMsgSn != null ? stepMsgSn : 'INFO'}">INFO</span>
+                                                    <span class="mt2" th:text="${msg.message}">message text</span>
+                                                </div>
+                                            </th:block>
+                                        </div>
+                                    </th:block>
+
+                                    <!-- Step meters -->
+                                    <th:block th:if="${!step.meters.isEmpty()}">
+                                        <div class="dt"
+                                             style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tt);margin-bottom:9px">
+                                            Meters
+                                        </div>
+                                        <table class="mtt">
+                                            <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Type</th>
+                                                <th>Count</th>
+                                                <th>Value / Mean</th>
+                                                <th>Max</th>
+                                                <th>Percentiles</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="meter : ${step.meters}">
+                                                <td class="mtt-name">
+                                                    <span th:text="${meter.name}">—</span>
+                                                    <div th:if="${meter.tags != null and !meter.tags.isEmpty()}"
+                                                         class="mtt-tag-list">
+                                                        <span th:each="entry : ${meter.tags}"
+                                                              th:if="${entry.key != 'scope' and entry.key != 'step' and entry.key != 'dag' and entry.key != 'previous-step'}"
+                                                              th:text="${entry.key + '=' + entry.value}"
+                                                              class="mtt-tag">k=v</span>
+                                                    </div>
+                                                </td>
+                                                <td><span class="tag"
+                                                          th:text="${meter.type != null ? meter.type : '—'}">—</span>
+                                                </td>
+                                                <td class="mtt-val"
+                                                    th:text="${meter.count != null ? meter.count : '—'}">—
+                                                </td>
+                                                <td class="mtt-val"
+                                                    th:text="${meter.mean != null ? meter.mean
+                                        : meter.meanDuration != null ? meter.meanDuration.toMillis() + ' ms'
+                                        : meter.value != null ? meter.value : '—'}">—
+                                                </td>
+                                                <td class="mtt-val"
+                                                    th:text="${meter.max != null ? meter.max
+                                        : meter.maxDuration != null ? meter.maxDuration.toMillis() + ' ms' : '—'}">—
+                                                </td>
+                                                <td>
+                                                    <th:block th:if="${meter.other != null and !meter.other.isEmpty()}">
+                                                        <span th:each="entry : ${meter.other}"
+                                                              th:if="${#strings.startsWith(entry.key,'percentile_')}"
+                                                              class="mtt-pct">
+                                                            <span class="mtt-pct-lbl"
+                                                                  th:text="'p' + ${entry.key.replace('percentile_','').replaceAll('\\.0$','')} + ':'">p95:</span>
+                                                            <span th:text="${meter.type == 'timer' ? #numbers.formatDecimal(entry.value.doubleValue() / 1000.0, 1, 'NONE', 1, 'POINT') + ' ms' : #numbers.formatInteger(entry.value.longValue(), 1, 'DEFAULT')}">—</span>
+                                                        </span>
+                                                    </th:block>
+                                                    <span th:if="${meter.other == null or meter.other.isEmpty()}">—</span>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </th:block>
+
+                                </div><!-- /sd -->
+                            </div><!-- /si -->
+
+                        </th:block><!-- /th:each step -->
+                    </div><!-- /step-list -->
+                </th:block><!-- /steps -->
+
+            </div><!-- /sc-body -->
+        </div><!-- /sc -->
+
+    </th:block><!-- /th:each scenario -->
+</th:block><!-- /fragment -->
+
+</body>
+</html>

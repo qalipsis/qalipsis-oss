@@ -33,14 +33,17 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.api.report.StepReport
 import io.qalipsis.core.head.jdbc.entity.CampaignEntity
 import io.qalipsis.core.head.jdbc.entity.CampaignReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportEntity
 import io.qalipsis.core.head.jdbc.entity.ScenarioReportMessageEntity
+import io.qalipsis.core.head.jdbc.entity.StepReportEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignReportRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportMessageRepository
 import io.qalipsis.core.head.jdbc.repository.ScenarioReportRepository
+import io.qalipsis.core.head.jdbc.repository.StepReportRepository
 import io.qalipsis.core.head.report.DatabaseCampaignReportPublisher
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -69,6 +72,9 @@ internal class DatabaseCampaignReportPublisherTest {
 
     @RelaxedMockK
     private lateinit var scenarioReportMessageRepository: ScenarioReportMessageRepository
+
+    @RelaxedMockK
+    private lateinit var stepReportRepository: StepReportRepository
 
     @InjectMockKs
     private lateinit var databaseCampaignReportPublisher: DatabaseCampaignReportPublisher
@@ -102,7 +108,7 @@ internal class DatabaseCampaignReportPublisherTest {
             every { id } returns 9
         }
         coEvery { campaignReportRepository.save(any()) } returns mockedSavedCampaignReport
-
+        coEvery { stepReportRepository.saveAll(any<Iterable<StepReportEntity>>()) } returns flowOf()
 
         val messageOne = ReportMessage(
             stepName = "my-step",
@@ -118,6 +124,14 @@ internal class DatabaseCampaignReportPublisherTest {
         )
         val messages = mutableListOf(messageOne, messageTwo)
 
+        val stepReport = StepReport(
+            name = "my-step",
+            dagId = "my-dag",
+            isUnderLoad = true,
+            initialized = true,
+            successfulExecutions = 990L,
+            failedExecutions = 10L
+        )
         val scenarioReport = ScenarioReport(
             campaignKey = "my-campaign",
             scenarioName = "my-scenario",
@@ -128,7 +142,8 @@ internal class DatabaseCampaignReportPublisherTest {
             successfulExecutions = 990,
             failedExecutions = 10,
             status = ExecutionStatus.SUCCESSFUL,
-            messages = messages
+            messages = messages,
+            steps = listOf(stepReport)
         )
         val campaignReport = CampaignReport(
             campaignKey = "my-campaign",
@@ -203,12 +218,95 @@ internal class DatabaseCampaignReportPublisherTest {
                     )
                 )
             )
+            stepReportRepository.saveAll(
+                listOf(
+                    StepReportEntity(
+                        scenarioReportId = 10,
+                        name = "my-step",
+                        dagId = "my-dag",
+                        isUnderLoad = true,
+                        initialized = true,
+                        successfulExecutions = 990L,
+                        failedExecutions = 10L
+                    )
+                )
+            )
         }
         confirmVerified(
             campaignRepository,
             campaignReportRepository,
             scenarioReportRepository,
-            scenarioReportMessageRepository
+            scenarioReportMessageRepository,
+            stepReportRepository
+        )
+    }
+
+    @Test
+    internal fun `should not call step report repository when steps list is empty`() = testDispatcherProvider.run {
+        // given
+        val now = getTimeMock()
+        val campaignEntity = CampaignEntity(
+            key = "my-campaign",
+            name = "The campaign",
+            creation = now.minusSeconds(12),
+            configurer = 123L,
+            scheduledMinions = 123
+        ).copy(id = 8)
+        coEvery { campaignRepository.findByKey("my-campaign") } returns campaignEntity
+        coEvery { campaignRepository.update(any()) } returnsArgument 0
+        val mockedSavedScenarioReport = mockk<ScenarioReportEntity>(relaxed = true) {
+            every { id } returns 10L
+            every { name } returns "my-scenario"
+        }
+        coEvery { scenarioReportRepository.saveAll(any<Iterable<ScenarioReportEntity>>()) } returns flowOf(
+            mockedSavedScenarioReport
+        )
+        val mockedSavedCampaignReport = mockk<CampaignReportEntity>(relaxed = true) {
+            every { id } returns 9
+        }
+        coEvery { campaignReportRepository.save(any()) } returns mockedSavedCampaignReport
+
+        val scenarioReport = ScenarioReport(
+            campaignKey = "my-campaign",
+            scenarioName = "my-scenario",
+            start = now.minusSeconds(900),
+            end = now.minusSeconds(600),
+            startedMinions = 1000,
+            completedMinions = 990,
+            successfulExecutions = 990,
+            failedExecutions = 10,
+            status = ExecutionStatus.SUCCESSFUL,
+            messages = emptyList()
+        )
+        val campaignReport = CampaignReport(
+            campaignKey = "my-campaign",
+            start = now.minusSeconds(1000),
+            end = now.minusSeconds(500),
+            scheduledMinions = 1,
+            startedMinions = 1000,
+            completedMinions = 990,
+            successfulExecutions = 990,
+            failedExecutions = 10,
+            status = ExecutionStatus.SUCCESSFUL,
+            scenariosReports = mutableListOf(scenarioReport)
+        )
+
+        // when
+        databaseCampaignReportPublisher.publish("my-tenant", "my-campaign", campaignReport)
+
+        // then
+        coVerifyOrder {
+            campaignRepository.findByKey("my-campaign")
+            campaignRepository.update(any())
+            campaignReportRepository.save(any())
+            scenarioReportRepository.saveAll(any<Iterable<ScenarioReportEntity>>())
+        }
+        confirmVerified(
+            campaignRepository,
+            campaignReportRepository,
+            scenarioReportRepository,
+            scenarioReportMessageRepository,
+            stepReportRepository
         )
     }
 

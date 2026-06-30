@@ -102,7 +102,8 @@ data class CampaignReportData(
     var info: Int = 0,
     var warning: Int = 0,
     var error: Int = 0,
-    var scenarios: Collection<ScenarioReportData> = emptyList()
+    var scenarios: Collection<ScenarioReportData> = emptyList(),
+    var svgLineIcon: String = ""
 )
 
 /**

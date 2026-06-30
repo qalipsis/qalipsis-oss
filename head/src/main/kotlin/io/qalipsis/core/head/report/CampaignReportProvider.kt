@@ -28,6 +28,15 @@ import io.qalipsis.core.head.model.CampaignExecutionDetails
  * @author Francisca Eze
  */
 interface CampaignReportProvider {
+
+    /**
+     * Retrieves the full execution details for a single campaign, enriched with zones, meters, and step breakdown.
+     *
+     * @param tenant the reference of the tenant owning the data.
+     * @param campaignKey the unique key of the campaign.
+     */
+    suspend fun retrieve(tenant: String, campaignKey: CampaignKey): CampaignExecutionDetails
+
     /**
      * Retrieves the CampaignReport matching the specified list of [campaignKeys].
      *

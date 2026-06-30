@@ -68,6 +68,24 @@ interface TimeSeriesDataProvider {
     ): Map<String, Page<TimeSeriesRecord>>
 
     /**
+     * Retrieves all meters recorded for the specified campaign, optionally filtered by scenario names.
+     *
+     * The result is intended for use in execution reports (HTML and similar) where all meters produced
+     * during a campaign need to be listed without a pre-defined data-series query.
+     *
+     * @param tenant the reference of the tenant owning the data.
+     * @param campaignKeys unique keys of the campaigns to retrieve meters for; must not be empty.
+     * @param scenarioNames names of the scenarios to restrict the result to; empty means all scenarios.
+     *
+     * @return all [TimeSeriesMeter]s recorded during the campaigns, sorted by name then by timestamp.
+     */
+    suspend fun retrieveCampaignMeters(
+        tenant: String,
+        campaignKeys: Collection<String>,
+        scenarioNames: Collection<String> = emptyList()
+    ): List<TimeSeriesMeter>
+
+    /**
      * Retrieve the disk space used in a tenant, in bytes.
      *
      * @param tenant the reference of the tenant.

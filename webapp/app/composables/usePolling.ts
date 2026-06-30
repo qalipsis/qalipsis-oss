@@ -1,18 +1,19 @@
 export const usePolling = (
   fn: () => Promise<void>,
   shouldContinue: () => boolean,
-  interval = 5000
+  interval = 5000,
+  immediate = true
 ) => {
   const toastStore = useToastStore()
   const isLoading = ref(false)
   let timer: ReturnType<typeof setTimeout> | null = null
 
-  const run = async () => {
+    const _tick = async () => {
     try {
       isLoading.value = true
       await fn()
       if (shouldContinue()) {
-        timer = setTimeout(run, interval)
+          timer = setTimeout(_tick, interval)
       }
     } catch (error) {
       toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
@@ -20,6 +21,16 @@ export const usePolling = (
       isLoading.value = false
     }
   }
+
+    const run = () => {
+        if (immediate) {
+            return _tick()
+        }
+        if (shouldContinue()) {
+            timer = setTimeout(_tick, interval)
+        }
+        return Promise.resolve()
+    }
 
   onUnmounted(() => {
     if (timer) clearTimeout(timer)

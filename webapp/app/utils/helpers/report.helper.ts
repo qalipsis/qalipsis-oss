@@ -67,7 +67,7 @@ export const ReportHelper = {
       },
       buildSeries: (chartOptionData, values, ctx) => {
         const campaignChartSeriesMap = values.reduce<{ [key: string]: TimeSeriesAggregationResult[] }>((acc, cur) => {
-          ;(acc[cur.campaign] ??= []).push(cur)
+          (acc[cur.campaign] ??= []).push(cur)
 
           return acc
         }, {})
@@ -84,6 +84,7 @@ export const ReportHelper = {
             color: chartOptionData.dataSeriesColor,
           })
           ctx.pushStrokeDash(campaignOption.strokeDashArray)
+          ctx.pushStrokeWidth(campaignOption.strokeWidth / 2 * 1.5)
         })
       },
     })

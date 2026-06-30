@@ -24,6 +24,7 @@ import io.lettuce.core.api.async.RedisHashAsyncCommands
 import io.lettuce.core.api.async.RedisListAsyncCommands
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.context.DirectedAcyclicGraphName
 import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.context.StepName
 import io.qalipsis.api.lang.IdGenerator
@@ -103,25 +104,31 @@ class RedisCampaignReportLiveStateRegistry(
         )
     }
 
+    @LogInput
     override suspend fun recordFailedStepInitialization(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         stepName: StepName,
+        dagId: DirectedAcyclicGraphName,
+        underLoad: Boolean,
         cause: Throwable?
     ) {
         val key = buildRedisReportKey(campaignKey, scenarioName) + FAILED_STEP_INITIALIZATION_KEY_POSTFIX
         val causeName = cause?.javaClass?.canonicalName?.let { "$it: " } ?: ""
         val causeMessage = cause?.message ?: "<Unknown>"
-        redisHashCommands.hset(key, stepName, "$causeName$causeMessage")
+        redisHashCommands.hset(key, "$dagId:$underLoad:$stepName", "$causeName$causeMessage")
     }
 
+    @LogInput
     override suspend fun recordSuccessfulStepInitialization(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
-        stepName: StepName
+        stepName: StepName,
+        dagId: DirectedAcyclicGraphName,
+        underLoad: Boolean
     ) {
         val key = buildRedisReportKey(campaignKey, scenarioName) + SUCCESSFUL_STEP_INITIALIZATION_KEY_POSTFIX
-        redisListCommands.rpush(key, stepName)
+        redisListCommands.rpush(key, "$dagId:$underLoad:$stepName")
     }
 
     @LogInput

@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.head.model
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.micronaut.core.annotation.Introspected
 import io.qalipsis.api.report.ExecutionStatus
 import io.swagger.v3.oas.annotations.media.Schema
@@ -92,8 +93,9 @@ open class Campaign(
     @field:Schema(description = "Name of the user, who aborted the campaign", required = false, example = "John Doe")
     val aborterName: String? = null,
 
-    @field:Schema(description = "Scenarios being part of the campaign", required = true)
-    val scenarios: Collection<Scenario>,
+    @field:Schema(name = "scenarios", description = "Scenarios being part of the campaign", required = true)
+    @get:JsonProperty("scenarios")
+    open val configuredScenarios: Collection<Scenario>,
 
     @field:Schema(description = "Keys of the zones where the campaign was executed", required = false)
     val zones: Set<String> = emptySet()
@@ -114,7 +116,7 @@ open class Campaign(
         failureReason: String? = null,
         configurerName: String? = this.configurerName,
         aborterName: String? = this.aborterName,
-        scenarios: Collection<Scenario> = this.scenarios
+        configuredScenarios: Collection<Scenario> = this.configuredScenarios
     ) = Campaign(
         version = version,
         key = key,
@@ -130,7 +132,7 @@ open class Campaign(
         failureReason = failureReason,
         configurerName = configurerName,
         aborterName = aborterName,
-        scenarios = scenarios
+        configuredScenarios = configuredScenarios
     )
 
     override fun equals(other: Any?): Boolean {
@@ -153,7 +155,7 @@ open class Campaign(
         if (failureReason != other.failureReason) return false
         if (configurerName != other.configurerName) return false
         if (aborterName != other.aborterName) return false
-        if (scenarios != other.scenarios) return false
+        if (configuredScenarios != other.configuredScenarios) return false
         if (zones != other.zones) return false
 
         return true
@@ -173,13 +175,13 @@ open class Campaign(
         result = 31 * result + status.hashCode()
         result = 31 * result + (configurerName?.hashCode() ?: 0)
         result = 31 * result + (aborterName?.hashCode() ?: 0)
-        result = 31 * result + scenarios.hashCode()
+        result = 31 * result + configuredScenarios.hashCode()
         result = 31 * result + zones.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "Campaign(version=$version, key='$key', creation=$creation, name='$name', speedFactor=$speedFactor, scheduledMinions=$scheduledMinions, softTimeout=$softTimeout, hardTimeout=$hardTimeout, start=$start, end=$end, result=$status, configurerName=$configurerName, aborterName=$aborterName, scenarios=$scenarios, zones=$zones)"
+        return "Campaign(version=$version, key='$key', creation=$creation, name='$name', speedFactor=$speedFactor, scheduledMinions=$scheduledMinions, softTimeout=$softTimeout, hardTimeout=$hardTimeout, start=$start, end=$end, result=$status, configurerName=$configurerName, aborterName=$aborterName, configuredScenarios=$configuredScenarios, zones=$zones)"
     }
 
 

@@ -7,6 +7,7 @@
     "mock-server": "npm --prefix mock-server run start",
     "local": "npx nuxi dev --dotenv .env.local",
     "test": "npx nuxi dev --dotenv .env.test",
+    "for-mock": "npx nuxi dev --dotenv .env.mock",
     "generate-dev": "npx nuxi generate --dotenv .env.test",
     "generate-docker": "npx nuxi generate --dotenv .env.docker",
     "generate-for-java": "npx nuxi generate --dotenv .env.java",

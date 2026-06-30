@@ -19,12 +19,23 @@ const props = defineProps<{
   end?: string
 }>()
 
-/**
- * The display time text
- */
-const displayTimeText = computed(() => ScenarioHelper.toTimeDisplayText(props.start, props.end))
+const now = ref(new Date().toISOString())
 
-const intervalText = computed(() => ScenarioHelper.toIntervalInHHMMSSFormat(props.start, props.end))
+const {pause, resume} = useIntervalFn(() => {
+  now.value = new Date().toISOString()
+}, 1000)
+
+watch(() => props.end, (end) => {
+  if (end) {
+    pause()
+  } else {
+    resume()
+  }
+}, {immediate: true})
+
+const effectiveEnd = computed(() => props.end ?? now.value)
+
+const displayTimeText = computed(() => ScenarioHelper.toTimeDisplayText(props.start, props.end))
+const intervalText = computed(() => ScenarioHelper.toIntervalInHHMMSSFormat(props.start, effectiveEnd.value))
 </script>
 
-<style scoped lang="scss"></style>

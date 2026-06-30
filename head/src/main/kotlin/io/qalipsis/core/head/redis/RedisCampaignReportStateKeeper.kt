@@ -32,6 +32,7 @@ import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.api.report.StepReport
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
@@ -183,22 +184,59 @@ class RedisCampaignReportStateKeeper(
                 log.debug { "Abortion timestamp for $campaignKey is $it" }
             }
 
-            val successfullyInitializedSteps =
+            val successfullyInitializedEntries =
                 redisListCommands.lrange("$rootKey$SUCCESSFUL_STEP_INITIALIZATION_KEY_POSTFIX", 0, -1)
-            val initializationFailures =
-                redisHashCommands.hgetall("$rootKey$FAILED_STEP_INITIALIZATION_KEY_POSTFIX").toList().map {
-                    val stepName = it.key
-                    val message = it.value
-                    ReportMessage(stepName, "${stepName}_init", ReportMessageSeverity.ERROR, message)
+                    .toList()
+            val failedInitializationEntries =
+                redisHashCommands.hgetall("$rootKey$FAILED_STEP_INITIALIZATION_KEY_POSTFIX").toList()
+
+            val stepReports = mutableMapOf<String, StepReport>()
+            successfullyInitializedEntries.forEach { encoded ->
+                val parts = encoded.split(":", limit = 3)
+                if (parts.size == 3) {
+                    val (dagId, underLoadStr, stepName) = parts
+                    stepReports[stepName] = StepReport(
+                        name = stepName,
+                        dagId = dagId,
+                        isUnderLoad = underLoadStr.toBoolean(),
+                        initialized = true,
+                        successfulExecutions = successfulExecutions[stepName]?.toLong() ?: 0L,
+                        failedExecutions = failedExecutions[stepName]?.toLong() ?: 0L
+                    )
                 }
+            }
+            val initializationFailureMessages = failedInitializationEntries.map {
+                val encoded = it.key
+                val errorMessage = it.value
+                val parts = encoded.split(":", limit = 3)
+                if (parts.size == 3) {
+                    val (dagId, underLoadStr, stepName) = parts
+                    stepReports[stepName] = StepReport(
+                        name = stepName,
+                        dagId = dagId,
+                        isUnderLoad = underLoadStr.toBoolean(),
+                        initialized = false,
+                        initializationError = errorMessage
+                    )
+                    ReportMessage(stepName, "${stepName}_init", ReportMessageSeverity.ERROR, errorMessage)
+                } else {
+                    ReportMessage(encoded, "${encoded}_init", ReportMessageSeverity.ERROR, errorMessage)
+                }
+            }
             val initializationMessages = listOf(
                 ReportMessage(
                     stepName = "_init",
                     messageId = "_init",
                     severity = ReportMessageSeverity.INFO,
-                    message = "Steps successfully initialized: ${successfullyInitializedSteps.joinToString()}"
+                    message = "Steps successfully initialized: ${
+                        successfullyInitializedEntries.joinToString {
+                            it.substringAfterLast(
+                                ":"
+                            )
+                        }
+                    }"
                 )
-            ) + initializationFailures
+            ) + initializationFailureMessages
 
             val messages = scenarioData
                 // All the messages have a key containing the step and messages IDs, separated by a slash.
@@ -263,7 +301,8 @@ class RedisCampaignReportStateKeeper(
                 end = endTimestamp,
                 abort = abortTimestamp,
                 status = status,
-                messages = allMessages
+                messages = allMessages,
+                steps = stepReports.values.toList()
             ).toReport(campaignKey)
         }.toCampaignReport(campaignKnownStatus).also {
             log.debug { "Campaign report for campaign $campaignKey created successfully: $it" }

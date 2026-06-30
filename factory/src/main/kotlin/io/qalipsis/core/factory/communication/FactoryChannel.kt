@@ -21,6 +21,7 @@ package io.qalipsis.core.factory.communication
 
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.DispatcherChannel
+import io.qalipsis.core.feedbacks.CampaignMetersFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.heartbeat.Heartbeat
@@ -67,6 +68,11 @@ interface FactoryChannel : FactoryStartupComponent {
      * Sends a [Feedback] to the heads.
      */
     suspend fun publishFeedback(feedback: Feedback)
+
+    /**
+     * Sends a [CampaignMetersFeedback] to the heads via the dedicated meters channel.
+     */
+    suspend fun publishMeterFeedback(feedback: CampaignMetersFeedback)
 
     /**
      * Sends a [HandshakeRequest] to the heads.

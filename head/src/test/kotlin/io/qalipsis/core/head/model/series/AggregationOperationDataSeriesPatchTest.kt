@@ -61,6 +61,31 @@ internal class AggregationOperationDataSeriesPatchTest {
     }
 
     @Test
+    internal fun `should clear the data series aggregationOperation when null is provided`() {
+        // given
+        val dataSeriesEntity = DataSeriesEntity(
+            reference = "my-data-series",
+            tenantId = 1431,
+            creatorId = 123,
+            displayName = "the-name",
+            aggregationOperation = QueryAggregationOperator.AVERAGE,
+            dataType = DataType.EVENTS,
+            valueName = "the-value-name",
+            filters = setOf(
+                DataSeriesFilterEntity("name", QueryClauseOperator.IS, "value")
+            )
+        )
+        val patch = AggregationOperationDataSeriesPatch(null)
+
+        // when
+        val result = patch.apply(dataSeriesEntity)
+
+        // then
+        assertThat(result).isTrue()
+        assertThat(dataSeriesEntity).prop(DataSeriesEntity::aggregationOperation).isEqualTo(null)
+    }
+
+    @Test
     internal fun `should not update the data series aggregationOperation when equal`() {
         // given
         val dataSeriesEntity = DataSeriesEntity(
