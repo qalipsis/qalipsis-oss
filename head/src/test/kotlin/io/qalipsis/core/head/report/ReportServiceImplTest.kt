@@ -28,12 +28,15 @@ import assertk.assertions.index
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotSameAs
 import assertk.assertions.isSameInstanceAs
 import assertk.assertions.prop
 import io.micronaut.data.model.Page
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.exceptions.HttpStatusException
 import io.mockk.coEvery
 import io.mockk.coExcludeRecords
 import io.mockk.coJustRun
@@ -2191,6 +2194,10 @@ internal class ReportServiceImplTest {
             assertThat(caught).all {
                 prop(ExitStatusException::exitStatus).isEqualTo(102)
                 prop(ExitStatusException::message).isEqualTo("io.micronaut.http.exceptions.HttpStatusException: File still Processing")
+                prop(ExitStatusException::cause).isInstanceOf<HttpStatusException>().all {
+                    prop(HttpStatusException::message).isEqualTo("File still Processing")
+                    prop(HttpStatusException::getStatus).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY)
+                }
             }
             coVerify {
                 reportTaskRepository.findByTenantReferenceAndReference(

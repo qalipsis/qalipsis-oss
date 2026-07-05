@@ -314,7 +314,12 @@ class ReportServiceImpl(
                 }
 
                 else -> {
-                    throw ExitStatusException(HttpStatusException(HttpStatus.NOT_FOUND, "File still Processing"), 102)
+                    throw ExitStatusException(
+                        HttpStatusException(
+                            HttpStatus.UNPROCESSABLE_ENTITY,
+                            "File still Processing"
+                        ), 102
+                    )
                 }
             }
         } ?: throw IllegalArgumentException("Requested file not found")

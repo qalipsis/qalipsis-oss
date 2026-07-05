@@ -156,13 +156,13 @@
                 <!-- Step row -->
                 <div
                     class="flex items-center gap-x-2 px-3 py-1.5"
-                    :class="{ 'cursor-pointer': !step.notExecuted && stepHasDetail(step) }"
-                    @click="!step.notExecuted && stepHasDetail(step) && toggleStep(report.id, stepIndex)"
+                    :class="{ 'cursor-pointer': !isStepNotExecuted(step) && stepHasDetail(step) }"
+                    @click="!isStepNotExecuted(step) && stepHasDetail(step) && toggleStep(report.id, stepIndex)"
                 >
                   <span class="font-mono text-sm text-gray-800 dark:text-gray-200 flex-1 truncate">{{
                       step.name
                     }}</span>
-                  <template v-if="!step.notExecuted">
+                  <template v-if="!isStepNotExecuted(step)">
                     <ScenarioExecutionSteps
                         :status="step.status"
                         :scenario-name="step.name"
@@ -175,12 +175,12 @@
                           :class="stepFailRateCls(step)">{{ stepFailRateText(step) }}</span>
                   </template>
                   <span
-                      v-if="step.notExecuted"
+                      v-if="isStepNotExecuted(step)"
                       class="flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                  >Not executed</span>
+                  >N/A, Off-load</span>
                   <ScenarioTag v-else :status="step.status" class="flex-shrink-0"/>
                   <button
-                      v-if="!step.notExecuted && stepHasDetail(step)"
+                      v-if="!isStepNotExecuted(step) && stepHasDetail(step)"
                       class="text-xs px-2 py-0.5 rounded border border-gray-200 dark:border-gray-600 text-gray-500 hover:bg-gray-50 dark:hover:bg-primary-800 flex-shrink-0"
                       @click.stop="toggleStep(report.id, stepIndex)"
                   >
@@ -192,7 +192,7 @@
 
                 <!-- Step detail panel -->
                 <div
-                    v-if="!step.notExecuted && stepHasDetail(step) && expandedSteps.has(`${report.id}:${stepIndex}`)"
+                    v-if="!isStepNotExecuted(step) && stepHasDetail(step) && expandedSteps.has(`${report.id}:${stepIndex}`)"
                     class="border-t border-gray-100 dark:border-gray-700 px-4 py-3 flex flex-col gap-y-3 bg-gray-50 dark:bg-primary-950"
                 >
                   <!-- Step messages -->
@@ -272,6 +272,9 @@ const toggleStep = (scenarioId: string, stepIndex: number) => {
 const stepHasDetail = (step: StepExecutionDetails): boolean =>
     (step.messages?.length ?? 0) > 0 || (step.meters?.length ?? 0) > 0
 
+const isStepNotExecuted = (step: StepExecutionDetails): boolean =>
+    step.notExecuted || ((step.successfulExecutions ?? 0) + (step.failedExecutions ?? 0)) === 0
+
 // ── Failure-rate helpers ─────────────────────────────────────────────────────
 
 const _failRate = (success: number, failed: number): number | null => {
@@ -302,7 +305,7 @@ const stepFailRateCls = (step: StepExecutionDetails): string => {
 }
 
 const stepBorderCls = (step: StepExecutionDetails): string => {
-  if (step.notExecuted) return 'border-gray-200 dark:border-gray-600 opacity-60'
+  if (isStepNotExecuted(step)) return 'border-gray-200 dark:border-gray-600 opacity-60'
   const s = step.status
   if (s === ExecutionStatusConstant.SUCCESSFUL) return 'border-green-300 dark:border-green-700'
   if (s === ExecutionStatusConstant.WARNING) return 'border-yellow-300 dark:border-yellow-600'

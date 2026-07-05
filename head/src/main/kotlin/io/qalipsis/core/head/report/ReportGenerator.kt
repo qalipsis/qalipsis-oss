@@ -116,7 +116,7 @@ class ReportGenerator(
             }
             require(campaignReportData.isNotEmpty()) { "No matching campaign for specified campaign keys, campaign name patterns and scenario name patterns" }
             val campaignReportDetail = reportFileBuilder.populateCampaignReportDetail(report, tenant, campaignReportData)
-            val dataSeries = report.dataComponents.flatMap { it.dataSeries }
+            val dataSeries = report.dataComponents.flatMap { it.dataSeries }.filter { it?.reference != null }
             val reportFile = templateReportService.generatePdf(
                 report,
                 campaignReportDetail,
@@ -127,9 +127,10 @@ class ReportGenerator(
                 currentReportTempDir,
                 campaignReferenceToName
             )
+            val timestamp = "${Instant.now().truncatedTo(ChronoUnit.SECONDS)}".replace("T", "-").replace("_", "-")
             reportFileRepository.save(
                 ReportFileEntity(
-                    "${report.displayName} ${Instant.now().truncatedTo(ChronoUnit.SECONDS)}",
+                    "${report.displayName}-$timestamp.pdf",
                     reportFile,
                     Instant.now(),
                     reportTask.id
@@ -140,6 +141,7 @@ class ReportGenerator(
             )
             logger.info { "Report generation... Report Task state: Completed" }
         } catch (e: Exception) {
+            logger.error(e) { "Encountered an error while generating report file : ${e.message}" }
             reportTaskRepository.update(
                 reportTask.copy(
                     status = ReportTaskStatus.FAILED,
@@ -147,7 +149,6 @@ class ReportGenerator(
                     failureReason = e.message
                 )
             )
-            logger.error(e) { "Encountered an error while generating report file : ${e.message}" }
             throw IllegalArgumentException("Encountered an error while generating report file : ${e.message}")
         } finally {
             File(currentReportTempDir.toString()).deleteRecursively()

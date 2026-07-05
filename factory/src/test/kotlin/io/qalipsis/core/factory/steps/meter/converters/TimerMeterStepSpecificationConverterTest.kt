@@ -145,7 +145,7 @@ internal class TimerMeterStepSpecificationConverterTest :
                 index(0).all {
                     prop("value extractor") { it.first }.transform {
                         it(mockk {
-                            every { max(TimeUnit.MICROSECONDS) } returns 2000.0
+                            every { max(TimeUnit.MILLISECONDS) } returns 2000.0
                         })
                     }.isEqualTo(Duration.ofMillis(2000))
                     prop("checker") { it.second }.isInstanceOf(GreaterThanChecker::class).prop("threshold")
@@ -154,7 +154,7 @@ internal class TimerMeterStepSpecificationConverterTest :
                 index(1).all {
                     prop("value extractor") { it.first }.transform {
                         it(mockk {
-                            every { mean(TimeUnit.MICROSECONDS) } returns 1000.0
+                            every { mean(TimeUnit.MILLISECONDS) } returns 1000.0
                         })
                     }.isEqualTo(Duration.ofMillis(1000))
                     prop("checker") { it.second }.isInstanceOf(LessThanChecker::class).prop("threshold").isEqualTo(Duration.ofSeconds(1))
@@ -162,7 +162,7 @@ internal class TimerMeterStepSpecificationConverterTest :
                 index(2).all {
                     prop("value extractor") { it.first }.transform {
                         it(mockk {
-                            every { percentile(45.0, TimeUnit.MICROSECONDS) } returns 100.0
+                            every { percentile(45.0, TimeUnit.MILLISECONDS) } returns 100.0
                         })
                     }.isEqualTo(Duration.ofMillis(100))
                     prop("checker") { it.second }.isInstanceOf(EqualsChecker::class).prop("expected")
@@ -171,7 +171,7 @@ internal class TimerMeterStepSpecificationConverterTest :
                 index(3).all {
                     prop("value extractor") { it.first }.transform {
                         it(mockk {
-                            every { percentile(25.0, TimeUnit.MICROSECONDS) } returns 500.0
+                            every { percentile(25.0, TimeUnit.MILLISECONDS) } returns 500.0
                         })
                     }.isEqualTo(Duration.ofMillis(500))
                     prop("checker") { it.second }.isInstanceOf(LessThanOrEqualChecker::class).prop("threshold").isEqualTo(Duration.ofMillis(1000))

@@ -57,7 +57,7 @@ SCENARIOS
 [# th:if="${!scenario.steps.isEmpty()}"]
   Steps:
 [# th:each="step : ${scenario.steps}"]
-[# th:if="${step.notExecuted}"]    o [(${step.name})][(${step.type != null ? ' (' + step.type + ')' : ''})]  (not executed)
+[# th:if="${step.notExecuted}"]    o [(${step.name})][(${step.type != null ? ' (' + step.type + ')' : ''})]  (N/A, off-load)
 [/]
 [# th:unless="${step.notExecuted}"]
 [# th:with="stFailRate=${step.totalExecutions > 0 ? #numbers.formatDecimal((step.failedExecutions != null ? step.failedExecutions : 0) * 100.0 / step.totalExecutions, 1, 'NONE', 1, 'POINT') : null}"]

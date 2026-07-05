@@ -1,7 +1,5 @@
-import { format } from 'date-fns'
-
 export const useReportApi = () => {
-  const { api$, get$, delete$, post$, put$ } = baseApi()
+  const {apiRaw$, get$, delete$, post$, put$} = baseApi()
 
   /**
    * Fetches the reports
@@ -48,21 +46,43 @@ export const useReportApi = () => {
     // Triggers the report generation
     const reportTask = await post$<ReportTask>(`/reports/${reference}/render`)
     // Download the report
-    const blob = await api$<Blob>(`/reports/file/${reportTask.reference}`, {
+    const response = await apiRaw$<Blob>(`/reports/file/${reportTask.reference}`, {
       method: 'get',
       responseType: 'blob',
       retry: 20, // Retry maximum 20 times
-      retryDelay: 500, // Wait 500 ms for the next retry
+      retryDelay: 1000, // Wait 1000 ms for the next retry
+      retryStatusCodes: [408, 409, 422, 425, 429, 502, 503, 504],
     })
-    const url = window.URL.createObjectURL(blob)
+    const blob = response._data as Blob
+    const filename = filenameFromContentDisposition(response.headers.get('content-disposition'))
+        ?? `${reference}.pdf`
+    const url = globalThis.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    const result = format(new Date(), 'yyyy-MM-dd-HH_mm_ss')
-    link.download = `${result}-${reference}.pdf`
+    link.download = filename
     document.body.appendChild(link)
     link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
+    link.remove()
+    globalThis.URL.revokeObjectURL(url)
+  }
+
+  /**
+   * Extracts the filename from a Content-Disposition header.
+   * Supports both `filename*=UTF-8''<encoded>` (RFC 5987) and `filename="..."` forms.
+   * Returns undefined if no filename is present.
+   */
+  const filenameFromContentDisposition = (header: string | null | undefined): string | undefined => {
+    if (!header) return undefined
+    const encodedMatch = /filename\*\s*=\s*[^']*''([^;]+)/i.exec(header)
+    if (encodedMatch?.[1]) {
+      try {
+        return decodeURIComponent(encodedMatch[1].trim())
+      } catch {
+        // Fall through to the plain filename form.
+      }
+    }
+    const plainMatch = /filename\s*=\s*"?([^";]+)"?/i.exec(header)
+    return plainMatch?.[1]?.trim()
   }
 
   /**

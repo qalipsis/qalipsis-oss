@@ -36,6 +36,7 @@ import io.micronaut.http.MediaType
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.http.exceptions.HttpStatusException
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.mockk.coEvery
@@ -55,6 +56,7 @@ import io.qalipsis.core.head.report.DownloadFile
 import io.qalipsis.core.head.report.ReportService
 import io.qalipsis.core.head.report.SharingMode
 import io.qalipsis.core.head.web.handler.ErrorResponse
+import io.qalipsis.core.lifetime.ExitStatusException
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import jakarta.inject.Inject
@@ -571,11 +573,9 @@ internal class ReportControllerIntegrationTest {
         //given
         val fileContent =
             byteArrayOf(0xA1.toByte(), 0x2E.toByte(), 0x38.toByte(), 0xD4.toByte(), 0x89.toByte(), 0xC3.toByte())
-        val downloadResponse = DownloadFile("Wonderful-Report", fileContent)
+        val downloadResponse = DownloadFile("Wonderful-Report.pdf", fileContent)
         coEvery { reportService.read(any(), any(), any()) } returns downloadResponse
         val request = HttpRequest.GET<ByteArray>("file/task-1")
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${downloadResponse.filename}\"")
-            .contentType(MediaType.APPLICATION_OCTET_STREAM)
 
         //when
         val response = httpClient.toBlocking().exchange(request, ByteArray::class.java)
@@ -591,6 +591,8 @@ internal class ReportControllerIntegrationTest {
         assertThat(response).all {
             transform("statusCode") { it.status }.isEqualTo(HttpStatus.OK)
             transform("body") { it.body.get() }.isEqualTo(downloadResponse.content)
+            transform("filename") { it.header(HttpHeaders.CONTENT_DISPOSITION) }.isEqualTo("attachment; filename=\"Wonderful-Report.pdf\"")
+            transform("contentType") { it.contentType.get() }.isEqualTo(MediaType.APPLICATION_PDF_TYPE)
         }
         confirmVerified(reportService)
     }
@@ -606,8 +608,6 @@ internal class ReportControllerIntegrationTest {
             )
         } throws IllegalArgumentException("File not found: Unknown creator, tenant or task reference")
         val request = HttpRequest.GET<ByteArray>("file/10")
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Report.pdf\"")
-            .contentType(MediaType.APPLICATION_PDF)
 
         // when
         val response = assertThrows<HttpClientResponseException> {
@@ -643,8 +643,6 @@ internal class ReportControllerIntegrationTest {
             )
         } throws IllegalArgumentException("There was an error generating the file")
         val request = HttpRequest.GET<ByteArray>("/file/20")
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Report.pdf\"")
-            .contentType(MediaType.APPLICATION_PDF)
 
         // when
         val response = assertThrows<HttpClientResponseException> {
@@ -670,21 +668,19 @@ internal class ReportControllerIntegrationTest {
 
     @Test
     fun `should throw an exception when task generation is still in progress`() {
-        //given
+        // given
+        val returnedStatus = HttpStatus.values().random()
         coEvery {
             reportService.read(
                 any(),
                 any(),
                 any()
             )
-        } throws IllegalArgumentException("File still Processing")
-        val request = HttpRequest.GET<ByteArray>("/file/20")
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Report.pdf\"")
-            .contentType(MediaType.APPLICATION_PDF)
+        } throws ExitStatusException(HttpStatusException(returnedStatus, "File still Processing"), 102)
 
         // when
         val response = assertThrows<HttpClientResponseException> {
-            httpClient.toBlocking().exchange(request, ByteArray::class.java)
+            httpClient.toBlocking().exchange(HttpRequest.GET<ByteArray>("/file/20"), ByteArray::class.java)
         }
 
         // then
@@ -697,7 +693,7 @@ internal class ReportControllerIntegrationTest {
         }
 
         assertThat(response).all {
-            transform("statusCode") { it.status }.isEqualTo(HttpStatus.BAD_REQUEST)
+            transform("statusCode") { it.status }.isEqualTo(returnedStatus)
             transform("body") { it.response.getBody(ErrorResponse::class.java).get() }.prop(ErrorResponse::errors)
                 .containsOnly("File still Processing")
         }

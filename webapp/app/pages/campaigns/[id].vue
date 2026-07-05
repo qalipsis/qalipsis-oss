@@ -228,7 +228,13 @@ onMounted(async () => {
     timeRange: { min, max },
   })
 
-  const allCampaignDataSeries = (await getCachedDataSeries({campaign: campaignDetails.value?.key})).filter(
+  // For running campaigns, backend narrows data series to those matching event/meter names already recorded.
+  // Skip that filter so any user-defined data series shows up before metrics accumulate.
+  const runningStatuses = ['IN_PROGRESS', 'QUEUED', 'SCHEDULED']
+  const dataSeriesQuery = runningStatuses.includes(campaignDetails.value?.status ?? '')
+      ? {}
+      : {campaign: campaignDetails.value?.key}
+  const allCampaignDataSeries = (await getCachedDataSeries(dataSeriesQuery)).filter(
       (d) => d.reference !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE,
   )
   hasDataSeries.value = allCampaignDataSeries.length > 0

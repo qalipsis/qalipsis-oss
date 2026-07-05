@@ -90,7 +90,7 @@ class ReportFileBuilder(
         chartData: MutableCollection<Map<String, TimeSeriesValues>>
     ) {
         val campaignReferences = report.campaignKeys.ifEmpty { report.campaignNamesPatterns }
-        val dataSeries = reportDataComponentEntity.dataSeries.map { it.reference }.toSet()
+        val dataSeries = reportDataComponentEntity.dataSeries.mapNotNull { it?.reference }.toSet()
         val campaignRange = campaignRepository.findInstantsAndDuration(tenant, report.campaignKeys)
         when (reportDataComponentEntity.type) {
             DataComponentType.DATA_TABLE -> tableData.add(

@@ -5,6 +5,7 @@ export interface ApiRequestOptions {
   responseType?: 'json' | 'text' | 'blob' | 'arrayBuffer' | 'stream'
   retry?: number
   retryDelay?: number
+    retryStatusCodes?: number[]
 }
 
 export const baseApi = () => {
@@ -24,8 +25,26 @@ export const baseApi = () => {
       responseType: options.responseType,
       retry: options.retry,
       retryDelay: options.retryDelay,
+        retryStatusCodes: options.retryStatusCodes,
     }) as Promise<T>
   }
+
+    /**
+     * Same as api$ but returns the full FetchResponse so callers can read headers
+     * (e.g. Content-Disposition for file downloads).
+     */
+    const apiRaw$ = <T>(url: string, options: ApiRequestOptions) => {
+        return $fetch.raw<T>(url, {
+            baseURL,
+            method: options.method,
+            body: options.body as Record<string, unknown> | undefined,
+            query: options.query,
+            responseType: options.responseType,
+            retry: options.retry,
+            retryDelay: options.retryDelay,
+            retryStatusCodes: options.retryStatusCodes,
+        })
+    }
 
   const get$ = <T, R extends object = Record<string, unknown>>(url: string, query?: R): Promise<T> => {
     return $fetch(url, {
@@ -68,6 +87,7 @@ export const baseApi = () => {
 
   return {
     api$,
+      apiRaw$,
     get$,
     post$,
     patch$,

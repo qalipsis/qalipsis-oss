@@ -114,8 +114,7 @@ internal class TimeoutStepDecoratorTest {
             meterRegistry.counter(
                 scenarioName = "my-scenario",
                 stepName = "my-step",
-                name = "step-timeout",
-                mapOf("minion" to "my-minion")
+                name = "step-timeout"
             )
             counter.increment()
         }

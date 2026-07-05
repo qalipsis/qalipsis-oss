@@ -37,7 +37,7 @@ class TimerExpectationSpecImpl(val percentiles: MutableSet<Double>) : TimerExpec
 
     override val max: MeterExpectationSpecification<Duration>
         get() {
-            val valueExtractor: Timer.() -> Duration = { Duration.ofMillis(max(TimeUnit.MICROSECONDS).toLong()) }
+            val valueExtractor: Timer.() -> Duration = { Duration.ofMillis(max(TimeUnit.MILLISECONDS).toLong()) }
             val comparableValueFailureSpecification =
                 ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.MAX), valueExtractor)
             checks.add(comparableValueFailureSpecification)
@@ -46,7 +46,7 @@ class TimerExpectationSpecImpl(val percentiles: MutableSet<Double>) : TimerExpec
 
     override val mean: MeterExpectationSpecification<Duration>
         get() {
-            val valueExtractor: Timer.() -> Duration = { Duration.ofMillis(mean(TimeUnit.MICROSECONDS).toLong()) }
+            val valueExtractor: Timer.() -> Duration = { Duration.ofMillis(mean(TimeUnit.MILLISECONDS).toLong()) }
             val comparableValueFailureSpecification =
                 ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.MEAN), valueExtractor)
             checks.add(comparableValueFailureSpecification)
@@ -55,7 +55,7 @@ class TimerExpectationSpecImpl(val percentiles: MutableSet<Double>) : TimerExpec
 
     override fun percentile(percentile: Double): MeterExpectationSpecification<Duration> {
         val valueExtractor: Timer.() -> Duration =
-            { Duration.ofMillis(percentile(percentile, TimeUnit.MICROSECONDS).toLong()) }
+            { Duration.ofMillis(percentile(percentile, TimeUnit.MILLISECONDS).toLong()) }
         percentiles.add(percentile)
         val comparableValueFailureSpecification =
             ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.PERCENTILE, percentile), valueExtractor)

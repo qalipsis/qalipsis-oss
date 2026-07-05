@@ -23,6 +23,8 @@ import io.micrometer.core.annotation.Timed
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.core.version.annotation.Version
+import io.micronaut.http.HttpHeaders
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
@@ -35,6 +37,7 @@ import io.micronaut.http.annotation.Produces
 import io.micronaut.http.annotation.Put
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.http.annotation.Status
+import io.micronaut.http.exceptions.HttpStatusException
 import io.micronaut.security.annotation.Secured
 import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
@@ -49,6 +52,8 @@ import io.qalipsis.core.head.model.ReportCreationAndUpdateRequest
 import io.qalipsis.core.head.model.ReportTask
 import io.qalipsis.core.head.report.ReportService
 import io.qalipsis.core.head.web.ControllerUtils.asFilters
+import io.qalipsis.core.head.web.handler.ErrorResponse
+import io.qalipsis.core.lifetime.ExitStatusException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -333,12 +338,11 @@ class ReportController(
         ]
     )
     @Secured(value = [Permissions.READ_REPORT])
-    @Status(HttpStatus.OK)
     @LogInput
     suspend fun download(
         @Parameter(
             name = "X-Tenant",
-            description = "Contextual tenant.",
+            description = "Contextual tenant",
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
@@ -348,13 +352,23 @@ class ReportController(
             required = true,
             `in` = ParameterIn.PATH
         ) @NotBlank @PathVariable taskReference: String,
-    ): ByteArray {
-        val response = reportService.read(
-            tenant,
-            authentication.name,
-            taskReference
-        )
-
-        return response.content
+    ): HttpResponse<ByteArray> {
+        return try {
+            val createdFile = reportService.read(
+                tenant,
+                authentication.name,
+                taskReference
+            )
+            HttpResponse.ok(createdFile.content)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${createdFile.filename}\"")
+                .contentType(MediaType.APPLICATION_PDF)
+        } catch (e: ExitStatusException) {
+            val cause = e.cause
+            throw if (cause is HttpStatusException) {
+                throw HttpStatusException(cause.status, ErrorResponse(cause.message ?: ""))
+            } else {
+                e
+            }
+        }
     }
 }

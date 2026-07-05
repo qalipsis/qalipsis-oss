@@ -58,8 +58,7 @@ class TimeoutStepDecorator<I, O>(
             meterRegistry.counter(
                 scenarioName = context.scenarioName,
                 stepName = context.stepName,
-                name = "step-timeout",
-                mapOf("minion" to context.minionId)
+                name = "step-timeout"
             ).increment()
             context.isExhausted = true
             throw e
