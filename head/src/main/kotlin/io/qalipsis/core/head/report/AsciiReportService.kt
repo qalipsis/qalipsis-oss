@@ -21,6 +21,7 @@ package io.qalipsis.core.head.report
 
 import io.micronaut.context.annotation.Value
 import io.qalipsis.core.head.model.CampaignExecutionDetails
+import io.qalipsis.core.head.model.StepExecutionDetails
 import jakarta.inject.Singleton
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.context.Context
@@ -62,7 +63,21 @@ class AsciiReportService(
             .plus("\n")
     }
 
+    /**
+     * Renders the ASCII details of a single [step] — status, execution counts, messages and meters —
+     * mirroring the per-step block emitted by the full ASCII campaign report. Suitable as free-form
+     * text content, for example the `<system-out>` of a JUnit test case.
+     */
+    fun renderStepDetails(step: StepExecutionDetails): String {
+        val context = Context().apply { setVariable("step", step) }
+        return templateEngine.process(STEP_TEMPLATE_NAME, context)
+            .replace(Regex("^\n+"), "")
+            .replace(Regex("\n{3,}"), "\n\n")
+            .trimEnd()
+    }
+
     private companion object {
         const val TEMPLATE_NAME = "ascii-campaign-report"
+        const val STEP_TEMPLATE_NAME = "ascii-step-details"
     }
 }

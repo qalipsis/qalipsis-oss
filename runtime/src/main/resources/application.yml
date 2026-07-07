@@ -64,6 +64,10 @@ micronaut:
     port: ${server.port}
     cors:
       enabled: true
+      configurations:
+        default:
+          exposed-headers:
+            - Content-Disposition
   session:
     http:
       cookie: false

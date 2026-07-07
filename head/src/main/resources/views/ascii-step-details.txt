@@ -1,0 +1,14 @@
+[# th:with="stFailRate=${step.totalExecutions > 0 ? #numbers.formatDecimal((step.failedExecutions != null ? step.failedExecutions : 0) * 100.0 / step.totalExecutions, 1, 'NONE', 1, 'POINT') : null}"]
+Status: [(${step.status})]
+Executions: [(${step.successfulExecutions != null ? step.successfulExecutions : 'n/a'})] ok   [(${step.failedExecutions != null ? step.failedExecutions : 'n/a'})] failed   [(${step.totalExecutions})] total   [(${stFailRate != null ? stFailRate + '%' : '0.0%'})] failure rate
+[/]
+[# th:if="${!step.messages.isEmpty()}"]
+Messages:
+[# th:each="msg : ${step.messages}"]  [(${msg.severity != null ? msg.severity.name() : 'INFO'})] [(${msg.message})]
+[/]
+[/]
+[# th:if="${!step.meters.isEmpty()}"]
+Meters:
+[# th:each="meter : ${step.meters}"]  - [(${meter.name})][(${meter.type != null ? ' (' + meter.type + ')' : ''})][(${meter.count != null ? '  count=' + meter.count : ''})][(${meter.mean != null ? '  mean=' + meter.mean : meter.meanDuration != null ? '  mean=' + meter.meanDuration.toMillis() + 'ms' : meter.value != null ? '  value=' + meter.value : ''})][(${meter.max != null ? '  max=' + meter.max : meter.maxDuration != null ? '  max=' + meter.maxDuration.toMillis() + 'ms' : ''})][(${meter.other != null and !meter.other.isEmpty() ? '  |' : ''})][# th:if="${meter.other != null}"][# th:each="entry : ${meter.other}"][# th:if="${#strings.startsWith(entry.key,'percentile_')}"]  p[(${entry.key.replace('percentile_','').replaceAll('\\.0$','')})]=[(${meter.type == 'timer' ? #numbers.formatDecimal(entry.value.doubleValue() / 1000.0, 1, 'NONE', 1, 'POINT') + 'ms' : #numbers.formatInteger(entry.value.longValue(), 1, 'DEFAULT')})] [/][/][/]
+[/]
+[/]

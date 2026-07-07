@@ -19,376 +19,353 @@
 
 package io.qalipsis.core.report
 
-import com.google.common.io.Files
+import assertk.assertThat
+import assertk.assertions.contains
+import assertk.assertions.doesNotContain
+import assertk.assertions.isTrue
+import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
+import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
-import io.qalipsis.api.report.ScenarioReport
+import io.qalipsis.core.head.model.CampaignExecutionDetails
+import io.qalipsis.core.head.model.ScenarioExecutionDetails
+import io.qalipsis.core.head.model.StepExecutionDetails
+import io.qalipsis.core.head.report.AsciiReportService
+import io.qalipsis.core.head.report.CampaignReportProvider
 import io.qalipsis.core.head.report.JunitReportPublisher
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import org.junit.jupiter.api.io.TempDir
 import java.io.File
-import java.time.Clock
 import java.time.Instant
-import java.time.ZoneId
 
-/**
- * @author rklymenko
- */
 @WithMockk
 internal class JunitReportPublisherTest {
 
-    private val generatedReportFolder = Files.createTempDir().absoluteFile.canonicalPath
-
-    private val expectedReportFolder = "src/test/resources/junit-reports"
-
     @field:RegisterExtension
-    val testCoroutineDispatcher = TestDispatcherProvider()
+    val testDispatcherProvider = TestDispatcherProvider()
 
-    @AfterAll
-    fun tearDownAll() {
-        unmockkStatic(Clock::class)
+    @MockK
+    private lateinit var campaignReportProvider: CampaignReportProvider
+
+    @MockK
+    private lateinit var asciiReportService: AsciiReportService
+
+    @TempDir
+    private lateinit var tempDir: File
+
+    private lateinit var publisher: JunitReportPublisher
+
+    @BeforeEach
+    internal fun setUp() {
+        publisher = JunitReportPublisher(
+            campaignReportProvider = campaignReportProvider,
+            asciiReportService = asciiReportService,
+            outputDir = tempDir.absolutePath
+        )
+        every { asciiReportService.renderStepDetails(any()) } answers {
+            "details of ${firstArg<StepExecutionDetails>().name}"
+        }
     }
 
     @Test
-    fun `should write simple report without errors`() = testCoroutineDispatcher.run {
-        //given
-        val junitReportPublisher = JunitReportPublisher(generatedReportFolder)
-
-        val campaignKey = "foo"
-
-        val timeDiffSeconds = 10L
-        val start = Instant.now().minusSeconds(timeDiffSeconds)
-        val end = Instant.now()
-
-        val campaignReport = CampaignReport(
-            campaignKey = campaignKey,
-            start = start,
-            end = end,
-            scheduledMinions = 987,
-            startedMinions = 123,
-            completedMinions = 4231,
-            successfulExecutions = 42,
-            failedExecutions = 234,
-            scenariosReports = listOf(
-                ScenarioReport(
-                    campaignKey = campaignKey,
-                    scenarioName = "bar",
-                    start = start,
-                    end = end,
-                    startedMinions = 2342,
-                    completedMinions = 23,
-                    successfulExecutions = 4234,
-                    failedExecutions = 45,
-                    status = ExecutionStatus.SUCCESSFUL,
-                    messages = listOf(
-                        ReportMessage(
-                            stepName = "normal test",
-                            messageId = "1",
-                            severity = ReportMessageSeverity.INFO,
-                            message = "passed"
+    internal fun `should write one testsuite per scenario and one testcase per step`() =
+        testDispatcherProvider.runTest {
+            // given
+            val start = Instant.parse("2026-01-01T10:00:00Z")
+            val end = Instant.parse("2026-01-01T10:00:12Z")
+            val details = campaignExecutionDetails(
+                key = "camp-1",
+                name = "My Campaign",
+                start = start,
+                end = end,
+                scenarios = listOf(
+                    scenarioExecutionDetails(
+                        name = "scenario-a",
+                        start = start,
+                        end = end,
+                        steps = listOf(
+                            executedStep("step-1"),
+                            executedStep("step-2")
                         )
+                    ),
+                    scenarioExecutionDetails(
+                        name = "scenario-b",
+                        start = start,
+                        end = end,
+                        steps = listOf(executedStep("step-3"))
                     )
                 )
-            ), status = ExecutionStatus.SUCCESSFUL
+            )
+            coEvery { campaignReportProvider.retrieve("my-tenant", "camp-1") } returns details
+
+            // when
+            publisher.publish("my-tenant", "camp-1", mockk<CampaignReport>())
+
+            // then
+            val xml = File(tempDir, "camp-1.xml").readText()
+            assertThat(xml).contains("""<testsuites id="camp-1" name="My Campaign"""")
+            assertThat(xml).contains("""tests="3"""")
+            assertThat(xml).contains("""<testsuite id="camp-1-scenario-a" name="scenario-a"""")
+            assertThat(xml).contains("""<testsuite id="camp-1-scenario-b" name="scenario-b"""")
+            assertThat(xml).contains("""<testcase name="step-1" classname="scenario-a"""")
+            assertThat(xml).contains("""<testcase name="step-2" classname="scenario-a"""")
+            assertThat(xml).contains("""<testcase name="step-3" classname="scenario-b"""")
+        }
+
+    @Test
+    internal fun `should mark a step with no execution as skipped`() = testDispatcherProvider.runTest {
+        // given
+        val details = campaignExecutionDetails(
+            key = "camp-2",
+            name = "camp-2",
+            scenarios = listOf(
+                scenarioExecutionDetails(
+                    name = "scenario",
+                    steps = listOf(skippedStep("skipped-step"), executedStep("normal-step"))
+                )
+            )
         )
+        coEvery { campaignReportProvider.retrieve("my-tenant", "camp-2") } returns details
 
-        val time = getTimeMock()
+        // when
+        publisher.publish("my-tenant", "camp-2", mockk<CampaignReport>())
 
-        //when
-        junitReportPublisher.publish("my-tenant", campaignKey, campaignReport)
-
-        //then
-        val generatedReport =
-            File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioName}.xml").readText()
-        val expectedReport =
-            File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioName}.xml").readText()
-                .replace("__time__", time.toString())
-        assertEqualXml(expectedReport, generatedReport)
+        // then
+        val xml = File(tempDir, "camp-2.xml").readText()
+        val skippedTestCase = xml.substringAfter("""<testcase name="skipped-step"""").substringBefore("</testcase>")
+        assertThat(skippedTestCase).contains("""<skipped message="Step not executed"/>""")
+        val normalTestCase = xml.substringAfter("""<testcase name="normal-step"""").substringBefore("</testcase>")
+        assertThat(normalTestCase).doesNotContain("<skipped")
+        assertThat(xml).contains("""skipped="1"""")
     }
 
     @Test
-    fun `should write report with errors`() = testCoroutineDispatcher.run {
-        //given
-        val junitReportPublisher = JunitReportPublisher(generatedReportFolder)
-
-        val campaignKey = "foo"
-
-        val timeDiffSeconds = 10L
-        val start = Instant.now().minusSeconds(timeDiffSeconds)
-        val end = Instant.now()
-
-        val campaignReport = CampaignReport(
-            campaignKey = campaignKey,
-            start = start,
-            end = end,
-            scheduledMinions = 987,
-            startedMinions = 123,
-            completedMinions = 4231,
-            successfulExecutions = 42,
-            failedExecutions = 234,
-            scenariosReports = listOf(
-                ScenarioReport(
-                    campaignKey = campaignKey,
-                    scenarioName = "bar2",
-                    start = start,
-                    end = end,
-                    startedMinions = 2342,
-                    completedMinions = 23,
-                    successfulExecutions = 4234,
-                    failedExecutions = 45,
-                    status = ExecutionStatus.SUCCESSFUL,
-                    messages = listOf(
-                        ReportMessage(
-                            stepName = "normal test",
-                            messageId = "1",
-                            severity = ReportMessageSeverity.INFO,
-                            message = "passed"
-                        ),
-                        ReportMessage(
-                            stepName = "failed test",
-                            messageId = "2",
-                            severity = ReportMessageSeverity.ERROR,
-                            message = "failed"
+    internal fun `should map ERROR messages to failure and ABORT messages to error`() = testDispatcherProvider.runTest {
+        // given
+        val details = campaignExecutionDetails(
+            key = "camp-3",
+            name = "camp-3",
+            scenarios = listOf(
+                scenarioExecutionDetails(
+                    name = "scenario",
+                    steps = listOf(
+                        executedStep(
+                            name = "faulty",
+                            messages = listOf(
+                                reportMessage("faulty", ReportMessageSeverity.ERROR, "assertion failed"),
+                                reportMessage("faulty", ReportMessageSeverity.ABORT, "connection lost")
+                            )
                         )
                     )
                 )
-            ), status = ExecutionStatus.SUCCESSFUL
+            )
         )
+        coEvery { campaignReportProvider.retrieve("my-tenant", "camp-3") } returns details
 
-        val time = getTimeMock()
+        // when
+        publisher.publish("my-tenant", "camp-3", mockk<CampaignReport>())
 
-        //when
-        junitReportPublisher.publish("my-tenant", campaignKey, campaignReport)
-
-        //then
-        val generatedReport =
-            File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioName}.xml")
-                .readText()
-        val expectedReport = File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioName}.xml")
-            .readText()
-            .replace("__time__", time.toString())
-        assertEqualXml(expectedReport, generatedReport)
+        // then
+        val xml = File(tempDir, "camp-3.xml").readText()
+        assertThat(xml).contains("""<failure message="assertion failed" type="ERROR">""")
+        assertThat(xml).contains("""<error message="connection lost" type="ABORT">""")
+        assertThat(xml).contains("""failures="1"""")
+        assertThat(xml).contains("""errors="1"""")
     }
 
     @Test
-    fun `should write few reports with errors`() = testCoroutineDispatcher.run {
-        //given
-        val junitReportPublisher = JunitReportPublisher(generatedReportFolder)
-        val campaignName1 = "foo"
-        val campaignName2 = "foo2"
-
-        val timeDiffSeconds = 10L
-        val start = Instant.now().minusSeconds(timeDiffSeconds)
-        val end = Instant.now()
-
-        val campaignReport = CampaignReport(
-            campaignKey = campaignName1,
-            start = start,
-            end = end,
-            scheduledMinions = 987,
-            startedMinions = 123,
-            completedMinions = 4231,
-            successfulExecutions = 42,
-            failedExecutions = 234,
-            scenariosReports = listOf(
-                ScenarioReport(
-                    campaignKey = campaignName1,
-                    scenarioName = "bar3",
-                    start = start,
-                    end = end,
-                    startedMinions = 1,
-                    completedMinions = 1,
-                    successfulExecutions = 1,
-                    failedExecutions = 1,
-                    status = ExecutionStatus.SUCCESSFUL,
-                    messages = listOf(
-                        ReportMessage(
-                            stepName = "normal test",
-                            messageId = "1",
-                            severity = ReportMessageSeverity.INFO,
-                            message = "passed"
-                        ),
-                        ReportMessage(
-                            stepName = "failed test",
-                            messageId = "2",
-                            severity = ReportMessageSeverity.ERROR,
-                            message = "failed"
-                        )
+    internal fun `should embed the ASCII step details rendered by AsciiReportService as system-out`() =
+        testDispatcherProvider.runTest {
+            // given
+            val details = campaignExecutionDetails(
+                key = "camp-4",
+                name = "camp-4",
+                scenarios = listOf(
+                    scenarioExecutionDetails(
+                        name = "scenario",
+                        steps = listOf(executedStep(name = "step-x"))
                     )
-                ),
-                ScenarioReport(
-                    campaignKey = campaignName2,
-                    scenarioName = "bar4",
-                    start = start,
-                    end = end,
-                    startedMinions = 1,
-                    completedMinions = 1,
-                    successfulExecutions = 1,
-                    failedExecutions = 1,
-                    status = ExecutionStatus.SUCCESSFUL,
-                    messages = listOf(
-                        ReportMessage(
-                            stepName = "normal test",
-                            messageId = "1",
-                            severity = ReportMessageSeverity.INFO,
-                            message = "passed"
-                        ),
-                        ReportMessage(
-                            stepName = "failed test",
-                            messageId = "2",
-                            severity = ReportMessageSeverity.ERROR,
-                            message = "failed"
+                )
+            )
+            coEvery { campaignReportProvider.retrieve("my-tenant", "camp-4") } returns details
+
+            // when
+            publisher.publish("my-tenant", "camp-4", mockk<CampaignReport>())
+
+            // then
+            val xml = File(tempDir, "camp-4.xml").readText()
+            assertThat(xml).contains("<system-out>")
+            assertThat(xml).contains("<![CDATA[details of step-x]]>")
+        }
+
+    @Test
+    internal fun `should escape XML special characters in attributes and CDATA terminators in text`() =
+        testDispatcherProvider.runTest {
+            // given
+            every { asciiReportService.renderStepDetails(any()) } returns "raw ]]> inside"
+            val details = campaignExecutionDetails(
+                key = "camp-5",
+                name = """A & B <"C">""",
+                scenarios = listOf(
+                    scenarioExecutionDetails(
+                        name = "sc",
+                        steps = listOf(
+                            executedStep(
+                                name = "step",
+                                messages = listOf(
+                                    reportMessage("step", ReportMessageSeverity.ERROR, "boom <tag> & \"quote\"")
+                                )
+                            )
                         )
                     )
                 )
-            ), status = ExecutionStatus.SUCCESSFUL
+            )
+            coEvery { campaignReportProvider.retrieve("my-tenant", "camp-5") } returns details
+
+            // when
+            publisher.publish("my-tenant", "camp-5", mockk<CampaignReport>())
+
+            // then
+            val xml = File(tempDir, "camp-5.xml").readText()
+            assertThat(xml).contains("""name="A &amp; B &lt;&quot;C&quot;&gt;"""")
+            assertThat(xml).contains("""message="boom &lt;tag&gt; &amp; &quot;quote&quot;"""")
+            // CDATA payload was split around the ]]> terminator to keep the XML valid.
+            assertThat(xml).contains("]]]]><![CDATA[>")
+        }
+
+    @Test
+    internal fun `should create the output directory when it does not exist`() = testDispatcherProvider.runTest {
+        // given
+        val nonExistingSubDir = File(tempDir, "sub/dir/nested")
+        val publisherWithNewDir = JunitReportPublisher(
+            campaignReportProvider = campaignReportProvider,
+            asciiReportService = asciiReportService,
+            outputDir = nonExistingSubDir.absolutePath
         )
-        val time = getTimeMock()
+        val details = campaignExecutionDetails(
+            key = "camp-6",
+            name = "camp-6",
+            scenarios = listOf(scenarioExecutionDetails("sc", steps = listOf(executedStep("step"))))
+        )
+        coEvery { campaignReportProvider.retrieve("my-tenant", "camp-6") } returns details
 
-        //when
-        junitReportPublisher.publish("my-tenant", "foo", campaignReport)
+        // when
+        publisherWithNewDir.publish("my-tenant", "camp-6", mockk<CampaignReport>())
 
-        //then
-        val generatedReport =
-            File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioName}.xml")
-                .readText()
-                .replace(Regex("""timestamp="[^"]+""""), """timestamp="$time"""")
-        val expectedReport = File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioName}.xml")
-            .readText()
-            .replace("__time__", time.toString())
-        assertEqualXml(expectedReport, generatedReport)
+        // then
+        assertThat(File(nonExistingSubDir, "camp-6.xml").exists()).isTrue()
     }
 
     @Test
-    fun `should write report for multiple scenarios with errors`() = testCoroutineDispatcher.run {
-        //given
-        val junitReportPublisher = JunitReportPublisher(generatedReportFolder)
-
-        val campaignKey = "foo"
-
-        val timeDiffSeconds = 10L
-        val start = Instant.now().minusSeconds(timeDiffSeconds)
-        val end = Instant.now()
-
-        val campaignReport = CampaignReport(
-            campaignKey = campaignKey,
-            start = start,
-            end = end,
-            scheduledMinions = 987,
-            startedMinions = 123,
-            completedMinions = 4231,
-            successfulExecutions = 42,
-            failedExecutions = 234,
-            scenariosReports = listOf(
-                ScenarioReport(
-                    campaignKey = campaignKey,
-                    scenarioName = "bar5",
-                    start = start,
-                    end = end,
-                    startedMinions = 2342,
-                    completedMinions = 23,
-                    successfulExecutions = 4234,
-                    failedExecutions = 45,
-                    status = ExecutionStatus.SUCCESSFUL,
-                    messages = listOf(
-                        ReportMessage(
-                            stepName = "normal test",
-                            messageId = "1",
-                            severity = ReportMessageSeverity.INFO,
-                            message = "passed"
-                        ),
-                        ReportMessage(
-                            stepName = "failed test",
-                            messageId = "2",
-                            severity = ReportMessageSeverity.ERROR,
-                            message = "failed"
-                        )
-                    )
-                ),
-                ScenarioReport(
-                    campaignKey = campaignKey,
-                    scenarioName = "bar7",
-                    start = start,
-                    end = end,
-                    startedMinions = 2392,
-                    completedMinions = 23,
-                    successfulExecutions = 4299,
-                    failedExecutions = 25,
-                    status = ExecutionStatus.SUCCESSFUL,
-                    messages = listOf(
-                        ReportMessage(
-                            stepName = "Second normal test",
-                            messageId = "1",
-                            severity = ReportMessageSeverity.ABORT,
-                            message = "passed second"
-                        ),
-                        ReportMessage(
-                            stepName = "Second failed test",
-                            messageId = "2",
-                            severity = ReportMessageSeverity.WARN,
-                            message = "failed again"
-                        ),
-                        ReportMessage(
-                            stepName = "Second failed test",
-                            messageId = "7",
-                            severity = ReportMessageSeverity.ABORT,
-                            message = "Just Aborted again"
-                        ),
-                        ReportMessage(
-                            stepName = "Second failed test",
-                            messageId = "6",
-                            severity = ReportMessageSeverity.ERROR,
-                            message = "ABorted failed again"
-                        )
+    internal fun `should compute duration in seconds between campaign start and end`() =
+        testDispatcherProvider.runTest {
+            // given
+            val start = Instant.parse("2026-01-01T10:00:00Z")
+            val end = Instant.parse("2026-01-01T10:00:42Z")
+            val details = campaignExecutionDetails(
+                key = "camp-7",
+                name = "camp-7",
+                start = start,
+                end = end,
+                scenarios = listOf(
+                    scenarioExecutionDetails(
+                        "sc",
+                        start = start,
+                        end = end,
+                        steps = listOf(executedStep("step"))
                     )
                 )
-            ), status = ExecutionStatus.SUCCESSFUL
-        )
-        val time = getTimeMock()
+            )
+            coEvery { campaignReportProvider.retrieve("my-tenant", "camp-7") } returns details
 
-        //when
-        junitReportPublisher.publish("my-tenant", campaignKey, campaignReport)
+            // when
+            publisher.publish("my-tenant", "camp-7", mockk<CampaignReport>())
 
-        //then
-        val generatedReport =
-            File(generatedReportFolder + "/foo/${campaignReport.scenariosReports[0].scenarioName}.xml")
-                .readText()
-        val expectedReport = File(expectedReportFolder + "/${campaignReport.scenariosReports[0].scenarioName}.xml")
-            .readText()
-            .replace("__time__", time.toString())
-        assertEqualXml(expectedReport, generatedReport)
-    }
+            // then
+            val xml = File(tempDir, "camp-7.xml").readText()
+            assertThat(xml).contains("""<testsuites id="camp-7"""")
+            assertThat(xml.substringAfter("<testsuites").substringBefore(">")).contains("""time="42"""")
+            assertThat(xml.substringAfter("<testsuite ").substringBefore(">")).contains("""time="42"""")
+        }
 
-    @AfterEach
-    fun cleanUp() {
-        File(generatedReportFolder).listFiles()!!.filter { it.name.endsWith(".xml") }.forEach { it.delete() }
-    }
+    private fun campaignExecutionDetails(
+        key: String,
+        name: String,
+        start: Instant? = null,
+        end: Instant? = null,
+        scenarios: List<ScenarioExecutionDetails> = emptyList()
+    ): CampaignExecutionDetails = CampaignExecutionDetails(
+        version = Instant.now(),
+        key = key,
+        creation = Instant.now(),
+        name = name,
+        speedFactor = 1.0,
+        scheduledMinions = null,
+        start = start,
+        end = end,
+        status = ExecutionStatus.SUCCESSFUL,
+        zones = emptySet(),
+        startedMinions = null,
+        completedMinions = null,
+        successfulExecutions = null,
+        failedExecutions = null,
+        scenarios = scenarios,
+        meters = emptyList()
+    )
 
-    private fun getTimeMock(): Instant {
-        val now = Instant.now()
-        val fixedClock = Clock.fixed(now, ZoneId.systemDefault())
-        mockkStatic(Clock::class)
-        every { Clock.systemUTC() } returns fixedClock
-        return now
-    }
+    private fun scenarioExecutionDetails(
+        name: String,
+        start: Instant? = null,
+        end: Instant? = null,
+        steps: List<StepExecutionDetails> = emptyList()
+    ): ScenarioExecutionDetails = ScenarioExecutionDetails(
+        id = name,
+        name = name,
+        start = start,
+        end = end,
+        startedMinions = null,
+        completedMinions = null,
+        successfulExecutions = null,
+        failedExecutions = null,
+        status = ExecutionStatus.SUCCESSFUL,
+        messages = emptyList(),
+        steps = steps
+    )
 
-    /**
-     * Compares two xml fragments.
-     */
-    private fun assertEqualXml(expected: String, actual: String) {
-        val pattern = Regex(">\\s+<") // pattern to match whitespace between tags.
-        val strippedXml1 = expected.replace(pattern, "><")
-        val strippedXml2 = actual.replace(pattern, "><")
-        assertEquals(strippedXml1, strippedXml2)
-    }
+    private fun executedStep(
+        name: String,
+        messages: List<ReportMessage> = emptyList()
+    ): StepExecutionDetails = StepExecutionDetails(
+        name = name,
+        status = ExecutionStatus.SUCCESSFUL,
+        successfulExecutions = 1L,
+        failedExecutions = 0L,
+        messages = messages
+    )
+
+    private fun skippedStep(name: String): StepExecutionDetails = StepExecutionDetails(
+        name = name,
+        status = ExecutionStatus.SUCCESSFUL,
+        successfulExecutions = 0L,
+        failedExecutions = 0L
+    )
+
+    private fun reportMessage(
+        stepName: String,
+        severity: ReportMessageSeverity,
+        message: String
+    ): ReportMessage = ReportMessage(
+        stepName = stepName,
+        messageId = "$stepName-$severity",
+        severity = severity,
+        message = message
+    )
 }

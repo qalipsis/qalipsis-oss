@@ -19,132 +19,180 @@
 
 package io.qalipsis.core.head.report
 
+import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
-import io.micronaut.context.annotation.Value
+import io.micronaut.core.order.Ordered
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.CampaignReport
 import io.qalipsis.api.report.CampaignReportPublisher
 import io.qalipsis.api.report.ReportMessage
 import io.qalipsis.api.report.ReportMessageSeverity
-import io.qalipsis.api.report.ScenarioReport
-import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.configuration.ExecutionEnvironments.HEAD
+import io.qalipsis.core.configuration.ExecutionEnvironments.STANDALONE
+import io.qalipsis.core.head.model.CampaignExecutionDetails
+import io.qalipsis.core.head.model.ScenarioExecutionDetails
+import io.qalipsis.core.head.model.StepExecutionDetails
 import jakarta.inject.Singleton
 import java.io.File
 import java.time.Duration
 import java.time.Instant
 
 /**
- * Implementation of a [CampaignReportPublisher] storing report in JUnit-like files.
+ * [CampaignReportPublisher] that renders the campaign report as a JUnit-compatible XML file
+ * (`<testsuites>` / `<testsuite>` / `<testcase>`) suitable for ingestion by CI tools.
+ *
+ * Mapping:
+ * - Campaign → `<testsuites>`
+ * - Scenario → `<testsuite>`
+ * - Step     → `<testcase>` (one per step, executed or not)
+ *   - Not executed → `<skipped/>`
+ *   - Messages with severity `ERROR` → `<failure>`
+ *   - Messages with severity `ABORT` → `<error>`
+ *   - `<system-out>` carries the step ASCII details (status, executions, messages, meters)
+ *     rendered by [AsciiReportService].
+ *
+ * Activated in standalone or head mode when `report.export.junit.enabled=true`. Output file
+ * defaults to `./results/<campaign-key>.xml`; the folder can be overridden via
+ * `report.export.junit.folder`.
  *
  * @author rklymenko
+ * @author Eric Jessé
  */
 @Singleton
 @Requirements(
-    Requires(env = [ExecutionEnvironments.HEAD, ExecutionEnvironments.STANDALONE]),
-    Requires(property = "report.export.junit.enabled", defaultValue = "false", value = "true")
+    Requires(bean = CampaignReportProvider::class),
+    Requires(env = [HEAD, STANDALONE]),
+    Requires(property = "report.export.junit.enabled", value = "true", defaultValue = "false")
 )
 class JunitReportPublisher(
-    @Value("\${report.export.junit.folder}") private val reportFolder: String
+    private val campaignReportProvider: CampaignReportProvider,
+    private val asciiReportService: AsciiReportService,
+    @Property(name = "report.export.junit.folder", defaultValue = "./results") private val outputDir: String
 ) : CampaignReportPublisher {
 
+    override fun getOrder(): Int = Ordered.LOWEST_PRECEDENCE
+
     override suspend fun publish(tenant: String, campaignKey: CampaignKey, report: CampaignReport) {
-        val duration = report.end?.let { Duration.between(report.start, it).toSeconds() }!!
-        val dir = File(reportFolder, campaignKey)
-        dir.mkdirs()
-        writeReportToFile(dir, campaignKey, report, duration)
+        val details = campaignReportProvider.retrieve(tenant, campaignKey)
+        val outputDirectory = File(outputDir).also { it.mkdirs() }
+        val outputFile = File(outputDirectory, "$campaignKey.xml")
+        outputFile.writeText(buildTestSuites(campaignKey, details), Charsets.UTF_8)
+        log.info { "JUnit campaign report written to ${outputFile.absolutePath}" }
     }
 
-    private fun writeReportToFile(directory: File, campaignKey: CampaignKey, report: CampaignReport, duration: Long) {
-        val failures =
-            report.scenariosReports.fold(0) { acc, scenarioReport -> acc + scenarioReport.messages.filter(::isFailedTestCase).size }
-        val wrapperTag =
-            """<testsuites id="${report.campaignKey}" name="${report.campaignKey}" tests="${(report.successfulExecutions ?: 0) + (report.failedExecutions ?: 0)}" failures="$failures" time="${duration}s">"""
-        File(directory, "${report.scenariosReports[0].scenarioName}.xml").writeText(
-            """
-                |${REPORT_HEADER.trimMargin()}
-                |$wrapperTag
-                |${
-                report.scenariosReports.joinToString("\n") {
-                    scenarioReportToText(it, duration, campaignKey)
-                }.trimMargin()
-            }
-                |</testsuites>
-            """.trimMargin()
-        )
-    }
+    private fun buildTestSuites(campaignKey: CampaignKey, details: CampaignExecutionDetails): String {
+        val duration = durationSeconds(details.start, details.end)
+        val totalTests = details.scenarios.sumOf { it.steps.size }
+        val totalFailures = details.scenarios.sumOf(::countFailedSteps)
+        val totalErrors = details.scenarios.sumOf(::countAbortedSteps)
+        val totalSkipped = details.scenarios.sumOf { it.steps.count(StepExecutionDetails::notExecuted) }
+        val campaignTimestamp = details.start ?: Instant.now()
 
-    private fun scenarioReportToText(scenarioReport: ScenarioReport, duration: Long, campaignKey: CampaignKey): String {
-        val out = scenarioReport.messages.filterNot(::isFailedTestCase)
-            .joinToString("\n", transform = ::buildConsoleMessage)
-        val err = scenarioReport.messages.filter(::isFailedTestCase)
-            .joinToString("\n", transform = ::buildConsoleMessage)
-
-        return """${generateTestSuiteHeader(scenarioReport, duration, campaignKey)}
-  ${generateTestSuites(scenarioReport, campaignKey)}
-  <system-out><![CDATA[
-$out
-  ]]></system-out>
-  <system-err><![CDATA[
-
-  ]]></system-err>
-|    </testsuite>
-""".trimMargin()
-    }
-
-    private fun buildConsoleMessage(it: ReportMessage): String {
-        val severity = "${it.severity}".padEnd(5)
-        return "$severity Step ${it.stepName}: ${it.message}"
-    }
-
-    private fun generateTestSuiteHeader(
-        scenarioReport: ScenarioReport,
-        duration: Long,
-        campaignKey: CampaignKey
-    ): String {
-        val tests = (scenarioReport.successfulExecutions?.plus(scenarioReport.failedExecutions!!)) ?: 0
-        val errors = scenarioReport.messages.filter { it.severity == ReportMessageSeverity.ABORT }.size
-        val failures = scenarioReport.messages.filter { it.severity == ReportMessageSeverity.ERROR }.size
-        val timestamp = Instant.now()
-        return TAB + """<testsuite id="${campaignKey + "-" + scenarioReport.scenarioName}" name="${scenarioReport.scenarioName}" tests="$tests" skipped="0" failures="$failures" errors="$errors" timestamp="$timestamp" hostname="Qalipsis" time="${duration}s">"""
-    }
-
-    private fun generateTestSuites(scenarioReport: ScenarioReport, campaignKey: CampaignKey): String {
-        val keyStore = mutableMapOf<String, MutableList<ReportMessage>>()
-        scenarioReport.messages.forEach { reportMessage ->
-            val messages = keyStore.getOrPut(reportMessage.stepName) { mutableListOf() }
-            messages.add(reportMessage)
-        }
         return buildString {
-            keyStore.forEach { (stepName, reportMessages) ->
-                val failures = countFailedTestCase(reportMessages)
-                val testCaseId = "${campaignKey}-${scenarioReport.scenarioName}-$stepName"
-                val failureTags = reportMessages.filter { isFailedTestCase(it) }
-                    .joinToString(" \n") {
-                        TAB.repeat(3) + """<failure message="${it.message}" type="${it.severity}"/>""".trimMargin()
-                    }
-                if (failureTags.isNotEmpty()) {
-                    appendLine(TAB.repeat(2) + """<testcase id="$testCaseId" name="$stepName" time="0" tests="${reportMessages.size}" failures="$failures">""")
-                    appendLine(failureTags)
-                    appendLine(TAB.repeat(2) + """</testcase>""".trimMargin())
-                } else {
-                    appendLine(TAB.repeat(2) + """<testcase id="$testCaseId" name="$stepName" time="0" tests="${reportMessages.size}" failures="$failures"/>""".trimMargin())
-                }
-
-            }
-        }.trimMargin()
+            appendLine(XML_HEADER)
+            append("<testsuites")
+            append(""" id="${xmlAttr(campaignKey)}"""")
+            append(""" name="${xmlAttr(details.name)}"""")
+            append(""" tests="$totalTests"""")
+            append(""" failures="$totalFailures"""")
+            append(""" errors="$totalErrors"""")
+            append(""" skipped="$totalSkipped"""")
+            append(""" time="$duration"""")
+            appendLine(">")
+            details.scenarios.forEach { appendScenario(this, campaignKey, it, campaignTimestamp) }
+            append("</testsuites>")
+        }
     }
 
-    private fun isFailedTestCase(reportMessage: ReportMessage) =
-        reportMessage.severity == ReportMessageSeverity.ERROR || reportMessage.severity == ReportMessageSeverity.ABORT
+    private fun appendScenario(
+        sb: StringBuilder,
+        campaignKey: CampaignKey,
+        scenario: ScenarioExecutionDetails,
+        campaignTimestamp: Instant
+    ) {
+        val duration = durationSeconds(scenario.start, scenario.end)
+        val tests = scenario.steps.size
+        val failures = countFailedSteps(scenario)
+        val errors = countAbortedSteps(scenario)
+        val skipped = scenario.steps.count(StepExecutionDetails::notExecuted)
+        val timestamp = scenario.start ?: campaignTimestamp
 
-    private fun countFailedTestCase(reportMessages: List<ReportMessage>) =
-        reportMessages.count { isFailedTestCase(it) }
+        sb.append(TAB).append("<testsuite")
+        sb.append(""" id="${xmlAttr(campaignKey)}-${xmlAttr(scenario.name)}"""")
+        sb.append(""" name="${xmlAttr(scenario.name)}"""")
+        sb.append(""" tests="$tests"""")
+        sb.append(""" failures="$failures"""")
+        sb.append(""" errors="$errors"""")
+        sb.append(""" skipped="$skipped"""")
+        sb.append(""" timestamp="$timestamp"""")
+        sb.append(""" hostname="Qalipsis"""")
+        sb.append(""" time="$duration"""")
+        sb.appendLine(">")
+        scenario.steps.forEach { appendTestCase(sb, scenario, it) }
+        sb.append(TAB).appendLine("</testsuite>")
+    }
 
-    companion object {
+    private fun appendTestCase(sb: StringBuilder, scenario: ScenarioExecutionDetails, step: StepExecutionDetails) {
+        sb.append(TAB.repeat(2)).append("<testcase")
+        sb.append(""" name="${xmlAttr(step.name)}"""")
+        sb.append(""" classname="${xmlAttr(scenario.name)}"""")
+        sb.append(""" time="0"""")
+        sb.appendLine(">")
 
-        private const val REPORT_HEADER = """<?xml version="1.0" encoding="UTF-8"?>
-"""
-        private const val TAB = "  "
+        if (step.notExecuted) {
+            sb.append(TAB.repeat(3)).appendLine("""<skipped message="Step not executed"/>""")
+        } else {
+            step.messages.filter { it.severity == ReportMessageSeverity.ERROR }
+                .forEach { appendReportedFailure(sb, it, "failure") }
+            step.messages.filter { it.severity == ReportMessageSeverity.ABORT }
+                .forEach { appendReportedFailure(sb, it, "error") }
+        }
+
+        val systemOut = asciiReportService.renderStepDetails(step)
+        if (systemOut.isNotBlank()) {
+            sb.append(TAB.repeat(3)).appendLine("<system-out>")
+            sb.appendLine(cdata(systemOut))
+            sb.append(TAB.repeat(3)).appendLine("</system-out>")
+        }
+        sb.append(TAB.repeat(2)).appendLine("</testcase>")
+    }
+
+    private fun appendReportedFailure(sb: StringBuilder, msg: ReportMessage, element: String) {
+        sb.append(TAB.repeat(3))
+        sb.append("<$element")
+        sb.append(""" message="${xmlAttr(msg.message)}"""")
+        sb.append(""" type="${msg.severity}"""")
+        sb.append(">")
+        sb.append(cdata(msg.message))
+        sb.appendLine("</$element>")
+    }
+
+    private fun durationSeconds(start: Instant?, end: Instant?): Long =
+        if (start != null && end != null) Duration.between(start, end).toSeconds() else 0L
+
+    private fun countFailedSteps(scenario: ScenarioExecutionDetails): Int =
+        scenario.steps.count { step -> step.messages.any { it.severity == ReportMessageSeverity.ERROR } }
+
+    private fun countAbortedSteps(scenario: ScenarioExecutionDetails): Int =
+        scenario.steps.count { step -> step.messages.any { it.severity == ReportMessageSeverity.ABORT } }
+
+    private fun xmlAttr(value: String?): String {
+        if (value == null) return ""
+        return value.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
+    }
+
+    // Protects the CDATA payload against an embedded terminator by splitting it across two sections.
+    private fun cdata(value: String): String = "<![CDATA[${value.replace("]]>", "]]]]><![CDATA[>")}]]>"
+
+    private companion object {
+        val log = logger()
+        const val XML_HEADER = """<?xml version="1.0" encoding="UTF-8"?>"""
+        const val TAB = "  "
     }
 }
