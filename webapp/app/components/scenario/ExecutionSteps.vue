@@ -1,9 +1,9 @@
 <template>
   <BaseTooltip>
     <template #tooltipContent>
-      <div>Total Steps: {{ totalExecutions }}</div>
       <div>Successful steps: {{ successfulExecutions }}</div>
       <div>Failed steps: {{ failedExecutions }}</div>
+      <div>Total Steps: {{ totalExecutions }}</div>
     </template>
     <div
       class="flex items-center cursor-pointer"
@@ -53,21 +53,21 @@
       />
       <div class="ml-4">
         <div class="flex items-center mb-2">
-          <div>Total Steps: {{ totalExecutions }}</div>
-        </div>
-        <div class="flex items-center mb-2">
           <div
             :style="{ backgroundColor: successfulExecutionsColor }"
             class="w-6 h-6 mr-2"
           ></div>
           <div>Successful steps: {{ successfulExecutions }}</div>
         </div>
-        <div class="flex items-center">
+        <div class="flex items-center mb-2">
           <div
             :style="{ backgroundColor: failedExecutionsColor }"
             class="w-6 h-6 mr-2"
           ></div>
           <div>Failed steps: {{ failedExecutions }}</div>
+        </div>
+        <div class="flex items-center">
+          <div>Total Steps: {{ totalExecutions }}</div>
         </div>
       </div>
     </section>

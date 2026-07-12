@@ -1,4 +1,4 @@
-import {format} from 'date-fns'
+import { format } from 'date-fns'
 
 const tagClass: { [key in ReportMessageSeverity]: TagStyleClass } = {
   INFO: {
@@ -88,9 +88,7 @@ export const ScenarioHelper = {
     }
 
     if (scenarioConfigForm.zones.length > 0) {
-      scenarioRequest.zones = Object.fromEntries(
-        scenarioConfigForm.zones.map((zone) => [zone.name, zone.share]),
-      )
+      scenarioRequest.zones = Object.fromEntries(scenarioConfigForm.zones.map((zone) => [zone.name, zone.share]))
     }
 
     return scenarioRequest
@@ -107,7 +105,7 @@ export const ScenarioHelper = {
     selectedScenarioNames: string[],
     campaignExecutionDetails: CampaignExecutionDetails,
   ): ScenarioReport[] {
-      const reports = campaignExecutionDetails.scenarios
+    const reports = campaignExecutionDetails.scenarios
       .filter((scenarioReport) => selectedScenarioNames.includes(scenarioReport.name))
       .map<ScenarioReport>((scenariosReport) => {
         return {
@@ -116,21 +114,21 @@ export const ScenarioHelper = {
           start: scenariosReport.start,
           end: scenariosReport.end,
           status: scenariosReport.status,
-            scheduledMinions: scenariosReport.scheduledMinions ?? 0,
+          scheduledMinions: scenariosReport.scheduledMinions ?? 0,
           startedMinions: scenariosReport.startedMinions ?? 0,
           completedMinions: scenariosReport.completedMinions ?? 0,
           successfulExecutions: scenariosReport.successfulExecutions ?? 0,
           failedExecutions: scenariosReport.failedExecutions ?? 0,
-          messages: scenariosReport.messages,
-            steps: scenariosReport.steps ?? [],
-            meters: scenariosReport.meters ?? [],
-            zoneDistribution: scenariosReport.zoneDistribution ?? {},
+          messages: scenariosReport.messages ?? [],
+          steps: scenariosReport.steps ?? [],
+          meters: scenariosReport.meters ?? [],
+          zoneDistribution: scenariosReport.zoneDistribution ?? {},
         }
       })
 
     const shouldScenarioSummaryReportIncluded =
       campaignExecutionDetails.scenarios.length > 1 &&
-        selectedScenarioNames.length === campaignExecutionDetails.scenarios.length
+      selectedScenarioNames.length === campaignExecutionDetails.scenarios.length
 
     /**
      * The summary report for all scenarios.
@@ -152,9 +150,9 @@ export const ScenarioHelper = {
 
         return acc.concat(...reportMessages)
       }, []),
-        steps: [],
-        meters: campaignExecutionDetails.meters ?? [],
-        zoneDistribution: {},
+      steps: [],
+      meters: campaignExecutionDetails.meters ?? [],
+      zoneDistribution: {},
     }
 
     return shouldScenarioSummaryReportIncluded ? [scenarioSummaryReport, ...reports] : reports
@@ -235,13 +233,16 @@ export const ScenarioHelper = {
         const cumulativeStartDurationInSeconds = (+executionProfileStage.rampUpDuration + cumulativeDuration) / 1000
         const cumulativeDurationInSeconds = (+executionProfileStage.duration + cumulativeDuration) / 1000
         cumulativeDuration += +executionProfileStage.duration
-        chartDataSeries.push({
-          x: cumulativeStartDurationInSeconds,
-          y: cumulativeMinionsCount,
-        }, {
-          x: cumulativeDurationInSeconds,
-          y: cumulativeMinionsCount,
-        })
+        chartDataSeries.push(
+          {
+            x: cumulativeStartDurationInSeconds,
+            y: cumulativeMinionsCount,
+          },
+          {
+            x: cumulativeDurationInSeconds,
+            y: cumulativeMinionsCount,
+          },
+        )
       }
     })
 

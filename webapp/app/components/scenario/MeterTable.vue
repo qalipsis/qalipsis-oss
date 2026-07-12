@@ -79,20 +79,10 @@ const headRowCls = computed(() =>
 )
 
 /**
- * Format a duration as ms in a human-readable format.
+ * Format an ISO-8601 duration as a human-readable millisecond value.
  */
-const _formatDuration = (d: string | number): string => {
-  if (typeof d === 'number') return `${Math.round(d / 1_000_000)} ms`
-  const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:([\d.]+)S)?/.exec(d)
-  if (m) {
-    const ms =
-        (Number.parseInt(m[1] ?? '0') * 3_600_000) +
-        (Number.parseInt(m[2] ?? '0') * 60_000) +
-        (Number.parseFloat(m[3] ?? '0') * 1_000)
-    return `${Math.round(ms)} ms`
-  }
-  return d
-}
+const _formatDuration = (d: string): string =>
+    `${Math.round(TimeframeHelper.isoStringToTargetTimeframeUnit(d, 'MS'))} ms`
 
 const meterValueOrMean = (meter: TimeSeriesMeter): string => {
   if (meter.mean != null) return String(meter.mean)
