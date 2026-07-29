@@ -257,12 +257,12 @@ export interface TimeSeriesMeter {
     activeTasks?: number;
 
     /**
-     * Duration values serialized as ISO-8601 strings (e.g. "PT1.234S") or as milliseconds.
+     * Duration values serialized as ISO-8601 strings (e.g. "PT1.234S").
      */
-    duration?: string | number;
-    sumDuration?: string | number;
-    meanDuration?: string | number;
-    maxDuration?: string | number;
+    duration?: string;
+    sumDuration?: string;
+    meanDuration?: string;
+    maxDuration?: string;
 
     other?: { [key: string]: number };
 }
