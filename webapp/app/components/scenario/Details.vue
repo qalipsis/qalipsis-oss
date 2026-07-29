@@ -67,7 +67,7 @@
 
           <!-- Failure rate -->
           <div class="flex flex-col items-center text-sm flex-shrink-0 min-w-[52px]">
-            <span class="font-semibold" :class="failRateCls(report)">{{ failRateText(report) }}</span>
+            <span class="font-semibold" :class="failRateCls(report.successfulExecutions, report.failedExecutions)">{{ failRateText(report.successfulExecutions, report.failedExecutions) }}</span>
             <span class="text-xs text-gray-400">Failure</span>
           </div>
         </template>
@@ -91,7 +91,7 @@
         <template v-else>
           <!-- Zone distribution -->
           <div
-              v-if="report.zoneDistribution && Object.keys(report.zoneDistribution).length > 0"
+              v-if="Object.keys(report.zoneDistribution).length > 0"
               class="flex items-center gap-x-2 flex-wrap"
           >
             <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex-shrink-0">
@@ -114,7 +114,7 @@
           </div>
 
           <!-- Scenario-level messages -->
-          <div v-if="report.messages?.length > 0">
+          <div v-if="report.messages.length > 0">
             <div class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
               Scenario Messages
             </div>
@@ -134,7 +134,7 @@
           </div>
 
           <!-- Scenario-level meters table -->
-          <div v-if="report.meters?.length > 0">
+          <div v-if="report.meters.length > 0">
             <div class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
               Meters
             </div>
@@ -142,7 +142,7 @@
           </div>
 
           <!-- Steps -->
-          <div v-if="report.steps?.length > 0">
+          <div v-if="report.steps.length > 0">
             <div class="flex items-center mb-2">
               <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Steps</span>
             </div>
@@ -172,7 +172,7 @@
                     />
                     <div class="w-px h-6 bg-gray-200 dark:bg-gray-600 flex-shrink-0"></div>
                     <span class="font-semibold text-sm flex-shrink-0"
-                          :class="stepFailRateCls(step)">{{ stepFailRateText(step) }}</span>
+                          :class="failRateCls(step.successfulExecutions, step.failedExecutions)">{{ failRateText(step.successfulExecutions, step.failedExecutions) }}</span>
                   </template>
                   <span
                       v-if="isStepNotExecuted(step)"
@@ -196,7 +196,7 @@
                     class="border-t border-gray-100 dark:border-gray-700 px-4 py-3 flex flex-col gap-y-3 bg-gray-50 dark:bg-primary-950"
                 >
                   <!-- Step messages -->
-                  <div v-if="step.messages?.length > 0">
+                  <div v-if="(step.messages?.length ?? 0) > 0">
                     <div class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
                       Messages
                     </div>
@@ -215,7 +215,7 @@
                   </div>
 
                   <!-- Step meters table -->
-                  <div v-if="step.meters?.length > 0">
+                  <div v-if="(step.meters?.length ?? 0) > 0">
                     <div class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
                       Meters
                     </div>
@@ -282,24 +282,13 @@ const _failRate = (success: number, failed: number): number | null => {
   return total > 0 ? (failed * 100) / total : null
 }
 
-const failRateText = (report: ScenarioReport): string => {
-  const rate = _failRate(report.successfulExecutions ?? 0, report.failedExecutions ?? 0)
+const failRateText = (success = 0, failed = 0): string => {
+  const rate = _failRate(success, failed)
   return rate !== null ? `${rate.toFixed(1)}%` : '0.0%'
 }
 
-const failRateCls = (report: ScenarioReport): string => {
-  const rate = _failRate(report.successfulExecutions ?? 0, report.failedExecutions ?? 0)
-  if (rate === null || rate === 0) return 'text-gray-400'
-  return rate > 10 ? 'text-red-600 dark:text-red-400' : 'text-orange-500 dark:text-orange-400'
-}
-
-const stepFailRateText = (step: StepExecutionDetails): string => {
-  const rate = _failRate(step.successfulExecutions ?? 0, step.failedExecutions ?? 0)
-  return rate !== null ? `${rate.toFixed(1)}%` : '0.0%'
-}
-
-const stepFailRateCls = (step: StepExecutionDetails): string => {
-  const rate = _failRate(step.successfulExecutions ?? 0, step.failedExecutions ?? 0)
+const failRateCls = (success = 0, failed = 0): string => {
+  const rate = _failRate(success, failed)
   if (rate === null || rate === 0) return 'text-gray-400'
   return rate > 10 ? 'text-red-600 dark:text-red-400' : 'text-orange-500 dark:text-orange-400'
 }
