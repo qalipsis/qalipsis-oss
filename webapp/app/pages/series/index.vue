@@ -14,7 +14,7 @@
         >
           <BaseButton
               class="ml-2"
-              text="Delete all"
+              text="Delete selected items"
               :disabled="deleteAllBtnDisabled"
               btn-style="outlined"
               icon="qls-icon-delete"
