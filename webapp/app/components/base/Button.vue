@@ -1,7 +1,7 @@
 <template>
   <button
     type="button"
-    class="h-10 px-3 py-2 text-base rounded-md min-w-32 flex items-center justify-center disabled:bg-gray-50 dark:disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+    class="h-10 px-3 py-2 text-base rounded-md min-w-32 flex items-center justify-center disabled:bg-gray-50 dark:disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed disabled:pointer-events-none"
     :class="[btnBaseClass, btnBgThemeClass]"
     :disabled="disabled"
     @click="emit('click')"
