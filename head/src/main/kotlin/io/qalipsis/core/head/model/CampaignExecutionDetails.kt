@@ -97,6 +97,13 @@ class CampaignExecutionDetails(
 
     var resolvedZones: Collection<Zone> = emptyList()
 
+    /**
+     * [resolvedZones] indexed by their key, to resolve the zones of the distributions of the scenarios.
+     */
+    @get:JsonIgnore
+    val resolvedZonesByKey: Map<String, Zone>
+        get() = resolvedZones.associateBy(Zone::key)
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

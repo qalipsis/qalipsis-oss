@@ -25,6 +25,7 @@ import assertk.assertions.prop
 import io.mockk.coEvery
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
+import io.mockk.slot
 import io.qalipsis.api.query.Page
 import io.qalipsis.api.query.QueryAggregationOperator
 import io.qalipsis.api.query.QueryClauseOperator
@@ -41,6 +42,7 @@ import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignsInstantsAndDuration
 import io.qalipsis.core.head.jdbc.repository.ZoneRepository
 import io.qalipsis.core.head.model.DataComponentType
+import io.qalipsis.core.head.model.Zone
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import kotlinx.coroutines.flow.flowOf
@@ -147,7 +149,7 @@ internal class ReportFileBuilderTest {
     @Test
     fun `should return a populated campaign report detail`() = testDispatcherProvider.runTest {
         //given
-        coEvery { zoneRepository.findZonesByTenant(any()) } returns listOf(
+        coEvery { zoneRepository.findByTenantAndKeys(any(), any()) } returns listOf(
             ZoneEntity(key = "FR", title = "France", description = "This is France", imagePath = null),
             ZoneEntity(key = "EN", title = "England", description = "This is England", imagePath = null),
         )
@@ -317,5 +319,49 @@ internal class ReportFileBuilderTest {
             )
             prop(CampaignReportDetail::tableData).isEqualTo(listOf(tableDataResult))
         }
+    }
+
+    @Test
+    fun `should resolve the zones of each campaign`() = testDispatcherProvider.runTest {
+        //given
+        val zoneKeys = slot<Collection<String>>()
+        coEvery { zoneRepository.findByTenantAndKeys("my-tenant", capture(zoneKeys)) } returns listOf(
+            ZoneEntity(key = "FR", title = "France", description = "This is France", imagePath = null),
+        )
+        coEvery { campaignRepository.findInstantsAndDuration(any(), any()) } returns CampaignsInstantsAndDuration(
+            minStart = Instant.parse("2023-01-18T16:31:47.445312Z"),
+            maxEnd = Instant.parse("2023-05-18T16:31:47.445312Z"),
+            maxDurationSec = 42L
+        )
+        coEvery { timeSeriesDataQueryService.render(any(), any(), any()) } returns emptyMap()
+        coEvery { timeSeriesDataQueryService.search(any(), any(), any()) } returns emptyMap()
+        val campaignInFrance = CampaignReportData(
+            name = "campaign-1",
+            result = ExecutionStatus.SUCCESSFUL,
+            startedMinions = 6,
+            completedMinions = 5,
+            successfulExecutions = 5,
+            failedExecutions = 1,
+            zones = setOf("FR"),
+            executionTime = 15,
+            start = null,
+            campaignReportId = 1234L,
+            campaignKey = "campaign1"
+        )
+        val campaignInUnknownZone = campaignInFrance.copy(name = "campaign-2", zones = setOf("GER"))
+
+        //when
+        reportFileBuilder.populateCampaignReportDetail(
+            reportEntity,
+            "my-tenant",
+            listOf(campaignInFrance, campaignInUnknownZone)
+        )
+
+        //then
+        assertThat(zoneKeys.captured.toSet()).isEqualTo(setOf("FR", "GER"))
+        assertThat(campaignInFrance.resolvedZones).isEqualTo(
+            setOf(Zone(key = "FR", title = "France", description = "This is France", imagePath = null))
+        )
+        assertThat(campaignInUnknownZone.resolvedZones).isEqualTo(emptySet<Zone>())
     }
 }

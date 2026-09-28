@@ -30,10 +30,13 @@ import io.mockk.slot
 import io.mockk.verify
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.head.model.CampaignExecutionDetails
+import io.qalipsis.core.head.model.ScenarioExecutionDetails
+import io.qalipsis.core.head.model.Zone
 import io.qalipsis.test.mockk.WithMockk
 import org.junit.jupiter.api.Test
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.context.Context
+import java.net.URL
 import java.time.Instant
 import java.time.ZonedDateTime
 
@@ -144,11 +147,39 @@ internal class HtmlReportServiceTest {
         assertThat(result).contains(">My Report<")
     }
 
+    @Test
+    internal fun `should render the title of the resolved zones of the distribution of the scenario`() {
+        // given — real Thymeleaf engine, no mocks
+        val realEngine = TemplateBeanFactory().templateEngine()
+        val service = HtmlReportService(realEngine, "1.5.0")
+        val campaign = minimalDetails(
+            key = "camp-zones",
+            scenarios = listOf(scenarioWithZoneDistribution(mapOf("fr" to 60, "unknown-zone" to 40)))
+        ).apply {
+            resolvedZones = listOf(
+                Zone(key = "fr", title = "France", description = "Paris", imagePath = URL("http://localhost/fr.png"))
+            )
+        }
+
+        // when
+        val result = service.render("My Report", listOf(campaign))
+
+        // then the resolved zone is displayed with its title and image, the unresolved one with its key.
+        assertThat(result).contains("France")
+        assertThat(result).contains("http://localhost/fr.png")
+        assertThat(result).contains("unknown-zone")
+        assertThat(result).contains("60%")
+        assertThat(result).contains("40%")
+    }
+
     // ---------------------------------------------------------------------------
     // Helper
     // ---------------------------------------------------------------------------
 
-    private fun minimalDetails(key: String): CampaignExecutionDetails = CampaignExecutionDetails(
+    private fun minimalDetails(
+        key: String,
+        scenarios: List<ScenarioExecutionDetails> = emptyList()
+    ): CampaignExecutionDetails = CampaignExecutionDetails(
         version = Instant.now(),
         key = key,
         creation = Instant.now(),
@@ -163,7 +194,20 @@ internal class HtmlReportServiceTest {
         completedMinions = null,
         successfulExecutions = null,
         failedExecutions = null,
-        scenarios = emptyList(),
+        scenarios = scenarios,
         meters = emptyList()
+    )
+
+    private fun scenarioWithZoneDistribution(zoneDistribution: Map<String, Int>) = ScenarioExecutionDetails(
+        id = "scenario-1",
+        name = "Scenario 1",
+        start = Instant.now(),
+        end = Instant.now(),
+        startedMinions = 10,
+        completedMinions = 10,
+        successfulExecutions = 10,
+        failedExecutions = 0,
+        status = ExecutionStatus.SUCCESSFUL,
+        zoneDistribution = zoneDistribution
     )
 }

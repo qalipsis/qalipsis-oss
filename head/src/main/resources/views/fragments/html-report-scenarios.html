@@ -157,15 +157,15 @@
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
                         <span style="font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tt);flex-shrink:0">Zone distribution</span>
                         <th:block th:each="entry : ${scenario.zoneDistribution}"
-                                  th:with="rzList=${campaign.resolvedZones != null ? campaign.resolvedZones.?[key == entry.key] : {}}">
+                                  th:with="rz=${campaign.resolvedZonesByKey[entry.key]}">
               <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--g800)">
-                <th:block th:if="${not #lists.isEmpty(rzList)}" th:with="rz=${rzList[0]}">
+                <th:block th:if="${rz != null}">
                   <img th:if="${rz.imagePath != null}" th:src="${rz.imagePath}"
                        style="width:14px;height:14px;border-radius:50%;object-fit:cover;flex-shrink:0"
                        th:alt="${rz.title}"/>
                   <span th:text="${rz.title}">Zone title</span>
                 </th:block>
-                <th:block th:if="${#lists.isEmpty(rzList)}">
+                <th:block th:if="${rz == null}">
                   <span th:text="${entry.key}">KEY</span>
                 </th:block>
                 <span style="font-family:var(--mono)" th:text="${entry.value + '%'}">0%</span>
