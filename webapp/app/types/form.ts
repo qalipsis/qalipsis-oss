@@ -11,6 +11,14 @@ export interface FormMenuOption {
      * A flag to indicate if the option is disabled
      */
     disabled?: boolean;
+    /**
+     * Image URL to display next to the label, when the option has a visual identity, such as a zone flag
+     */
+    imagePath?: string;
+    /**
+     * A more detailed definition of the option, displayed under its label
+     */
+    description?: string;
 }
 
 export type FormInputType =

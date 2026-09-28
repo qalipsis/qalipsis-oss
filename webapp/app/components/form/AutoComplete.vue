@@ -67,9 +67,8 @@
                   :option="option"
                 >
                   <FormSelectOption
-                    :label="option.label"
+                    :option="option"
                     :active="active"
-                    :disabled="option.disabled"
                     :selected="selected"
                   />
                 </slot>

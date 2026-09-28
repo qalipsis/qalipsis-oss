@@ -53,13 +53,19 @@
                   : TailwindClassConfig.formInputWrapperActiveClass,
               ]"
             >
+              <img
+                v-if="selectedOption?.imagePath"
+                :src="selectedOption.imagePath"
+                :alt="selectedOption.label"
+                class="rounded-full bg-cover w-5 h-5 flex-shrink-0 mr-2"
+              />
               <input
                 readonly
                 type="text"
                 class="cursor-pointer"
                 autocomplete="off"
                 :class="TailwindClassConfig.formInputClass"
-                :value="selectedOptionLabel"
+                :value="selectedOption?.label"
                 :placeholder="placeholder"
                 :disabled="disabled"
               />
@@ -105,9 +111,8 @@
                   :option="option"
                 >
                   <FormSelectOption
-                    :label="option.label"
+                    :option="option"
                     :active="active"
-                    :disabled="option.disabled"
                     :selected="selected"
                   />
                 </slot>
@@ -155,8 +160,8 @@ const selectedOptions = computed(() =>
   props.options.filter((option) => (selectedFormControlValue.value as string[])?.includes(option.value)),
 )
 
-const selectedOptionLabel = computed(
-  () => props.options.find((option) => option.value === selectedFormControlValue.value)?.label,
+const selectedOption = computed(() =>
+  props.options.find((option) => option.value === selectedFormControlValue.value),
 )
 
 const handleDeleteButtonClick = (option: FormMenuOption) => {
