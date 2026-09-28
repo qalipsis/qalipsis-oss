@@ -76,12 +76,19 @@ abstract class AbstractCampaignExecutionState<C : CampaignExecutionContext>(
         val healthyFactories = context.factoryService.getFactoriesHealth(campaign.tenant, campaign.factories.keys)
             .filter { it.state == Heartbeat.State.IDLE }.map { it.nodeId }.toSet()
         return if (healthyFactories.isEmpty()) {
-            // If no factory is healthy return DisabledState
-            DisabledState(campaign, isSuccessful = false)
+            // No factory can acknowledge the abortion, hence the campaign is directly disabled.
+            disabledState(campaign)
         } else {
             // Else only keep healthy factories and return AbortingState
             campaign.factories.keys.removeIf { it !in healthyFactories }
             toDoWithResult()
         }
     }
+
+    /**
+     * Creates the state to apply when the campaign has to be disabled without any further interaction with
+     * the factories. Implementations keeping their own persistent context should return a state cleaning it.
+     */
+    protected open fun disabledState(campaign: RunningCampaign): CampaignExecutionState<CampaignExecutionContext> =
+        DisabledState(campaign, isSuccessful = false)
 }

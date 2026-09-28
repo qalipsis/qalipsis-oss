@@ -669,7 +669,8 @@ internal class ReportControllerIntegrationTest {
     @Test
     fun `should throw an exception when task generation is still in progress`() {
         // given
-        val returnedStatus = HttpStatus.values().random()
+        // Status used by ReportServiceImpl when the report task is neither completed nor failed.
+        val returnedStatus = HttpStatus.UNPROCESSABLE_ENTITY
         coEvery {
             reportService.read(
                 any(),

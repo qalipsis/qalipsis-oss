@@ -61,4 +61,26 @@ internal class InMemoryDelayedFeedbackManagerIntegrationTest {
             headChannel.publishFeedback("the-channel", "my-campaign", refEq(feedback))
         }
     }
+
+    @Test
+    fun `should publish the feedback after the specified delay`() {
+        // given
+        every { configuration.campaignCancellationStateGracePeriod } returns Duration.ofMinutes(10)
+        val latch = CountDownLatch(1)
+        coEvery { headChannel.publishFeedback(any(), any(), any()) } answers { latch.countDown() }
+        val feedback = mockk<Feedback>(moreInterfaces = arrayOf(CampaignManagementFeedback::class)) {
+            every { (this@mockk as CampaignManagementFeedback).campaignKey } returns "my-campaign"
+        }
+
+        // when
+        val beforeCall = Instant.now()
+        inMemoryDelayedFeedbackManager.scheduleCancellation("the-channel", feedback, Duration.ofMillis(1200))
+
+        // then
+        latch.await()
+        assertThat(Duration.between(beforeCall, Instant.now())).isGreaterThanOrEqualTo(Duration.ofSeconds(1))
+        coVerifyOnce {
+            headChannel.publishFeedback("the-channel", "my-campaign", refEq(feedback))
+        }
+    }
 }

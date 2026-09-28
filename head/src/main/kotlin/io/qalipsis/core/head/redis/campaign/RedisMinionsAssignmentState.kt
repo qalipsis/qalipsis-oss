@@ -49,34 +49,40 @@ class RedisMinionsAssignmentState(
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
-        return if (feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED) {
-            RedisFailureState(campaign, feedback.error ?: "", operations)
-        } else if (feedback is MinionsAssignmentFeedback && feedback.status.isDone) {
-            if (feedback.status == FeedbackStatus.FAILED) {
+        return when {
+            feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED -> {
                 RedisFailureState(campaign, feedback.error ?: "", operations)
-            } else {
-                if (feedback.status == FeedbackStatus.IGNORED) {
-                    operations.saveConfiguration(campaign)
-                }
-                if (operations.markFeedbackForFactoryScenario(
-                        campaign.tenant,
-                        campaignKey,
-                        feedback.nodeId,
-                        feedback.scenarioName
-                    )
-                ) {
-                    RedisMinionsScheduleRampUpState(campaign, operations)
+            }
+
+            feedback is MinionsAssignmentFeedback && feedback.status.isDone -> {
+                if (feedback.status == FeedbackStatus.FAILED) {
+                    RedisFailureState(campaign, feedback.error ?: "", operations)
                 } else {
-                    this
+                    if (feedback.status == FeedbackStatus.IGNORED) {
+                        operations.saveConfiguration(campaign)
+                    }
+                    if (operations.markFeedbackForFactoryScenario(
+                            campaign.tenant,
+                            campaignKey,
+                            feedback.nodeId,
+                            feedback.scenarioName
+                        )
+                    ) {
+                        RedisMinionsScheduleRampUpState(campaign, operations)
+                    } else {
+                        this
+                    }
                 }
             }
-        } else if (feedback is NodeExecutionFeedback && feedback.status == FeedbackStatus.FAILED) {
-            // Remove the node from the campaign to avoid wait for feedbacks from it, that
-            // would never come.
-            campaign.factories.remove(feedback.nodeId)
-            RedisFailureState(campaign, feedback.error ?: "", operations)
-        } else {
-            this
+
+            feedback is NodeExecutionFeedback && feedback.status == FeedbackStatus.FAILED -> {
+                // Remove the node from the campaign to avoid wait for feedbacks from it, that
+                // would never come.
+                campaign.factories.remove(feedback.nodeId)
+                RedisFailureState(campaign, feedback.error ?: "", operations)
+            }
+
+            else -> this
         }
     }
 
@@ -85,6 +91,8 @@ class RedisMinionsAssignmentState(
             RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
         }
     }
+
+    override fun disabledState(campaign: RunningCampaign) = RedisDisabledState(campaign, false, operations)
 
     private companion object {
         val log = logger()

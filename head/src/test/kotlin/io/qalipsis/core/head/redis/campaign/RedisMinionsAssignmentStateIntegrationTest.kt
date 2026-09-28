@@ -47,7 +47,6 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsAssignmentFeedback
 import io.qalipsis.core.feedbacks.MinionsDeclarationFeedback
 import io.qalipsis.core.feedbacks.NodeExecutionFeedback
-import io.qalipsis.core.head.campaign.states.DisabledState
 import io.qalipsis.core.head.factory.FactoryHealth
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.assertk.prop
@@ -383,9 +382,10 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
         val newState = state.abort(AbortRunningCampaign())
 
         // then
-        assertThat(newState).isInstanceOf(DisabledState::class).all {
+        assertThat(newState).isInstanceOf(RedisDisabledState::class).all {
             prop("campaign").isSameInstanceAs(campaign)
             prop("isSuccessful").isSameInstanceAs(false)
+            prop("operations").isSameInstanceAs(operations)
         }
         coVerifyOrder {
             factoryService.getFactoriesHealth(refEq("my-tenant"), mutableSetOf("node-1", "node-2", "node-3"))
@@ -502,9 +502,10 @@ internal class RedisMinionsAssignmentStateIntegrationTest : AbstractRedisStateIn
             val newState = state.abort(abortRunningCampaign)
 
             // then
-            assertThat(newState).isInstanceOf(DisabledState::class).all {
+            assertThat(newState).isInstanceOf(RedisDisabledState::class).all {
                 prop("campaign").isSameInstanceAs(campaign)
                 prop("isSuccessful").isSameInstanceAs(false)
+                prop("operations").isSameInstanceAs(operations)
             }
             assertThat(campaign.factories.keys).isEqualTo(mutableSetOf("node-1", "node-2", "node-3"))
             coVerifyOrder {

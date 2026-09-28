@@ -38,6 +38,7 @@ import io.qalipsis.core.serialization.DistributionSerializer
 import jakarta.annotation.PostConstruct
 import jakarta.inject.Singleton
 import kotlinx.coroutines.runBlocking
+import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -79,13 +80,14 @@ class DistributedDelayedFeedbackManager(
     }
 
     @LogInput
-    override fun scheduleCancellation(channelName: DispatcherChannel, feedback: Feedback) {
+    override fun scheduleCancellation(channelName: DispatcherChannel, feedback: Feedback, delay: Duration?) {
         val task = DelayedFeedbackTask()
         task.channelName = channelName
         task.campaignKey = (feedback as CampaignManagementFeedback).campaignKey
         task.serializedFeedback = serializer.serialize(feedback)
 
-        scheduler.schedule<Unit>(task, configuration.campaignCancellationStateGracePeriod.toSeconds(), TimeUnit.SECONDS)
+        val actualDelay = delay ?: configuration.campaignCancellationStateGracePeriod
+        scheduler.schedule<Unit>(task, actualDelay.toSeconds(), TimeUnit.SECONDS)
     }
 
     companion object {

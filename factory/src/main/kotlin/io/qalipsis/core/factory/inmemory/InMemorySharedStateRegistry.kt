@@ -22,8 +22,10 @@ package io.qalipsis.core.factory.inmemory
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.Expiry
+import com.github.benmanes.caffeine.cache.Ticker
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.annotation.Value
+import io.micronaut.core.annotation.Nullable
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.api.states.SharedStateRegistry
@@ -40,11 +42,13 @@ import java.time.Duration
 @Singleton
 @Requires(env = [ExecutionEnvironments.STANDALONE, ExecutionEnvironments.SINGLE_FACTORY])
 class InMemorySharedStateRegistry(
-    @Value("\${factory.cache.ttl:PT1M}") timeToLive: Duration
+    @Value("\${factory.cache.ttl:PT1M}") timeToLive: Duration,
+    @Nullable ticker: Ticker? = null
 ) : SharedStateRegistry {
 
     private val cache: Cache<SharedStateDefinition, Any?> = Caffeine.newBuilder()
         .expireAfter(SharedStateDefinitionExpiry(timeToLive))
+        .ticker(ticker ?: Ticker.systemTicker())
         .build()
 
     override suspend fun set(definition: SharedStateDefinition, payload: Any?) {

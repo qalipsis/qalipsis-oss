@@ -31,6 +31,7 @@ import io.qalipsis.core.head.configuration.HeadConfiguration
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.coroutines.runBlocking
+import java.time.Duration
 
 /**
  * Implementation of [DelayedFeedbackManager] that performs the operation in memory.
@@ -44,8 +45,8 @@ class InMemoryDelayedFeedbackManager(
 ) : DelayedFeedbackManager {
 
     @LogInput
-    override fun scheduleCancellation(channelName: DispatcherChannel, feedback: Feedback) {
-        taskScheduler.schedule(configuration.campaignCancellationStateGracePeriod) {
+    override fun scheduleCancellation(channelName: DispatcherChannel, feedback: Feedback, delay: Duration?) {
+        taskScheduler.schedule(delay ?: configuration.campaignCancellationStateGracePeriod) {
             runBlocking {
                 headChannel.publishFeedback(
                     channelName = channelName,

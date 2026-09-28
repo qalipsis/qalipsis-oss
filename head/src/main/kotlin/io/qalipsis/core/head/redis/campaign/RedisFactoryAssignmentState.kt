@@ -83,6 +83,8 @@ class RedisFactoryAssignmentState(
         }
     }
 
+    override fun disabledState(campaign: RunningCampaign) = RedisDisabledState(campaign, false, operations)
+
     private companion object {
         val log = logger()
     }

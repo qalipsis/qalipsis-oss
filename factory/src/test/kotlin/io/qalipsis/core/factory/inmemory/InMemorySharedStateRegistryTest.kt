@@ -19,6 +19,7 @@
 
 package io.qalipsis.core.factory.inmemory
 
+import com.github.benmanes.caffeine.cache.Ticker
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -158,79 +159,83 @@ internal class InMemorySharedStateRegistryTest {
 
     @Test
     internal fun shouldBeEvictedAfterDefaultTimeToLive() = testDispatcherProvider.run {
-        val registry = InMemorySharedStateRegistry(Duration.ofMillis(50))
+        val ticker = MutableTicker()
+        val registry = InMemorySharedStateRegistry(Duration.ofMillis(50), ticker)
         val definition = SharedStateDefinition("minion-1", "state")
 
         registry.set(definition, "My value")
 
         assertTrue(registry.contains(SharedStateDefinition("minion-1", "state")))
 
-        // Wait after the time to live.
-        Thread.sleep(100)
+        // After the time to live.
+        ticker.elapse(Duration.ofMillis(100))
         assertFalse(registry.contains(SharedStateDefinition("minion-1", "state")))
     }
 
     @Test
     internal fun shouldBeEvictedAfterSpecifiedTimeToLive() = testDispatcherProvider.run {
-        val registry = InMemorySharedStateRegistry(Duration.ofMillis(50))
+        val ticker = MutableTicker()
+        val registry = InMemorySharedStateRegistry(Duration.ofMillis(50), ticker)
         val definition = SharedStateDefinition("minion-1", "state", Duration.ofMillis(100))
 
         registry.set(definition, "My value")
 
         assertTrue(registry.contains(SharedStateDefinition("minion-1", "state")))
 
-        // Wait just before the time to live.
-        Thread.sleep(60)
+        // Just before the time to live.
+        ticker.elapse(Duration.ofMillis(60))
         assertTrue(registry.contains(SharedStateDefinition("minion-1", "state")))
 
-        // Wait after the time to live.
-        Thread.sleep(60)
+        // After the time to live.
+        ticker.elapse(Duration.ofMillis(60))
         assertFalse(registry.contains(SharedStateDefinition("minion-1", "state")))
     }
 
     @Test
     internal fun shouldBeEvictedAfterSpecifiedTimeToLiveAfterWrite() = testDispatcherProvider.run {
-        val registry = InMemorySharedStateRegistry(Duration.ofMillis(50))
+        val ticker = MutableTicker()
+        val registry = InMemorySharedStateRegistry(Duration.ofMillis(50), ticker)
         val definition = SharedStateDefinition("minion-1", "state", Duration.ofMillis(100))
 
         registry.set(definition, "My value")
 
         assertTrue(registry.contains(SharedStateDefinition("minion-1", "state")))
-        // Wait just before the time to live.
-        Thread.sleep(80)
+        // Just before the time to live.
+        ticker.elapse(Duration.ofMillis(80))
 
         // The value is written again, the expiration should be updated.
         registry.set(SharedStateDefinition("minion-1", "state", Duration.ofMillis(200)), "My value")
 
-        // Wait just before the time to live.
-        Thread.sleep(100)
+        // Just before the new time to live.
+        ticker.elapse(Duration.ofMillis(100))
         assertTrue(registry.contains(SharedStateDefinition("minion-1", "state")))
 
-        // Wait after the time to live.
-        Thread.sleep(100)
+        // After the new time to live.
+        ticker.elapse(Duration.ofMillis(100))
         assertFalse(registry.contains(SharedStateDefinition("minion-1", "state")))
     }
 
     @Test
     internal fun shouldBeEvictedAfterSpecifiedTimeToLiveAfterRead() = testDispatcherProvider.run {
-        val registry = InMemorySharedStateRegistry(Duration.ofMillis(50))
+        val ticker = MutableTicker()
+        val registry = InMemorySharedStateRegistry(Duration.ofMillis(50), ticker)
         val definition = SharedStateDefinition("minion-1", "state", Duration.ofMillis(100))
 
         registry.set(definition, "My value")
 
         assertTrue(registry.contains(SharedStateDefinition("minion-1", "state")))
-        // Wait just before the time to live.
-        Thread.sleep(80)
+        // Just before the time to live.
+        ticker.elapse(Duration.ofMillis(80))
 
         // The value is read, the expiration should be updated.
         registry.get<String>(definition)
 
-        // Wait just before the time to live.
-        Thread.sleep(80)
+        // Just before the renewed time to live.
+        ticker.elapse(Duration.ofMillis(80))
         assertTrue(registry.contains(SharedStateDefinition("minion-1", "state")))
 
-        // Wait after the time to live.
-        Thread.sleep(40)
+        // After the renewed time to live.
+        ticker.elapse(Duration.ofMillis(40))
         assertFalse(registry.contains(SharedStateDefinition("minion-1", "state")))
     }
 
@@ -284,5 +289,20 @@ internal class InMemorySharedStateRegistryTest {
         assertNull(registry.get(SharedStateDefinition("minion-1", "state-2")))
         assertNull(registry.get(SharedStateDefinition("minion-3", "state-4")))
 
+    }
+
+    /**
+     * Clock of the cache, to make the expirations deterministic instead of depending on the actual duration
+     * of the operations.
+     */
+    private class MutableTicker : Ticker {
+
+        private var nanos = 0L
+
+        fun elapse(duration: Duration) {
+            nanos += duration.toNanos()
+        }
+
+        override fun read() = nanos
     }
 }

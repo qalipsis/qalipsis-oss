@@ -50,6 +50,7 @@ import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.CampaignAbortDirective
+import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
@@ -478,6 +479,58 @@ internal class StandaloneCampaignExecutorTest {
             campaignExecutionContext
         )
     }
+
+    @Test
+    internal fun `should close the campaign when the abortion leads to a completed state`() =
+        testDispatcherProvider.run {
+            //given
+            val campaignExecutor = standaloneCampaignExecutor(this)
+            coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.IN_PROGRESS
+            campaignExecutor.setProperty(
+                "currentCampaignState",
+                relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                    every { isCompleted } returns false
+                    coEvery { abort(any()) } returns relaxedMockk {
+                        // No factory can acknowledge the abortion, the state is directly completed.
+                        every { isCompleted } returns true
+                        coEvery { init() } returns listOf(
+                            CompleteCampaignDirective("first_campaign", false, "The campaign was aborted", "channel")
+                        )
+                    }
+                })
+
+            // when
+            campaignExecutor.abort("my-tenant", "my-user", "first_campaign", false)
+
+            // then
+            val sentDirectives = mutableListOf<Directive>()
+            coExcludeRecords {
+                campaignExecutor.abort(any(), any(), any(), any())
+                campaignExecutor.abortAlreadyStartedCampaign(any(), any(), any(), any())
+            }
+            coVerifyOrder {
+                campaignService.retrieve("my-tenant", "first_campaign")
+                campaignExecutor.get("my-tenant", "first_campaign")
+                campaignService.abort("my-tenant", "my-user", "first_campaign")
+                campaignService.close(
+                    "my-tenant",
+                    "first_campaign",
+                    ExecutionStatus.ABORTED,
+                    "The campaign was aborted"
+                )
+                campaignExecutor.set(any())
+                headChannel.publishDirective(capture(sentDirectives))
+            }
+            confirmVerified(campaignExecutor, campaignService, campaignReportStateKeeper, headChannel)
+
+            assertThat(sentDirectives).all {
+                hasSize(1)
+                index(0).isInstanceOf(CompleteCampaignDirective::class).all {
+                    prop(CompleteCampaignDirective::campaignKey).isEqualTo("first_campaign")
+                    prop(CompleteCampaignDirective::isSuccessful).isEqualTo(false)
+                }
+            }
+        }
 
     @Test
     internal fun `should not abort a completed campaign with state in cache`() = testDispatcherProvider.run {
