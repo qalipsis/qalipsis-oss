@@ -226,13 +226,17 @@ const handleConfirmBtnClick = handleSubmit(async (values: ScenarioConfigurationF
 })
 
 const _initZoneOptions = async () => {
-  // Prepares the available zone options for configuring the scenario.
+  // Prepares the available zone options for configuring the scenario, sorted as they are displayed.
   const zones = await fetchZones()
-  zoneOptions.value = zones.map((zone) => ({
-    label: zone.title,
-    value: zone.key,
-    disabled: !zone.enabled,
-  }))
+  zoneOptions.value = zones
+    .map((zone) => ({
+      label: zone.title,
+      value: zone.key,
+      disabled: !zone.enabled,
+      imagePath: zone.imagePath,
+      description: zone.description,
+    }))
+    .sort((option, otherOption) => option.label.localeCompare(otherOption.label))
 }
 
 const handleAddExecutionProfileBtnClick = () => {
@@ -250,7 +254,8 @@ const handleAddExecutionProfileBtnClick = () => {
 
 const handleAddZoneBtnClick = () => {
   pushZones({
-    share: 20,
+    // The zone takes the whole share that is not distributed yet, hence 100% for the very first one.
+    share: Math.max(0, 100 - values.zones.reduce((acc, z) => acc + +z.share, 0)),
     name: '',
   })
 }
