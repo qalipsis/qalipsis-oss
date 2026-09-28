@@ -10,7 +10,8 @@ export const useCampaignExecution = (
     if (!campaignConfiguration.value) return
 
     const selectedScenarioConfigMap: { [key: string]: ScenarioConfigurationForm } = {}
-    const defaultStage = campaignConfiguration.value.validation.stage
+    const validation = campaignConfiguration.value.validation
+    const defaultStage = validation.stage
 
     scenarioTableStore.selectedRows.forEach((scenario) => {
       const existingConfig = scenarioTableStore.scenarioConfig[scenario.name]
@@ -28,7 +29,7 @@ export const useCampaignExecution = (
         selectedScenarioConfigMap[scenario.name] = {
           executionProfileStages: [
             {
-              minionsCount: defaultStage.minMinionsCount,
+              minionsCount: ScenarioHelper.defaultStageMinionsCount(validation),
               duration: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minDuration),
               rampUpDuration: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minStartDuration),
               resolution: TimeframeHelper.isoStringToTargetTimeframeUnit(defaultStage.minResolution),

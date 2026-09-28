@@ -101,6 +101,10 @@ class ValidationCampaignHook(
     private suspend fun validateZones(tenant: String, zones: Map<String, Int>, constraintsViolations: MutableCollection<String>) {
 
         if (zones.isNotEmpty()) {
+            if (zones.size > campaignConstraints.maxZonesCount) {
+                constraintsViolations += "The count of zones of a scenario should not exceed ${campaignConstraints.maxZonesCount}"
+            }
+
             /**
              * Keys of the zones supported by the cluster.
              */

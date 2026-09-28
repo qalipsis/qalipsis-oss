@@ -1,5 +1,5 @@
-import { differenceInCalendarDays, format, intervalToDuration } from 'date-fns'
-import { Duration } from 'luxon'
+import {differenceInCalendarDays, format, intervalToDuration} from 'date-fns'
+import {Duration} from 'luxon'
 
 type DurationKey = 'years' | 'months' | 'weeks' | 'days' | 'hours' | 'minutes' | 'seconds'
 
@@ -160,6 +160,22 @@ export const TimeframeHelper = {
    */
   msToFormattedTimeframe(ms: number): FormattedTimeframe {
     return TimeframeHelper.toFormattedTimeframe(TimeframeHelper.toIsoStringDuration(ms, 'MS'))
+  },
+
+  /**
+   * Converts the timeframe to a human-readable text, to display it in the rules of a configuration.
+   *
+   * @param timeframeInIsoStringFormat The value of the timeframe in ISO format.
+   * @returns The timeframe in plain English, for example "30 minutes" or "1 hour, 30 minutes".
+   */
+  isoStringToHumanReadable(timeframeInIsoStringFormat: string | undefined): string {
+    if (!timeframeInIsoStringFormat) return ''
+
+    try {
+      return Duration.fromISO(timeframeInIsoStringFormat).rescale().toHuman({unitDisplay: 'long'})
+    } catch {
+      return ''
+    }
   },
 
   /**

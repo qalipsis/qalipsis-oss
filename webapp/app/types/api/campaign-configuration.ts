@@ -6,6 +6,7 @@ export interface Validation {
     maxMinionsCount: number;
     maxExecutionDuration: string;
     maxScenariosCount: number;
+    maxZonesCount: number;
     stage: StageValidation;
 }
 

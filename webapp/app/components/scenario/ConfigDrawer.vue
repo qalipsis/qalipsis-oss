@@ -27,22 +27,12 @@
               The ramp up duration value should be less or equal than the duration value!
             </span>
           </template>
-          <template v-if="isConfirmBtnClicked">
-            <span
-              v-if="!hasValidMinionsSummary"
-              class="text-red-600 dark:text-red-300 pt-2"
-            >
-              The summary of the minions count should not exceed
-              {{ configuration.validation.maxMinionsCount }}
-            </span>
-            <span
-              v-if="!hasValidDurationSummary"
-              class="text-red-600 dark:text-red-300 pt-2"
-            >
-              The summary of the duration should not exceed
-              {{ maxDurationInMilliSeconds }} ms
-            </span>
-          </template>
+          <p :class="ruleClass(hasValidMinionsSummary)">
+            Total of minions should not exceed {{ configuration.validation.maxMinionsCount }}
+          </p>
+          <p :class="ruleClass(hasValidDurationSummary)">
+            Total duration cannot exceed {{ maxDurationText }}
+          </p>
         </div>
         <div
           v-if="!disabled"
@@ -59,8 +49,9 @@
         <div class="col-span-12 my-5">
           <BaseDivideLine />
         </div>
-        <div class="col-span-12">
+        <div class="col-span-12 flex items-baseline gap-x-2">
           <span class="text-gray-500 dark:text-gray-100">Zone</span>
+          <span class="text-gray-400 dark:text-gray-300 text-sm">optional</span>
         </div>
         <div class="col-span-12">
           <ScenarioZone
@@ -69,26 +60,28 @@
             :zone-options="zoneOptions"
             :disabled="disabled"
           />
-          <template v-if="isConfirmBtnClicked">
-            <span
-              v-if="!hasValidZoneShareSummary && values.zones.length > 0"
-              class="text-red-600 pt-2"
-            >
-              The sum of the share zones should be equal 100%
-            </span>
-          </template>
+          <p :class="ruleClass(hasValidZonesCount)">
+            Until {{ maxZonesCount }} different zones can be added
+          </p>
+          <p :class="ruleClass(hasValidZoneShareSummary)">
+            When zones are configured, the sum of their shares should be equal 100%
+          </p>
         </div>
         <div
           class="col-span-12"
+          :class="{ 'cursor-not-allowed': !canZoneBeAdded }"
           v-if="!disabled"
         >
-          <BaseButton
-            icon="qls-icon-plus"
-            btn-style="outlined"
-            class="w-full"
-            text="Add new"
-            @click="handleAddZoneBtnClick"
-          />
+          <BaseTooltip :text="zoneAdditionRestriction">
+            <BaseButton
+              icon="qls-icon-plus"
+              btn-style="outlined"
+              class="w-full"
+              text="Add new"
+              :disabled="!canZoneBeAdded"
+              @click="handleAddZoneBtnClick"
+            />
+          </BaseTooltip>
         </div>
         <div class="col-span-12 my-5">
           <BaseDivideLine />
@@ -109,10 +102,14 @@
 </template>
 
 <script setup lang="ts">
-import { type ApexOptions } from 'apexcharts'
-import { useFieldArray, useForm } from 'vee-validate'
+import {type ApexOptions} from 'apexcharts'
+import {useFieldArray, useForm} from 'vee-validate'
 
 const { fetchZones } = useZonesApi()
+
+// Styles of the validation rules of the campaign, depending on whether the configuration matches them.
+const RULE_CLASS = 'text-gray-500 dark:text-gray-400 text-sm pt-2'
+const VIOLATED_RULE_CLASS = 'text-red-600 dark:text-red-300 text-sm pt-2'
 
 const props = defineProps<{
   open: boolean
@@ -130,6 +127,10 @@ const title = computed(() => `Configuration of ${props.scenario.name}`)
 const maxDurationInMilliSeconds = computed(() =>
   TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.maxExecutionDuration),
 )
+const maxDurationText = computed(() =>
+    TimeframeHelper.isoStringToHumanReadable(props.configuration.validation.maxExecutionDuration),
+)
+const maxZonesCount = computed(() => props.configuration.validation.maxZonesCount)
 
 const zoneOptions = ref<FormMenuOption[]>([])
 const canChartBeRendered = ref(false)
@@ -141,7 +142,7 @@ const { handleSubmit, values, meta } = useForm<ScenarioConfigurationForm>({
   initialValues: {
     executionProfileStages: props.scenarioForm?.executionProfileStages ?? [
       {
-        minionsCount: props.configuration.validation.stage.minMinionsCount,
+        minionsCount: ScenarioHelper.defaultStageMinionsCount(props.configuration.validation),
         duration: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minDuration, 'SEC'),
         durationUnit: TimeframeUnitConstant.SEC,
         rampUpDuration: TimeframeHelper.isoStringToTargetTimeframeUnit(
@@ -155,7 +156,7 @@ const { handleSubmit, values, meta } = useForm<ScenarioConfigurationForm>({
   },
 })
 
-const { push: pushExecutionProfile, fields: executionProfileFields } =
+const { push: pushExecutionProfile, fields: executionProfileFields, update: updateExecutionProfile } =
   useFieldArray<ExecutionProfileStage>('executionProfileStages')
 const { push: pushZones, fields: zoneFields } = useFieldArray<ZoneForm>('zones')
 
@@ -171,10 +172,13 @@ const invalidExecutionProfileIndexes = computed(() =>
   }, [])
 )
 
-const hasValidMinionsSummary = computed(() => {
-  const total = values.executionProfileStages.reduce((acc, s) => acc + +s.minionsCount, 0)
-  return total <= props.configuration.validation.maxMinionsCount
-})
+const totalMinionsCount = computed(() =>
+    values.executionProfileStages.reduce((acc, s) => acc + +s.minionsCount, 0)
+)
+
+const hasValidMinionsSummary = computed(
+    () => totalMinionsCount.value <= props.configuration.validation.maxMinionsCount
+)
 
 const hasValidDurationSummary = computed(() => {
   const total = values.executionProfileStages.reduce((acc, s) => acc + _toMs(+s.duration, s.durationUnit), 0)
@@ -184,6 +188,28 @@ const hasValidDurationSummary = computed(() => {
 const hasValidZoneShareSummary = computed(() =>
   values.zones.length === 0 || values.zones.reduce((acc, z) => acc + +z.share, 0) === 100
 )
+
+const hasValidZonesCount = computed(() => values.zones.length <= maxZonesCount.value)
+
+// A zone can only be used once in a scenario, hence no more zone can be added when they are all used.
+const enabledZonesCount = computed(() => zoneOptions.value.filter((option) => !option.disabled).length)
+
+const canZoneBeAdded = computed(
+    () => values.zones.length < Math.min(maxZonesCount.value, enabledZonesCount.value)
+)
+
+const zoneAdditionRestriction = computed(() => {
+  if (canZoneBeAdded.value) return undefined
+  if (enabledZonesCount.value === 0) return 'There is no zone available to distribute the execution of this scenario.'
+  return values.zones.length >= maxZonesCount.value
+      ? `A scenario cannot be distributed on more than ${maxZonesCount.value} zones.`
+    : `The ${enabledZonesCount.value} available zones are all used, the execution cannot be distributed further.`
+})
+
+// The violations are only reported once the user tried to submit the configuration, whereas the rules
+// themselves are always visible.
+const ruleClass = (isRuleMatched: boolean) =>
+  isRuleMatched || !isConfirmBtnClicked.value ? RULE_CLASS : VIOLATED_RULE_CLASS
 
 const _setScenarioConfigChartDataSeries = (executionProfileStages: ExecutionProfileStage[]) => {
   canChartBeRendered.value = false
@@ -207,6 +233,26 @@ watch(
   { deep: true, immediate: true },
 )
 
+// The ramp-up of a stage happens within its duration, hence a longer ramp-up extends the duration
+// instead of leaving the user with a configuration to fix.
+watch(
+  () => values.executionProfileStages.map((stage) => _toMs(+stage.rampUpDuration, stage.rampUpDurationUnit)),
+  (rampUpDurations) => {
+    rampUpDurations.forEach((rampUpDuration, index) => {
+      const stage = values.executionProfileStages[index]
+      if (!stage || isNaN(rampUpDuration) || rampUpDuration <= _toMs(+stage.duration, stage.durationUnit)) return
+
+      updateExecutionProfile(index, {
+        ...stage,
+        duration: TimeframeHelper.fromMs(
+          rampUpDuration,
+          (stage.durationUnit ?? TimeframeUnitConstant.SEC) as TimeframeUnit,
+        ),
+      })
+    })
+  },
+)
+
 onMounted(() => {
   _initZoneOptions()
 })
@@ -218,7 +264,8 @@ const handleConfirmBtnClick = handleSubmit(async (values: ScenarioConfigurationF
     invalidExecutionProfileIndexes.value.length === 0 &&
     hasValidDurationSummary.value &&
     hasValidMinionsSummary.value &&
-    hasValidZoneShareSummary.value
+      hasValidZoneShareSummary.value &&
+      hasValidZonesCount.value
   if (hasValidFormInput) {
     emit('submit', values)
     emit('update:open', false)
@@ -241,7 +288,7 @@ const _initZoneOptions = async () => {
 
 const handleAddExecutionProfileBtnClick = () => {
   pushExecutionProfile({
-    minionsCount: props.configuration.validation.stage.minMinionsCount,
+    minionsCount: ScenarioHelper.defaultStageMinionsCount(props.configuration.validation, totalMinionsCount.value),
     duration: TimeframeHelper.isoStringToTargetTimeframeUnit(props.configuration.validation.stage.minDuration, 'SEC'),
     durationUnit: TimeframeUnitConstant.SEC,
     rampUpDuration: TimeframeHelper.isoStringToTargetTimeframeUnit(

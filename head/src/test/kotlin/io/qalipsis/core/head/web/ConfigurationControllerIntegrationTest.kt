@@ -100,6 +100,7 @@ internal class ConfigurationControllerIntegrationTest {
                             maxMinionsCount = 10000,
                             maxExecutionDuration = Duration.ofHours(1),
                             maxScenariosCount = 4,
+                            maxZonesCount = 3,
                             stage = Stage(
                                 minMinionsCount = 1,
                                 maxMinionsCount = 10000,
@@ -118,6 +119,7 @@ internal class ConfigurationControllerIntegrationTest {
                 prop(Validation::maxMinionsCount).isEqualTo(10000)
                 prop(Validation::maxExecutionDuration).isEqualTo(Duration.ofHours(1))
                 prop(Validation::maxScenariosCount).isEqualTo(4)
+                prop(Validation::maxZonesCount).isEqualTo(3)
             }
         }
     }
@@ -128,6 +130,7 @@ internal class ConfigurationControllerIntegrationTest {
         Property(name = "campaign.configuration.validation.maxMinionsCount", value = "5000"),
         Property(name = "campaign.configuration.validation.maxExecutionDuration", value = "PT30M"),
         Property(name = "campaign.configuration.validation.maxScenariosCount", value = "2"),
+        Property(name = "campaign.configuration.validation.maxZonesCount", value = "5"),
         Property(name = "campaign.configuration.validation.stage.minMinionsCount", value = "1"),
         Property(name = "campaign.configuration.validation.stage.maxMinionsCount", value = "5000"),
         Property(name = "campaign.configuration.validation.stage.minResolution", value = "PT5S"),
@@ -160,6 +163,7 @@ internal class ConfigurationControllerIntegrationTest {
                             maxMinionsCount = 5000,
                             maxExecutionDuration = Duration.ofMinutes(30),
                             maxScenariosCount = 2,
+                            maxZonesCount = 5,
                             stage = Stage(
                                 minMinionsCount = 1,
                                 maxMinionsCount = 5000,
@@ -216,6 +220,7 @@ internal class ConfigurationControllerIntegrationTest {
                             maxMinionsCount = 5000,
                             maxExecutionDuration = Duration.ofMinutes(30),
                             maxScenariosCount = 2,
+                            maxZonesCount = 3,
                             stage = Stage(
                                 minMinionsCount = 1,
                                 maxMinionsCount = 5000,

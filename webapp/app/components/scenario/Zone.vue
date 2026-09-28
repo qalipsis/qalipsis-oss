@@ -4,7 +4,7 @@
       <FormSelect
         label="Name"
         :form-control-name="`zones[${index}].name`"
-        :options="zoneOptions"
+        :options="availableZoneOptions"
         :disabled="disabled"
         :field-validation-schema="zoneSchema.name"
       />
@@ -36,8 +36,8 @@
 </template>
 
 <script setup lang="ts">
-import { toTypedSchema } from '@vee-validate/zod'
-import { useFieldArray } from 'vee-validate'
+import {toTypedSchema} from '@vee-validate/zod'
+import {useFieldArray} from 'vee-validate'
 import * as zod from 'zod'
 
 const props = defineProps<{
@@ -48,6 +48,18 @@ const props = defineProps<{
 }>()
 
 const { remove, fields } = useFieldArray<ZoneForm>('zones')
+
+// A zone can only be used once in a scenario, hence the zones of the other rows are not proposed here.
+const availableZoneOptions = computed<FormMenuOption[]>(() => {
+  const zonesOfOtherRows = fields.value
+      .filter((_, index) => index !== props.index)
+      .map((field) => field.value.name)
+
+  return props.zoneOptions.map((option) => ({
+    ...option,
+    disabled: option.disabled || zonesOfOtherRows.includes(option.value),
+  }))
+})
 
 const zoneSchema = {
   name: toTypedSchema(

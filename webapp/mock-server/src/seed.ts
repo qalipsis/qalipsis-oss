@@ -1,13 +1,13 @@
-import { DateTime } from 'luxon'
-import type { Campaign, CampaignConfiguration, CampaignExecutionDetails, ExecutionStatus } from '@webapp-types/campaign'
-import type { DataSeries, DataType, SharingMode, QueryAggregationOperator } from '@webapp-types/series'
-import type { DataReport, DataComponentType } from '@webapp-types/report'
-import type { ScenarioSummary } from '@webapp-types/scenario'
-import type { Zone } from '@webapp-types/zone'
-import type { Profile } from '@webapp-types/profile'
-import type { PermissionEnum } from '@webapp-types/permission'
-import type { DefaultCampaignConfiguration } from '@webapp-types/campaign-configuration'
-import { db } from './db.js'
+import {DateTime} from 'luxon'
+import type {Campaign, CampaignConfiguration, CampaignExecutionDetails, ExecutionStatus} from '@webapp-types/campaign'
+import type {DataSeries, DataType, QueryAggregationOperator, SharingMode} from '@webapp-types/series'
+import type {DataComponentType, DataReport} from '@webapp-types/report'
+import type {ScenarioSummary} from '@webapp-types/scenario'
+import type {Zone} from '@webapp-types/zone'
+import type {Profile} from '@webapp-types/profile'
+import type {PermissionEnum} from '@webapp-types/permission'
+import type {DefaultCampaignConfiguration} from '@webapp-types/campaign-configuration'
+import {db} from './db.js'
 
 const now = DateTime.utc()
 const iso = (dt: DateTime) => dt.toISO()!
@@ -299,6 +299,7 @@ const buildDefaultCampaignConfig = (): DefaultCampaignConfiguration => ({
     maxMinionsCount: 100000,
     maxExecutionDuration: 'PT4H',
     maxScenariosCount: 20,
+    maxZonesCount: 3,
     stage: {
       minMinionsCount: 1,
       maxMinionsCount: 100000,

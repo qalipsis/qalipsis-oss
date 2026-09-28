@@ -57,10 +57,23 @@ data class Validation(
     val maxScenariosCount: Int,
 
     /**
+     * maximum number of zones to distribute a scenario onto, default to 3.
+     *
+     * The default value also applies when the configuration is received from a remote service that does not
+     * provide the limit yet.
+     */
+    val maxZonesCount: Int = DEFAULT_MAX_ZONES_COUNT,
+
+    /**
      * stage validation field of a campaign.
      */
     val stage: Stage
 )
+
+/**
+ * Number of zones to apply when the source of the configuration does not specify any limit.
+ */
+private const val DEFAULT_MAX_ZONES_COUNT = 1
 
 data class Stage(
     /**

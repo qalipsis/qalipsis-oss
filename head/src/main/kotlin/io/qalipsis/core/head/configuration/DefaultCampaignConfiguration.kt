@@ -47,6 +47,9 @@ class DefaultCampaignConfiguration {
         @field:Positive
         var maxScenariosCount: Int = 4
 
+        @field:Positive
+        var maxZonesCount: Int = 3
+
         var stage: Stage = Stage()
 
         @ConfigurationProperties("stage")

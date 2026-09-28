@@ -42,6 +42,7 @@ class DefaultCampaignConfigurationProvider(
                 maxMinionsCount = defaultCampaignConfiguration.validation.maxMinionsCount,
                 maxExecutionDuration = defaultCampaignConfiguration.validation.maxExecutionDuration,
                 maxScenariosCount = defaultCampaignConfiguration.validation.maxScenariosCount,
+                maxZonesCount = defaultCampaignConfiguration.validation.maxZonesCount,
                 stage = Stage(
                     minMinionsCount = defaultCampaignConfiguration.validation.stage.minMinionsCount,
                     maxMinionsCount = defaultCampaignConfiguration.validation.stage.maxMinionsCount

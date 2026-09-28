@@ -1,4 +1,4 @@
-import { format } from 'date-fns'
+import {format} from 'date-fns'
 
 const tagClass: { [key in ReportMessageSeverity]: TagStyleClass } = {
   INFO: {
@@ -19,7 +19,28 @@ const tagClass: { [key in ReportMessageSeverity]: TagStyleClass } = {
   },
 }
 
+// Count of minions to preset in a new stage, as long as the rules of the campaign allow it.
+const PREFERRED_STAGE_MINIONS_COUNT = 100
+
 export const ScenarioHelper = {
+  /**
+   * Calculates the count of minions to preset in a new stage: the preferred value, limited by the rules of a
+   * stage and by the minions that are still available in the campaign.
+   *
+   * @param validation The validation rules of the campaign.
+   * @param usedMinionsCount The count of minions already distributed to the other stages.
+   */
+  defaultStageMinionsCount(validation: Validation, usedMinionsCount: number = 0): number {
+    const availableMinionsCount = validation.maxMinionsCount - usedMinionsCount
+    const minionsCount = Math.min(
+        PREFERRED_STAGE_MINIONS_COUNT,
+        validation.stage.maxMinionsCount,
+        availableMinionsCount,
+    )
+
+    return Math.max(validation.stage.minMinionsCount, minionsCount)
+  },
+
   toScenarioConfigForm(campaignConfiguration: CampaignConfiguration): {
     [key: string]: ScenarioConfigurationForm
   } {

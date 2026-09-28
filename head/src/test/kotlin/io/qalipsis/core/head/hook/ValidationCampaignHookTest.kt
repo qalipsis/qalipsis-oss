@@ -76,6 +76,7 @@ internal class ValidationCampaignHookTest {
         every { campaignConstraints.maxMinionsCount } returns 10_000
         every { campaignConstraints.maxExecutionDuration } returns Duration.ofHours(1)
         every { campaignConstraints.maxScenariosCount } returns 4
+        every { campaignConstraints.maxZonesCount } returns 3
         every { campaignConstraints.stage.minMinionsCount } returns 1
         every { campaignConstraints.stage.maxMinionsCount } returns 100
         every { campaignConstraints.stage.minResolution } returns Duration.ofMillis(500)
@@ -552,6 +553,44 @@ internal class ValidationCampaignHookTest {
             assertThat(exception.messages.toList()).all {
                 hasSize(1)
                 index(0).isEqualTo("The requested zones CM, NG are not known")
+            }
+        }
+
+    @Test
+    internal fun `should deny a campaign when the count of zones of a scenario exceeds`() =
+        testDispatcherProvider.runTest {
+            // given
+            coEvery { zoneService.list(any()) } returns listOf(
+                Zone(key = "FR", title = "France", description = "description", imagePath = null),
+                Zone(key = "EN", title = "England", description = "description", imagePath = null),
+                Zone(key = "DE", title = "Germany", description = "description", imagePath = null),
+                Zone(key = "PL", title = "Poland", description = "description", imagePath = null)
+            )
+            val configuration = CampaignConfiguration(
+                name = "my-campaign",
+                speedFactor = 1.43,
+                startOffsetMs = 123,
+                scenarios = mapOf("Scenario1" to ScenarioRequest(1))
+            )
+            val running = RunningCampaign(
+                tenant = "my-tenant",
+                key = "my-campaign",
+                speedFactor = 1.43,
+                startOffsetMs = 123,
+                scenarios = mapOf(
+                    "Scenario1" to ScenarioConfiguration(
+                        1, stageExecutionPrototype, zones = mapOf("FR" to 25, "EN" to 25, "DE" to 25, "PL" to 25)
+                    )
+                )
+            )
+            // when
+            val exception = assertThrows<BulkIllegalArgumentException> {
+                campaignHook.preCreate(configuration, running)
+            }
+            // then
+            assertThat(exception.messages.toList()).all {
+                hasSize(1)
+                index(0).isEqualTo("The count of zones of a scenario should not exceed 3")
             }
         }
 

@@ -49,7 +49,7 @@
               <span class="text-gray-600">
                 {{ zoneKeyToZoneModel[firstZoneKey]?.title }}
               </span>
-              <BaseTooltip v-if="campaignDetails.zones.length > 0">
+              <BaseTooltip v-if="campaignDetails.zones.length > 1">
                 <template #tooltipContent>
                   <div
                     v-for="(zoneKey, _) in campaignDetails.zones"
