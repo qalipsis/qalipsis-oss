@@ -28,7 +28,6 @@ import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignsInstantsAndDuration
 import io.qalipsis.core.head.jdbc.repository.ZoneRepository
 import io.qalipsis.core.head.model.DataComponentType
-import io.qalipsis.core.head.model.Zone
 import jakarta.inject.Singleton
 
 /**
@@ -54,11 +53,14 @@ class ReportFileBuilder(
         tenant: String,
         campaignReportData: Collection<CampaignReportData>,
     ): CampaignReportDetail {
+        val zoneKeys = campaignReportData.flatMapTo(mutableSetOf()) { it.zones }
+        val zonesByKey = if (zoneKeys.isEmpty()) {
+            emptyMap()
+        } else {
+            zoneRepository.findByTenantAndKeys(tenant, zoneKeys).associate { it.key to it.toModel() }
+        }
         campaignReportData.forEach { campaign ->
-            val zones = mutableSetOf<Zone>()
-            campaign.resolvedZones =
-                zoneRepository.findZonesByTenant(tenant).filter { zone -> zone.key in campaign.zones }.map { it.toModel() }.toSet()
-            campaign.apply { resolvedZones = zones }
+            campaign.resolvedZones = campaign.zones.mapNotNull { zonesByKey[it] }.toSet()
         }
         val tableData = mutableListOf<Collection<TimeSeriesRecord>>()
         val chartData = mutableListOf<Map<String, TimeSeriesValues>>()
