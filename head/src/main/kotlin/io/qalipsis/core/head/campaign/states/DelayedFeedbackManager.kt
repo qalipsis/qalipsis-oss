@@ -21,6 +21,7 @@ package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.feedbacks.Feedback
+import java.time.Duration
 
 /**
  * Service that will emit the provided feedback after a reasonable (configured delay).
@@ -29,7 +30,9 @@ interface DelayedFeedbackManager {
 
     /**
      * Schedule the propagation of the feedback in the future.
+     *
+     * @param delay duration to wait before the propagation, defaults to the configured campaign cancellation state grace period
      */
-    fun scheduleCancellation(channelName: DispatcherChannel, feedback: Feedback)
+    fun scheduleCancellation(channelName: DispatcherChannel, feedback: Feedback, delay: Duration? = null)
 
 }

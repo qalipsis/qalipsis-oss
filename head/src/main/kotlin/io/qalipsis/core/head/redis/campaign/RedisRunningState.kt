@@ -64,17 +64,14 @@ class RedisRunningState(
             feedback is MinionsDeclarationFeedback && feedback.status == FeedbackStatus.FAILED ->
                 RedisFailureState(campaign, feedback.error ?: "", operations)
 
+            feedback is FailedCampaignFeedback ->
+                RedisFailureState(campaign, feedback.error ?: "", operations)
+
             feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED ->
                 RedisFailureState(campaign, feedback.error ?: "", operations)
 
             feedback is MinionsStartFeedback && feedback.status == FeedbackStatus.FAILED ->
                 RedisFailureState(campaign, feedback.error ?: "", operations)
-
-            feedback is FailedCampaignFeedback -> RedisFailureState(
-                campaign,
-                feedback.error ?: "",
-                operations
-            )
 
             feedback is NodeExecutionFeedback -> {
                 // Remove the node from the campaign to avoid wait for feedbacks from it, that
@@ -129,6 +126,8 @@ class RedisRunningState(
             RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
         }
     }
+
+    override fun disabledState(campaign: RunningCampaign) = RedisDisabledState(campaign, false, operations)
 
     private companion object {
         val log = logger()

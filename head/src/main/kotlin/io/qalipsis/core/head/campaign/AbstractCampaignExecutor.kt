@@ -223,13 +223,16 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
             if (hard) {
                 campaignReportStateKeeper.abort(campaignKey)
             }
+            // When the new state is already completed, no factory remains to acknowledge the abortion,
+            // hence the campaign is closed right away, otherwise it would never end.
+            if (campaignState.isCompleted) {
+                campaignService.close(tenant, campaignKey, ExecutionStatus.ABORTED, ABORTION_MESSAGE)
+            }
             val directives = campaignState.init()
-            if (!campaignState.isCompleted) {
-                set(campaignState)
-                directives.forEach {
-                    (it as? CampaignManagementDirective)?.tenant = tenant
-                    headChannel.publishDirective(it)
-                }
+            set(campaignState)
+            directives.forEach {
+                (it as? CampaignManagementDirective)?.tenant = tenant
+                headChannel.publishDirective(it)
             }
         }
     }
@@ -273,22 +276,27 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
             val campaignState = sourceCampaignState.abort(AbortRunningCampaign(hard))
             log.trace { "Campaign state $campaignState" }
             campaignState.inject(campaignExecutionContext)
-            val directives = campaignState.init()
             campaignService.abort(tenant, null, campaignKey)
             if (hard) {
                 campaignReportStateKeeper.abort(campaignKey)
             }
-            if (!campaignState.isCompleted) {
-                set(campaignState)
-                directives.forEach {
-                    (it as? CampaignManagementDirective)?.tenant = tenant
-                    headChannel.publishDirective(it)
-                }
+            // When the new state is already completed, no factory remains to acknowledge the abortion,
+            // hence the campaign is closed right away, otherwise it would never end.
+            if (campaignState.isCompleted) {
+                campaignService.close(tenant, campaignKey, ExecutionStatus.ABORTED, ABORTION_MESSAGE)
+            }
+            val directives = campaignState.init()
+            set(campaignState)
+            directives.forEach {
+                (it as? CampaignManagementDirective)?.tenant = tenant
+                headChannel.publishDirective(it)
             }
         }
     }
 
     companion object {
+
+        private const val ABORTION_MESSAGE = "The campaign was aborted"
 
         private val log = logger()
 

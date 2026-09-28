@@ -47,21 +47,27 @@ class RedisMinionsScheduleRampUpState(
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
-        return if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED) {
-            RedisFailureState(campaign, feedback.error ?: "", operations)
-        } else if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.COMPLETED) {
-            if (operations.markFeedbackForScenario(campaign.tenant, campaignKey, feedback.scenarioName)) {
-                RedisWarmupState(campaign, operations)
-            } else {
-                this
+        return when {
+            feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED -> {
+                RedisFailureState(campaign, feedback.error ?: "", operations)
             }
-        } else if (feedback is NodeExecutionFeedback && feedback.status == FeedbackStatus.FAILED) {
-            // Remove the node from the campaign to avoid wait for feedbacks from it, that
-            // would never come.
-            campaign.factories.remove(feedback.nodeId)
-            RedisFailureState(campaign, feedback.error ?: "", operations)
-        } else {
-            this
+
+            feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.COMPLETED -> {
+                if (operations.markFeedbackForScenario(campaign.tenant, campaignKey, feedback.scenarioName)) {
+                    RedisWarmupState(campaign, operations)
+                } else {
+                    this
+                }
+            }
+
+            feedback is NodeExecutionFeedback && feedback.status == FeedbackStatus.FAILED -> {
+                // Remove the node from the campaign to avoid wait for feedbacks from it, that
+                // would never come.
+                campaign.factories.remove(feedback.nodeId)
+                RedisFailureState(campaign, feedback.error ?: "", operations)
+            }
+
+            else -> this
         }
     }
 
@@ -70,4 +76,6 @@ class RedisMinionsScheduleRampUpState(
             RedisAbortingState(campaign, abortConfiguration, "The campaign was aborted", operations)
         }
     }
+
+    override fun disabledState(campaign: RunningCampaign) = RedisDisabledState(campaign, false, operations)
 }
