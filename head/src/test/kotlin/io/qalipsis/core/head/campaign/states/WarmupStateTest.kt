@@ -47,6 +47,7 @@ import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
 import org.junit.jupiter.api.AfterAll
@@ -112,6 +113,23 @@ internal class WarmupStateTest : AbstractStateTest() {
             )
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
+    }
+
+    @Test
+    fun `should notify the hooks when the warm-up starts`() = testDispatcherProvider.runTest {
+        // given
+        val state = WarmupState(campaign)
+        state.inject(campaignExecutionContext)
+
+        // when
+        state.init()
+
+        // then
+        coVerifyOnce {
+            campaignHook1.preWarmup(refEq(campaign))
+            campaignHook2.preWarmup(refEq(campaign))
+        }
+        confirmVerified(campaignHook1, campaignHook2, factoryService, campaignReportStateKeeper)
     }
 
     @Test

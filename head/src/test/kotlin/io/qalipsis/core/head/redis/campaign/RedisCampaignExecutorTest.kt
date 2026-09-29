@@ -331,6 +331,8 @@ internal class RedisCampaignExecutorTest {
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1"))
                 campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
                 campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
+                campaignHook1.afterStop("my-campaign")
+                campaignHook2.afterStop("my-campaign")
             }
 
             confirmVerified(
@@ -340,7 +342,9 @@ internal class RedisCampaignExecutorTest {
                 campaignReportStateKeeper,
                 campaignConstraintsProvider,
                 campaignExecutionContext,
-                operations
+                operations,
+                campaignHook1,
+                campaignHook2
             )
         }
 
@@ -945,8 +949,17 @@ internal class RedisCampaignExecutorTest {
         coVerifyOrder {
             campaignService.retrieve("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
+            campaignHook1.afterStop("first_campaign")
+            campaignHook2.afterStop("first_campaign")
         }
-        confirmVerified(campaignExecutor, campaignService, campaignReportStateKeeper, headChannel)
+        confirmVerified(
+            campaignExecutor,
+            campaignService,
+            campaignReportStateKeeper,
+            headChannel,
+            campaignHook1,
+            campaignHook2
+        )
     }
 
     @Test

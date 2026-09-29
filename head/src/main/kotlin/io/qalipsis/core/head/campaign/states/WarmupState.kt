@@ -43,6 +43,7 @@ open class WarmupState(
     private val mutex = Mutex(false)
 
     override suspend fun doInit(): List<Directive> {
+        context.campaignHooks.forEach { it.preWarmup(campaign) }
         return campaign.factories.values.flatMap { config ->
             config.assignment.keys.map { scenarioName ->
                 ScenarioWarmUpDirective(
