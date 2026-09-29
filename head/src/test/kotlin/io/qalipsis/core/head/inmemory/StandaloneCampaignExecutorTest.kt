@@ -555,7 +555,14 @@ internal class StandaloneCampaignExecutorTest {
             campaignService.retrieve("my-tenant", "first_campaign")
             campaignExecutor.get("my-tenant", "first_campaign")
         }
-        confirmVerified(campaignExecutor, campaignService, campaignReportStateKeeper, headChannel)
+        confirmVerified(
+            campaignExecutor,
+            campaignService,
+            campaignReportStateKeeper,
+            headChannel,
+            campaignHook1,
+            campaignHook2
+        )
     }
 
     @Test
@@ -574,6 +581,8 @@ internal class StandaloneCampaignExecutorTest {
         coVerifyOrder {
             campaignService.retrieve("my-tenant", "first_campaign")
             campaignService.abort("my-tenant", "my-user", "first_campaign")
+            campaignHook1.afterStop("first_campaign")
+            campaignHook2.afterStop("first_campaign")
         }
         confirmVerified(campaignExecutor, campaignService, campaignReportStateKeeper, headChannel)
     }
@@ -830,7 +839,9 @@ internal class StandaloneCampaignExecutorTest {
                 campaignService,
                 campaignReportStateKeeper,
                 campaignConstraintsProvider,
-                campaignExecutionContext
+                campaignExecutionContext,
+                campaignHook1,
+                campaignHook2
             )
         }
 
@@ -873,6 +884,8 @@ internal class StandaloneCampaignExecutorTest {
                 factoryService.getAvailableFactoriesForScenarios("my-tenant", setOf("scenario-1"))
                 campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
                 campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "Something wrong occurred")
+                campaignHook1.afterStop("my-campaign")
+                campaignHook2.afterStop("my-campaign")
             }
 
             confirmVerified(

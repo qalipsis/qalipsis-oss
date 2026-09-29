@@ -123,6 +123,9 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
                     log.error(e) { "An error occurred while preparing the campaign ${runningCampaign.key} to start" }
                     campaignReportStateKeeper.complete(runningCampaign.key, ExecutionStatus.FAILED, e.message)
                     campaignService.close(tenant, runningCampaign.key, ExecutionStatus.FAILED, e.message)
+                    // The campaign never reached the state machine, hence the hooks have to release the resources
+                    // they booked at its creation.
+                    campaignHooks.forEach { hook -> tryAndLogOrNull(log) { hook.afterStop(runningCampaign.key) } }
                     throw e
                 }
             }
@@ -132,6 +135,7 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
                 campaignReportStateKeeper.complete(runningCampaign.key, ExecutionStatus.FAILED, e.message)
                 campaignService.close(tenant, runningCampaign.key, ExecutionStatus.FAILED, e.message)
             }
+            campaignHooks.forEach { hook -> tryAndLogOrNull(log) { hook.afterStop(runningCampaign.key) } }
             throw e
         }
         return runningCampaign
@@ -192,6 +196,9 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
                 lockProvider.withLock(campaignKey) {
                     campaignService.abort(tenant, aborter, campaignKey)
                 }
+                // The campaign was never executed, hence the hooks have to release the resources they booked when
+                // it was scheduled.
+                campaignHooks.forEach { hook -> tryAndLogOrNull(log) { hook.afterStop(campaignKey) } }
             }
         } else {
             tryAndLog(log) {

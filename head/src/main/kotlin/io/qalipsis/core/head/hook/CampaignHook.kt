@@ -48,6 +48,12 @@ interface CampaignHook : Ordered {
     suspend fun preStart(runningCampaign: RunningCampaign) = Unit
 
     /**
+     * Hook to process the campaign when the warm-up of its scenarios starts, which is the point from which its
+     * resources are effectively consumed.
+     */
+    suspend fun preWarmup(runningCampaign: RunningCampaign) = Unit
+
+    /**
      * Hook to process the campaign details after it terminates.
      */
     suspend fun afterStop(campaignKey: CampaignKey) = Unit
