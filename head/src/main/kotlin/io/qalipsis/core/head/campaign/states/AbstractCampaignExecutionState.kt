@@ -20,6 +20,8 @@
 package io.qalipsis.core.head.campaign.states
 
 import io.qalipsis.api.context.CampaignKey
+import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
@@ -86,9 +88,37 @@ abstract class AbstractCampaignExecutionState<C : CampaignExecutionContext>(
     }
 
     /**
+     * Closes the campaign with [status] and initializes [disabledState], returning its directives.
+     *
+     * This is used by the terminal states when no factory remains to acknowledge the shutdown of the campaign:
+     * no feedback would ever come to leave them, letting the campaign run forever.
+     */
+    protected suspend fun terminateCampaign(
+        campaign: RunningCampaign,
+        status: ExecutionStatus,
+        failureReason: String? = null,
+        disabledState: CampaignExecutionState<CampaignExecutionContext>
+    ): List<Directive> {
+        log.debug { "Terminating campaign $campaign" }
+        context.campaignReportStateKeeper.complete(campaignKey, status, failureReason)
+        context.campaignService.close(campaign.tenant, campaignKey, status, failureReason)
+        return disabledState.run {
+            inject(context)
+            init()
+        }
+    }
+
+    /**
      * Creates the state to apply when the campaign has to be disabled without any further interaction with
      * the factories. Implementations keeping their own persistent context should return a state cleaning it.
      */
     protected open fun disabledState(campaign: RunningCampaign): CampaignExecutionState<CampaignExecutionContext> =
         DisabledState(campaign, isSuccessful = false)
+
+
+    companion object {
+
+        private val log = logger()
+
+    }
 }

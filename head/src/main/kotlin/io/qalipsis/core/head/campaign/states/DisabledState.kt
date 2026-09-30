@@ -33,21 +33,28 @@ open class DisabledState(
     override val isCompleted: Boolean = true
 
     override suspend fun doInit(): List<Directive> {
+        log.trace { "Enriching the campaign $campaignKey" }
         context.campaignService.enrich(campaign)
+        log.trace { "Releasing the factories for the campaign $campaignKey" }
         context.factoryService.releaseFactories(campaign, campaign.factories.keys)
+        log.trace { "Unsubscribe from feedback channel for the campaign $campaignKey" }
         context.headChannel.unsubscribeFeedback(campaign.feedbackChannel)
 
         if (context.reportPublishers.isNotEmpty()) {
+            log.trace { "Aggregating the in-memory report for the campaign $campaignKey" }
             context.campaignReportStateKeeper.generateReport(campaignKey)?.let { report ->
+                log.trace { "Publishable report for the campaign $campaignKey: $report" }
                 context.reportPublishers.sortedBy { it.order }.forEach { publisher ->
+                    log.debug { "Publishing the report of the campaign $campaignKey by $publisher" }
                     tryAndLogOrNull(log) {
                         publisher.publish(campaign.tenant, campaign.key, report)
                     }
                 }
             }
         }
-        context.campaignHooks.forEach {
-            it.afterStop(campaignKey)
+        context.campaignHooks.forEach { hook ->
+            log.trace { "Calling hook on $hook $campaignKey" }
+            hook.afterStop(campaignKey)
         }
 
         val directive = CompleteCampaignDirective(

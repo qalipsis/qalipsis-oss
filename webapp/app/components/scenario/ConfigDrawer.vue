@@ -28,7 +28,7 @@
             </span>
           </template>
           <p :class="ruleClass(hasValidMinionsSummary)">
-            Total of minions should not exceed {{ configuration.validation.maxMinionsCount }}
+            Total of minions should not exceed {{ maxMinionsCountText }}
           </p>
           <p :class="ruleClass(hasValidDurationSummary)">
             Total duration cannot exceed {{ maxDurationText }}
@@ -61,7 +61,7 @@
             :disabled="disabled"
           />
           <p :class="ruleClass(hasValidZonesCount)">
-            Until {{ maxZonesCount }} different zones can be added
+            Until {{ effectiveMaxZonesCount }} different zones can be added
           </p>
           <p :class="ruleClass(hasValidZoneShareSummary)">
             When zones are configured, the sum of their shares should be equal 100%
@@ -130,8 +130,9 @@ const maxDurationInMilliSeconds = computed(() =>
 const maxDurationText = computed(() =>
     TimeframeHelper.isoStringToHumanReadable(props.configuration.validation.maxExecutionDuration),
 )
-const maxZonesCount = computed(() => props.configuration.validation.maxZonesCount)
-
+const maxMinionsCountText = computed(() =>
+    ScenarioDetailsHelper.toDisplayNumber(props.configuration.validation.maxMinionsCount),
+)
 const zoneOptions = ref<FormMenuOption[]>([])
 const canChartBeRendered = ref(false)
 const chartOptions = ref<ApexOptions | null>(null)
@@ -189,10 +190,18 @@ const hasValidZoneShareSummary = computed(() =>
   values.zones.length === 0 || values.zones.reduce((acc, z) => acc + +z.share, 0) === 100
 )
 
-const hasValidZonesCount = computed(() => values.zones.length <= maxZonesCount.value)
-
 // A zone can only be used once in a scenario, hence no more zone can be added when they are all used.
 const enabledZonesCount = computed(() => zoneOptions.value.filter((option) => !option.disabled).length)
+
+// Heads of previous versions do not declare any limit of zones, the available ones are then the only restriction.
+const maxZonesCount = computed(() => props.configuration.validation.maxZonesCount ?? enabledZonesCount.value)
+
+const hasValidZonesCount = computed(() => values.zones.length <= maxZonesCount.value)
+
+// A scenario cannot be distributed on more zones than the available ones, whatever the limit of the subscription.
+const effectiveMaxZonesCount = computed(() =>
+    enabledZonesCount.value > 0 ? Math.min(maxZonesCount.value, enabledZonesCount.value) : maxZonesCount.value,
+)
 
 const canZoneBeAdded = computed(
     () => values.zones.length < Math.min(maxZonesCount.value, enabledZonesCount.value)

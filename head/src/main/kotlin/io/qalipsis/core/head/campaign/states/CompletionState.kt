@@ -34,13 +34,29 @@ open class CompletionState(
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 
     override suspend fun doInit(): List<Directive> {
-        return listOf(
-            CampaignShutdownDirective(
-                campaignKey = campaignKey,
-                channel = campaign.broadcastChannel
+        return if (campaign.factories.isEmpty()) {
+            // There is no factory left to acknowledge the shutdown, hence the campaign is terminated right away.
+            terminateCampaign(
+                campaign = campaign,
+                status = ExecutionStatus.SUCCESSFUL,
+                disabledState = successfulDisabledState(campaign)
             )
-        )
+        } else {
+            listOf(
+                CampaignShutdownDirective(
+                    campaignKey = campaignKey,
+                    channel = campaign.broadcastChannel
+                )
+            )
+        }
     }
+
+    /**
+     * Creates the state to apply when the campaign successfully completed. Implementations keeping their own
+     * persistent context should return a state cleaning it.
+     */
+    protected open fun successfulDisabledState(campaign: RunningCampaign): CampaignExecutionState<CampaignExecutionContext> =
+        DisabledState(campaign)
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {

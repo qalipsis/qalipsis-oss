@@ -221,11 +221,17 @@ class DatabaseCampaignReportProvider(
         } else {
             ongoingScenarios.map { scenario ->
                 ScenarioExecutionDetails(
-                    id = scenario.name, name = scenario.name, start = scenario.start, end = null,
+                    id = scenario.name, name = scenario.name, start = scenario.start, end = scenario.end,
                     startedMinions = null, completedMinions = null,
                     successfulExecutions = null, failedExecutions = null,
                     scheduledMinions = scenario.minionsCount,
-                    status = if (scenario.start == null) QUEUED else IN_PROGRESS,
+                    // A scenario that was never closed inherits the status of its campaign once the latter
+                    // terminated, otherwise it would be reported as running forever.
+                    status = when {
+                        campaign.status !in RUNNING_STATUSES -> campaign.status
+                        scenario.start == null -> QUEUED
+                        else -> IN_PROGRESS
+                    },
                     messages = emptyList()
                 )
             }
@@ -243,11 +249,7 @@ class DatabaseCampaignReportProvider(
             hardTimeout = campaign.hardTimeout,
             start = campaign.start,
             end = campaign.end,
-            status = when {
-                campaignReport != null -> campaignReport.status
-                ongoingScenarios.isNotEmpty() -> IN_PROGRESS
-                else -> campaign.status
-            },
+            status = campaignReport?.status ?: campaign.status,
             failureReason = campaign.failureReason,
             configurerName = campaign.configurerName,
             aborterName = campaign.aborterName,

@@ -41,6 +41,7 @@ import io.qalipsis.core.campaigns.FactoryConfiguration
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.directives.CampaignShutdownDirective
+import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.NodeExecutionFeedback
@@ -98,6 +99,30 @@ internal class RedisFailureStateIntegrationTest : AbstractRedisStateIntegrationT
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
+
+    @Test
+    internal fun `should close the campaign and clean the state on init when no factory remains`() =
+        testDispatcherProvider.run {
+            // given
+            val campaign = campaign.copy()
+            campaign.broadcastChannel = "my-broadcast-channel"
+            campaign.feedbackChannel = "my-feedback-channel"
+
+            // when
+            val directives = RedisFailureState(campaign, "this error", operations).run {
+                inject(campaignExecutionContext)
+                init()
+            }
+
+            // then
+            assertThat(directives).hasSize(1)
+            assertThat(directives.first()).isInstanceOf(CompleteCampaignDirective::class)
+            coVerifyOnce {
+                campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.FAILED, "this error")
+                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.FAILED, "this error")
+                factoryService.releaseFactories(refEq(campaign), any())
+            }
+        }
 
     @Test
     internal fun `should unassign when feedback is ignored then MinionsAssignmentState when all the feedbacks were received`() =

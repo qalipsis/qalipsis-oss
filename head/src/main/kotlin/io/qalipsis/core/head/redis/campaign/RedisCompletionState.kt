@@ -39,12 +39,20 @@ class RedisCompletionState(
 
     override suspend fun doInit(): List<Directive> {
         log.debug { "Initializing the status ${this::class.simpleName} for the campaign ${campaign.key}" }
-        operations.setState(campaign.tenant, campaignKey, CampaignRedisState.COMPLETION_STATE)
-        operations.prepareFactoriesForFeedbackExpectations(campaign)
-        return super.doInit().also {
-            operations.saveConfiguration(campaign)
+        return if (campaign.factories.isEmpty()) {
+            // The campaign is terminated right away by the parent state, hence there is no expectation to persist.
+            super.doInit()
+        } else {
+
+            operations.setState(campaign.tenant, campaignKey, CampaignRedisState.COMPLETION_STATE)
+            operations.prepareFactoriesForFeedbackExpectations(campaign)
+            super.doInit().also {
+                operations.saveConfiguration(campaign)
+            }
         }
     }
+
+    override fun successfulDisabledState(campaign: RunningCampaign) = RedisDisabledState(campaign, true, operations)
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {

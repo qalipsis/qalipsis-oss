@@ -26,6 +26,8 @@ import io.lettuce.core.api.coroutines.RedisSetCoroutinesCommands
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
 import jakarta.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -43,6 +45,7 @@ class CampaignRedisOperations(
     private val protoBuf: ProtoBuf
 ) {
 
+    @LogInput
     suspend fun saveConfiguration(campaign: RunningCampaign) {
         redisHashCommands.hset(
             "campaign-management:{${campaign.tenant}:${campaign.key}}",
@@ -53,6 +56,7 @@ class CampaignRedisOperations(
     /**
      * Creates brand new feedback expectations initialized with the collection of factories identifiers.
      */
+    @LogInput
     suspend fun prepareFactoriesForFeedbackExpectations(campaign: RunningCampaign) {
         val key = buildExpectedFeedbackKey(campaign.tenant, campaign.key)
         redisKeyCommands.unlink(key)
@@ -64,6 +68,7 @@ class CampaignRedisOperations(
     /**
      * Creates brand new feedback expectations initialized with the collection of scenarios identifiers.
      */
+    @LogInput
     suspend fun prepareScenariosForFeedbackExpectations(campaign: RunningCampaign) {
         val key = buildExpectedFeedbackKey(campaign.tenant, campaign.key)
         redisKeyCommands.unlink(key)
@@ -75,6 +80,7 @@ class CampaignRedisOperations(
     /**
      * Creates brand new feedback expectations initialized with the scenarios for each factory.
      */
+    @LogInput
     suspend fun prepareAssignmentsForFeedbackExpectations(campaign: RunningCampaign) {
         prepareFactoriesForFeedbackExpectations(campaign)
         campaign.factories.forEach { (factory, config) ->
@@ -91,6 +97,7 @@ class CampaignRedisOperations(
      *
      * @return true when there are no longer expectations, false otherwise
      */
+    @LogInputAndOutput
     suspend fun markFeedbackForFactory(tenant: String, campaignKey: CampaignKey, factory: NodeId): Boolean {
         val feedbackKey = buildExpectedFeedbackKey(tenant, campaignKey)
         redisSetCommands.srem(feedbackKey, factory)
@@ -102,6 +109,7 @@ class CampaignRedisOperations(
      *
      * @return true when there are no longer expectations, false otherwise
      */
+    @LogInputAndOutput
     suspend fun markFeedbackForScenario(
         tenant: String,
         campaignKey: CampaignKey,
@@ -117,6 +125,7 @@ class CampaignRedisOperations(
      *
      * @return true when there are no longer expectations, false otherwise
      */
+    @LogInputAndOutput
     suspend fun markFeedbackForFactoryScenario(
         tenant: String,
         campaignKey: CampaignKey,
@@ -125,16 +134,13 @@ class CampaignRedisOperations(
     ): Boolean {
         val feedbackKey = buildFactoryAssignmentFeedbackKey(tenant, campaignKey, factory)
         redisSetCommands.srem(feedbackKey, scenarioName)
-        return if (!exists(feedbackKey)) {
-            markFeedbackForFactory(tenant, campaignKey, factory)
-        } else {
-            false
-        }
+        return !exists(feedbackKey) && markFeedbackForFactory(tenant, campaignKey, factory)
     }
 
     /**
      * Updates the state of the campaign.
      */
+    @LogInput
     suspend fun setState(tenant: String, campaignKey: CampaignKey, state: CampaignRedisState) {
         redisHashCommands.hset("campaign-management:{$tenant:$campaignKey}", mapOf("state" to "$state"))
     }
@@ -142,6 +148,7 @@ class CampaignRedisOperations(
     /**
      * Fetches the current state of the campaign.
      */
+    @LogInputAndOutput
     suspend fun getState(tenant: String, campaignKey: CampaignKey): Pair<RunningCampaign, CampaignRedisState>? {
         val campaignDetails = mutableMapOf<String, String>()
         redisHashCommands.hgetall("campaign-management:{$tenant:$campaignKey}")
@@ -157,6 +164,7 @@ class CampaignRedisOperations(
     /**
      * Cleans all the data used for the campaign.
      */
+    @LogInput
     suspend fun clean(campaign: RunningCampaign) {
         val allCampaignKeys = campaign.factories.keys.map { nodeId ->
             buildFactoryAssignmentFeedbackKey(campaign.tenant, campaign.key, nodeId)

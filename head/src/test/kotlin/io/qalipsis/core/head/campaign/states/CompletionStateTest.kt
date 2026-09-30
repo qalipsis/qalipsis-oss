@@ -23,6 +23,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameInstanceAs
@@ -33,6 +34,7 @@ import io.mockk.mockk
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.directives.CampaignShutdownDirective
+import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.test.assertk.prop
@@ -50,6 +52,9 @@ internal class CompletionStateTest : AbstractStateTest() {
 
     @Test
     fun `should return shutdown directive on init`() = testDispatcherProvider.runTest {
+        // given
+        every { campaign.factories } returns mutableMapOf("node-1" to relaxedMockk())
+
         // when
         val directives = CompletionState(campaign).run {
             inject(campaignExecutionContext)
@@ -65,6 +70,31 @@ internal class CompletionStateTest : AbstractStateTest() {
         }
         confirmVerified(factoryService, campaignReportStateKeeper)
     }
+
+    @Test
+    fun `should close the campaign and disable it on init when no factory remains`() =
+        testDispatcherProvider.runTest {
+            // given
+            every { campaign.factories } returns mutableMapOf()
+
+            // when
+            val directives = CompletionState(campaign).run {
+                inject(campaignExecutionContext)
+                init()
+            }
+
+            // then
+            assertThat(directives).hasSize(1)
+            assertThat(directives.first()).isInstanceOf(CompleteCampaignDirective::class).all {
+                prop("campaignKey").isEqualTo("my-campaign")
+                typedProp<Boolean>("isSuccessful").isTrue()
+            }
+            coVerifyOnce {
+                campaignReportStateKeeper.complete("my-campaign", ExecutionStatus.SUCCESSFUL, null)
+                campaignService.close("my-tenant", "my-campaign", ExecutionStatus.SUCCESSFUL, null)
+                factoryService.releaseFactories(refEq(campaign), any())
+            }
+        }
 
     @Test
     internal fun `should return DisabledState when all the feedbacks were received`() =

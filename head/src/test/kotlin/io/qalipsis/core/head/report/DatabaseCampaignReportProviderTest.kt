@@ -591,6 +591,46 @@ internal class DatabaseCampaignReportProviderTest {
         }
 
     @Test
+    internal fun `should report the status of a terminated campaign when no campaign report exists`() =
+        testDispatcherProvider.runTest {
+            // given
+            val campaignEntity = mockk<CampaignEntity> { every { id } returns 42L }
+            val campaign = buildCampaign().copy(status = ExecutionStatus.FAILED, failureReason = "Failed termination")
+            coEvery { campaignRepository.findByTenantAndKeys("my-tenant", listOf("camp-1")) } returns listOf(
+                campaignEntity
+            )
+            coEvery { campaignConverter.convertToModel(campaignEntity) } returns campaign
+            coEvery { campaignReportRepository.findByCampaignIdIn(listOf(42L)) } returns emptyList()
+            // The scenario was never closed, since the campaign failed before its execution.
+            coEvery { campaignScenarioRepository.findByCampaignIdIn(listOf(42L)) } returns listOf(
+                CampaignScenarioEntity(
+                    id = 10L,
+                    version = now,
+                    campaignId = 42L,
+                    name = "sc-1",
+                    minionsCount = 5,
+                    start = start,
+                    end = null
+                )
+            )
+            coEvery {
+                campaignMeterEnricher.distribute("my-tenant", listOf("camp-1"), emptyList())
+            } returns mapOf("camp-1" to emptyDistribution())
+            coEvery { zoneService.resolve("my-tenant", emptySet()) } returns emptyList()
+            coEvery {
+                campaignService.retrieveConfiguration("my-tenant", "camp-1")
+            } throws RuntimeException("no config")
+
+            // when
+            val result = campaignReportProvider.retrieve("my-tenant", "camp-1")
+
+            // then
+            assertThat(result.status).isEqualTo(ExecutionStatus.FAILED)
+            assertThat(result.scenarios).hasSize(1)
+            assertThat(result.scenarios.first().status).isEqualTo(ExecutionStatus.FAILED)
+        }
+
+    @Test
     internal fun `should use inline scenario reports from campaign report when available`() =
         testDispatcherProvider.runTest {
             // given

@@ -22,6 +22,7 @@ package io.qalipsis.core.head.campaign.states
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.report.ExecutionStatus
+import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.directives.CampaignShutdownDirective
 import io.qalipsis.core.directives.Directive
@@ -42,29 +43,37 @@ open class FailureState(
         }
     }
 
+    @LogInputAndOutput
     override suspend fun doInit(): List<Directive> {
-        // In case the factories do not answer fast enough or not at all,
-        // schedule a failure on each node to go on with the next state.
-        campaign.factories.keys.forEach { nodeId ->
-            context.delayedFeedbackManager.scheduleCancellation(
-                campaign.feedbackChannel, CampaignShutdownFeedback(
-                    campaign.key,
-                    status = FeedbackStatus.FAILED,
-                    errorMessage = "The factory could not be properly stopped"
-                ).also {
-                    it.nodeId = nodeId
-                    it.tenant = campaign.tenant
-                })
-        }
+        return if (campaign.factories.isEmpty()) {
+            // There is no factory left to acknowledge the shutdown, hence the campaign is terminated right away.
+            terminateCampaign(campaign, ExecutionStatus.FAILED, error, disabledState(campaign))
+        } else {
 
-        return listOf(
-            CampaignShutdownDirective(
-                campaignKey = campaignKey,
-                channel = campaign.broadcastChannel
+            // In case the factories do not answer fast enough or not at all,
+            // schedule a failure on each node to go on with the next state.
+            campaign.factories.keys.forEach { nodeId ->
+                context.delayedFeedbackManager.scheduleCancellation(
+                    campaign.feedbackChannel, CampaignShutdownFeedback(
+                        campaign.key,
+                        status = FeedbackStatus.FAILED,
+                        errorMessage = "The factory could not be properly stopped"
+                    ).also {
+                        it.nodeId = nodeId
+                        it.tenant = campaign.tenant
+                    })
+            }
+
+            listOf(
+                CampaignShutdownDirective(
+                    campaignKey = campaignKey,
+                    channel = campaign.broadcastChannel
+                )
             )
-        )
+        }
     }
 
+    @LogInputAndOutput
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {
         return if (feedback is CampaignShutdownFeedback && feedback.status.isDone) {
             if (expectedFeedbacks.remove(feedback.nodeId) && feedback.status == FeedbackStatus.FAILED) {
