@@ -124,7 +124,7 @@ class ReportingStepDecorator<I, O>(
             runningStepsGauge = meterRegistry.gauge(
                 scenarioName = context.scenarioName,
                 stepName = context.stepName,
-                name = "running-steps",
+                name = "_running-steps",
                 tags = mapOf("scenario" to context.scenarioName)
             )
             executedStepCounter = meterRegistry.counter(

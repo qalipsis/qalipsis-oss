@@ -28,7 +28,6 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.executionprofile.MinionsStartingLine
 import io.qalipsis.api.runtime.Scenario
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
-import io.qalipsis.core.directives.MinionsRampUpPreparationDirectiveReference
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.executionprofile.ExecutionProfileConfiguration
 import io.qalipsis.core.factory.communication.FactoryChannel
@@ -66,10 +65,10 @@ internal class CampaignLaunch4MinionsRampUpPreparationDirectiveListenerTest {
 
     @Test
     @Timeout(2)
-    internal fun `should accept MinionsRampUpPreparationDirectiveReference`() {
+    internal fun `should accept MinionsRampUpPreparationDirective`() {
         val directive =
-            MinionsRampUpPreparationDirectiveReference(
-                "my-directive", "my-campaign", "my-scenario"
+            MinionsRampUpPreparationDirective(
+                "my-campaign", "my-scenario", relaxedMockk(), ""
             )
         every { factoryCampaignManager.isLocallyExecuted("my-campaign", "my-scenario") } returns true
 
@@ -81,17 +80,17 @@ internal class CampaignLaunch4MinionsRampUpPreparationDirectiveListenerTest {
 
     @Test
     @Timeout(2)
-    internal fun `should not accept not MinionsRampUpPreparationDirectiveReference`() {
+    internal fun `should not accept not MinionsRampUpPreparationDirective`() {
         assertFalse(processor.accept(TestDescriptiveDirective()))
         confirmVerified(factoryCampaignManager)
     }
 
     @Test
     @Timeout(2)
-    internal fun `should not accept MinionsRampUpPreparationDirectiveReference for unknown scenario`() {
+    internal fun `should not accept MinionsRampUpPreparationDirective for unknown scenario`() {
         val directive =
-            MinionsRampUpPreparationDirectiveReference(
-                "my-directive", "my-campaign", "my-scenario"
+            MinionsRampUpPreparationDirective(
+                "my-campaign", "my-scenario", relaxedMockk(), ""
             )
         every { factoryCampaignManager.isLocallyExecuted("my-campaign", "my-scenario") } returns false
 

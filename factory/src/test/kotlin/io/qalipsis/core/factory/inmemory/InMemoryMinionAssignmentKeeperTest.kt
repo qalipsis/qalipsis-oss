@@ -47,7 +47,6 @@ import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -169,21 +168,22 @@ internal class InMemoryMinionAssignmentKeeperTest {
     @Test
     @Timeout(10)
     @Order(2)
-    internal fun `should schedule the minions underload of all factories and throw a failure if not all minions are scheduled`() =
+    internal fun `should only schedule the minions covered by the starting lines`() =
         testDispatcherProvider.run {
-
-            val assertionError = assertThrows<AssertionError> {
-                minionAssignmentKeeper.schedule(
-                    CAMPAIGN,
-                    SCENARIO_1,
-                    listOf(
-                        MinionsStartingLine(1, 123),
-                    )
+            // when
+            minionAssignmentKeeper.schedule(
+                CAMPAIGN,
+                SCENARIO_1,
+                listOf(
+                    MinionsStartingLine(1, 123),
                 )
-            }
+            )
 
-            // then
-            assertThat(assertionError.message).isEqualTo("999 minions could not be scheduled")
+            // then the minions that cannot be started are only reported, to let the other ones be executed
+            assertThat(minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1)).all {
+                hasSize(1)
+                key(123).hasSize(1)
+            }
         }
 
     @Test

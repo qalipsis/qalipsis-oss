@@ -38,7 +38,6 @@ import io.qalipsis.core.directives.MinionsAssignmentDirective
 import io.qalipsis.core.directives.MinionsDeclarationDirective
 import io.qalipsis.core.directives.MinionsDeclarationDirectiveReference
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
-import io.qalipsis.core.directives.MinionsRampUpPreparationDirectiveReference
 import io.qalipsis.core.directives.MinionsShutdownDirective
 import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.directives.ScenarioWarmUpDirective
@@ -112,7 +111,6 @@ class SerializationFactory {
         MinionsShutdownDirective::class to MinionsShutdownDirective.serializer(),
 
         MinionsRampUpPreparationDirective::class to MinionsRampUpPreparationDirective.serializer(),
-        MinionsRampUpPreparationDirectiveReference::class to MinionsRampUpPreparationDirectiveReference.serializer(),
     )
 
     protected open val descriptiveDirectiveClassesAndSerializers =
@@ -128,18 +126,18 @@ class SerializationFactory {
             MinionsAssignmentDirective::class to MinionsAssignmentDirective.serializer(),
             MinionsStartDirective::class to MinionsStartDirective.serializer(),
             MinionsShutdownDirective::class to MinionsShutdownDirective.serializer(),
+
+            MinionsRampUpPreparationDirective::class to MinionsRampUpPreparationDirective.serializer(),
         )
 
     protected open val singleUseDirectiveClassesAndSerializers =
         mapOf<KClass<out SingleUseDirective<*>>, KSerializer<out SingleUseDirective<*>>>(
             MinionsDeclarationDirective::class to MinionsDeclarationDirective.serializer(),
-            MinionsRampUpPreparationDirective::class to MinionsRampUpPreparationDirective.serializer(),
         )
 
     protected open val singleUseDirectiveReferenceClassesAndSerializers =
         mapOf<KClass<out SingleUseDirectiveReference>, KSerializer<out SingleUseDirectiveReference>>(
             MinionsDeclarationDirectiveReference::class to MinionsDeclarationDirectiveReference.serializer(),
-            MinionsRampUpPreparationDirectiveReference::class to MinionsRampUpPreparationDirectiveReference.serializer(),
         )
 
     protected open val serializedRecordClassesAndSerializers =

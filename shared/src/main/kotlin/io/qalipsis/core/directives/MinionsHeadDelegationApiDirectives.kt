@@ -67,6 +67,20 @@ data class MinionsDeclarationDirectiveReference(
 
 /**
  * Directive to calculate the ramp-up of the minions given the scenario strategy.
+ *
+ * Contrary to [MinionsDeclarationDirective], this directive is not single-use: every factory executing the scenario
+ * receives it and prepares the ramp-up plan.
+ *
+ * What it brings: the head waits for one feedback from each factory and scenario. A factory that never prepared the
+ * ramp-up is therefore visible, instead of blocking the campaign without any error.
+ *
+ * What it costs: all those factories calculate the very same plan, because the starting lines are derived from the
+ * count of minions under load of the whole scenario, which is shared by the cluster.
+ *
+ * Why this redundancy is not an issue: the calculation only creates a few starting lines in memory, and the minions
+ * are never scheduled twice. The deduplication happens in the registry: the first factory sets the flag
+ * `minion:scheduling-executed` and writes the plan, the next ones are rejected by this flag - see
+ * `schedule-minion.lua`. Each factory then reads only the minions that the plan assigned to itself.
  */
 @Serializable
 @SerialName("mrp")
@@ -75,26 +89,7 @@ data class MinionsRampUpPreparationDirective(
     val scenarioName: ScenarioName,
     val executionProfileConfiguration: ExecutionProfileConfiguration,
     override val channel: DispatcherChannel
-) : SingleUseDirective<MinionsRampUpPreparationDirectiveReference>(),
-    CampaignManagementDirective {
-
-    override var tenant: String = ""
-
-    override fun toReference(key: DirectiveKey): MinionsRampUpPreparationDirectiveReference {
-        return MinionsRampUpPreparationDirectiveReference(key, campaignKey, scenarioName)
-    }
-}
-
-/**
- * Transportable representation of a [MinionsRampUpPreparationDirective].
- */
-@Serializable
-@SerialName("mrpRef")
-data class MinionsRampUpPreparationDirectiveReference(
-    override val key: DirectiveKey,
-    override val campaignKey: CampaignKey,
-    val scenarioName: ScenarioName
-) : SingleUseDirectiveReference(), CampaignManagementDirective {
+) : DescriptiveDirective(), CampaignManagementDirective {
 
     override var tenant: String = ""
 }

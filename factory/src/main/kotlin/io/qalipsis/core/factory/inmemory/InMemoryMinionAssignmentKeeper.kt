@@ -155,6 +155,12 @@ class InMemoryMinionAssignmentKeeper(
         return localAssignmentStore.assignments[scenarioName] ?: emptyMap()
     }
 
+    @LogInputAndOutput
+    override suspend fun countAssignedMinionsUnderLoad(campaignKey: CampaignKey, scenarioName: ScenarioName): Int {
+        val minionsUnderLoad = getIdsOfMinionsUnderLoad(campaignKey, scenarioName).toSet()
+        return localAssignmentStore.assignments[scenarioName]?.keys?.count { it in minionsUnderLoad } ?: 0
+    }
+
     @LogInput
     override suspend fun schedule(
         campaignKey: CampaignKey,
@@ -172,7 +178,9 @@ class InMemoryMinionAssignmentKeeper(
             }
         }
 
-        assert(minionIndex == minionsUnderLoad.size) { "${minionsUnderLoad.size - minionIndex} minions could not be scheduled" }
+        if (minionIndex < minionsUnderLoad.size) {
+            log.error { "${minionsUnderLoad.size - minionIndex} minions of the scenario $scenarioName could not be scheduled for the campaign $campaignKey and will not be executed" }
+        }
         scheduledStartOffsets[scenarioName] = scenarioSchedule
     }
 

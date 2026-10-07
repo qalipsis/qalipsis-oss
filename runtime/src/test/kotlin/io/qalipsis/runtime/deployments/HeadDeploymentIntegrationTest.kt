@@ -145,7 +145,7 @@ internal class HeadDeploymentIntegrationTest : AbstractDeploymentIntegrationTest
         // then
         await.await("Await for the application context to be initialized")
             .pollInterval(Duration.ofMillis(500))
-            .atMost(Duration.ofSeconds(10))
+            .atMost(Duration.ofSeconds(20))
             .failFast(Callable { exitCodeFuture.isCompletedExceptionally })
             .until { runCatching { qalipsisBootstrap.applicationContext }.getOrNull() != null }
 

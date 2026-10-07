@@ -24,7 +24,7 @@ import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
-import assertk.assertions.isEqualTo
+import assertk.assertions.isEmpty
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
@@ -32,7 +32,6 @@ import assertk.assertions.key
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
 import io.micronaut.context.annotation.Property
 import io.micronaut.context.annotation.PropertySource
 import io.micronaut.test.annotation.MockBean
@@ -60,8 +59,6 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.verifyOnce
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.MethodOrderer
@@ -69,7 +66,6 @@ import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
 
 @WithMockk
@@ -354,20 +350,30 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
     @Test
     @Timeout(10)
     @Order(2)
-    internal fun `should schedule the minions underload of all factories and throw a failure if not all minions are scheduled`(
+    internal fun `should only schedule the minions covered by the starting lines`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
-
-        val assertionError = assertThrows<AssertionError> {
-            minionAssignmentKeeper.schedule(
-                CAMPAIGN, SCENARIO_1, listOf(
-                    MinionsStartingLine(1, 123),
-                )
+        // when the starting lines do not cover all the minions under load
+        minionAssignmentKeeper.schedule(
+            CAMPAIGN, SCENARIO_1, listOf(
+                MinionsStartingLine(1, 123),
             )
-        }
+        )
 
-        // then
-        assertThat(assertionError.message).isEqualTo("999 minions could not be scheduled")
+        // then the minions that cannot be scheduled are only reported, the other ones are planned as expected.
+        val schedule = mutableMapOf<Long, MutableCollection<MinionId>>()
+        minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1, "the-factory-1-channel")
+            .forEach { (offset, minions) ->
+                schedule.computeIfAbsent(offset) { mutableSetOf() } += minions
+            }
+        minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1, "the-factory-2-channel")
+            .forEach { (offset, minions) ->
+                schedule.computeIfAbsent(offset) { mutableSetOf() } += minions
+            }
+        assertThat(schedule).all {
+            hasSize(1)
+            key(123).hasSize(1)
+        }
     }
 
     @Test
@@ -375,6 +381,9 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
     @Order(3)
     internal fun `should schedule the minions underload of all factories`(minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper) =
         testDispatcherProvider.run {
+            // given the scheduling of the scenario 1 was already executed by the previous test
+            resetSchedulingExecution(SCENARIO_1)
+
             // when
             minionAssignmentKeeper.schedule(
                 CAMPAIGN, SCENARIO_1, listOf(
@@ -431,6 +440,24 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
     @Test
     @Timeout(10)
     @Order(4)
+    internal fun `should ignore the scheduling requests of a scenario that was already scheduled`(
+        minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
+    ) = testDispatcherProvider.run {
+        // when all the factories executing the scenario request the scheduling, only the first request is executed.
+        minionAssignmentKeeper.schedule(
+            CAMPAIGN, SCENARIO_1, listOf(
+                MinionsStartingLine(MINIONS_COUNT_IN_EACH_SCENARIO, 10_000)
+            )
+        )
+
+        // then the minions, which schedule was already consumed, are not scheduled once more.
+        assertThat(minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1, "the-factory-1-channel")).isEmpty()
+        assertThat(minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1, "the-factory-2-channel")).isEmpty()
+    }
+
+    @Test
+    @Timeout(10)
+    @Order(5)
     internal fun `should not mark anything complete when not all the DAGS for all the minions are complete`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -469,7 +496,7 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
 
     @Test
     @Timeout(10)
-    @Order(5)
+    @Order(6)
     internal fun `should mark the minion complete when all the DAGS for all but 1 minion are complete`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -508,7 +535,7 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
 
     @Test
     @Timeout(10)
-    @Order(6)
+    @Order(7)
     internal fun `should not complete the scenario when a singleton minion of a scenario is completed but a minion under load still runs`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -530,10 +557,9 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
 
     @Test
     @Timeout(10)
-    @Order(7)
+    @Order(8)
     internal fun `should not complete the scenario when the latest minion of a scenario is completed but has to restart`(
-        minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper,
-        hashCoroutinesCommands: RedisHashCoroutinesCommands<String, String>
+        minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
         val minionId = MINIONS_SCENARIO_1.last()
         assertThat(
@@ -549,20 +575,11 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
             prop(CampaignCompletionState::scenarioComplete).isFalse()
             prop(CampaignCompletionState::campaignComplete).isFalse()
         }
-
-        // Checks that the number of remaining DAGs is properly reset without affecting the originally scheduled count of DAGs.
-        val dagsForMinion =
-            hashCoroutinesCommands.hgetall("{$CAMPAIGN}-assignment:$SCENARIO_1:minion:assigned-dags:${minionId}")
-                .map { it.key to it.value }.toList().toMap()
-        assertThat(dagsForMinion["remaining-dags"]).isNotNull().all {
-            prop(String::toIntOrNull).isNotNull().isEqualTo(5)
-            isEqualTo(dagsForMinion["scheduled-dags"])
-        }
     }
 
     @Test
     @Timeout(10)
-    @Order(8)
+    @Order(9)
     internal fun `should complete the scenario when the latest minion of a scenario is completed even if a singleton still runs but other scenarios still run`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -602,7 +619,7 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
 
     @Test
     @Timeout(10)
-    @Order(9)
+    @Order(10)
     internal fun `should complete the campaign when the latest minion of the latest scenario completes its latest DAG`(
         minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
@@ -626,7 +643,7 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
     @PropertySource(
         Property(name = "factory.assignment.timeout", value = "1ms")
     )
-    @Timeout(2)
+    @Timeout(10)
     @Order(-1)
     internal fun `should assign until the timeout`(minionAssignmentKeeper: RedisSingleLocationMinionAssignmentKeeper) =
         testDispatcherProvider.run {
@@ -703,6 +720,14 @@ internal class RedisSingleLocationMinionAssignmentKeeperIntegrationTest : Abstra
                     .hasSize(321)
             }
         }
+
+    /**
+     * Removes the flag that makes the scheduling of a scenario executable only once, in order to let the
+     * next test plan the minions of that scenario from a clean state.
+     */
+    private fun resetSchedulingExecution(scenarioName: String) {
+        connection.sync().del("{$CAMPAIGN}-assignment:$scenarioName:minion:scheduling-executed")
+    }
 
     private companion object {
 

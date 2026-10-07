@@ -48,7 +48,7 @@ internal class CampaignMeterChannelPublisher(
 
     override suspend fun publish(meters: Collection<MeterSnapshot>) {
         val campaignMeters = meters.filter {
-            it.meterId.tags["scope"] == "campaign" || it.meterId.meterName == "running-minions"
+            it.meterId.tags["scope"] == "campaign" || it.meterId.meterName == "_running-minions"
         }
         if (campaignMeters.isEmpty()) return
         val converted = campaignMeters.mapNotNull { snapshot ->

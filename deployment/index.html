@@ -103,12 +103,12 @@
       campaign FROM %schema%.meters RIGHT JOIN buckets ON meters.timestamp BETWEEN buckets.start AND buckets.end WHERE
       meters.timestamp BETWEEN $1::timestamp AND $2::timestamp AND meters.tenant = $3 AND meters.value IS NOT NULL %s
       AND meters.name = $4 GROUP BY meters.campaign, buckets.start, buckets.end ORDER BY meters.campaign,
-      buckets.start","agPar":{":schema":{"v":null,"t":"STRING","i":["%schema%"]},":timeframe":{"v":"300","t":"NUMBER","i":["%timeframe%"]},":start":{"v":null,"t":"STRING","i":["$1"]},":end":{"v":null,"t":"STRING","i":["$2"]},":tenant":{"v":null,"t":"STRING","i":["$3"]},"$4":{"v":"running-minions","t":"STRING","i":["$4"]}},"agIdx":5,"ctSql":"SELECT
+        buckets.start","agPar":{":schema":{"v":null,"t":"STRING","i":["%schema%"]},":timeframe":{"v":"300","t":"NUMBER","i":["%timeframe%"]},":start":{"v":null,"t":"STRING","i":["$1"]},":end":{"v":null,"t":"STRING","i":["$2"]},":tenant":{"v":null,"t":"STRING","i":["$3"]},"$4":{"v":"_running-minions","t":"STRING","i":["$4"]}},"agIdx":5,"ctSql":"SELECT
       COUNT(*) FROM %schema%.meters WHERE meters.timestamp BETWEEN $1::timestamp AND $2::timestamp AND meters.tenant =
       $3 AND meters.value IS NOT NULL %s AND meters.name = $4","rtSql":"SELECT * FROM %schema%.meters WHERE
       meters.timestamp BETWEEN $1::timestamp AND $2::timestamp AND meters.tenant = $3 AND meters.value IS NOT NULL %s
       AND meters.name = $4 ORDER BY meters.timestamp %order% LIMIT %limit% OFFSET
-      %offset%","rtPar":{":schema":{"v":null,"t":"STRING","i":["%schema%"]},":limit":{"v":"100","t":"NUMBER","i":["%limit%"]},":offset":{"v":"0","t":"NUMBER","i":["%offset%"]},":order":{"v":"DESC","t":"STRING","i":["%order%"]},":start":{"v":null,"t":"STRING","i":["$1"]},":end":{"v":null,"t":"STRING","i":["$2"]},":tenant":{"v":null,"t":"STRING","i":["$3"]},"$4":{"v":"running-minions","t":"STRING","i":["$4"]}},"rtIdx":5}',
+        %offset%","rtPar":{":schema":{"v":null,"t":"STRING","i":["%schema%"]},":limit":{"v":"100","t":"NUMBER","i":["%limit%"]},":offset":{"v":"0","t":"NUMBER","i":["%offset%"]},":order":{"v":"DESC","t":"STRING","i":["%order%"]},":start":{"v":null,"t":"STRING","i":["$1"]},":end":{"v":null,"t":"STRING","i":["$2"]},":tenant":{"v":null,"t":"STRING","i":["$3"]},"$4":{"v":"_running-minions","t":"STRING","i":["$4"]}},"rtIdx":5}',
       100
       );
 

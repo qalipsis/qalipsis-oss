@@ -138,7 +138,7 @@ internal class CampaignMeterChannelPublisherTest {
             val runningMinionsSnapshot = buildSnapshot(
                 MeterType.GAUGE,
                 mapOf("campaign" to "campaign-1", "scenario" to "scenario-1", "step" to "step-1"),
-                meterName = "running-minions",
+                meterName = "_running-minions",
                 measurements = listOf(buildMeasurement(Statistic.VALUE, 42.0))
             )
             val slot = slot<CampaignMetersFeedback>()
@@ -150,7 +150,7 @@ internal class CampaignMeterChannelPublisherTest {
             // then
             coVerify(exactly = 1) { factoryChannel.publishMeterFeedback(any()) }
             assertThat(slot.captured.meters).hasSize(1)
-            assertThat(slot.captured.meters[0].name).isEqualTo("running-minions")
+            assertThat(slot.captured.meters[0].name).isEqualTo("_running-minions")
             assertThat(slot.captured.meters[0].campaign).isEqualTo("campaign-1")
         }
 
@@ -171,7 +171,7 @@ internal class CampaignMeterChannelPublisherTest {
             val runningMinionsSnapshot = buildSnapshot(
                 MeterType.GAUGE,
                 mapOf("campaign" to "campaign-1", "scenario" to "scenario-1", "step" to "step-1"),
-                meterName = "running-minions",
+                meterName = "_running-minions",
                 measurements = listOf(buildMeasurement(Statistic.VALUE, 7.0))
             )
             val nonCampaignSnapshot = buildSnapshot(MeterType.COUNTER, mapOf("scope" to "global"))

@@ -34,6 +34,7 @@ import kotlinx.serialization.Serializable
  * @property nodeId ID of the factory node that emitted the feedback
  * @property status status of the execution of the directive
  * @property errorMessage error message in case of failure
+ * @property assignedMinionsUnderLoadCount count of minions under load the factory could assign to itself
  *
  * @author Eric Jessé
  */
@@ -43,7 +44,8 @@ data class MinionsAssignmentFeedback(
     override val campaignKey: CampaignKey,
     val scenarioName: ScenarioName,
     override val status: FeedbackStatus,
-    private val errorMessage: String = ""
+    private val errorMessage: String = "",
+    val assignedMinionsUnderLoadCount: Int = 0
 ) : Feedback(), CampaignManagementFeedback {
 
     override var nodeId: String = ""

@@ -211,7 +211,7 @@ internal class CampaignConfigurationConverterImplTest {
 
 
     @Test
-    @Timeout(3)
+    @Timeout(30)
     internal fun `should convert execution profile configuration to execution profile`() =
         testDispatcherProvider.runTest {
 

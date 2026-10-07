@@ -86,16 +86,4 @@ internal class MinionsHeadDelegationApiDirectivesIntegrationTest {
         assertThat(serializer.deserialize<Directive>(serializer.serialize(directive))).isNotNull().isDataClassEqualTo(directive)
     }
 
-    @Test
-    fun `should be able to serialize MinionsRampUpPreparationDirectiveReference as directive`() {
-        val directive: Directive = MinionsRampUpPreparationDirectiveReference("any", "campaign", "scenario")
-        val serialized = protobuf.encodeToByteArray(directive)
-        val directiveFromSerialization = protobuf.decodeFromByteArray<Directive>(serialized)
-
-        assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
-
-        // when + then
-        assertThat(serializer.deserialize<Directive>(serializer.serialize(directive))).isNotNull().isDataClassEqualTo(directive)
-    }
-
 }

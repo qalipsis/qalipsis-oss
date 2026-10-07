@@ -293,7 +293,7 @@ class RunnerImpl(
                     meterRegistry.gauge(
                         scenarioName = scenario,
                         stepName = "",
-                        name = "running-steps",
+                        name = "_running-steps",
                         tags = mapOf("scenario" to scenario),
                     )
                 }

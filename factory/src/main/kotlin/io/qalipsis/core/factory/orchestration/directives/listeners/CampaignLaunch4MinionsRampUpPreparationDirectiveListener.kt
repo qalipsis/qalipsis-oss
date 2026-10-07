@@ -26,7 +26,6 @@ import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
-import io.qalipsis.core.directives.MinionsRampUpPreparationDirectiveReference
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.FactoryChannel
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
@@ -54,7 +53,7 @@ class CampaignLaunch4MinionsRampUpPreparationDirectiveListener(
 
     @LogInputAndOutput(level = Level.DEBUG)
     override fun accept(directive: Directive): Boolean {
-        return directive is MinionsRampUpPreparationDirectiveReference
+        return directive is MinionsRampUpPreparationDirective
                 && factoryCampaignManager.isLocallyExecuted(directive.campaignKey, directive.scenarioName)
     }
 

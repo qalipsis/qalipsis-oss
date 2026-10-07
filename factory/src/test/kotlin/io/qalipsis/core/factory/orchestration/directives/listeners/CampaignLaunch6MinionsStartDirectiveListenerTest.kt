@@ -31,6 +31,7 @@ import io.mockk.verify
 import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.directives.TestDescriptiveDirective
 import io.qalipsis.core.factory.communication.FactoryChannel
+import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
 import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
@@ -64,6 +65,9 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
 
     @MockK
     private lateinit var minionsAssignmentKeeper: MinionAssignmentKeeper
+
+    @RelaxedMockK
+    private lateinit var factoryCampaignManager: FactoryCampaignManager
 
     @InjectMockKs
     private lateinit var processor: CampaignLaunch6MinionsStartDirectiveListener
@@ -115,6 +119,7 @@ internal class CampaignLaunch6MinionsStartDirectiveListenerTest {
 
         // then
         coVerifyOrder {
+            factoryCampaignManager.notifyMinionsStart("my-scenario", start)
             minionsKeeper.startSingletons("my-scenario")
             minionsAssignmentKeeper.readSchedulePlan("my-campaign", "my-scenario")
             localAssignmentStore.hasRootUnderLoadLocally("my-scenario", "my-minion-1")

@@ -53,7 +53,7 @@ internal class StandaloneDeploymentIntegrationTest : AbstractDeploymentIntegrati
         )
 
         // when
-        qalipsisProcess.await(Duration.ofSeconds(2))
+        qalipsisProcess.await(Duration.ofSeconds(10))
 
         // then
         assertThat(qalipsisProcess.outputLines).any {

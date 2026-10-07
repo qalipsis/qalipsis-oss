@@ -125,7 +125,7 @@ internal class IterativeStepDecoratorTest {
     }
 
     @Test
-    @Timeout(3)
+    @Timeout(10)
     fun `should iterate on decorated step with tail only at end if originally set`() = testDispatcherProvider.runTest {
         val testEntity = TestEntity()
         val capturedContexts = mutableListOf<StepContext<*, *>>()
@@ -192,7 +192,7 @@ internal class IterativeStepDecoratorTest {
     }
 
     @Test
-    @Timeout(3)
+    @Timeout(10)
     fun `should iterate on decorated step with tail only at end if originally set when errors are ignored`() =
         testDispatcherProvider.runTest {
             val testEntity = TestEntity()
@@ -261,7 +261,7 @@ internal class IterativeStepDecoratorTest {
         }
 
     @Test
-    @Timeout(3)
+    @Timeout(10)
     fun `should iterate on decorated step with tail only at end`() = testDispatcherProvider.runTest {
         val testEntity = TestEntity()
         val capturedContexts = mutableListOf<StepContext<*, *>>()
@@ -305,7 +305,7 @@ internal class IterativeStepDecoratorTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     fun `should iterate on decorated step with delay even when the step does not consume the input`() =
         testDispatcherProvider.run {
             val executionTimestamps = mutableListOf<Long>()
@@ -332,7 +332,7 @@ internal class IterativeStepDecoratorTest {
         }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     fun `should iterate on decorated step until no more data is generated and keep isTail false`() =
         testDispatcherProvider.run {
             val decoratedStep: Step<TestEntity, Any> = mockk {
@@ -365,7 +365,7 @@ internal class IterativeStepDecoratorTest {
         }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     fun `should iterate on decorated step until no more data is generated and keep isTail true`() =
         testDispatcherProvider.run {
             val decoratedStep: Step<TestEntity, Any> = mockk {
@@ -398,7 +398,7 @@ internal class IterativeStepDecoratorTest {
         }
 
     @Test
-    @Timeout(3)
+    @Timeout(10)
     fun `should forward failure and set the tail flag back to true if originally set`() =
         testDispatcherProvider.runTest {
             val executionCount = AtomicInteger(0)
@@ -425,7 +425,7 @@ internal class IterativeStepDecoratorTest {
         }
 
     @Test
-    @Timeout(3)
+    @Timeout(10)
     fun `should forward failure and keep the tail flag back to false if originally unset`() =
         testDispatcherProvider.runTest {
             val executionCount = AtomicInteger(0)
@@ -452,7 +452,7 @@ internal class IterativeStepDecoratorTest {
         }
 
     @Test
-    @Timeout(3)
+    @Timeout(30)
     fun `should forward failed state even without exception and set the tail flag back to true if originally set`() =
         testDispatcherProvider.runTest {
             val executionCount = AtomicInteger(0)

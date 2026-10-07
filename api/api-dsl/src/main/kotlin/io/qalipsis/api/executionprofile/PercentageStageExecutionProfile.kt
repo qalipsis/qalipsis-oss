@@ -45,14 +45,13 @@ data class PercentageStageExecutionProfile(
      */
     private var latestStageEnd: Long = Long.MIN_VALUE
 
-    override fun notifyStart(speedFactor: Double) {
-        if (latestStageEnd == Long.MIN_VALUE) {
-            // Calculates the end of the latest stage.
-            val delayUntilEnd = stages.sumOf { it.totalDurationMs } / speedFactor
-            latestStageEnd = Instant.now().plusMillis(delayUntilEnd.toLong()).toEpochMilli()
-            log.debug { "The latest stage ends at $latestStageEnd" }
-            super.notifyStart(speedFactor)
-        }
+    override fun notifyStart(speedFactor: Double) = notifyStart(speedFactor, Instant.now())
+
+    override fun notifyStart(speedFactor: Double, startInstant: Instant) {
+        // Calculates the end of the latest stage.
+        val delayUntilEnd = stages.sumOf { it.totalDurationMs } / speedFactor
+        latestStageEnd = startInstant.plusMillis(delayUntilEnd.toLong()).toEpochMilli()
+        log.debug { "The latest stage ends at $latestStageEnd" }
     }
 
     override fun iterator(totalMinionsCount: Int, speedFactor: Double): PercentStageExecutionProfileIterator {

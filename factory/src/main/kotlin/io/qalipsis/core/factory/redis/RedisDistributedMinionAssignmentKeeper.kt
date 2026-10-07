@@ -114,6 +114,18 @@ class RedisDistributedMinionAssignmentKeeper(
     }
 
     /**
+     * The DAGs of a minion are distributed over several factories, hence only the shared registry knows when all
+     * of them are complete.
+     */
+    override suspend fun executionComplete(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        minionId: MinionId,
+        dagIds: Collection<DirectedAcyclicGraphName>,
+        mightRestart: Boolean
+    ) = executionCompleteRemotely(campaignKey, scenarioName, minionId, dagIds, mightRestart)
+
+    /**
      * Factory-configurable version of [assign] for testing purpose.
      */
     @Suppress("UNCHECKED_CAST")
@@ -173,10 +185,11 @@ class RedisDistributedMinionAssignmentKeeper(
             redisKeyCommands.unlink(keyForFactoryAssignment)
         }
 
+        assignedMinionsUnderLoadCounts[scenarioName] = assignedUnderLoad
         if (log.isTraceEnabled) {
-            log.trace { "Assignment of factory $factoryNodeId for campaign $campaignKey and scenario $scenarioName (${assignments.size} minions assigned): $assignments" }
+            log.trace { "Assignment of factory $factoryNodeId for campaign $campaignKey and scenario $scenarioName ($assignedUnderLoad minions under load of ${assignments.size} minions assigned): $assignments" }
         } else if (log.isDebugEnabled) {
-            log.debug { "${assignments.size} minions assigned to factory $factoryNodeId for campaign $campaignKey and scenario $scenarioName" }
+            log.debug { "${assignments.size} minions assigned to factory $factoryNodeId for campaign $campaignKey and scenario $scenarioName, among which $assignedUnderLoad are under load" }
         }
 
         localAssignmentStore.save(scenarioName, assignments)

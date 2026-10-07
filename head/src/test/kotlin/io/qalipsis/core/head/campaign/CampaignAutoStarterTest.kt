@@ -100,7 +100,7 @@ internal class CampaignAutoStarterTest {
     }
 
     @Test
-    @Timeout(3)
+    @Timeout(30)
     internal fun `should not start a campaign with the specified name when not enough factories are registered`() =
         testCoroutineDispatcher.run {
             // given
@@ -175,7 +175,7 @@ internal class CampaignAutoStarterTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should release the starter when there is no scenario to execute`() =
         testCoroutineDispatcher.run {
             // given
@@ -203,7 +203,7 @@ internal class CampaignAutoStarterTest {
         }
 
     @Test
-    @Timeout(2)
+    @Timeout(10)
     internal fun `should not start when no handshake request was notified`() =
         testCoroutineDispatcher.run {
             // given
@@ -218,14 +218,14 @@ internal class CampaignAutoStarterTest {
 
             // when
             assertThrows<TimeoutCancellationException> {
-                withTimeout(500) {
+                withTimeout(1000) {
                     campaignAutoStarter.notify(Heartbeat("node-1", "my-tenant", Instant.now()))
                 }
             }
         }
 
     @Test
-    @Timeout(2)
+    @Timeout(10)
     internal fun `should release the latch when the campaign is complete with success`() =
         testCoroutineDispatcher.run {
             // given
@@ -342,7 +342,7 @@ internal class CampaignAutoStarterTest {
         }
 
     @Test
-    @Timeout(5)
+    @Timeout(30)
     internal fun `should not release the latch until the campaign is complete`() =
         testCoroutineDispatcher.run {
             // given

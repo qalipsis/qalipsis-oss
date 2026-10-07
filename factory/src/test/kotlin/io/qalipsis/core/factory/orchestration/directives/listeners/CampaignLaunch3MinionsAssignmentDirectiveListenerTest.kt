@@ -103,6 +103,7 @@ internal class CampaignLaunch3MinionsAssignmentDirectiveListenerTest {
             "minion-1" to listOf("dag-1", "dag-2"),
             "minion-2" to listOf("dag-2", "dag-3")
         )
+        coEvery { minionAssignmentKeeper.countAssignedMinionsUnderLoad("my-campaign", "my-scenario") } returns 2
 
         // when
         processor.notify(directive)
@@ -119,11 +120,13 @@ internal class CampaignLaunch3MinionsAssignmentDirectiveListenerTest {
             minionAssignmentKeeper.assign("my-campaign", "my-scenario")
             minionsKeeper.create("my-campaign", "my-scenario", listOf("dag-1", "dag-2"), "minion-1")
             minionsKeeper.create("my-campaign", "my-scenario", listOf("dag-2", "dag-3"), "minion-2")
+            minionAssignmentKeeper.countAssignedMinionsUnderLoad("my-campaign", "my-scenario")
             factoryChannel.publishFeedback(
                 MinionsAssignmentFeedback(
                     campaignKey = "my-campaign",
                     scenarioName = "my-scenario",
-                    status = FeedbackStatus.COMPLETED
+                    status = FeedbackStatus.COMPLETED,
+                    assignedMinionsUnderLoadCount = 2
                 )
             )
         }

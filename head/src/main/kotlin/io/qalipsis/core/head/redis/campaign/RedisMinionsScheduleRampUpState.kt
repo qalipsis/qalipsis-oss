@@ -39,8 +39,9 @@ class RedisMinionsScheduleRampUpState(
 
     override suspend fun doInit(): List<Directive> {
         operations.setState(campaign.tenant, campaignKey, CampaignRedisState.MINIONS_STARTUP_STATE)
-        // Prepared the feedback expectations, ony by scenario.
-        operations.prepareScenariosForFeedbackExpectations(campaign)
+        // Prepares the feedback expectations, one by scenario and factory, since all the factories executing a
+        // scenario schedule its ramp-up.
+        operations.prepareAssignmentsForFeedbackExpectations(campaign)
         return super.doInit().also {
             operations.saveConfiguration(campaign)
         }
@@ -53,7 +54,13 @@ class RedisMinionsScheduleRampUpState(
             }
 
             feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.COMPLETED -> {
-                if (operations.markFeedbackForScenario(campaign.tenant, campaignKey, feedback.scenarioName)) {
+                if (operations.markFeedbackForFactoryScenario(
+                        campaign.tenant,
+                        campaignKey,
+                        feedback.nodeId,
+                        feedback.scenarioName
+                    )
+                ) {
                     RedisWarmupState(campaign, operations)
                 } else {
                     this

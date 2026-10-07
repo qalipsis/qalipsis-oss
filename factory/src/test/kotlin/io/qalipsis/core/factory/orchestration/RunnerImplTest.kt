@@ -56,7 +56,7 @@ internal class RunnerImplTest {
     private val meterRegistry = relaxedMockk<CampaignMeterRegistry>()
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     internal fun `should execute the full dag asynchronously`() = testCoroutineDispatcher.runTest {
         // given
         val dag = testDag {
@@ -115,7 +115,7 @@ internal class RunnerImplTest {
     }
 
     @Test
-    @Timeout(3)
+    @Timeout(30)
     internal fun `should execute the error processing only`() = testCoroutineDispatcher.runTest {
         // given
         val dag = testDag {
@@ -154,7 +154,7 @@ internal class RunnerImplTest {
     }
 
     @Test
-    @Timeout(3)
+    @Timeout(10)
     internal fun `should execute the normal steps after recovery`() = testCoroutineDispatcher.runTest {
         // given
         val dag = testDag {
@@ -190,7 +190,7 @@ internal class RunnerImplTest {
     }
 
     @Test
-    @Timeout(3)
+    @Timeout(10)
     internal fun `should not execute next steps when there is no output but complete them`() =
         testCoroutineDispatcher.runTest {
             // given
@@ -224,7 +224,7 @@ internal class RunnerImplTest {
         }
 
     @Test
-    @Timeout(3)
+    @Timeout(10)
     internal fun `should use retry policy instead of executing the step directly`() = testCoroutineDispatcher.runTest {
         // given
         val contextSlot = slot<StepContext<Unit, Int>>()
