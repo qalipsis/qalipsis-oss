@@ -81,6 +81,7 @@ dependencies {
     implementation("io.micronaut:micronaut-validation")
     implementation("io.micronaut:micronaut-runtime")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
     implementation("com.tdunning:t-digest:3.3")
     implementation("com.h2database:h2")
 

@@ -40,6 +40,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.qalipsis.api.executionprofile.CompletionMode
 import io.qalipsis.core.campaigns.FactoryConfiguration
+import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.configuration.AbortRunningCampaign
@@ -273,7 +274,7 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
         }
 
     @Test
-    internal fun `should return a new RedisWarmupState when a completed MinionsStartFeedback is received`() =
+    internal fun `should return a new RedisWarmupState when all the factories sent their completed MinionsRampUpPreparationFeedback`() =
         testDispatcherProvider.run {
             // given
             val runningCampaign = campaign.copy(
@@ -284,6 +285,17 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
             ).also {
                 it.feedbackChannel = "my-feedback-channel"
                 it.broadcastChannel = "my-broadcast-channel"
+                it.factories["node-1"] = FactoryConfiguration(
+                    "node-1-channel", mutableMapOf(
+                        "scenario-1" to FactoryScenarioAssignment("scenario-1", listOf("dag-1")),
+                        "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-2"))
+                    )
+                )
+                it.factories["node-2"] = FactoryConfiguration(
+                    "node-2-channel", mutableMapOf(
+                        "scenario-2" to FactoryScenarioAssignment("scenario-2", listOf("dag-2"))
+                    )
+                )
             }
             val state = RedisMinionsScheduleRampUpState(runningCampaign, operations)
             state.run {
@@ -292,6 +304,7 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
             }
             var newState =
                 state.process(mockk<MinionsRampUpPreparationFeedback> {
+                    every { nodeId } returns "node-1"
                     every { scenarioName } returns "scenario-1"
                     every { status } returns FeedbackStatus.COMPLETED
                 })
@@ -302,6 +315,18 @@ internal class RedisMinionsScheduleRampUpStateIntegrationTest : AbstractRedisSta
             // when
             newState =
                 state.process(mockk<MinionsRampUpPreparationFeedback> {
+                    every { nodeId } returns "node-1"
+                    every { scenarioName } returns "scenario-2"
+                    every { status } returns FeedbackStatus.COMPLETED
+                })
+
+            // then the feedbacks of the second factory are still expected
+            assertThat(newState).isSameInstanceAs(state)
+
+            // when
+            newState =
+                state.process(mockk<MinionsRampUpPreparationFeedback> {
+                    every { nodeId } returns "node-2"
                     every { scenarioName } returns "scenario-2"
                     every { status } returns FeedbackStatus.COMPLETED
                 })

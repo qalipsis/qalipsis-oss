@@ -292,6 +292,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
                 every { nodeId } returns "node-2"
                 every { scenarioName } returns "scenario-2"
                 every { status } returns FeedbackStatus.COMPLETED
+                every { assignedMinionsUnderLoadCount } returns 123
             })
 
             // then
@@ -302,6 +303,7 @@ internal class MinionsAssignmentStateTest : AbstractStateTest() {
                 every { nodeId } returns "node-1"
                 every { scenarioName } returns "scenario-1"
                 every { status } returns FeedbackStatus.COMPLETED
+                every { assignedMinionsUnderLoadCount } returns 456
             })
 
             // then

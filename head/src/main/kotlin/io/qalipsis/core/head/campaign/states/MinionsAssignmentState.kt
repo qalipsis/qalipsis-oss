@@ -19,6 +19,8 @@
 
 package io.qalipsis.core.head.campaign.states
 
+import io.qalipsis.api.context.NodeId
+import io.qalipsis.api.context.ScenarioName
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
@@ -40,6 +42,12 @@ open class MinionsAssignmentState(
         ConcurrentHashMap(campaign.factories.mapValues { it.value.assignment.keys.toSet() })
 
     private val mutex = Mutex(false)
+
+    /**
+     * Counts of minions under load effectively assigned to each factory, for each scenario.
+     */
+    private val assignedMinionsUnderLoadCounts =
+        ConcurrentHashMap<ScenarioName, MutableMap<NodeId, Int>>()
 
     override suspend fun doInit(): List<Directive> {
         return campaign.scenarios.map { (scenarioName, config) ->
@@ -67,9 +75,35 @@ open class MinionsAssignmentState(
             } else if (feedback.status == FeedbackStatus.FAILED) {
                 // The failure management is let to doProcess.
                 log.error { "The assignment of minions to the factory ${feedback.nodeId} failed: ${feedback.error}" }
+            } else if (feedback.status == FeedbackStatus.COMPLETED) {
+                assignedMinionsUnderLoadCounts.computeIfAbsent(feedback.scenarioName) { ConcurrentHashMap() }[feedback.nodeId] =
+                    feedback.assignedMinionsUnderLoadCount
             }
         }
-        return doTransition(feedback)
+        return doTransition(feedback).also { newState ->
+            // The assignments are complete when the state changes to let the ramp-up be prepared.
+            if (newState is MinionsScheduleRampUpState) {
+                verifyAssignmentsCompleteness()
+            }
+        }
+    }
+
+    /**
+     * Reports the minions that no factory could assign to itself, hence that will never be executed.
+     *
+     * Each factory can only assign the count of minions it was allowed to, so a factory that is missing or that
+     * failed to claim its share leaves minions behind, without any other factory being able to execute them.
+     */
+    private fun verifyAssignmentsCompleteness() {
+        campaign.scenarios.forEach { (scenarioName, configuration) ->
+            val countsByFactory = assignedMinionsUnderLoadCounts[scenarioName].orEmpty()
+            val assignedMinionsCount = countsByFactory.values.sum()
+            if (assignedMinionsCount < configuration.minionsCount) {
+                log.error {
+                    "Only $assignedMinionsCount minions of the ${configuration.minionsCount} of the scenario $scenarioName were assigned for the campaign $campaignKey, the ${configuration.minionsCount - assignedMinionsCount} remaining ones will not be executed, assignments by factory: $countsByFactory"
+                }
+            }
+        }
     }
 
     override suspend fun doTransition(feedback: Feedback): CampaignExecutionState<CampaignExecutionContext> {

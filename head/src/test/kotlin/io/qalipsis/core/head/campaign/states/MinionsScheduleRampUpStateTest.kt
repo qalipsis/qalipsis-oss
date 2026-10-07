@@ -47,6 +47,7 @@ import io.qalipsis.core.head.factory.FactoryHealth
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
+import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
@@ -211,7 +212,7 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
         }
 
     @Test
-    internal fun `should return a new WarmupState when all MinionsRampUpPreparationFeedback are received`() =
+    internal fun `should return a new WarmupState when all the factories sent their MinionsRampUpPreparationFeedback`() =
         testDispatcherProvider.runTest {
             // given
             every { campaign.scenarios } returns mapOf(
@@ -220,6 +221,19 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
                 },
                 "scenario-2" to mockk {
                     every { executionProfileConfiguration.clone() } returns mockk()
+                }
+            )
+            every { campaign.factories } returns mutableMapOf(
+                "node-1" to relaxedMockk {
+                    every { assignment } returns mutableMapOf(
+                        "scenario-1" to relaxedMockk(),
+                        "scenario-2" to relaxedMockk()
+                    )
+                },
+                "node-2" to relaxedMockk {
+                    every { assignment } returns mutableMapOf(
+                        "scenario-2" to relaxedMockk()
+                    )
                 }
             )
             val state = MinionsScheduleRampUpState(campaign)
@@ -231,6 +245,7 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
             // when
             var newState =
                 state.process(mockk<MinionsRampUpPreparationFeedback> {
+                    every { nodeId } returns "node-1"
                     every { scenarioName } returns "scenario-1"
                     every { status } returns FeedbackStatus.COMPLETED
                 })
@@ -241,6 +256,18 @@ internal class MinionsScheduleRampUpStateTest : AbstractStateTest() {
             // when
             newState =
                 state.process(mockk<MinionsRampUpPreparationFeedback> {
+                    every { nodeId } returns "node-1"
+                    every { scenarioName } returns "scenario-2"
+                    every { status } returns FeedbackStatus.COMPLETED
+                })
+
+            // then the feedbacks of the second factory are still expected
+            assertThat(newState).isSameInstanceAs(state)
+
+            // when
+            newState =
+                state.process(mockk<MinionsRampUpPreparationFeedback> {
+                    every { nodeId } returns "node-2"
                     every { scenarioName } returns "scenario-2"
                     every { status } returns FeedbackStatus.COMPLETED
                 })

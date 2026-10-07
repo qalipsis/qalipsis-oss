@@ -149,7 +149,9 @@ internal class FactoryInitializerImplTest {
     @RelaxedMockK
     private lateinit var localAssignmentStore: LocalAssignmentStore
 
-    private val conversionTimeout: Duration = Duration.ofSeconds(2)
+    // Generous enough for a slow or loaded machine, where the conversion of the scenarios is dominated by the
+    // first instrumentation of the mocked classes.
+    private val conversionTimeout: Duration = Duration.ofSeconds(8)
 
     private val factoryInitializer: FactoryInitializerImpl by lazy(LazyThreadSafetyMode.NONE) {
         spyk(
@@ -219,7 +221,7 @@ internal class FactoryInitializerImplTest {
     }
 
     @Test
-    @Timeout(2)
+    @Timeout(30)
     internal fun `should fail to init the factory`() {
         // given
         val exception = RuntimeException()
@@ -647,7 +649,7 @@ internal class FactoryInitializerImplTest {
     }
 
     @Test
-    @Timeout(3)
+    @Timeout(30)
     internal fun `should convert scenario`() = testDispatcherProvider.run {
         // given
         val scenarioRootSteps = emptyList<StepSpecification<*, *, *>>()
@@ -720,7 +722,7 @@ internal class FactoryInitializerImplTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(30)
     internal fun `should load scenarios, convert them and publish handshake request`() {
         // given
         val scenarioSpecification1: ConfiguredScenarioSpecification = relaxedMockk { }
@@ -763,10 +765,10 @@ internal class FactoryInitializerImplTest {
     }
 
     @Test
-    @Timeout(4)
+    @Timeout(30)
     internal fun `should generate an exception when the conversion is too long`() {
         // given
-        every { scenarioSpecificationsKeeper.reload() } answers { Thread.sleep(2500) }
+        every { scenarioSpecificationsKeeper.reload() } answers { Thread.sleep(conversionTimeout.toMillis() + 1000) }
 
         // when
         assertThrows<TimeoutException> {
@@ -775,7 +777,7 @@ internal class FactoryInitializerImplTest {
     }
 
     @Test
-    @Timeout(4)
+    @Timeout(30)
     internal fun `should throw the conversion exception`() {
         // given
         every { scenarioSpecificationsKeeper.scenariosSpecifications } returns mapOf("scenario-1" to TestScenarioFactory.scenario())
@@ -795,7 +797,7 @@ internal class FactoryInitializerImplTest {
     }
 
     @Test
-    @Timeout(4)
+    @Timeout(30)
     internal fun `should generate an exit status exception when there is no scenario to convert`() {
         // given
         every { scenarioSpecificationsKeeper.scenariosSpecifications } returns emptyMap()

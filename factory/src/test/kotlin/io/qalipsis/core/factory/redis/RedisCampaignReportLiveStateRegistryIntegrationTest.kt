@@ -31,6 +31,7 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.api.report.ReportMessageSeverity
 import io.qalipsis.core.configuration.ExecutionEnvironments
+import io.qalipsis.core.factory.redis.catadioptre.flush
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import jakarta.inject.Inject
@@ -265,11 +266,46 @@ internal class RedisCampaignReportLiveStateRegistryIntegrationTest : AbstractRed
         }
     }
 
-    private suspend fun getCounter(key: String, field: String): Int? =
-        redisCoroutinesCommands.hget(key, field)?.toInt()
+    // The counters are aggregated in the registry, they only reach Redis when they are flushed.
+    @Test
+    internal fun `should aggregate the counters until they are flushed`() = testDispatcherProvider.run {
+        // when
+        repeat(3) { registry.recordSuccessfulStepExecution("my-campaign", "my-scenario-1", "my-step-1") }
+        registry.recordStartedMinion("my-campaign", "my-scenario-1", 4)
 
-    private suspend fun getCounters(key: String): Map<String, Int?> =
-        redisCoroutinesCommands.hgetall(key).toList().associate { it.key to it.value?.toIntOrNull() }
+        // then nothing was pushed to the shared registry yet.
+        assertThat(
+            redisCoroutinesCommands.hget(
+                "my-campaign-report:my-scenario-1:successful-step-executions",
+                "my-step-1"
+            )
+        ).isNull()
+        assertThat(redisCoroutinesCommands.hget("my-campaign-report:my-scenario-1", "__started-minions")).isNull()
+
+        // when
+        registry.flush()
+
+        // then the aggregated values are pushed at once.
+        assertThat(
+            redisCoroutinesCommands.hget(
+                "my-campaign-report:my-scenario-1:successful-step-executions",
+                "my-step-1"
+            )?.toInt()
+        ).isEqualTo(3)
+        assertThat(
+            redisCoroutinesCommands.hget("my-campaign-report:my-scenario-1", "__started-minions")?.toInt()
+        ).isEqualTo(4)
+    }
+
+    private suspend fun getCounter(key: String, field: String): Int? {
+        registry.flush()
+        return redisCoroutinesCommands.hget(key, field)?.toInt()
+    }
+
+    private suspend fun getCounters(key: String): Map<String, Int?> {
+        registry.flush()
+        return redisCoroutinesCommands.hgetall(key).toList().associate { it.key to it.value?.toIntOrNull() }
+    }
 
     private suspend fun getList(key: String): List<String> =
         redisCoroutinesCommands.lrange(key, 0, -1)

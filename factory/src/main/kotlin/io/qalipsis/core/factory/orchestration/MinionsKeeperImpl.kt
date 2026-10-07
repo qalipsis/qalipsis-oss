@@ -130,7 +130,7 @@ class MinionsKeeperImpl(
                     meterRegistry.gauge(
                             scenarioName = scenario,
                             stepName = "",
-                            name = "idle-minions",
+                        name = "_idle-minions",
                             tags = mapOf("scenario" to scenario),
                     )
                 }.increment()
@@ -189,7 +189,7 @@ class MinionsKeeperImpl(
                 meterRegistry.gauge(
                     scenarioName = scenario,
                     stepName = "",
-                    name = "idle-minions",
+                    name = "_idle-minions",
                     tags = mapOf("scenario" to scenario),
                 )
             }.decrement(minionsToStart.size.toDouble())
@@ -197,7 +197,7 @@ class MinionsKeeperImpl(
                 meterRegistry.gauge(
                     scenarioName = scenario,
                     stepName = "",
-                    name = "running-minions",
+                    name = "_running-minions",
                     tags = mapOf("scenario" to scenario),
                 )
             }.increment(minionsToStart.size.toDouble())

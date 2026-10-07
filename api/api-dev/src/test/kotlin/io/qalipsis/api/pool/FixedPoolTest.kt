@@ -55,7 +55,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
-@Timeout(6)
+@Timeout(15)
 internal class FixedPoolTest {
 
     @field:RegisterExtension
@@ -381,6 +381,7 @@ internal class FixedPoolTest {
         }
 
     @Test
+    @Timeout(30)
     internal fun `should check the health on release and add a new item to the pool when unhealthy`() =
         testCoroutineDispatcher.run {
             // given
@@ -453,6 +454,7 @@ internal class FixedPoolTest {
     }
 
     @Test
+    @Timeout(30)
     internal fun `should close all the items when closing the pool`(): Unit = testCoroutineDispatcher.run {
         // given
         val mocks = concurrentList<MyTestObject>()

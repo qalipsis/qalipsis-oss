@@ -54,7 +54,6 @@ import io.qalipsis.core.factory.orchestration.CampaignCompletionState
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
 import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import io.qalipsis.core.factory.orchestration.ScenarioRegistry
-import io.qalipsis.core.factory.redis.RedisSingleLocationMinionAssignmentKeeper.Companion.CAMPAIGN_COUNTERS
 import io.qalipsis.core.redis.RedisUtils
 import jakarta.annotation.PostConstruct
 import jakarta.inject.Singleton
@@ -63,6 +62,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import org.slf4j.event.Level
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * [MinionAssignmentKeeper] for cluster-distributed minions, where each minion completely executes in a unique
@@ -110,6 +110,11 @@ class RedisSingleLocationMinionAssignmentKeeper(
     private lateinit var minionCompletionScript: ByteArray
 
     /**
+     * Script to process the definitive completion of a minion.
+     */
+    private lateinit var minionFinalCompletionScript: ByteArray
+
+    /**
      * SHA key of the script to register the minions.
      */
     private var minionRegistrationScriptSha: String = "bfd0b8b5cfd8bea664b4fcca9d307f10c928275c"
@@ -122,12 +127,17 @@ class RedisSingleLocationMinionAssignmentKeeper(
     /**
      * SHA key of the script to schedule the minions of a scenario.
      */
-    private var minionSchedulingScriptSha: String = "644ed2700871a438ffd7c5f8df00a99aef8e03cf"
+    private var minionSchedulingScriptSha: String = "81aa64283870c77f58ddb7e129cca8bfad6ae775"
 
     /**
      * SHA key of the script to process the completion of a minions on DAGs.
      */
     private var minionCompletionScriptSha: String = "df54491af56797ef0dc6a0ab86a0756d755e618a"
+
+    /**
+     * SHA key of the script to process the definitive completion of a minion.
+     */
+    private var minionFinalCompletionScriptSha: String = "8cb820fb3b34b47105a552f4f1a079491e08f302"
 
     /**
      * Maximal counts of minions that can be assigned to each scenario.
@@ -139,6 +149,28 @@ class RedisSingleLocationMinionAssignmentKeeper(
      * Cache of the scenario schedules in the current company.
      */
     private val scenarioSchedules = ConcurrentHashMap<ScenarioName, Map<Long, Collection<MinionId>>>()
+
+    /**
+     * Count of minions under load effectively assigned to this factory, for each scenario.
+     */
+    protected val assignedMinionsUnderLoadCounts = ConcurrentHashMap<ScenarioName, Int>()
+
+    /**
+     * Counts of DAGs assigned to this factory for each of its minions. Since a minion is entirely executed by a
+     * unique factory, its completion is verified locally, without any call to the shared registry.
+     */
+    private val scheduledDagsCountsByMinion = ConcurrentHashMap<MinionId, Int>()
+
+    /**
+     * Counts of DAGs remaining to execute for each minion assigned to this factory.
+     */
+    private val remainingDagsCountsByMinion = ConcurrentHashMap<MinionId, AtomicInteger>()
+
+    /**
+     * Minions assigned to this factory that are not under load, hence that do not count in the completion of
+     * their scenario.
+     */
+    private val singletonMinions = ConcurrentHashMap.newKeySet<MinionId>()
 
     /**
      * Mutex to avoid concurrent loading of scripts into Redis.
@@ -155,11 +187,14 @@ class RedisSingleLocationMinionAssignmentKeeper(
         minionAssignmentScript = RedisUtils.loadScript("/redis/minion-assignment-for-single-location-minion.lua")
         minionSchedulingScript = RedisUtils.loadScript("/redis/schedule-minion.lua")
         minionCompletionScript = RedisUtils.loadScript("/redis/minion-dag-completion.lua")
+        minionFinalCompletionScript = RedisUtils.loadScript("/redis/minion-final-completion.lua")
     }
 
     override suspend fun close(campaign: Campaign) {
         maxMinionsCountsByScenario.clear()
         scenarioSchedules.clear()
+        assignedMinionsUnderLoadCounts.clear()
+        clearLocalCompletionStates()
         localAssignmentStore.reset()
     }
 
@@ -394,15 +429,27 @@ class RedisSingleLocationMinionAssignmentKeeper(
             assignments += assignedSingletonMinions
         }
 
+        assignedMinionsUnderLoadCounts[scenarioName] = assignedUnderLoad
+        assignments.forEach { (minionId, dags) ->
+            scheduledDagsCountsByMinion[minionId] = dags.size
+            remainingDagsCountsByMinion[minionId] = AtomicInteger(dags.size)
+            if (minionId !in minionsUnderLoad) {
+                singletonMinions += minionId
+            }
+        }
         if (log.isTraceEnabled) {
-            log.trace { "Assignment of factory $factoryNodeId for campaign $campaignKey and scenario $scenarioName (${assignments.size} minions assigned): $assignments" }
+            log.trace { "Assignment of factory $factoryNodeId for campaign $campaignKey and scenario $scenarioName ($assignedUnderLoad minions under load of ${assignments.size} minions assigned): $assignments" }
         } else if (log.isDebugEnabled) {
-            log.debug { "${assignments.size} minions assigned to factory $factoryNodeId for campaign $campaignKey and scenario $scenarioName" }
+            log.debug { "${assignments.size} minions assigned to factory $factoryNodeId for campaign $campaignKey and scenario $scenarioName, among which $assignedUnderLoad are under load" }
         }
 
         localAssignmentStore.save(scenarioName, assignments)
         return assignments
     }
+
+    @LogInputAndOutput
+    override suspend fun countAssignedMinionsUnderLoad(campaignKey: CampaignKey, scenarioName: ScenarioName) =
+        assignedMinionsUnderLoadCounts[scenarioName] ?: 0
 
     /**
      * Assigns all the minions to the current factory.
@@ -482,7 +529,9 @@ class RedisSingleLocationMinionAssignmentKeeper(
         val schedulingResult = executeScheduling(buildRedisKeyPrefix(campaignKey, scenarioName))
         log.debug { "Result of the scheduling: $schedulingResult" }
         val unscheduledMinionsCount = schedulingResult[3] as Long
-        assert(unscheduledMinionsCount == 0L) { "$unscheduledMinionsCount minions could not be scheduled" }
+        if (unscheduledMinionsCount > 0) {
+            log.error { "$unscheduledMinionsCount minions of the scenario $scenarioName could not be scheduled for the campaign $campaignKey and will not be executed" }
+        }
     }
 
 
@@ -547,8 +596,61 @@ class RedisSingleLocationMinionAssignmentKeeper(
         return scheduledMinions
     }
 
+    /**
+     * Verifies the completion of the minion locally, since all its DAGs are executed by this factory. The shared
+     * registry is only contacted when the minion is definitely complete, hence never while it is replayed: this
+     * keeps the latency between the factory and the registry out of the execution loop of the minions.
+     */
     @LogInputAndOutput
     override suspend fun executionComplete(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName,
+        minionId: MinionId,
+        dagIds: Collection<DirectedAcyclicGraphName>,
+        mightRestart: Boolean
+    ): CampaignCompletionState {
+        val remainingDagsCount = remainingDagsCountsByMinion[minionId]
+        // When the minion is not locally known, the shared registry remains the only source of truth.
+        if (remainingDagsCount == null) {
+            return executionCompleteRemotely(campaignKey, scenarioName, minionId, dagIds, mightRestart)
+        }
+
+        val state = CampaignCompletionState()
+        if (minionId in singletonMinions) {
+            // A singleton minion is complete, it does not affect the completion of the scenario.
+            state.minionComplete = true
+        } else if (remainingDagsCount.addAndGet(-dagIds.size) <= 0) {
+            state.minionComplete = true
+            if (mightRestart) {
+                // The remaining DAGs are reset to the originally scheduled ones.
+                remainingDagsCount.set(scheduledDagsCountsByMinion[minionId] ?: dagIds.size)
+            } else {
+                val completionsFlags = executeFinalCompletion(
+                    buildRedisKeyPrefix(campaignKey) + CAMPAIGN_COUNTERS,
+                    buildRedisKeyPrefix(campaignKey, scenarioName) + MINION_ASSIGNED_DAGS_PREFIX + minionId,
+                    buildRedisKeyPrefix(campaignKey) + SINGLETON_REGISTRY,
+                    scenarioName
+                )
+                state.scenarioComplete = (completionsFlags[1] as Number).toInt() > 0
+                state.campaignComplete = (completionsFlags[3] as Number).toInt() > 0
+                scheduledDagsCountsByMinion -= minionId
+                remainingDagsCountsByMinion -= minionId
+                if (state.campaignComplete) {
+                    clearLocalCompletionStates()
+                    localAssignmentStore.reset()
+                    cleanCampaignKeys(campaignKey)
+                }
+            }
+        }
+        log.trace { "$state" }
+        return state
+    }
+
+    /**
+     * Verifies the completion of the minion, its scenario and the campaign in the shared registry, which is
+     * required when the DAGs of the minion are distributed over several factories.
+     */
+    protected suspend fun executionCompleteRemotely(
         campaignKey: CampaignKey,
         scenarioName: ScenarioName,
         minionId: MinionId,
@@ -579,6 +681,12 @@ class RedisSingleLocationMinionAssignmentKeeper(
         }
         log.trace { "$state" }
         return state
+    }
+
+    private fun clearLocalCompletionStates() {
+        scheduledDagsCountsByMinion.clear()
+        remainingDagsCountsByMinion.clear()
+        singletonMinions.clear()
     }
 
     @LogInputAndOutput
@@ -648,6 +756,30 @@ class RedisSingleLocationMinionAssignmentKeeper(
                 dagIdsCount,
                 mightRestart
             )
+        }
+    }
+
+    /**
+     * Executes the script to verify the completion of the scenario and campaign from the SHA key of the script.
+     * If the SHA key is not valid, the script is first loaded into Redis before a new attempt.
+     */
+    private suspend fun executeFinalCompletion(
+        countersHashKey: String,
+        keyForAssignedDags: String,
+        singletonsHashKey: String,
+        scenarioName: String
+    ): List<*> {
+        return try {
+            redisScriptingCommands.evalsha(
+                minionFinalCompletionScriptSha, ScriptOutputType.MULTI,
+                arrayOf(countersHashKey, keyForAssignedDags, singletonsHashKey),
+                scenarioName
+            )!!
+        } catch (e: RedisNoScriptException) {
+            minionFinalCompletionScriptSha =
+                scriptLoaderMutex.withLock { redisScriptingCommands.scriptLoad(minionFinalCompletionScript)!! }
+            log.debug { "Final completion script was loaded with SHA $minionFinalCompletionScriptSha" }
+            executeFinalCompletion(countersHashKey, keyForAssignedDags, singletonsHashKey, scenarioName)
         }
     }
 

@@ -40,6 +40,8 @@ import io.qalipsis.api.executionprofile.StageExecutionProfile
 import io.qalipsis.api.executionprofile.TimeFrameExecutionProfile
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
+import io.qalipsis.api.meters.CampaignMeterRegistry
+import io.qalipsis.api.meters.Timer
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.runtime.ScenarioStartStopConfiguration
 import io.qalipsis.api.states.SharedStateRegistry
@@ -71,6 +73,7 @@ import org.slf4j.event.Level
 import java.time.Duration
 import java.time.Instant
 import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
 
 @Singleton
 @Requires(env = [ExecutionEnvironments.FACTORY, ExecutionEnvironments.STANDALONE])
@@ -82,6 +85,7 @@ class FactoryCampaignManagerImpl(
     private val sharedStateRegistry: SharedStateRegistry,
     private val contextConsumer: Optional<ContextConsumer>,
     private val campaignReportLiveStateRegistry: CampaignReportLiveStateRegistry,
+    private val meterRegistry: CampaignMeterRegistry,
     @Named(Executors.BACKGROUND_EXECUTOR_NAME) private val backgroundScope: CoroutineScope,
     @Property(name = "factory.graceful-shutdown.minion", defaultValue = "1s")
     private val minionGracefulShutdown: Duration = Duration.ofSeconds(1),
@@ -96,6 +100,12 @@ class FactoryCampaignManagerImpl(
      */
     @KTestable
     override var runningCampaign: Campaign = EMPTY_CAMPAIGN
+
+    /**
+     * Timers of the notification of the minions completion, which requires a call to the shared registry and is
+     * therefore sensitive to the latency between the factory and the cluster.
+     */
+    private val minionsCompletionTimers = ConcurrentHashMap<ScenarioName, Timer>()
 
     /**
      * Scenarios to be globally executed in the campaign, and known in the current factory.
@@ -230,9 +240,6 @@ class FactoryCampaignManagerImpl(
         )
         var start = 0L
 
-        // Notifies all the execution profiles that the campaign is now effectively starting.
-        assignableScenariosExecutionProfiles.values.forEach { it.notifyStart(runningCampaign.speedFactor) }
-
         val result = mutableListOf<MinionsStartingLine>()
         log.debug { "Creating the execution profile for $remainingMinionsUnderLoadCount minions on campaign $campaignKey of scenario $scenarioName" }
         while (remainingMinionsUnderLoadCount > 0 && executionProfileIterator.hasNext()) {
@@ -251,9 +258,16 @@ class FactoryCampaignManagerImpl(
             start = nextStart
         }
 
-        assert(remainingMinionsUnderLoadCount == 0) { "$remainingMinionsUnderLoadCount minions could not be scheduled" }
+        if (remainingMinionsUnderLoadCount > 0) {
+            log.error { "The execution profile of the scenario $scenarioName does not start $remainingMinionsUnderLoadCount minions of the campaign $campaignKey" }
+        }
         log.debug { "Ramp-up creation is complete on campaign $campaignKey for scenario $scenarioName" }
         return result
+    }
+
+    @LogInput(Level.DEBUG)
+    override fun notifyMinionsStart(scenarioName: ScenarioName, startInstant: Instant) {
+        assignableScenariosExecutionProfiles[scenarioName]?.notifyStart(runningCampaign.speedFactor, startInstant)
     }
 
     @LogInput
@@ -271,6 +285,7 @@ class FactoryCampaignManagerImpl(
                 && assignableScenariosExecutionProfiles[scenarioName]!!.canReplay(minionsExecutionElapsedTime)
 
         // Verifies the actual completion state of the minion, scenario and campaign.
+        val completionNotificationStart = System.nanoTime()
         val completionState =
             minionAssignmentKeeper.executionComplete(
                 campaignKey,
@@ -279,6 +294,14 @@ class FactoryCampaignManagerImpl(
                 listOf(dagId),
                 mightRestartMinion
             )
+        minionsCompletionTimers.computeIfAbsent(scenarioName) { scenario ->
+            meterRegistry.timer(
+                scenarioName = scenario,
+                stepName = "",
+                name = "_minions-completion-notification",
+                tags = mapOf("scenario" to scenario)
+            )
+        }.record(Duration.ofNanos(System.nanoTime() - completionNotificationStart))
         log.trace { "Completing minion $minionId of scenario $scenarioName in campaign $campaignKey returns $completionState" }
         if (completionState.minionComplete) {
             if (mightRestartMinion) {

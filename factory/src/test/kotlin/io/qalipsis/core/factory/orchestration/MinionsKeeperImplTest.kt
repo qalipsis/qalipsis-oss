@@ -107,7 +107,7 @@ internal class MinionsKeeperImplTest {
             campaignMeterRegistry.gauge(
                 any(),
                 any(),
-                "idle-minions",
+                "_idle-minions",
                 mapOf("scenario" to "my-scenario"),
             )
         } returns idleMinionsGauge
@@ -115,7 +115,7 @@ internal class MinionsKeeperImplTest {
             campaignMeterRegistry.gauge(
                 any(),
                 any(),
-                "running-minions",
+                "_running-minions",
                 mapOf("scenario" to "my-scenario"),
             )
         } returns runningMinionsGauge
@@ -153,7 +153,7 @@ internal class MinionsKeeperImplTest {
                 campaignMeterRegistry.gauge(
                     "my-scenario",
                     "",
-                    "idle-minions",
+                    "_idle-minions",
                     mapOf("scenario" to "my-scenario"),
                 )
                 eventsLogger.debug(
@@ -259,7 +259,7 @@ internal class MinionsKeeperImplTest {
             runner.run(any(), refEq(dag))
             campaignMeterRegistry.gauge(
                 "my-scenario",
-                "", "idle-minions", mapOf("scenario" to "my-scenario")
+                "", "_idle-minions", mapOf("scenario" to "my-scenario")
             )
             idleMinionsGauge.increment()
         }
@@ -434,12 +434,13 @@ internal class MinionsKeeperImplTest {
             )
             reportLiveStateRegistry.recordStartedMinion("my-campaign", "my-scenario", 2)
             campaignMeterRegistry.gauge(  "my-scenario",
-                "","idle-minions", mapOf("scenario" to "my-scenario"))
+                "", "_idle-minions", mapOf("scenario" to "my-scenario")
+            )
             idleMinionsGauge.decrement(2.0)
             campaignMeterRegistry.gauge(
                 "my-scenario",
                 "",
-                "running-minions",
+                "_running-minions",
                 mapOf("scenario" to "my-scenario")
             )
             runningMinionsGauge.increment(2.0)
@@ -498,12 +499,13 @@ internal class MinionsKeeperImplTest {
             )
             reportLiveStateRegistry.recordStartedMinion("my-campaign", "my-scenario", 2)
             campaignMeterRegistry.gauge(  "my-scenario",
-                "", "idle-minions", mapOf("scenario" to "my-scenario"))
+                "", "_idle-minions", mapOf("scenario" to "my-scenario")
+            )
             idleMinionsGauge.decrement(2.0)
             campaignMeterRegistry.gauge(
                 "my-scenario",
                 "",
-                "running-minions",
+                "_running-minions",
                 mapOf("scenario" to "my-scenario")
             )
             runningMinionsGauge.increment(2.0)

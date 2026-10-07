@@ -17,6 +17,7 @@ local minionsRootFactoriesKey = KEYS[1] .. 'minion:root-factory-channel'
 local unscheduledMinionsKey = KEYS[1] .. 'minion:unscheduled'
 local startingLinesKey = KEYS[1] .. 'minion:starting-lines'
 local scheduledMinionsByFactoryKey = KEYS[1] .. 'minion:scheduled-by-factory:'
+local schedulingExecutionKey = KEYS[1] .. 'minion:scheduling-executed'
 
 local function schedule()
     local scheduledMinionsCount = 0
@@ -54,6 +55,14 @@ local function schedule()
 
     -- Returns the number of scheduled minions
     return scheduledMinionsCount
+end
+
+-- All the factories executing the scenario request the scheduling, but the starting lines always cover all its
+-- minions. Only the first request is therefore executed, the further ones would reschedule minions that are
+-- already planned, potentially after they were started.
+if redis.call('setnx', schedulingExecutionKey, '1') == 0 then
+    redis.call('unlink', startingLinesKey)
+    return { 'scheduled-minions-count', 0, 'unscheduled-minions', 0 }
 end
 
 redis.call('copy', minionsRootFactoriesKey, unscheduledMinionsKey)

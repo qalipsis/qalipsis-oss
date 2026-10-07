@@ -92,6 +92,15 @@ interface MinionAssignmentKeeper {
     ): Map<MinionId, Collection<DirectedAcyclicGraphName>>
 
     /**
+     * Returns the count of minions under load that the local factory could effectively assign to itself for the
+     * scenario, which can be less than its maximal count when the other factories were served first.
+     */
+    suspend fun countAssignedMinionsUnderLoad(
+        campaignKey: CampaignKey,
+        scenarioName: ScenarioName
+    ): Int
+
+    /**
      * Schedules all the minions for the campaign and scenario, using the provided calculated starting lines.
      */
     suspend fun schedule(

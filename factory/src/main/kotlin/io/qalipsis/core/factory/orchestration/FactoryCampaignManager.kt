@@ -57,6 +57,14 @@ interface FactoryCampaignManager : CampaignLifeCycleAware {
         executionProfileConfiguration: ExecutionProfileConfiguration
     ): List<MinionsStartingLine>
 
+    /**
+     * Notifies the execution profile of the scenario that its minions start at [startInstant].
+     *
+     * The instant is provided by the head and is therefore the same on all the factories executing the scenario,
+     * which is required to have them all apply the same time frame when replaying the minions.
+     */
+    fun notifyMinionsStart(scenarioName: ScenarioName, startInstant: Instant)
+
     suspend fun notifyCompleteMinion(
         minionId: MinionId,
         minionStart: Instant,

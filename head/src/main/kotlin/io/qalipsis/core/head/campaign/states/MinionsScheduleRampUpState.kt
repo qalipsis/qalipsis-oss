@@ -19,7 +19,6 @@
 
 package io.qalipsis.core.head.campaign.states
 
-import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
@@ -28,12 +27,20 @@ import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.ConcurrentHashMap
 
 open class MinionsScheduleRampUpState(
     protected val campaign: RunningCampaign
 ) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
 
-    private val expectedFeedbacks = concurrentSet(campaign.scenarios.keys)
+    // All the factories prepare and schedule the ramp-up of the scenarios they execute, hence a feedback is
+    // expected from each of them before the campaign can start.
+    private val expectedFeedbacks =
+        ConcurrentHashMap(campaign.factories.mapValues { it.value.assignment.keys.toSet() })
+
+    private val mutex = Mutex(false)
 
     override suspend fun doInit(): List<Directive> {
         return campaign.scenarios.map { (scenarioName, configuration) ->
@@ -58,11 +65,15 @@ open class MinionsScheduleRampUpState(
         return if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.FAILED) {
             FailureState(campaign, feedback.error ?: "")
         } else if (feedback is MinionsRampUpPreparationFeedback && feedback.status == FeedbackStatus.COMPLETED) {
-            expectedFeedbacks -= feedback.scenarioName
-            if (expectedFeedbacks.isEmpty()) {
-                WarmupState(campaign)
-            } else {
-                this
+            mutex.withLock {
+                expectedFeedbacks.computeIfPresent(feedback.nodeId) { _, scenarios ->
+                    (scenarios - feedback.scenarioName).ifEmpty { null }
+                }
+                if (expectedFeedbacks.isEmpty()) {
+                    WarmupState(campaign)
+                } else {
+                    this
+                }
             }
         } else {
             this
@@ -76,7 +87,7 @@ open class MinionsScheduleRampUpState(
     }
 
     override fun toString(): String {
-        return "MinionsScheduleRampUpState(campaign=$campaign)"
+        return "MinionsScheduleRampUpState(campaign=$campaign, expectedFeedbacks=$expectedFeedbacks)"
     }
 
     private companion object {

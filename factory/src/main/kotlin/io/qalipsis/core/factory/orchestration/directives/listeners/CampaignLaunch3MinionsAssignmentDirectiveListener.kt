@@ -67,7 +67,16 @@ class CampaignLaunch3MinionsAssignmentDirectiveListener(
                 assignedMinions.forEach { (minionId, dags) ->
                     minionsKeeper.create(directive.campaignKey, directive.scenarioName, dags, minionId)
                 }
-                factoryChannel.publishFeedback(feedback.copy(status = FeedbackStatus.COMPLETED))
+                // The count of minions under load is reported to let the head verify that all of them are executed.
+                factoryChannel.publishFeedback(
+                    feedback.copy(
+                        status = FeedbackStatus.COMPLETED,
+                        assignedMinionsUnderLoadCount = minionAssignmentKeeper.countAssignedMinionsUnderLoad(
+                            directive.campaignKey,
+                            directive.scenarioName
+                        )
+                    )
+                )
             }
         } catch (e: Exception) {
             log.error(e) { e.message }

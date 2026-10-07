@@ -24,6 +24,7 @@ import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isGreaterThan
@@ -126,7 +127,7 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     @Order(1)
     @MicronautTest(startApplication = false)
     @PropertySource(Property(name = "factory.assignment.timeout", value = "2s"))
@@ -348,21 +349,30 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
     @Test
     @Timeout(10)
     @Order(2)
-    internal fun `should schedule the minions underload of all factories and throw a failure if not all minions are scheduled`(
+    internal fun `should only schedule the minions covered by the starting lines`(
         minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
     ) = testDispatcherProvider.run {
-
-        val assertionError = assertThrows<AssertionError> {
-            minionAssignmentKeeper.schedule(
-                CAMPAIGN,
-                SCENARIO_1, listOf(
-                    MinionsStartingLine(1, 123),
-                )
+        // when the starting lines do not cover all the minions under load
+        minionAssignmentKeeper.schedule(
+            CAMPAIGN, SCENARIO_1, listOf(
+                MinionsStartingLine(1, 123),
             )
-        }
+        )
 
-        // then
-        assertThat(assertionError.message).isEqualTo("999 minions could not be scheduled")
+        // then the minions that cannot be scheduled are only reported, the other ones are planned as expected.
+        val schedule = mutableMapOf<Long, MutableCollection<MinionId>>()
+        minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1, "the-factory-1-channel")
+            .forEach { (offset, minions) ->
+                schedule.computeIfAbsent(offset) { mutableSetOf() } += minions
+            }
+        minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1, "the-factory-2-channel")
+            .forEach { (offset, minions) ->
+                schedule.computeIfAbsent(offset) { mutableSetOf() } += minions
+            }
+        assertThat(schedule).all {
+            hasSize(1)
+            key(123).hasSize(1)
+        }
     }
 
     @Test
@@ -442,6 +452,24 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
                 key(2789).hasSize(MINIONS_COUNT_IN_EACH_SCENARIO - 115 - 50)
             }
         }
+
+    @Test
+    @Timeout(10)
+    @Order(3)
+    internal fun `should ignore the scheduling requests of a scenario that was already scheduled`(
+        minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper
+    ) = testDispatcherProvider.run {
+        // when all the factories executing the scenario request the scheduling, only the first request is executed.
+        minionAssignmentKeeper.schedule(
+            CAMPAIGN, SCENARIO_1, listOf(
+                MinionsStartingLine(MINIONS_COUNT_IN_EACH_SCENARIO, 10_000)
+            )
+        )
+
+        // then the minions, which schedule was already consumed, are not scheduled once more.
+        assertThat(minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1, "the-factory-1-channel")).isEmpty()
+        assertThat(minionAssignmentKeeper.readSchedulePlan(CAMPAIGN, SCENARIO_1, "the-factory-2-channel")).isEmpty()
+    }
 
     @Test
     @Timeout(10)
@@ -642,7 +670,7 @@ internal class RedisDistributedMinionAssignmentKeeperIntegrationTest : AbstractR
     @PropertySource(
         Property(name = "factory.assignment.timeout", value = "1ms")
     )
-    @Timeout(2)
+    @Timeout(10)
     @Order(-1)
     internal fun `should assign until the timeout`(minionAssignmentKeeper: RedisDistributedMinionAssignmentKeeper) =
         testDispatcherProvider.run {

@@ -30,6 +30,7 @@ import io.mockk.spyk
 import io.qalipsis.test.mockk.verifyExactly
 import org.junit.jupiter.api.Test
 import java.time.Duration
+import java.time.Instant
 
 /**
  * @author Svetlana Paliashchuk
@@ -196,6 +197,36 @@ internal class StageExecutionProfileTest {
     }
 
     @Test
+    internal fun `should not replay when the start was not notified`() {
+        // given
+        val executionProfile = StageExecutionProfile(CompletionMode.GRACEFUL, stagesOf500Ms())
+
+        // when
+        val canReplay = executionProfile.canReplay(Duration.ZERO)
+
+        // then
+        assertThat(canReplay).isFalse()
+    }
+
+    @Test
+    internal fun `should replay until the end of the stages counted from the notified start instant`() {
+        // given
+        val executionProfile = StageExecutionProfile(CompletionMode.GRACEFUL, stagesOf500Ms())
+
+        // when
+        executionProfile.notifyStart(1.0, Instant.now().plusSeconds(10))
+
+        // then
+        assertThat(executionProfile.canReplay(Duration.ZERO)).isTrue()
+
+        // when the start instant is in the past of more than the duration of the stages
+        executionProfile.notifyStart(1.0, Instant.now().minusSeconds(10))
+
+        // then the latest notified instant applies
+        assertThat(executionProfile.canReplay(Duration.ZERO)).isFalse()
+    }
+
+    @Test
     internal fun `should replay when the completion is HARD and the remaining time is more than the elapsed one`() {
         // given
         val stages = listOf(
@@ -294,10 +325,9 @@ internal class StageExecutionProfileTest {
             ),
         )
         val executionProfile = StageExecutionProfile(CompletionMode.GRACEFUL, stages)
-        executionProfile.notifyStart(1.0)
+        executionProfile.notifyStart(1.0, Instant.now().minusMillis(400))
 
         // when
-        Thread.sleep(400)
         val canReplay = executionProfile.canReplay(Duration.ofMinutes(10_000))
 
         // then
@@ -322,10 +352,9 @@ internal class StageExecutionProfileTest {
             ),
         )
         val executionProfile = StageExecutionProfile(CompletionMode.GRACEFUL, stages)
-        executionProfile.notifyStart(1.0)
+        executionProfile.notifyStart(1.0, Instant.now().minusMillis(600))
 
         // when
-        Thread.sleep(600)
         val canReplay = executionProfile.canReplay(Duration.ofMinutes(10_000))
 
         // then
@@ -350,13 +379,17 @@ internal class StageExecutionProfileTest {
             ),
         )
         val executionProfile = StageExecutionProfile(CompletionMode.GRACEFUL, stages)
-        executionProfile.notifyStart(2.0)
+        executionProfile.notifyStart(2.0, Instant.now().minusMillis(300))
 
         // when
-        Thread.sleep(300)
         val canReplay = executionProfile.canReplay(Duration.ofMinutes(10_000))
 
         // then
         assertThat(canReplay).isFalse()
     }
+
+    private fun stagesOf500Ms() = listOf(
+        Stage(minionsCount = 12, rampUpDurationMs = 100, totalDurationMs = 200, resolutionMs = 50),
+        Stage(minionsCount = 14, rampUpDurationMs = 300, totalDurationMs = 300, resolutionMs = 40),
+    )
 }

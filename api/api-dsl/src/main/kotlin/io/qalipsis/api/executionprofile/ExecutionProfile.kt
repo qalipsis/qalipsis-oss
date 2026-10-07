@@ -20,6 +20,7 @@
 package io.qalipsis.api.executionprofile
 
 import java.time.Duration
+import java.time.Instant
 
 /**
  *
@@ -34,6 +35,14 @@ interface ExecutionProfile {
      * Notifies the execution profile that the campaign is starting.
      */
     fun notifyStart(speedFactor: Double) = Unit
+
+    /**
+     * Notifies the execution profile that the minions of the campaign start at [startInstant].
+     *
+     * Contrary to [notifyStart], [startInstant] is shared by all the factories executing the scenario, so that they
+     * all apply the very same time frame to the profile.
+     */
+    fun notifyStart(speedFactor: Double, startInstant: Instant) = notifyStart(speedFactor)
 
     /**
      * Generates a new [ExecutionProfileIterator] to define a new sequence of starts.

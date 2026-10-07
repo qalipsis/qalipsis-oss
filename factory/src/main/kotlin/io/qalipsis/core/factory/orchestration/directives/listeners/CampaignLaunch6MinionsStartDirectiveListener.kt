@@ -28,6 +28,7 @@ import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.MinionsStartDirective
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.FactoryChannel
+import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
 import io.qalipsis.core.factory.orchestration.MinionAssignmentKeeper
 import io.qalipsis.core.factory.orchestration.MinionsKeeper
@@ -48,6 +49,7 @@ class CampaignLaunch6MinionsStartDirectiveListener(
     private val localAssignmentStore: LocalAssignmentStore,
     private val minionsKeeper: MinionsKeeper,
     private val minionsAssignmentKeeper: MinionAssignmentKeeper,
+    private val factoryCampaignManager: FactoryCampaignManager,
     private val factoryChannel: FactoryChannel
 ) : DirectiveListener<MinionsStartDirective> {
 
@@ -59,6 +61,10 @@ class CampaignLaunch6MinionsStartDirectiveListener(
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(directive: MinionsStartDirective) {
         try {
+            // All the factories of the scenario are notified with the same instant, so that they all apply the
+            // same time frame of the execution profile when replaying their minions.
+            factoryCampaignManager.notifyMinionsStart(directive.scenarioName, directive.startTimestamp)
+
             log.debug { "Starting the singletons for the campaign ${directive.campaignKey} on scenario ${directive.scenarioName}" }
             minionsKeeper.startSingletons(directive.scenarioName)
 

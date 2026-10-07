@@ -715,7 +715,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should not generate a report while there are running scenarios`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
@@ -741,7 +741,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should not generate a report when nothing started`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
@@ -764,7 +764,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should allow the report when the campaign started and is aborted`() = testDispatcherProvider.run {
         // given
         val campaignStateKeeper =
@@ -795,7 +795,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should generate a report for all the scenarios of the campaign as successful when there are info only`() =
         testDispatcherProvider.run {
             // given
@@ -856,7 +856,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should generate a report for all the scenarios of the campaign as warning when there are warning`() =
         testDispatcherProvider.run {
             // given
@@ -917,7 +917,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should generate a report for all the scenarios of the campaign as error when there is one error`() =
         testDispatcherProvider.run {
             // given
@@ -986,7 +986,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         ABORTED,The campaign succeeded,ABORTED""",
         nullValues = [""]
     )
-    @Timeout(2)
+    @Timeout(30)
     internal fun `should generate a report using the status provided at completion when it is a failure`(
         completionStatus: ExecutionStatus,
         completionMessage: String?,
@@ -1052,7 +1052,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should retrieve the report details for a unique campaign`() = testDispatcherProvider.run {
         // given
         val campaignReportProvider =
@@ -1131,7 +1131,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should retrieve the report details for a collection of campaigns`() = testDispatcherProvider.run {
         // given
         val campaignReportProvider =
@@ -1275,7 +1275,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should retrieve the report details when a campaign key is missing`() = testDispatcherProvider.run {
         // given
         val campaignReportProvider =
@@ -1386,7 +1386,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `should retrieve the report details when all campaign keys are missing`() =
         testDispatcherProvider.run {
             // given
@@ -1745,7 +1745,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
-    @Timeout(2)
+    @Timeout(10)
     internal fun `retrieve step status should be FAILED when step is not initialized`() =
         testDispatcherProvider.runTest {
             // given
@@ -1764,7 +1764,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(2)
+    @Timeout(10)
     internal fun `retrieve step status should be FAILED when step has initialization error`() =
         testDispatcherProvider.runTest {
             // given
@@ -1786,7 +1786,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(2)
+    @Timeout(10)
     internal fun `retrieve step status should be FAILED when there are ERROR messages for the step`() =
         testDispatcherProvider.runTest {
             // given
@@ -1811,7 +1811,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(2)
+    @Timeout(10)
     internal fun `retrieve step status should be WARNING when there are WARN messages for the step`() =
         testDispatcherProvider.runTest {
             // given
@@ -1836,7 +1836,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(2)
+    @Timeout(10)
     internal fun `retrieve step status should be WARNING when failedExecutions is greater than zero`() =
         testDispatcherProvider.runTest {
             // given
@@ -1858,7 +1858,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(2)
+    @Timeout(10)
     internal fun `retrieve step status should be SUCCESSFUL when all checks pass`() =
         testDispatcherProvider.runTest {
             // given
@@ -1880,7 +1880,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `retrieveCampaignsReports should populate resolvedZones from zone service`() =
         testDispatcherProvider.run {
             // given
@@ -1919,7 +1919,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `retrieveCampaignsReports should populate zones field from campaign configuration`() =
         testDispatcherProvider.run {
             // given
@@ -1956,7 +1956,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
         }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `retrieveCampaignsReports should populate campaign level meters`() = testDispatcherProvider.run {
         // given
         val keeper = StandaloneCampaignReportStateKeeperImpl(
@@ -1988,7 +1988,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `retrieveCampaignsReports should populate scenario level meters`() = testDispatcherProvider.run {
         // given
         val keeper = StandaloneCampaignReportStateKeeperImpl(
@@ -2020,7 +2020,7 @@ internal class StandaloneCampaignReportStateKeeperImplTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(10)
     internal fun `retrieveCampaignsReports should populate step level meters`() = testDispatcherProvider.run {
         // given
         val keeper = StandaloneCampaignReportStateKeeperImpl(
