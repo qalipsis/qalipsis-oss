@@ -13,7 +13,7 @@ export interface CampaignTableData extends Campaign {
    * The start time of the campaign in formatted text.
    * If the campaign is not yet started. "Not started yet" text is displayed.
    */
-  startTime: string
+  start: string
 
   /**
    * The text of all scenario names.

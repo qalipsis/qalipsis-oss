@@ -20,8 +20,8 @@
     </thead>
     <tbody>
     <tr
-        v-for="meter in meters"
-        :key="meter.name"
+        v-for="meter in displayedMeters"
+        :key="meterKey(meter)"
         class="border-t border-gray-100 dark:border-gray-700 align-top"
     >
       <td class="px-2 py-1.5">
@@ -71,6 +71,37 @@ const EXCLUDED_TAG_KEYS = new Set(['scope', 'step', 'dag', 'previous-step'])
 
 const filteredTags = (meter: TimeSeriesMeter): [string, string][] =>
     meter.tags ? Object.entries(meter.tags).filter(([k]) => !EXCLUDED_TAG_KEYS.has(k)) : []
+
+/**
+ * Identity of a meter, made of its name and all its tags. The REST API returns one row per factory
+ * and per publication, hence several rows sharing the very same identity.
+ */
+const meterKey = (meter: TimeSeriesMeter): string => {
+  const tags = Object.entries(meter.tags ?? {})
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, value]) => `${key}=${value}`)
+      .join(',')
+
+  return `${meter.name}|${tags}`
+}
+
+const _timestampOf = (meter: TimeSeriesMeter): number => Date.parse(meter.timestamp) || 0
+
+/**
+ * Only the latest snapshot of each distinct meter identity, in order of first appearance.
+ */
+const displayedMeters = computed(() => {
+  const latestByIdentity = new Map<string, TimeSeriesMeter>()
+  props.meters.forEach((meter) => {
+    const key = meterKey(meter)
+    const alreadyKept = latestByIdentity.get(key)
+    if (!alreadyKept || _timestampOf(meter) >= _timestampOf(alreadyKept)) {
+      latestByIdentity.set(key, meter)
+    }
+  })
+
+  return [...latestByIdentity.values()]
+})
 
 const headRowCls = computed(() =>
     props.variant === 'nested'
