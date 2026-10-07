@@ -112,11 +112,11 @@ export const ReportHelper = {
           seriesName: dataSeriesReferenceToDataSeries[cur]!.displayName,
           campaignKey: res.campaign,
           campaignName: campaignKeyToName[res.campaign]!,
-          startTime: res.start,
+            start: res.start,
           elapsed: TimeframeHelper.isoStringToTargetTimeframeUnit(res.elapsed, 'SEC'),
           elapsedText: `${TimeframeHelper.isoStringToTargetTimeframeUnit(res.elapsed, 'SEC')} s`,
           value: res.value,
-          startTimeText: TimeframeHelper.toSpecificFormat(new Date(res.start), 'dd/MM/yyyy, HH:mm:ss'),
+            startText: TimeframeHelper.toSpecificFormat(new Date(res.start), 'dd/MM/yyyy, HH:mm:ss'),
           valueDisplayText: formattedAggregatedValue.formattedText,
         }
 

@@ -292,7 +292,7 @@ export const CampaignHelper = {
       ...campaign,
       scenarioText: campaign.scenarios.map((scenario) => scenario.name).join(','),
       creationTime: TimeframeHelper.toSpecificFormat(new Date(campaign.creation), 'dd/MM/yyyy, HH:mm:ss'),
-      startTime: campaign.start
+        start: campaign.start
         ? TimeframeHelper.toSpecificFormat(new Date(campaign.start), 'dd/MM/yyyy, HH:mm:ss')
         : 'Not started yet',
       /**

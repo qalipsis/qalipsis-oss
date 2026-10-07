@@ -89,28 +89,55 @@
         </template>
 
         <template v-else>
-          <!-- Zone distribution -->
-          <div
-              v-if="Object.keys(report.zoneDistribution).length > 0"
-              class="flex items-center gap-x-2 flex-wrap"
-          >
-            <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex-shrink-0">
-              Zone distribution
-            </span>
-            <span
-                v-for="(percentage, zoneKey) in report.zoneDistribution"
-                :key="zoneKey"
-                class="inline-flex items-center gap-x-1.5 px-2 py-0.5 text-xs font-semibold text-gray-800 dark:text-gray-200"
+          <!-- Zone distribution and steps display options -->
+          <div class="flex items-center gap-x-6 flex-wrap">
+            <div
+                v-if="Object.keys(report.zoneDistribution).length > 0"
+                class="flex items-center gap-x-2 flex-wrap"
             >
-              <img
-                  v-if="zones[zoneKey]?.imagePath"
-                  :src="zones[zoneKey]!.imagePath"
-                  :alt="zones[zoneKey]!.title"
-                  class="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0"
-              />
-              <span>{{ zones[zoneKey]?.title ?? zoneKey }}</span>
-              <span class="text-gray-800 dark:text-gray-200 font-mono">{{ percentage }}%</span>
-            </span>
+              <span
+                  class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex-shrink-0">
+                Zone distribution
+              </span>
+              <span
+                  v-for="(percentage, zoneKey) in report.zoneDistribution"
+                  :key="zoneKey"
+                  class="inline-flex items-center gap-x-1.5 px-2 py-0.5 text-xs font-semibold text-gray-800 dark:text-gray-200"
+              >
+                <img
+                    v-if="zones[zoneKey]?.imagePath"
+                    :src="zones[zoneKey]!.imagePath"
+                    :alt="zones[zoneKey]!.title"
+                    class="w-3.5 h-3.5 rounded-full object-cover flex-shrink-0"
+                />
+                <span>{{ zones[zoneKey]?.title ?? zoneKey }}</span>
+                <span class="text-gray-800 dark:text-gray-200 font-mono">{{ percentage }}%</span>
+              </span>
+            </div>
+
+            <BaseTableCheckbox
+                v-if="report.meters.length > 0 || report.steps.length > 0"
+                v-model="scenarioIdsShowingGauges"
+                :value="report.id"
+                label="Show gauges"
+                class="text-xs text-gray-500 dark:text-gray-400"
+            />
+
+            <BaseTableCheckbox
+                v-if="report.meters.length > 0 || report.steps.length > 0"
+                v-model="scenarioIdsShowingInternalMeters"
+                :value="report.id"
+                label="Show internal meters"
+                class="text-xs text-gray-500 dark:text-gray-400"
+            />
+
+            <BaseTableCheckbox
+                v-if="report.steps.length > 0"
+                v-model="scenarioIdsShowingUnnamedSteps"
+                :value="report.id"
+                label="Show unnamed steps"
+                class="text-xs text-gray-500 dark:text-gray-400"
+            />
           </div>
 
           <!-- Scenario-level messages -->
@@ -134,11 +161,11 @@
           </div>
 
           <!-- Scenario-level meters table -->
-          <div v-if="report.meters.length > 0">
+          <div v-if="visibleMeters(report, report.meters).length > 0">
             <div class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
               Meters
             </div>
-            <ScenarioMeterTable :meters="report.meters!"/>
+            <ScenarioMeterTable :meters="visibleMeters(report, report.meters)"/>
           </div>
 
           <!-- Steps -->
@@ -148,16 +175,16 @@
             </div>
             <div class="flex flex-col gap-y-1">
               <div
-                  v-for="(step, stepIndex) in report.steps ?? []"
-                  :key="stepIndex"
+                  v-for="step in visibleSteps(report)"
+                  :key="step.name"
                   class="border rounded"
                   :class="stepBorderCls(step)"
               >
                 <!-- Step row -->
                 <div
                     class="flex items-center gap-x-2 px-3 py-1.5"
-                    :class="{ 'cursor-pointer': !isStepNotExecuted(step) && stepHasDetail(step) }"
-                    @click="!isStepNotExecuted(step) && stepHasDetail(step) && toggleStep(report.id, stepIndex)"
+                    :class="{ 'cursor-pointer': !isStepNotExecuted(step) && stepHasDetail(report, step) }"
+                    @click="!isStepNotExecuted(step) && stepHasDetail(report, step) && toggleStep(report.id, step.name)"
                 >
                   <span class="font-mono text-sm text-gray-800 dark:text-gray-200 flex-1 truncate">{{
                       step.name
@@ -180,19 +207,19 @@
                   >N/A, Off-load</span>
                   <ScenarioTag v-else :status="step.status" class="flex-shrink-0"/>
                   <button
-                      v-if="!isStepNotExecuted(step) && stepHasDetail(step)"
+                      v-if="!isStepNotExecuted(step) && stepHasDetail(report, step)"
                       class="text-xs px-2 py-0.5 rounded border border-gray-200 dark:border-gray-600 text-gray-500 hover:bg-gray-50 dark:hover:bg-primary-800 flex-shrink-0"
-                      @click.stop="toggleStep(report.id, stepIndex)"
+                      @click.stop="toggleStep(report.id, step.name)"
                   >
                     Details <span class="text-gray-400">{{
-                      expandedSteps.has(`${report.id}:${stepIndex}`) ? '▴' : '▾'
+                      expandedSteps.has(`${report.id}:${step.name}`) ? '▴' : '▾'
                     }}</span>
                   </button>
                 </div>
 
                 <!-- Step detail panel -->
                 <div
-                    v-if="!isStepNotExecuted(step) && stepHasDetail(step) && expandedSteps.has(`${report.id}:${stepIndex}`)"
+                    v-if="!isStepNotExecuted(step) && stepHasDetail(report, step) && expandedSteps.has(`${report.id}:${step.name}`)"
                     class="border-t border-gray-100 dark:border-gray-700 px-4 py-3 flex flex-col gap-y-3 bg-gray-50 dark:bg-primary-950"
                 >
                   <!-- Step messages -->
@@ -215,11 +242,11 @@
                   </div>
 
                   <!-- Step meters table -->
-                  <div v-if="(step.meters?.length ?? 0) > 0">
+                  <div v-if="visibleMeters(report, step.meters).length > 0">
                     <div class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
                       Meters
                     </div>
-                    <ScenarioMeterTable :meters="step.meters!" variant="nested"/>
+                    <ScenarioMeterTable :meters="visibleMeters(report, step.meters)" variant="nested"/>
                   </div>
                 </div>
               </div>
@@ -245,6 +272,17 @@ const props = defineProps<{
   zones: { [key: string]: Zone }
 }>()
 
+/**
+ * Steps and meters generated by QALIPSIS itself, as opposed to the ones declared in the scenario,
+ * have a name starting with it.
+ */
+const INTERNAL_NAME_PREFIX = '_'
+
+/**
+ * Technical type of the gauge meters, as provided by the REST API.
+ */
+const GAUGE_METER_TYPE = 'gauge'
+
 const isRunning = computed(() =>
     props.status === ExecutionStatusConstant.IN_PROGRESS ||
     props.status === ExecutionStatusConstant.QUEUED ||
@@ -262,15 +300,54 @@ const toggleScenario = (id: string) => {
   else s.add(id)
 }
 
-const toggleStep = (scenarioId: string, stepIndex: number) => {
-  const key = `${scenarioId}:${stepIndex}`
+const toggleStep = (scenarioId: string, stepName: string) => {
+  const key = `${scenarioId}:${stepName}`
   const s = expandedSteps.value
   if (s.has(key)) s.delete(key)
   else s.add(key)
 }
 
-const stepHasDetail = (step: StepExecutionDetails): boolean =>
-    (step.messages?.length ?? 0) > 0 || (step.meters?.length ?? 0) > 0
+// ── Unnamed steps visibility ─────────────────────────────────────────────────
+
+/**
+ * Identifiers of the scenario reports for which the unnamed steps are displayed.
+ */
+const scenarioIdsShowingUnnamedSteps = ref<string[]>([])
+
+const isUnnamedStep = (step: StepExecutionDetails): boolean => step.name.startsWith(INTERNAL_NAME_PREFIX)
+
+const visibleSteps = (report: ScenarioReport): StepExecutionDetails[] => {
+  const steps = report.steps ?? []
+  return scenarioIdsShowingUnnamedSteps.value.includes(report.id) ? steps : steps.filter((step) => !isUnnamedStep(step))
+}
+
+// ── Meters visibility ────────────────────────────────────────────────────────
+
+/**
+ * Identifiers of the scenario reports for which the gauge meters are displayed.
+ */
+const scenarioIdsShowingGauges = ref<string[]>([])
+
+/**
+ * Identifiers of the scenario reports for which the internal meters are displayed.
+ */
+const scenarioIdsShowingInternalMeters = ref<string[]>([])
+
+const isGauge = (meter: TimeSeriesMeter): boolean => meter.type?.toLowerCase() === GAUGE_METER_TYPE
+
+const isInternalMeter = (meter: TimeSeriesMeter): boolean => meter.name.startsWith(INTERNAL_NAME_PREFIX)
+
+const visibleMeters = (report: ScenarioReport, meters?: TimeSeriesMeter[]): TimeSeriesMeter[] => {
+  const showGauges = scenarioIdsShowingGauges.value.includes(report.id)
+  const showInternalMeters = scenarioIdsShowingInternalMeters.value.includes(report.id)
+
+  return (meters ?? []).filter(
+      (meter) => (showGauges || !isGauge(meter)) && (showInternalMeters || !isInternalMeter(meter)),
+  )
+}
+
+const stepHasDetail = (report: ScenarioReport, step: StepExecutionDetails): boolean =>
+    (step.messages?.length ?? 0) > 0 || visibleMeters(report, step.meters).length > 0
 
 const isStepNotExecuted = (step: StepExecutionDetails): boolean =>
     step.notExecuted || ((step.successfulExecutions ?? 0) + (step.failedExecutions ?? 0)) === 0

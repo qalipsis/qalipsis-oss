@@ -16,7 +16,7 @@ export const CampaignsTableConfig = {
     },
     {
       title: 'Started',
-      key: 'startTime',
+        key: 'start',
       sortingEnabled: true,
     },
     {

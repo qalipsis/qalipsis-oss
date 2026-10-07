@@ -29,7 +29,7 @@ export interface ReportDetailsTableData {
     /**
      * The start time from the aggregation result
      */
-    startTime: string;
+    start: string;
     /**
      * The elapsed time from the aggregation result
      */
@@ -45,7 +45,7 @@ export interface ReportDetailsTableData {
     /**
      * The text to display the start time
      */
-    startTimeText: string;
+    startText: string;
     /**
      * The text to display the value
      */

@@ -29,7 +29,7 @@ export const ReportDetailsConfig = {
         },
         {
             title: "Start time",
-            key: "startTimeText",
+            key: "startText",
         },
         {
             title: "Elapsed",
