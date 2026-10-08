@@ -22,9 +22,11 @@ package io.qalipsis.core.factory.redis
 import io.aerisconsulting.catadioptre.KTestable
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisFuture
+import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.async.RedisHashAsyncCommands
 import io.lettuce.core.api.async.RedisListAsyncCommands
 import io.micronaut.context.annotation.Property
+import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.qalipsis.api.Executors
 import io.qalipsis.api.constraints.PositiveDuration
@@ -58,7 +60,10 @@ import java.util.concurrent.atomic.AtomicLong
 import javax.validation.constraints.Positive
 
 @Singleton
-@Requires(env = [ExecutionEnvironments.FACTORY])
+@Requirements(
+    Requires(beans = [StatefulRedisConnection::class]),
+    Requires(env = [ExecutionEnvironments.FACTORY])
+)
 @ExperimentalLettuceCoroutinesApi
 class RedisCampaignReportLiveStateRegistry(
     private val redisHashCommands: RedisHashAsyncCommands<String, String>,
