@@ -17,6 +17,7 @@
  *
  */
 
+import groovy.lang.Closure
 import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
@@ -66,6 +67,12 @@ tasks.withType<Wrapper> {
 
 val testNumCpuCore: String? by project
 
+val versionDetails: Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
+val currentGitBranch = versionDetails().branchName ?: ""
+if (currentGitBranch != "main") {
+    project.logger.lifecycle("Maven Central deploy disabled for branch '${currentGitBranch}' in ${project.name}")
+}
+
 jreleaser {
     gitRootSearch.set(true)
 
@@ -93,7 +100,7 @@ jreleaser {
         maven {
             mavenCentral {
                 register("qalipsis-releases") {
-                    active.set(Active.RELEASE_PRERELEASE)
+                    active.set(if (currentGitBranch == "main") Active.RELEASE_PRERELEASE else Active.NEVER)
                     namespace.set("io.qalipsis")
                     applyMavenCentralRules.set(true)
                     stage.set(MavenCentralMavenDeployer.Stage.UPLOAD)
