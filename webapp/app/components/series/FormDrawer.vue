@@ -49,6 +49,7 @@
             :disabled="dataSeries?.disabled"
             :field-validation-schema="fieldValidationSchema.valueName"
             @search="handleFieldNameSearch($event)"
+            @select="handleValueNameSelect($event)"
           />
           <BaseSpinner v-else></BaseSpinner>
         </div>
@@ -161,6 +162,7 @@ import {toTypedSchema} from '@vee-validate/zod'
 import * as zod from 'zod'
 
 const WEBAPP_OSS_PROJECT_NAME = 'webapp-oss'
+const DEFAULT_DATA_TYPE = DataTypeConstant.METERS
 const config = useRuntimeConfig()
 
 const props = defineProps<{
@@ -180,7 +182,7 @@ const toastStore = useToastStore()
 const initialFormValue: DataSeriesForm = {
   name: props.dataSeries?.displayName ?? '',
   sharingMode: props.dataSeries?.sharingMode ?? (config.public.projectName === WEBAPP_OSS_PROJECT_NAME ? 'NONE' : null),
-  dataType: props.dataSeries?.dataType ?? DataTypeConstant.EVENTS,
+  dataType: props.dataSeries?.dataType ?? DEFAULT_DATA_TYPE,
   valueName: props.dataSeries?.valueName ?? '',
   fieldName: props.dataSeries?.fieldName ?? '',
   aggregationOperation: props.dataSeries?.aggregationOperation ?? null,
@@ -300,10 +302,11 @@ const isMetersType = computed(() => values.dataType === DataTypeConstant.METERS)
 const valueNameLabel = computed(() => (values.dataType === DataTypeConstant.EVENTS ? 'Event name' : 'Meter name'))
 
 onMounted(async () => {
-  const dataType = props.dataSeries?.dataType ?? DataTypeConstant.EVENTS
+  const dataType = props.dataSeries?.dataType ?? DEFAULT_DATA_TYPE
+  const valueName = props.dataSeries?.valueName
   _prepareValueNameFieldOptions(dataType)
-  _prepareTagMap(dataType)
-  await _prepareFieldOptions(dataType)
+  _prepareTagMap(dataType, valueName)
+  await _prepareFieldOptions(dataType, valueName)
   if (dataType === DataTypeConstant.METERS) {
     setFieldValue('aggregationOperation', null)
   } else {
@@ -322,6 +325,20 @@ const handleFieldNameSearch = async (query: string) => {
     }
   } catch (error) {
     toastStore.error({ text: ErrorHelper.getErrorMessage(error) })
+  }
+}
+
+/**
+ * Reloads the fields and tags restricted to the newly selected event or meter name.
+ *
+ * @param selectedValueName The selected event or meter name.
+ */
+const handleValueNameSelect = async (selectedValueName: string) => {
+  setFieldValue('fieldName', '')
+  _prepareTagMap(values.dataType, selectedValueName)
+  await _prepareFieldOptions(values.dataType, selectedValueName)
+  if (values.dataType !== DataTypeConstant.METERS) {
+    _shouldAggregationOperationFieldDisabled('')
   }
 }
 
