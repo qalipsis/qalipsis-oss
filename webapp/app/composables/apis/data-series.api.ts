@@ -126,20 +126,22 @@ export const useDataSeriesApi = () => {
    * Fetches the available data fields for the selected data type
    *
    * @param dataType The data type.
+   * @param name Optional name of the event or meter to restrict the fields to.
    * @returns The available fields.
    */
-  const fetchFields = (dataType: DataType): Promise<DataField[]> => {
-    return get$<DataField[]>(`/data-series/${dataType}/fields`)
+  const fetchFields = (dataType: DataType, name?: string): Promise<DataField[]> => {
+    return get$<DataField[]>(`/data-series/${dataType}/fields`, name ? {name} : undefined)
   }
 
   /**
    * Fetches the tags for the tag options
    *
    * @param dataType The data type
+   * @param name Optional name of the event or meter to restrict the tags to.
    * @returns A map of the tags
    */
-  const fetchTags = (dataType: DataType): Promise<{ [key: string]: string[] }> => {
-    return get$<{ [key: string]: string[] }>(`/data-series/${dataType}/tags`)
+  const fetchTags = (dataType: DataType, name?: string): Promise<{ [key: string]: string[] }> => {
+    return get$<{ [key: string]: string[] }>(`/data-series/${dataType}/tags`, name ? {name} : undefined)
   }
 
   /**
