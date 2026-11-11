@@ -264,6 +264,11 @@ export interface TimeSeriesMeter {
     meanDuration?: string;
     maxDuration?: string;
 
+    /**
+     * Percentiles of the durations of timers, by percentage (e.g. "99.0"), serialized as ISO-8601 strings.
+     */
+    percentileDurations?: { [percentage: string]: string };
+
     other?: { [key: string]: number };
 }
 

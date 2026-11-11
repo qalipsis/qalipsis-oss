@@ -53,6 +53,12 @@ export interface DataSeries {
   fieldName?: string
 
   /**
+   * Unit of the values of the field (e.g. MICROSECONDS for the durations of a timer), not returned with the data
+   * series but resolved from the fields of its event or meter.
+   */
+  fieldUnit?: string
+
+  /**
    * The opacity of the color
    */
   colorOpacity?: number

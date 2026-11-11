@@ -94,7 +94,7 @@ const createCampaignDetailsChartTooltip =
                 rows.push(
                     renderChartTooltipRow(
                         series.color,
-                        `<div class="pr-1">${label}:</div><div class="ml-2">${point.y}${series.name !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE && summaryVal !== undefined ? ` (${summaryVal})` : ''}</div>`,
+                        `<div class="pr-1">${label}:</div><div class="ml-2">${point.text ?? point.y}${series.name !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE && summaryVal !== undefined ? ` (${summaryVal})` : ''}</div>`,
                     ),
                 )
               }),

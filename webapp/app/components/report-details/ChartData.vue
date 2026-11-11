@@ -38,6 +38,7 @@ const props = defineProps<{
 
 const reportDetailsStore = useReportDetailsStore()
 const { fetchTimeSeriesAggregation } = useTimeSeriesApi()
+const { withFieldUnits } = useDataSeriesApi()
 const toastStore = useToastStore()
 
 const chartOptions = ref<ApexOptions>()
@@ -90,9 +91,10 @@ const _updateChartData = async (dataSeriesOptions: DataSeriesOption[]) => {
     const timeSeriesAggregationResult: {
       [key: string]: TimeSeriesValues
     } = await fetchTimeSeriesAggregation(queryParam)
+    const dataSeriesWithUnits = await withFieldUnits(dataSeriesOptions)
     const chartData: ChartData = ReportHelper.toReportChartData(
       timeSeriesAggregationResult,
-      dataSeriesOptions,
+      dataSeriesWithUnits,
       reportDetailsStore.activeCampaignOptions,
     )
     chartOptions.value = chartData.chartOptions

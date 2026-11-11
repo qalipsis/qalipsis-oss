@@ -47,8 +47,8 @@
       <td class="px-2 py-1.5 text-right">
         <template v-if="filteredPercentiles(meter).length > 0">
           <div v-for="[k, v] in filteredPercentiles(meter)" :key="k" class="font-mono text-xs leading-tight">
-            <span class="text-gray-400 dark:text-gray-500">{{ formatPctLabel(k) }}:&nbsp;</span>
-            <span class="text-gray-600 dark:text-gray-400"> {{ formatPctValue(meter, v) }}</span>
+            <span class="text-gray-400 dark:text-gray-500">{{ k }}:&nbsp;</span>
+            <span class="text-gray-600 dark:text-gray-400"> {{ v }}</span>
           </div>
         </template>
         <span v-else class="text-gray-600 dark:text-gray-400">—</span>
@@ -112,8 +112,7 @@ const headRowCls = computed(() =>
 /**
  * Format an ISO-8601 duration as a human-readable millisecond value.
  */
-const _formatDuration = (d: string): string =>
-    `${Math.round(TimeframeHelper.isoStringToTargetTimeframeUnit(d, 'MS'))} ms`
+const _formatDuration = (d: string): string => DurationFormatHelper.formatIso(d)
 
 const meterValueOrMean = (meter: TimeSeriesMeter): string => {
   if (meter.mean != null) return String(meter.mean)
@@ -129,22 +128,28 @@ const meterMax = (meter: TimeSeriesMeter): string => {
 }
 
 /**
- * Filters the percentiles provided in the meter.
+ * Prefix of the percentile keys in the additional values of the meters.
  */
-const filteredPercentiles = (meter: TimeSeriesMeter): [string, number][] =>
-    meter.other ? Object.entries(meter.other).filter(([k]) => k.startsWith('percentile_')) : []
+const PERCENTILE_PREFIX = 'percentile_'
 
 /**
- * Format the label of the percentile based on the key.
- * For example, percentile_99.9 is returned as 99.9 and percentile_50.0 as 50.
+ * Returns the percentiles of the meter as label and formatted value: durations for the timers,
+ * plain values for the other meters.
  */
-const formatPctLabel = (key: string): string =>
-    'p' + key.replace('percentile_', '').replace(/\.0$/, '')
+const filteredPercentiles = (meter: TimeSeriesMeter): [string, string][] => {
+  if (meter.percentileDurations) {
+    return Object.entries(meter.percentileDurations)
+        .map(([percentage, duration]): [string, string] => [formatPctLabel(percentage), _formatDuration(duration)])
+  }
+
+  return Object.entries(meter.other ?? {})
+      .filter(([key]) => key.startsWith(PERCENTILE_PREFIX))
+      .map(([key, value]): [string, string] => [formatPctLabel(key.replace(PERCENTILE_PREFIX, '')), String(value)])
+}
 
 /**
- * Format the percentile value. If the meter is a timer, the value is converted from
- * microseconds to milliseconds and the unit is added.
+ * Format the label of the percentile based on the percentage.
+ * For example, 99.9 is returned as p99.9 and 50.0 as p50.
  */
-const formatPctValue = (meter: TimeSeriesMeter, value: number): string =>
-    meter.type === 'timer' ? `${(value / 1000).toFixed(1)} ms` : String(Math.round(value))
+const formatPctLabel = (percentage: string): string => 'p' + percentage.replace(/\.0$/, '')
 </script>

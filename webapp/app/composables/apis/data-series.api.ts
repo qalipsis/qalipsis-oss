@@ -1,5 +1,9 @@
 let _allDataSeries: DataSeries[] = []
 const _campaignDataSeriesCache = new Map<string, DataSeries[]>()
+/**
+ * Units of the fields of the meters, by meter name, cached since they do not change.
+ */
+const _meterFieldUnitsCache = new Map<string, Promise<Record<string, string>>>()
 
 export const useDataSeriesApi = () => {
   const { get$, delete$, post$, patch$ } = baseApi()
@@ -123,6 +127,37 @@ export const useDataSeriesApi = () => {
   }
 
   /**
+   * Returns the data series with the unit of their field, when the field of the meter has one (durations).
+   * The data series of events, without field or whose units cannot be fetched are returned unchanged.
+   *
+   * @param dataSeries The data series to complete.
+   * @returns The data series with their field units.
+   */
+  const withFieldUnits = async <T extends DataSeries>(dataSeries: T[]): Promise<T[]> => {
+    return Promise.all(dataSeries.map(async (series) => {
+      if (series.dataType !== DataTypeConstant.METERS || !series.fieldName || !series.valueName) return series
+      const fieldUnit = (await _fetchMeterFieldUnits(series.valueName))[series.fieldName]
+
+      return fieldUnit ? { ...series, fieldUnit } : series
+    }))
+  }
+
+  const _fetchMeterFieldUnits = (meterName: string): Promise<Record<string, string>> => {
+    let units = _meterFieldUnitsCache.get(meterName)
+    if (!units) {
+      units = fetchFields(DataTypeConstant.METERS, meterName)
+          .then((fields) => Object.fromEntries(fields.filter((f) => !!f.unit).map((f) => [f.name, f.unit!])))
+          .catch(() => {
+            _meterFieldUnitsCache.delete(meterName)
+            return {}
+          })
+      _meterFieldUnitsCache.set(meterName, units)
+    }
+
+    return units
+  }
+
+  /**
    * Fetches the available data fields for the selected data type
    *
    * @param dataType The data type.
@@ -176,6 +211,7 @@ export const useDataSeriesApi = () => {
     deleteDataSeries,
     duplicateDataSeries,
     fetchAllDataSeries,
+    withFieldUnits,
     getCachedDataSeries,
     fetchValueNames,
     fetchFields,

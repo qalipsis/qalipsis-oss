@@ -39,6 +39,7 @@ const props = defineProps<{
 
 const reportDetailsStore = useReportDetailsStore()
 const { fetchTimeSeriesAggregation } = useTimeSeriesApi()
+const { withFieldUnits } = useDataSeriesApi()
 const toastStore = useToastStore()
 
 const tableData = ref<ReportDetailsTableData[]>([])
@@ -91,9 +92,10 @@ const _updateTableData = async (dataSeriesOptions: DataSeriesOption[]) => {
 
   try {
     const timeSeriesAggregationResult = await fetchTimeSeriesAggregation(queryParam)
+    const dataSeriesWithUnits = await withFieldUnits(dataSeriesOptions)
     tableData.value = ReportHelper.toReportDetailsTableData(
       timeSeriesAggregationResult,
-      dataSeriesOptions,
+      dataSeriesWithUnits,
       reportDetailsStore.activeCampaignOptions,
     )
   } catch (error) {
