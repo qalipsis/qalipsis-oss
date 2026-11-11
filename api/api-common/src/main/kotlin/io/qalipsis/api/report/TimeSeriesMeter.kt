@@ -69,6 +69,8 @@ data class TimeSeriesMeter(
     val meanDuration: Duration? = null,
     @get:Schema(description = "Max of the execution durations of timers")
     val maxDuration: Duration? = null,
+    @get:Schema(description = "Percentiles of the execution durations of timers, by percentage (e.g. 99.0)")
+    val percentileDurations: Map<String, Duration>? = null,
 
     @get:Schema(description = "Additional measurement values of the meter")
     val other: Map<String, Number>? = null

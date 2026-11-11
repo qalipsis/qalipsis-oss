@@ -21,7 +21,7 @@ const createReportChartTooltip =
                           <div>${day}, ${time}:</div>
                           <div class="pr-1">${campaignName} - ${seriesName}</div>
                       </div>
-                      <div class="ml-2">${point.y}${summaryVal !== undefined ? ` [${summaryVal}]` : ''}</div>`,
+                      <div class="ml-2">${point.text ?? point.y}${summaryVal !== undefined ? ` [${summaryVal}]` : ''}</div>`,
                     ),
                 )
               }),
@@ -79,7 +79,8 @@ export const ReportHelper = {
             data: campaignSeriesValues.map((v) => ({
               meta: new Date(v.start).getTime(),
               x: TimeframeHelper.isoStringToTargetTimeframeUnit(v.elapsed, 'SEC'),
-              y: chartOptionData.format(v.value),
+              y: chartOptionData.toPlotValue(v.value),
+              text: chartOptionData.format(v.value),
             })),
             color: chartOptionData.dataSeriesColor,
           })

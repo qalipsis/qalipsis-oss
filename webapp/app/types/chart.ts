@@ -26,9 +26,9 @@ export interface ChartOptionData {
     dataSeriesColor: string;
 
     /**
-     * A flag to indicate if the field from the data series is duration nano field
+     * A flag to indicate if the values of the data series are durations
      */
-    isDurationNanoField: boolean;
+    isDuration: boolean;
 
     /**
      * A flag to indicate if the data series is minion count
@@ -44,6 +44,16 @@ export interface ChartOptionData {
      * Formats a raw value according to this series' unit and decimal rules.
      */
     format: (value: number) => string;
+
+    /**
+     * Converts a raw value into the value to plot (milliseconds for the durations).
+     */
+    toPlotValue: (value: number) => number | string;
+
+    /**
+     * Formats a plotted value for the axis labels.
+     */
+    formatPlotValue: (plotValue: number) => string;
 }
 
 /**

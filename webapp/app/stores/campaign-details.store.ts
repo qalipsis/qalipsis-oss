@@ -50,10 +50,14 @@ export const useCampaignDetailsStore = defineStore('CampaignDetails', {
       // Fetches the data from the time series service.
       this.isLoadingChart = true
       const { fetchTimeSeriesAggregation } = useTimeSeriesApi()
-      const aggregationResult = await fetchTimeSeriesAggregation(queryParams)
+      const { withFieldUnits } = useDataSeriesApi()
+      const [aggregationResult, dataSeries] = await Promise.all([
+        fetchTimeSeriesAggregation(queryParams),
+        withFieldUnits(this.selectedDataSeries),
+      ])
 
       // Converts the aggregation result to the chart data.
-      const chartData = CampaignHelper.toChartData(aggregationResult, this.selectedDataSeries, campaignDetails)
+      const chartData = CampaignHelper.toChartData(aggregationResult, dataSeries, campaignDetails)
 
       // Updates the x axis range if the time range min and max are defined
       if (this.timeRange.min) {

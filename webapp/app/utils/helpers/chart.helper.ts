@@ -3,6 +3,20 @@ import tinycolor from 'tinycolor2'
 import {SeriesDetailsConfig} from '~/utils/configs/series-details.config'
 
 /**
+ * Part of the ApexCharts context passed as third argument to the y-axis label formatters.
+ */
+interface ApexYAxisScaleContext {
+  globals?: { yAxisScale?: { result?: number[] }[] }
+}
+
+/**
+ * Returns whether all the ticks of the y-axis at the index are integers, or undefined when ApexCharts does not give them.
+ */
+function areYAxisTicksIntegers(axisIndex: number, context: unknown): boolean | undefined {
+  return (context as ApexYAxisScaleContext | undefined)?.globals?.yAxisScale?.[axisIndex]?.result?.every(Number.isInteger)
+}
+
+/**
  * Renders the outer panel and header bar shared by chart tooltips.
  * `headerHtml` goes in the top strip; `rowsHtml` is concatenated below.
  */
@@ -62,10 +76,12 @@ export const ChartHelper = {
         seriesDefinition?.color && tinycolor(seriesDefinition.color).isValid()
           ? seriesDefinition.color
           : ColorsConfig.PURPLE_COLOR_HEX_CODE,
-      isDurationNanoField: fmt.isDurationNanoField,
+      isDuration: fmt.isDuration,
       isMinionsCountSeries: fmt.isMinionsCountSeries,
       decimal: fmt.decimal,
       format: fmt.format,
+      toPlotValue: fmt.toPlotValue,
+      formatPlotValue: fmt.formatPlotValue,
     }
   },
 
@@ -77,22 +93,28 @@ export const ChartHelper = {
       name: chartOptionData.dataSeriesName,
       data: timeAggregationResults.map((v) => ({
         x: new Date(v.start).getTime(),
-        y: chartOptionData.format(v.value),
+        y: chartOptionData.toPlotValue(v.value),
+        text: chartOptionData.format(v.value),
       })),
       color: chartOptionData.dataSeriesColor,
     }
   },
 
-  getYAxisOptions(chartOptionData: ChartOptionData): ApexYAxis {
+  /**
+   * @param axisIndex Index of the axis in the y-axes of the chart, to display its labels as integers
+   *                  when all its ticks are integers.
+   */
+  getYAxisOptions(chartOptionData: ChartOptionData, axisIndex: number): ApexYAxis {
     return {
       seriesName: chartOptionData.dataSeriesName,
       opposite: !chartOptionData.isMinionsCountSeries,
       decimalsInFloat: chartOptionData.decimal,
       labels: {
         show: true,
-        formatter: (val, _) => {
-          return `${val.toFixed(chartOptionData.decimal)}${chartOptionData.isDurationNanoField ? ' ms' : ''}`
-        },
+        formatter: (val: number, ...args: unknown[]) =>
+          !chartOptionData.isDuration && (areYAxisTicksIntegers(axisIndex, args[1]) ?? Number.isInteger(val))
+            ? val.toFixed(0)
+            : chartOptionData.formatPlotValue(val),
         style: {
           colors: [chartOptionData.dataSeriesColor],
           cssClass: 'apexcharts-yaxis-label',
@@ -177,17 +199,17 @@ export const ChartHelper = {
     aggregations.forEach(([key, timeSeriesValues], idx) => {
       const chartOptionData = ChartHelper.toChartOptionData(key, params.dataSeries)
       params.buildSeries(chartOptionData, timeSeriesValues.values, ctx)
-      const yAxisConfig = ChartHelper.getYAxisOptions(chartOptionData)
+      const yAxisConfig = ChartHelper.getYAxisOptions(chartOptionData, idx)
       if (timeSeriesValues.values.length === 0 && timeSeriesValues.summary) {
-        const summaryVal = timeSeriesValues.summary.value
+        const summaryVal = Number(chartOptionData.toPlotValue(timeSeriesValues.summary.value))
         yAxisConfig.min = 0
         yAxisConfig.max = summaryVal > 0 ? summaryVal * 1.2 : 1
       }
       yAxisConfigs.push(yAxisConfig)
 
       if (timeSeriesValues.summary && key !== SeriesDetailsConfig.MINIONS_COUNT_DATA_SERIES_REFERENCE) {
-        const rawY = timeSeriesValues.summary.value
-        summaryBySeriesName[chartOptionData.dataSeriesName] = chartOptionData.format(rawY)
+        const rawY = Number(chartOptionData.toPlotValue(timeSeriesValues.summary.value))
+        summaryBySeriesName[chartOptionData.dataSeriesName] = chartOptionData.format(timeSeriesValues.summary.value)
         yAxisAnnotations.push({
           y: rawY,
           yAxisIndex: idx,
@@ -200,7 +222,10 @@ export const ChartHelper = {
         // Extend y-axis max so the annotation is within the visible range.
         // Needed when the campaign summary (e.g. total counter) exceeds any individual period value.
         const dataMax = timeSeriesValues.values.reduce(
-            (max, v) => (v.value != null && Number(v.value) > max ? Number(v.value) : max),
+            (max, v) => {
+              const plotValue = v.value != null ? Number(chartOptionData.toPlotValue(v.value)) : max
+              return plotValue > max ? plotValue : max
+            },
             0,
         )
         if (rawY > dataMax) {
