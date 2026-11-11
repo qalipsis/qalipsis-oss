@@ -110,6 +110,32 @@ internal class ZipLastStepTest {
         assertThat(output.second).isEqualTo(entityFromFromRight)
     }
 
+    @Test
+    @Timeout(3)
+    internal fun `should unite again when restarted after a stop`() = testCoroutineDispatcher.run {
+        // given
+        val topic = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
+        val step = buildZipLastStep(this, topic)
+        step.start(relaxedMockk())
+        step.stop(relaxedMockk())
+        step.start(relaxedMockk())
+        val entityFromLeft = TestLeftJoinEntity(123, "From Left")
+        val entityFromRight = TestLeftJoinEntity(859, "From Right")
+        val ctx = buildStepContext(entityFromLeft)
+
+        // when
+        delay(50)
+        topic.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", entityFromRight))
+        delay(50) // Lets the value reach the slot of the step.
+        step.execute(ctx)
+
+        // then
+        val output = ctx.consumeOutputValue()
+        assertThat(output.first).isEqualTo(entityFromLeft)
+        assertThat(output.second).isEqualTo(entityFromRight)
+        step.stop(relaxedMockk())
+    }
+
     private fun buildZipLastStep(
         coroutineScope: CoroutineScope,
         vararg topics: Topic<CorrelationRecord<TestLeftJoinEntity>>

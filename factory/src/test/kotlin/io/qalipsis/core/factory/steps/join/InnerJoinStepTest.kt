@@ -129,6 +129,33 @@ internal class InnerJoinStepTest {
         Assertions.assertFalse(step.hasKeyInCache(123))
     }
 
+    @Test
+    @Timeout(2)
+    internal fun `should correlate again when restarted after a stop`() = testCoroutineDispatcher.run {
+        // given
+        val topic1 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
+        val topic2 = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(1)
+        val step = buildInnerJoinStep(this, topic1, topic2)
+        step.start(relaxedMockk())
+        step.stop(relaxedMockk())
+        step.start(relaxedMockk())
+        val entityFromLeft = TestLeftJoinEntity(123, "From Left")
+        val entityFromFromRight1 = TestLeftJoinEntity(123, "From Right 1")
+        val entityFromFromRight2 = TestLeftJoinEntity(123, "From Right 2")
+        val minion = MinionImpl("my-minion", "my-campaign", "my-scenario", pauseAtStart = false)
+        val ctx = buildStepContext(entityFromLeft)
+
+        // when
+        topic2.produceValue(CorrelationRecord(ctx.minionId, "secondary-2", entityFromFromRight2))
+        topic1.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", entityFromFromRight1))
+        step.execute(minion, ctx)
+
+        // then
+        val output = ctx.consumeOutputValue()
+        assertThat(output).containsExactly(entityFromLeft.value, entityFromFromRight1.value, entityFromFromRight2.value)
+        step.stop(relaxedMockk())
+    }
+
     /**
      * This test validates the concurrency behavior when running the unit tests massively.
      */

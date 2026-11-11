@@ -111,6 +111,35 @@ internal class ZipStepTest {
         assertThat(output.second).isEqualTo(entityFromFromRight)
     }
 
+    @Test
+    @Timeout(3)
+    internal fun `should zip again when restarted after a stop and drop the values of the previous campaign`() =
+        testCoroutineDispatcher.run {
+            // given
+            val topic = broadcastTopic<CorrelationRecord<TestLeftJoinEntity>>(0) // As created by the converter.
+            val step = buildZipStep(this, topic)
+            step.start(relaxedMockk())
+            val entityFromLeft = TestLeftJoinEntity(123, "From Left")
+            val staleEntity = TestLeftJoinEntity(567, "Left by the previous campaign")
+            val entityFromRight = TestLeftJoinEntity(841, "From Right")
+            val ctx = buildStepContext(entityFromLeft)
+            topic.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", staleEntity))
+            delay(50) // Lets the value reach the buffer of the step.
+            step.stop(relaxedMockk())
+            step.start(relaxedMockk())
+
+            // when
+            delay(50)
+            topic.produceValue(CorrelationRecord(ctx.minionId, "secondary-1", entityFromRight))
+            step.execute(ctx)
+
+            // then
+            val output = ctx.consumeOutputValue()
+            assertThat(output.first).isEqualTo(entityFromLeft)
+            assertThat(output.second).isEqualTo(entityFromRight)
+            step.stop(relaxedMockk())
+        }
+
     private fun buildZipStep(
         coroutineScope: CoroutineScope,
         vararg topics: Topic<CorrelationRecord<TestLeftJoinEntity>>

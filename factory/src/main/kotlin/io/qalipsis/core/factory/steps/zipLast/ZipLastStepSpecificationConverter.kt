@@ -80,7 +80,10 @@ class ZipLastStepSpecificationConverter(
     }
 
     private fun <O> createRightDataSupplier(secondaryStep: Step<*, *>): Topic<CorrelationRecord<*>> {
-        val topic = broadcastTopic<CorrelationRecord<*>>()
+        // The step subscribes when it starts, before any record is produced: no record needs to be kept for late
+        // subscribers. With an unlimited buffer, a restarted step would receive the records of the previous campaigns
+        // again, and the topic would keep all the records in memory.
+        val topic = broadcastTopic<CorrelationRecord<*>>(bufferSize = 0)
         // A step is added as output to forward the data to the topic.
         // Since the step is technical, its name is prefixed by 2 underscores.
         val dataSupplier = TopicMirrorStep<O, CorrelationRecord<*>>(
