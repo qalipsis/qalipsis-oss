@@ -96,10 +96,11 @@ class InnerJoinStep<I, O>(
         rightCorrelations.forEach { corr ->
             @Suppress("UNCHECKED_CAST")
             val keyExtractor = (corr.keyExtractor as (CorrelationRecord<out Any>) -> Any?)
+            // Subscribes before the campaign runs, so no record produced from now on is missed.
+            val subscription = corr.topic.subscribe(stepName)
             consumptionJobs.add(
                 coroutineScope.launch {
                     log.debug { "Starting the coroutine buffering right records from step ${corr.sourceStepName}" }
-                    val subscription = corr.topic.subscribe(stepName)
                     while (subscription.isActive()) {
                         try {
                             val record = subscription.pollValue()
@@ -125,7 +126,9 @@ class InnerJoinStep<I, O>(
         running = false
         consumptionJobs.forEach { it.cancel() }
         consumptionJobs.clear()
-        rightCorrelations.forEach { it.topic.close() }
+        // Only leave the topics: they are owned by the TopicMirrorSteps, which close them when the scenario is destroyed.
+        // Closing them here prevents the step from consuming again in the next campaign.
+        rightCorrelations.forEach { it.topic.cancel(name) }
     }
 
     override suspend fun execute(minion: Minion, context: StepContext<I, O>) {

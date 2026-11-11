@@ -67,10 +67,11 @@ class ZipStep<I, O>(
         // Starts the coroutines to buffer the data coming from the right steps.
         val stepName = this.name
         rightSources.forEach { source ->
+            // Subscribes before the campaign runs, so no record produced from now on is missed.
+            val subscription = source.topic.subscribe(stepName)
             consumptionJobs.add(
                 coroutineScope.launch {
                     log.debug { "Starting the coroutine buffering right records from step ${source.sourceStepName}" }
-                    val subscription = source.topic.subscribe(stepName)
                     while (subscription.isActive()) {
                         try {
                             val record = subscription.pollValue()
@@ -93,8 +94,11 @@ class ZipStep<I, O>(
         running = false
         consumptionJobs.forEach { it.cancel() }
         consumptionJobs.clear()
-        rightSources.forEach { it.topic.close() }
-        rightValues.cancel()
+        // Only leave the topics: they are owned by the TopicMirrorSteps, which close them when the scenario is destroyed.
+        // Closing them here prevents the step from consuming again in the next campaign.
+        rightSources.forEach { it.topic.cancel(name) }
+        // Drops the values left by this campaign, but keeps the channel usable for the next one.
+        while (rightValues.tryReceive().isSuccess) Unit
     }
 
     override suspend fun execute(context: StepContext<I, O>) {
