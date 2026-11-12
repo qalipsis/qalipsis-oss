@@ -62,6 +62,7 @@ import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.verifyOnce
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.joinAll
 import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -265,6 +266,52 @@ internal class CampaignMeterRegistryFacadeImplTest {
                 campaignMeterRegistry,
                 meterRegistry
             )
+        }
+
+    @Test
+    internal fun `given a closed campaign when the next campaign publishes then only its own publishers are used`() =
+        testDispatcherProvider.run {
+            // given
+            every { factoryConfiguration.tags } returns emptyMap()
+            every { factoryConfiguration.zone } returns null
+            every { factoryConfiguration.tenant } returns "my-tenant"
+            coEvery { meterRegistry.summarize(any()) } returns emptyList()
+            val publisherOfFirstCampaign = mockk<MeasurementPublisher> {
+                coJustRun { init() }
+                coJustRun { stop() }
+            }
+            val publisherOfSecondCampaign = mockk<MeasurementPublisher> {
+                coJustRun { init() }
+                coJustRun { publish(any()) }
+                coJustRun { stop() }
+            }
+            every { publisherFactory1.getPublisher() } returnsMany listOf(publisherOfFirstCampaign, publisherOfSecondCampaign)
+            every { campaign.campaignKey } returns RandomStringUtils.randomAlphanumeric(5)
+            val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
+                publisherFactories = listOf(publisherFactory1),
+                meterRegistry = meterRegistry,
+                factoryConfiguration = factoryConfiguration,
+                measurementConfiguration = measurementConfiguration,
+                step = Duration.ofSeconds(10),
+                coroutineScope = this
+            )
+            campaignMeterRegistry.init(campaign)
+            campaignMeterRegistry.close(campaign)
+            campaignMeterRegistry.init(campaign)
+            val snapshots = listOf<MeterSnapshot>(mockk())
+
+            // when
+            campaignMeterRegistry.publishSnapshots(snapshots).joinAll()
+
+            // then
+            coVerifyOrder {
+                publisherOfFirstCampaign.init()
+                publisherOfFirstCampaign.stop()
+                publisherOfSecondCampaign.init()
+                publisherOfSecondCampaign.publish(refEq(snapshots))
+            }
+            confirmVerified(publisherOfFirstCampaign, publisherOfSecondCampaign)
+            campaignMeterRegistry.close(campaign)
         }
 
     @Test

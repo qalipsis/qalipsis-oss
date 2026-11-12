@@ -135,6 +135,8 @@ class CampaignMeterRegistryFacadeImpl(
         publishSnapshots(snapshots).joinAll()
         logger.debug { "Shutting down the publication of meters for the campaign $currentCampaignKey" }
         publishers.forEach { it.stop() }
+        // The publishers are created for each campaign: the stopped ones should not be used by the next campaigns.
+        publishers.clear()
         logger.debug { "The publication of meters has been shut down for the campaign $currentCampaignKey" }
         // The current campaign key is kept on purpose, in order to ensure that closing meters are still
         // related to the same campaign.
