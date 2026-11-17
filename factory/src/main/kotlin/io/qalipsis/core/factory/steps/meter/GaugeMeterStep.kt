@@ -46,6 +46,10 @@ import java.util.concurrent.atomic.AtomicReference
  * Step to create a [Gauge] that allows for specification of failure conditions
  * and evaluation of success and failure of the steps using configured thresholds.
  *
+ * The value returned by [block] is passed to [record], which the converter resolves once from the operation
+ * of the specification: [Gauge.set] when the block returns a level, which the gauge then holds and which is
+ * evaluated against the [checkers], or [Gauge.increment] when it returns a contribution to add to the gauge.
+ *
  * @author Francisca Eze
  */
 class GaugeMeterStep<I>(
@@ -54,6 +58,7 @@ class GaugeMeterStep<I>(
     private val coroutineScope: CoroutineScope,
     private val campaignReportLiveStateRegistry: CampaignReportLiveStateRegistry,
     private val meterName: String,
+    private val record: Gauge.(Double) -> Double,
     val block: (stepContext: StepContext<I, I>, input: I) -> Double,
     private val checkers: List<Pair<Gauge.() -> Double, ValueChecker<Double>>>,
     private val campaignMeterRegistry: CampaignMeterRegistry,
@@ -122,7 +127,7 @@ class GaugeMeterStep<I>(
         try {
             val input = context.receive()
             val valueToRecord = block(context, input)
-            meter.increment(valueToRecord)
+            meter.record(valueToRecord)
             recordedValues.set(true)
             context.send(input)
         } catch (e: Exception) {

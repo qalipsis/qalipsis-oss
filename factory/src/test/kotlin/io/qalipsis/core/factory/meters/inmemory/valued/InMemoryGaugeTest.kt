@@ -68,6 +68,22 @@ internal class InMemoryGaugeTest {
     }
 
     @Test
+    internal fun `should replace the tracked value of a measurement`() {
+        // given
+        val gauge = InMemoryGauge(mockk(), meterReporter)
+        gauge.increment(7.0)
+
+        // when
+        val returned = gauge.set(4200.0)
+        gauge.set(50.0)
+
+        // then
+        // The value is replaced and not added: 7 + 4200 + 50 would be 4257.
+        assertThat(returned).isEqualTo(4200.0)
+        assertThat(gauge.value()).isEqualTo(50.0)
+    }
+
+    @Test
     internal fun `should decrement the tracked value of a measurement`() {
         // given
         val id = mockk<Meter.Id>()

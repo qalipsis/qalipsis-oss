@@ -25,6 +25,7 @@ package io.qalipsis.api.meters.steps.expectations.impl
  */
 enum class MetricValue(val valueName: String) {
     COUNT("count"),
+    VALUE("value"),
     MEAN("mean"),
     MAX("max"),
     RATE("current rate"),

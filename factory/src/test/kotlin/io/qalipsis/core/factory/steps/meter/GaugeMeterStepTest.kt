@@ -20,6 +20,7 @@
 package io.qalipsis.core.factory.steps.meter
 
 import assertk.assertThat
+import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import io.aerisconsulting.catadioptre.setProperty
@@ -27,6 +28,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.spyk
@@ -37,6 +39,7 @@ import io.qalipsis.api.meters.CampaignMeterRegistry
 import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.report.ReportMessageSeverity
+import io.qalipsis.core.factory.meters.inmemory.valued.InMemoryGauge
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.core.factory.steps.meter.catadioptre.checkState
 import io.qalipsis.core.factory.steps.meter.catadioptre.startStatusCheck
@@ -50,6 +53,7 @@ import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyExactly
 import io.qalipsis.test.mockk.coVerifyOnce
+import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.StepTestHelper.createStepContext
 import kotlinx.coroutines.channels.Channel
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -116,6 +120,7 @@ internal class GaugeMeterStepTest {
                 coroutineScope = this,
                 campaignReportLiveStateRegistry = campaignReportLiveStateRegistry,
                 meterName = "gauge-meter",
+                record = Gauge::set,
                 block = block,
                 checkers = checkers,
                 campaignMeterRegistry = campaignMeterRegistry,
@@ -127,7 +132,7 @@ internal class GaugeMeterStepTest {
             callOriginal()
             latch.decrement()
         }
-        every { gauge.increment(12.0) } returns 13.0
+        every { gauge.set(12.0) } returns 12.0
 
         gaugeMeterStep.start(stepStartStopContext)
         val ctx = createStepContext<Int, Int>(
@@ -156,7 +161,7 @@ internal class GaugeMeterStepTest {
                 name = "gauge-meter",
                 tags = emptyMap()
             )
-            gauge.increment(12.0)
+            gauge.set(12.0)
             gaugeMeterStep.checkState(stepStartStopContext)
         }
         coVerifyExactly(3) {
@@ -169,6 +174,126 @@ internal class GaugeMeterStepTest {
 
         confirmVerified(campaignMeterRegistry, gauge)
     }
+
+    @Test
+    fun `should pass each value to the function resolved for the step, and to that one only`() =
+        testDispatcherProvider.run {
+            // given
+            val levels = listOf(12.0, 5.0, 5.0, 20.0)
+            val setValues = mutableListOf<Double>()
+            val addedValues = mutableListOf<Double>()
+            every { gauge.set(capture(setValues)) } returns 0.0
+            every { gauge.increment(capture(addedValues)) } returns 0.0
+
+            // when
+            listOf<Gauge.(Double) -> Double>(Gauge::set, Gauge::increment).forEach { record ->
+                val values = levels.iterator()
+                val gaugeMeterStep = GaugeMeterStep(
+                    id = "gauge-step",
+                    retryPolicy = null,
+                    coroutineScope = this,
+                    campaignReportLiveStateRegistry = campaignReportLiveStateRegistry,
+                    meterName = "gauge-meter",
+                    record = record,
+                    block = { _, _: Int -> values.next() },
+                    checkers = emptyList(),
+                    campaignMeterRegistry = campaignMeterRegistry,
+                    checkPeriod = Duration.ofMillis(100)
+                )
+                gaugeMeterStep.start(stepStartStopContext)
+                repeat(levels.size) {
+                    gaugeMeterStep.execute(
+                        createStepContext(
+                            input = 1,
+                            campaignKey = "my-campaign",
+                            scenarioName = "my-scenario",
+                            minionId = "my-minion"
+                        )
+                    )
+                }
+                gaugeMeterStep.stop(stepStartStopContext)
+            }
+
+            // then
+            assertThat(setValues).isEqualTo(levels)
+            assertThat(addedValues).isEqualTo(levels)
+        }
+
+    @Test
+    fun `should evaluate the expectations on the level of a real gauge and not on the sum of the levels`() =
+        testDispatcherProvider.run {
+            // given
+            // A real gauge, to verify what the step leaves in it and what the checkers then receive.
+            val realGauge = InMemoryGauge(mockk(relaxed = true), relaxedMockk())
+            every {
+                campaignMeterRegistry.gauge(
+                    scenarioName = "my-scenario",
+                    stepName = "gauge-step",
+                    name = "consumer-lag",
+                    tags = emptyMap()
+                )
+            } returns realGauge
+            // Levels of a queue depth: it grows, peaks far above the threshold, then goes back down.
+            val levels = listOf(100.0, 300.0, 4200.0, 50.0).iterator()
+            val gaugeMeterStep = GaugeMeterStep(
+                id = "gauge-step",
+                retryPolicy = null,
+                coroutineScope = this,
+                campaignReportLiveStateRegistry = campaignReportLiveStateRegistry,
+                meterName = "consumer-lag",
+                record = Gauge::set,
+                block = { _, _: Int -> levels.next() },
+                checkers = listOf<Pair<Gauge.() -> Double, ValueChecker<Double>>>(
+                    Pair({ value() }, LessThanChecker("value", 500.0))
+                ),
+                campaignMeterRegistry = campaignMeterRegistry,
+                checkPeriod = Duration.ofMinutes(1)
+            )
+            gaugeMeterStep.start(stepStartStopContext)
+
+            // when
+            val observedValues = mutableListOf<Double>()
+            repeat(4) {
+                gaugeMeterStep.execute(
+                    createStepContext(
+                        input = 1,
+                        campaignKey = "my-campaign",
+                        scenarioName = "my-scenario",
+                        minionId = "my-minion"
+                    )
+                )
+                observedValues += realGauge.value()
+                gaugeMeterStep.checkState(stepStartStopContext)
+            }
+
+            // then
+            // The gauge holds the levels instead of adding them up, which would give 100, 400, 4600, 4650.
+            assertThat(observedValues).isEqualTo(listOf(100.0, 300.0, 4200.0, 50.0))
+
+            // Only the level above the threshold is a violation, and it is reported with its own value.
+            val messages = mutableListOf<String>()
+            coVerify {
+                campaignReportLiveStateRegistry.put(
+                    campaignKey = "my-campaign",
+                    scenarioName = "my-scenario",
+                    stepName = "gauge-step",
+                    severity = ReportMessageSeverity.ERROR,
+                    messageId = null,
+                    message = capture(messages)
+                )
+            }
+            assertThat(messages).isEqualTo(listOf("The value is 4200.0 but should be less than 500.0"))
+
+            // The last level is below the threshold again, so the message is removed from the report.
+            coVerifyOnce {
+                campaignReportLiveStateRegistry.delete(
+                    campaignKey = "my-campaign",
+                    scenarioName = "my-scenario",
+                    stepName = "gauge-step",
+                    messageId = any()
+                )
+            }
+        }
 
     @Test
     fun `should not start the job to evaluate meter conditions when there are no checkers`() =
@@ -184,6 +309,7 @@ internal class GaugeMeterStepTest {
                     coroutineScope = this,
                     campaignReportLiveStateRegistry = campaignReportLiveStateRegistry,
                     meterName = "gauge-meter",
+                    record = Gauge::set,
                     block = block,
                     checkers = checkers,
                     campaignMeterRegistry = campaignMeterRegistry,
@@ -191,7 +317,7 @@ internal class GaugeMeterStepTest {
                 ), recordPrivateCalls = true
             )
             gaugeMeterStep.start(stepStartStopContext)
-            every { gauge.increment(12.0) } returns 13.0
+            every { gauge.set(12.0) } returns 12.0
             val ctx = createStepContext<Int, Int>(
                 input = 1,
                 campaignKey = "my-campaign",
@@ -217,7 +343,7 @@ internal class GaugeMeterStepTest {
                     name = "gauge-meter",
                     tags = emptyMap()
                 )
-                gauge.increment(12.0)
+                gauge.set(12.0)
             }
             verify { gauge.report(any()) }
             coVerifyOnce { gaugeMeterStep.checkState(stepStartStopContext) }
@@ -243,6 +369,7 @@ internal class GaugeMeterStepTest {
                     coroutineScope = this,
                     campaignReportLiveStateRegistry = campaignReportLiveStateRegistry,
                     meterName = "gauge-meter",
+                    record = Gauge::set,
                     block = block,
                     checkers = checkers,
                     campaignMeterRegistry = campaignMeterRegistry,
@@ -253,7 +380,7 @@ internal class GaugeMeterStepTest {
                 callOriginal()
                 latch.decrement()
             }
-            every { gauge.increment(12.0) } returns 13.0
+            every { gauge.set(12.0) } returns 12.0
             gaugeMeterStep.start(stepStartStopContext)
             val ctx = createStepContext<Int, Int>(
                 input = 1,
@@ -282,7 +409,7 @@ internal class GaugeMeterStepTest {
                     name = "gauge-meter",
                     tags = emptyMap()
                 )
-                gauge.increment(12.0)
+                gauge.set(12.0)
 
                 campaignReportLiveStateRegistry.put(
                     "my-campaign", "my-scenario", "gauge-step", ReportMessageSeverity.ERROR, null, """
@@ -321,6 +448,7 @@ internal class GaugeMeterStepTest {
                     coroutineScope = this,
                     campaignReportLiveStateRegistry = campaignReportLiveStateRegistry,
                     meterName = "gauge-meter",
+                    record = Gauge::set,
                     block = block,
                     checkers = checkers,
                     campaignMeterRegistry = campaignMeterRegistry,
@@ -331,7 +459,7 @@ internal class GaugeMeterStepTest {
                 callOriginal()
                 latch.decrement()
             }
-            every { gauge.increment(12.0) } returns 13.0
+            every { gauge.set(12.0) } returns 12.0
             gaugeMeterStep.setProperty("messageId", "message-id")
             gaugeMeterStep.start(stepStartStopContext)
             val ctx = createStepContext<Int, Int>(
@@ -361,7 +489,7 @@ internal class GaugeMeterStepTest {
                     name = "gauge-meter",
                     tags = emptyMap()
                 )
-                gauge.increment(12.0)
+                gauge.set(12.0)
                 campaignReportLiveStateRegistry.delete("my-campaign", "my-scenario", "gauge-step", any())
             }
             coVerifyExactly(3) {

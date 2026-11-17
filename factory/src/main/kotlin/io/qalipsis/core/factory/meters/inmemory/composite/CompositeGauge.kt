@@ -52,6 +52,11 @@ class CompositeGauge(
         return scenarioMeter.decrement(amount)
     }
 
+    override fun set(value: Double): Double {
+        globalMeter.set(value)
+        return scenarioMeter.set(value)
+    }
+
     override fun increment(): Double {
         return increment(1.0)
     }

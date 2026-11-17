@@ -35,7 +35,7 @@ class GaugeExpectationSpecImpl : GaugeExpectationSpec {
     override val value: ComparableValueMeterExpectationSpecification<Gauge, Double>
         get() {
             val comparableValueFailureSpecification =
-                ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.COUNT), Gauge::value)
+                ComparableValueMeterExpectationSpecificationImpl(Metric(MetricValue.VALUE), Gauge::value)
             checks.add(comparableValueFailureSpecification)
             return comparableValueFailureSpecification
         }

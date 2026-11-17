@@ -35,6 +35,18 @@ interface Gauge : Meter<Gauge> {
     }
 
     /**
+     * Replaces the value of the gauge by [value].
+     *
+     * This is the operation to use when the source of the measurement provides a level and not a contribution:
+     * a queue depth, a consumer lag, a pool occupancy, a cache size. Use [increment] and [decrement] when the
+     * gauge tracks a value the caller makes evolve itself, such as a number of running operations.
+     *
+     * @param value the new value of the gauge.
+     * @return the new value.
+     */
+    fun set(value: Double): Double
+
+    /**
      * Update the gauge by one.
      */
     fun increment(): Double

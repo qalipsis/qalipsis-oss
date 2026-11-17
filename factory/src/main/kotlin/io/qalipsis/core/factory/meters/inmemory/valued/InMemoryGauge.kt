@@ -59,6 +59,11 @@ internal class InMemoryGauge(
     override suspend fun summarize(timestamp: Instant): Collection<MeterSnapshot> =
         listOf(MeterSnapshotImpl(timestamp, id.copy(tags = id.tags + ("scope" to "campaign")), measure()))
 
+    override fun set(value: Double): Double {
+        current.set(value)
+        return value
+    }
+
     override fun increment(): Double {
         return increment(1.0)
     }

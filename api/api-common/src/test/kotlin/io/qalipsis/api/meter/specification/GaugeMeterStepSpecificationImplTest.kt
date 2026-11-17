@@ -23,6 +23,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.steps.GaugeMeterStepSpecificationImpl
+import io.qalipsis.api.meters.steps.GaugeOperation
 import io.qalipsis.api.meters.steps.gauge
 import org.junit.jupiter.api.Test
 
@@ -36,11 +37,12 @@ internal class GaugeMeterStepSpecificationImplTest {
         val previousStep = DummyStepSpecification()
         val specification: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
-        previousStep.gauge(name = "test-gauge", specification)
+        previousStep.gauge(name = "test-gauge", block = specification)
 
         assertThat(
             GaugeMeterStepSpecificationImpl(
                 "test-gauge",
+                GaugeOperation.SET,
                 specification
             )
         ).isEqualTo(previousStep.nextSteps[0])
@@ -52,7 +54,7 @@ internal class GaugeMeterStepSpecificationImplTest {
         val previousStep = DummyStepSpecification()
         val specification: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
-        previousStep.gauge(name = "test-gauge", specification)
+        previousStep.gauge(name = "test-gauge", block = specification)
             .shouldSatisfy {
                 value.isEqual(13.0)
             }
@@ -60,6 +62,23 @@ internal class GaugeMeterStepSpecificationImplTest {
         assertThat(
             GaugeMeterStepSpecificationImpl(
                 "test-gauge",
+                GaugeOperation.SET,
+                specification
+            )
+        ).isEqualTo(previousStep.nextSteps[0])
+    }
+
+    @Test
+    internal fun `should add gauge step adding the values as next`() {
+        val previousStep = DummyStepSpecification()
+        val specification: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
+            { _, _ -> 12.0 }
+        previousStep.gauge(name = "test-gauge", operation = GaugeOperation.ADD, block = specification)
+
+        assertThat(
+            GaugeMeterStepSpecificationImpl(
+                "test-gauge",
+                GaugeOperation.ADD,
                 specification
             )
         ).isEqualTo(previousStep.nextSteps[0])

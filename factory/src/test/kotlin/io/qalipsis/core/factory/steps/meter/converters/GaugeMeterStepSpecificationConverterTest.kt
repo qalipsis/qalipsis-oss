@@ -32,6 +32,7 @@ import io.mockk.mockk
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.meters.steps.GaugeMeterStepSpecificationImpl
+import io.qalipsis.api.meters.steps.GaugeOperation
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepCreationContextImpl
 import io.qalipsis.core.factory.steps.meter.GaugeMeterStep
@@ -70,7 +71,7 @@ internal class GaugeMeterStepSpecificationConverterTest :
         // given
         val block: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
-        val spec = GaugeMeterStepSpecificationImpl("test-gauge", block)
+        val spec = GaugeMeterStepSpecificationImpl("test-gauge", GaugeOperation.SET, block)
         spec.name = "my-step"
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
@@ -81,6 +82,9 @@ internal class GaugeMeterStepSpecificationConverterTest :
         assertThat(creationContext.createdStep!!).isInstanceOf(GaugeMeterStep::class).all {
             prop(GaugeMeterStep<*>::name).isEqualTo("my-step")
             prop("meterName").isEqualTo("test-gauge")
+            // The operation of the specification is resolved into the function the step calls on the gauge.
+            typedProp<Gauge.(Double) -> Double>("record").transform { it.calledOperation() }
+                .isEqualTo("set")
             prop("block").isEqualTo(block)
             typedProp<List<Pair<Gauge.() -> Double, ValueChecker<Double>>>>("checkers").isEmpty()
         }
@@ -91,7 +95,7 @@ internal class GaugeMeterStepSpecificationConverterTest :
         // given
         val block: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
-        val spec = GaugeMeterStepSpecificationImpl("test-gauge", block)
+        val spec = GaugeMeterStepSpecificationImpl("test-gauge", GaugeOperation.SET, block)
         val creationContext = StepCreationContextImpl(scenarioSpecification, directedAcyclicGraph, spec)
 
         // when
@@ -101,6 +105,9 @@ internal class GaugeMeterStepSpecificationConverterTest :
         assertThat(creationContext.createdStep!!).isInstanceOf(GaugeMeterStep::class).all {
             prop(GaugeMeterStep<*>::name).isEmpty()
             prop("meterName").isEqualTo("test-gauge")
+            // The operation of the specification is resolved into the function the step calls on the gauge.
+            typedProp<Gauge.(Double) -> Double>("record").transform { it.calledOperation() }
+                .isEqualTo("set")
             prop("block").isEqualTo(block)
             typedProp<List<Pair<Gauge.() -> Double, ValueChecker<Double>>>>("checkers").isEmpty()
         }
@@ -111,7 +118,7 @@ internal class GaugeMeterStepSpecificationConverterTest :
         // given
         val block: (context: StepContext<Unit, Unit>, input: Unit) -> Double =
             { _, _ -> 12.0 }
-        val spec = GaugeMeterStepSpecificationImpl("test-gauge", block)
+        val spec = GaugeMeterStepSpecificationImpl("test-gauge", GaugeOperation.ADD, block)
             .shouldSatisfy {
                 value.isLessThan(10.0)
             }
@@ -124,6 +131,9 @@ internal class GaugeMeterStepSpecificationConverterTest :
         assertThat(creationContext.createdStep!!).isInstanceOf(GaugeMeterStep::class).all {
             prop(GaugeMeterStep<*>::name).isEmpty()
             prop("meterName").isEqualTo("test-gauge")
+            // The operation of the specification is resolved into the function the step calls on the gauge.
+            typedProp<Gauge.(Double) -> Double>("record").transform { it.calledOperation() }
+                .isEqualTo("increment")
             prop("block").isEqualTo(block)
             typedProp<List<Pair<Gauge.() -> Double, ValueChecker<Double>>>>("checkers").all {
                 hasSize(1)
@@ -139,4 +149,18 @@ internal class GaugeMeterStepSpecificationConverterTest :
             }
         }
     }
+}
+
+/**
+ * Name of the single operation the function calls when it is applied to a gauge.
+ */
+private fun (Gauge.(Double) -> Double).calledOperation(): String {
+    val calls = mutableListOf<String>()
+    val meter = mockk<Gauge> {
+        every { set(1.5) } answers { calls += "set"; 1.5 }
+        every { increment(1.5) } answers { calls += "increment"; 1.5 }
+    }
+    invoke(meter, 1.5)
+
+    return calls.single()
 }

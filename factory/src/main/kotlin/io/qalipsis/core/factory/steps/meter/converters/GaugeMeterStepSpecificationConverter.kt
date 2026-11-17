@@ -22,7 +22,9 @@ package io.qalipsis.core.factory.steps.meter.converters
 import io.qalipsis.api.Executors
 import io.qalipsis.api.annotations.StepConverter
 import io.qalipsis.api.meters.CampaignMeterRegistry
+import io.qalipsis.api.meters.Gauge
 import io.qalipsis.api.meters.steps.GaugeMeterStepSpecificationImpl
+import io.qalipsis.api.meters.steps.GaugeOperation
 import io.qalipsis.api.report.CampaignReportLiveStateRegistry
 import io.qalipsis.api.steps.StepCreationContext
 import io.qalipsis.api.steps.StepSpecification
@@ -55,12 +57,18 @@ class GaugeMeterStepSpecificationConverter(
         val checkers = spec.checks
             .filter { it.checkSpec != null }
             .map { it.valueExtractor to checkerConverter.convert(it.checkSpec!!) }
+        // The operation is resolved once here, so that the execution of the step only calls the function.
+        val record: Gauge.(Double) -> Double = when (spec.operation) {
+            GaugeOperation.SET -> Gauge::set
+            GaugeOperation.ADD -> Gauge::increment
+        }
         val step = GaugeMeterStep(
             id = spec.name,
             retryPolicy = spec.retryPolicy ?: creationContext.directedAcyclicGraph.scenario.defaultRetryPolicy,
             coroutineScope = coroutineScope,
             campaignReportLiveStateRegistry = campaignReportLiveStateRegistry,
             meterName = spec.meterName,
+            record = record,
             block = spec.block,
             checkers = checkers,
             campaignMeterRegistry =  meterRegistry
