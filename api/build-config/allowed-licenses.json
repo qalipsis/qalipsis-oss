@@ -1,0 +1,92 @@
+{
+  "_comment": [
+    "Allowed licenses for the QALIPSIS modules distributed under the Apache License 2.0.",
+    "Stricter than ../../build-config/allowed-licenses.json, which applies to the AGPL 3.0 runtime modules:",
+    "no copyleft license (GPL, LGPL, AGPL, MPL, CC-BY-SA) may enter the dependency graph of these modules.",
+    "Weak copyleft is tolerated only when the license carries a linking exception (Classpath Exception, CDDL+GPLv2+CE)."
+  ],
+  "allowedLicenses": [
+    {
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleLicense": "MIT License"
+    },
+    {
+      "moduleLicense": "MIT-0"
+    },
+    {
+      "moduleLicense": "BSD Zero Clause License"
+    },
+    {
+      "moduleLicense": "The 2-Clause BSD License"
+    },
+    {
+      "moduleLicense": "The 3-Clause BSD License"
+    },
+    {
+      "moduleLicense": "Eclipse Public License - v 1.0"
+    },
+    {
+      "moduleLicense": "Eclipse Public License - v 2.0"
+    },
+    {
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0"
+    },
+    {
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1"
+    },
+    {
+      "moduleLicense": "CDDL/GPLv2+CE"
+    },
+    {
+      "moduleLicense": "GNU GENERAL PUBLIC LICENSE, Version 2 + Classpath Exception"
+    },
+    {
+      "moduleLicense": "PUBLIC DOMAIN"
+    },
+    {
+      "moduleLicense": "Universal Permissive License v 1.0"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.fasterxml.jackson:jackson-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.willowtreeapps.assertk:assertk"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "com.willowtreeapps.opentest4k:opentest4k"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.micronaut.*"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.mockk:*"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "io.netty:netty-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.jetbrains.*"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.junit:junit-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "org.testcontainers:testcontainers-bom"
+    },
+    {
+      "moduleLicense": ".*",
+      "moduleName": "net.jcip:jcip-annotations"
+    }
+  ]
+}

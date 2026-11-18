@@ -2,7 +2,11 @@
 
 Thank you for considering a contribution to QALIPSIS. This document explains how to get involved, what to expect from the review process, and the conventions the project follows.
 
-QALIPSIS is an enterprise-grade load, performance, and end-to-end testing tool designed for distributed systems. It is developed in Kotlin, built with Gradle, and runs on JDK 11+. The open-source edition and all community plugins are licensed under **AGPL-3.0**.
+QALIPSIS is an enterprise-grade load, performance, and end-to-end testing tool designed for distributed systems. It is
+developed in Kotlin, built with Gradle, and runs on JDK 11+. The open-source edition is dual-licensed: the API and
+build-time modules are under **Apache-2.0**, the runtime modules under **AGPL-3.0 or a commercial license**, at the
+licensee's choice. The community plugins, the examples and the bootstrap project are under **Apache-2.0**.
+See [Licensing](#licensing) before adding a file.
 
 ---
 
@@ -197,11 +201,45 @@ Feature requests are welcome. When describing a feature:
 
 ---
 
-## License
+## Licensing
 
-All contributions to QALIPSIS open-source repositories are made under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. By submitting a pull request, you agree that your contribution will be licensed under the same terms.
+QALIPSIS OSS is distributed under two licenses, depending on the role of a module.
 
-The full license text is available in the `LICENSE` file at the root of each repository.
+| Scope                                                                                                                                                                                                                                 | License                                                                                                                                      |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| Everything under `api/` — `qalipsis-api-dsl`, `qalipsis-api-common`, `qalipsis-api-dev`, `qalipsis-api-processors`, `qalipsis-test`, `qalipsis-dev-platform` — `qalipsis-plugin-platform`, and the Docker base images under `docker/` | **Apache License 2.0** — [`LICENSE-APACHE-2.0`](./LICENSE-APACHE-2.0)                                                                        |
+| All the other modules — head, factory, runtime, shared, cluster, webapp — required at runtime only                                                                                                                                    | **Dual: GNU AGPL v3.0 or commercial**, at the licensee's choice — [`LICENSE`](./LICENSE), [`LICENSE-COMMERCIAL.md`](./LICENSE-COMMERCIAL.md) |
+
+The API and the build-time surface are permissive, so that scenario and plugin authors can write, distribute, and keep
+proprietary their own test code. The runtime that executes those scenarios is available under the AGPL, or under a
+commercial license that replaces the AGPL obligations — the license on which the QALIPSIS commercial and SaaS editions
+are built.
+
+When adding a file, copy the license header from a neighbouring file **of the same module**: the two tiers must never be
+mixed. The same rule applies to dependencies — an Apache-licensed module must not pull in a copyleft library.
+`./gradlew checkLicense` enforces both lists:
+
+- [`api/build-config/allowed-licenses.json`](./api/build-config/allowed-licenses.json) — the stricter list, applied to
+  the Apache-licensed modules.
+- [`build-config/allowed-licenses.json`](./build-config/allowed-licenses.json) — applied to the AGPL modules.
+
+---
+
+## Contributor License Agreement
+
+Before your first pull request can be merged, you must sign
+the [QALIPSIS Individual Contributor License Agreement](./cla/individual-cla.md). The CLA bot posts the signing link as
+a comment on the pull request; signing takes a minute and is remembered for all your later contributions. Contributing
+on behalf of an employer requires the [Corporate Contributor License Agreement](./cla/corporate-cla.md), signed by
+someone entitled to bind the company.
+
+The CLA does **not** transfer your copyright. You keep it, and grant AERIS IT Solutions GmbH a non-exclusive right to
+distribute your contribution — under the license of the module you contributed to, under the commercial license of the
+dual-licensed modules, and in the commercial and SaaS editions built on the same core. Without that grant, a contributed
+file can never move between the two tiers above, nor be relicensed later without tracking every past contributor down.
+
+Your contribution must be your own work, or work you have the right to submit. Do not paste code from another project
+unless its license allows it and you say so explicitly in the pull request.
 
 ---
 
