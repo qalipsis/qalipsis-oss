@@ -2,18 +2,20 @@
  * QALIPSIS
  * Copyright (C) 2022 AERIS IT Solutions GmbH
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This program is dual-licensed: you may use, modify and distribute it under the terms of either
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   1. the GNU Affero General Public License as published by the Free Software Foundation,
+ *      either version 3 of the License, or (at your option) any later version; or
+ *   2. a commercial license agreement concluded with AERIS IT Solutions GmbH.
+ *
+ * Under the GNU Affero General Public License, this program is distributed in the hope that it
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * For the commercial license, see LICENSE-COMMERCIAL.md at the root of the repository.
  *
  */
 
@@ -43,6 +45,44 @@ plugins {
 
 description = "QALIPSIS OSS"
 
+/**
+ * Modules distributed under the Apache License 2.0: the API and build-time surface consumed by
+ * scenario and plugin authors. All the other modules, required at runtime only, remain under the AGPL 3.0.
+ */
+val apacheLicensedModules = setOf(
+    "qalipsis-dev-platform",
+    "qalipsis-api-dev",
+    "qalipsis-api-dsl",
+    "qalipsis-api-common",
+    "qalipsis-api-processors",
+    "qalipsis-test",
+    "qalipsis-plugin-platform",
+)
+
+/**
+ * Applies the license matching the tier of [project] to the generated POM: Apache 2.0 for the API surface,
+ * a dual license — AGPL 3.0 or commercial, at the licensee's choice — for the runtime modules.
+ */
+fun MavenPom.configureLicense(project: Project) = licenses {
+    if (project.name in apacheLicensedModules) {
+        license {
+            name.set("Apache License, Version 2.0 (Apache-2.0)")
+            url.set("https://opensource.org/license/apache-2-0")
+        }
+    } else {
+        license {
+            name.set("GNU AFFERO GENERAL PUBLIC LICENSE, Version 3 (AGPL-3.0)")
+            url.set("http://opensource.org/licenses/AGPL-3.0")
+            comments.set("Dual-licensed: AGPL-3.0-or-later, or the QALIPSIS commercial license, at your option.")
+        }
+        license {
+            name.set("QALIPSIS Commercial License")
+            url.set("https://github.com/qalipsis/qalipsis-oss/blob/main/LICENSE-COMMERCIAL.md")
+            comments.set("Dual-licensed: AGPL-3.0-or-later, or the QALIPSIS commercial license, at your option.")
+        }
+    }
+}
+
 repositories {
     mavenLocal()
     mavenCentral()
@@ -55,6 +95,8 @@ licenseReport {
             "Qalipsis OSS"
         )
     )
+    // The Apache-licensed modules are verified by their own stricter report, see configureApacheLicenseReport.
+    projects = (listOf(project) + subprojects).filterNot { it.name in apacheLicensedModules }.toTypedArray()
     allowedLicensesFile = File("$projectDir/build-config/allowed-licenses.json")
     filters =
         arrayOf<com.github.jk1.license.filter.DependencyFilter>(com.github.jk1.license.filter.LicenseBundleNormalizer())
@@ -178,6 +220,28 @@ allprojects {
 fun Project.isNotPlatform() = !name.contains("platform")
 
 /**
+ * Verifies the dependencies of a module distributed under the Apache License 2.0 against the dedicated
+ * allowed licenses of `api/build-config`, which forbids the copyleft licenses tolerated by the AGPL modules.
+ */
+fun Project.configureApacheLicenseReport() {
+    val allowedLicenses = File(rootDir, "api/build-config/allowed-licenses.json")
+    apply(plugin = "com.github.jk1.dependency-license-report")
+    configure<com.github.jk1.license.LicenseReportExtension> {
+        projects = arrayOf(this@configureApacheLicenseReport)
+        allowedLicensesFile = allowedLicenses
+        renderers = arrayOf<com.github.jk1.license.render.ReportRenderer>(
+            com.github.jk1.license.render.InventoryHtmlReportRenderer("report.html", project.name)
+        )
+        filters =
+            arrayOf<com.github.jk1.license.filter.DependencyFilter>(com.github.jk1.license.filter.LicenseBundleNormalizer())
+    }
+    // The plugin does not declare the file as an input, hence an edited list would leave the check up-to-date.
+    tasks.named("checkLicense") {
+        inputs.file(allowedLicenses).withPropertyName("allowedLicensesFile")
+    }
+}
+
+/**
  * Applies the configuration for non-platform modules.
  */
 fun Project.configureNotPlatform() {
@@ -296,6 +360,10 @@ fun Project.configureNotPlatform() {
         }
     }
 
+    if (project.name in apacheLicensedModules) {
+        configureApacheLicenseReport()
+    }
+
     project.afterEvaluate {
         publishing {
             publications {
@@ -307,12 +375,7 @@ fun Project.configureNotPlatform() {
                         description.set(this@configureNotPlatform.description)
 
                         url.set("https://qalipsis.io")
-                        licenses {
-                            license {
-                                name.set("GNU AFFERO GENERAL PUBLIC LICENSE, Version 3 (AGPL-3.0)")
-                                url.set("http://opensource.org/licenses/AGPL-3.0")
-                            }
-                        }
+                        configureLicense(this@configureNotPlatform)
                         developers {
                             developer {
                                 id.set("ericjesse")

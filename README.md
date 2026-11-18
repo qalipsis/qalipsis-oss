@@ -149,4 +149,13 @@ You can find examples of QALIPSIS scenarios under https://github.com/qalipsis/qa
 
 ## License
 
-QALIPSIS OSS is distributed under the AGPL 3.0, the terms can be read [here](./LICENSE).
+QALIPSIS OSS is distributed under two licenses, depending on the role of a module.
+
+| Scope                                                                                                                                                                                                                                 | License                                                                                              |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| Everything under `api/` — `qalipsis-api-dsl`, `qalipsis-api-common`, `qalipsis-api-dev`, `qalipsis-api-processors`, `qalipsis-test`, `qalipsis-dev-platform` — `qalipsis-plugin-platform`, and the Docker base images under `docker/` | [Apache License 2.0](./LICENSE-APACHE-2.0)                                                           |
+| All the other modules — head, factory, runtime, shared, cluster, webapp — required at runtime only                                                                                                                                    | Dual: [GNU AGPL 3.0](./LICENSE) **or** [commercial license](./LICENSE-COMMERCIAL.md), at your option |
+
+Writing, distributing, and keeping proprietary your own scenarios and plugins only requires the Apache-licensed modules.
+Embedding, modifying or operating the runtime modules without the AGPL obligations requires a commercial license,
+see [LICENSE-COMMERCIAL.md](./LICENSE-COMMERCIAL.md).
