@@ -48,6 +48,14 @@ class SerialFormatRecordSerializer(
     private val serializersByType = serializersProvider.serialFormatWrappersByType
 
     /**
+     * Serializers by the name of the types they support, accepting the binary and the canonical names.
+     */
+    private val serializersByTypeName: Map<String, Collection<SerialFormatWrapper<*>>> =
+        serializersByType.flatMap { (type, serializers) ->
+            listOfNotNull(type.java.name, type.java.canonicalName).map { it to serializers }
+        }.toMap()
+
+    /**
      * All the qualifiers of the supported serializers.
      */
     private val serializersQualifiers = serializersByType.values.flatMap { it.map { it.qualifier } }.toSet()
@@ -67,12 +75,18 @@ class SerialFormatRecordSerializer(
 
     override fun <T : Any> deserialize(source: SerializedRecord, deserializationContext: DeserializationContext): T? {
         source as BinarySerializedRecord
-        val serializer = getSerializer(source.serType.type.kotlin, source.serializer) as SerialFormatWrapper<T>
+        val serializers = serializersByTypeName[source.typeName] ?: throw RejectedRecordTypeException(source.typeName)
+        val serializer = selectSerializer(serializers, source.serializer) as SerialFormatWrapper<T>
         return serializer.deserialize(source.value)
     }
 
-    private fun <T : Any> getSerializer(type: KClass<T>, qualifier: String? = null): SerialFormatWrapper<T> {
-        val serializers = serializersByType[type] as Collection<SerialFormatWrapper<T>>
+    private fun <T : Any> getSerializer(type: KClass<T>): SerialFormatWrapper<T> =
+        selectSerializer(serializersByType[type]!!, null) as SerialFormatWrapper<T>
+
+    private fun selectSerializer(
+        serializers: Collection<SerialFormatWrapper<*>>,
+        qualifier: String?
+    ): SerialFormatWrapper<*> {
         return if (serializers.size == 1 || qualifier.isNullOrBlank()) {
             serializers.first()
         } else {

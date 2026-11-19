@@ -68,8 +68,17 @@ class RecordDistributionSerializer(
 
     override fun <T> deserializeRecord(record: SerializedRecord): T? {
         return sortedSerializers.asSequence().filter { it.acceptsToDeserialize(record) }
-            .onEach { log.trace { "$it can deserialize the record of type ${record.type} and qualifier ${record.serializer}" } }
-            .firstNotNullOfOrNull { kotlin.runCatching { it.deserialize(record) as T? }.getOrNull() }
+            .onEach { log.trace { "$it can deserialize the record of type ${record.typeName} and qualifier ${record.serializer}" } }
+            .firstNotNullOfOrNull { serializer ->
+                try {
+                    serializer.deserialize(record) as T?
+                } catch (e: RejectedRecordTypeException) {
+                    throw e
+                } catch (e: Exception) {
+                    log.trace(e) { "An exception occurred while deserializing the record of type ${record.typeName} with $serializer" }
+                    null
+                }
+            }
     }
 
     private companion object {

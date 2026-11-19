@@ -36,7 +36,9 @@ import jakarta.inject.Singleton
  */
 @Suppress("UNCHECKED_CAST")
 @Singleton
-class JacksonJsonRecordSerializer : RecordSerializer {
+class JacksonJsonRecordSerializer(
+    private val recordTypeResolver: RecordTypeResolver
+) : RecordSerializer {
 
     override val order: Int = 0
 
@@ -72,7 +74,7 @@ class JacksonJsonRecordSerializer : RecordSerializer {
 
     override fun <T : Any> deserialize(source: SerializedRecord, deserializationContext: DeserializationContext): T? {
         source as BinarySerializedRecord
-        return mapper.readValue(source.value, source.serType.type) as T
+        return mapper.readValue(source.value, recordTypeResolver.resolve(source.typeName)) as T
     }
 
     companion object {

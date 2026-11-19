@@ -121,6 +121,8 @@ dependencies {
     testFixturesImplementation("io.micronaut:micronaut-runtime")
     testFixturesImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
+    testFixturesImplementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
+    testFixturesImplementation(kotlin("reflect"))
     testFixturesImplementation("org.postgresql:postgresql")
 
 }

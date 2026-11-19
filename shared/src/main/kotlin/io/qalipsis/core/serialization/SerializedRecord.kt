@@ -26,10 +26,11 @@ package io.qalipsis.core.serialization
  * all the fields are non-nullable.
  *
  * @property serializer qualifier of the serializer
+ * @property typeName binary name of the type of the original value, see [Class.getName]
  *
  * @author Eric Jessé
  */
 interface SerializedRecord {
     val serializer: String
-    val type: Class<*>
+    val typeName: String
 }

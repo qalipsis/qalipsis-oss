@@ -36,7 +36,7 @@ import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
-import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.ControlPlaneSerializer
 import jakarta.annotation.PostConstruct
 import jakarta.inject.Singleton
 import kotlinx.coroutines.runBlocking
@@ -54,7 +54,7 @@ class DistributedDelayedFeedbackManager(
     private val hazelcastInstance: HazelcastInstance,
     private val headChannel: HeadChannel,
     private val configuration: HeadConfiguration,
-    private val serializer: DistributionSerializer
+    private val serializer: ControlPlaneSerializer
 ) : DelayedFeedbackManager {
 
     /**

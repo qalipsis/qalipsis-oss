@@ -21,4 +21,11 @@
 
 package io.qalipsis.core.serialization
 
-class SerializationException(message: String) : Exception(message)
+open class SerializationException(message: String) : Exception(message)
+
+/**
+ * Thrown when a serialized record names a type that is not allowed to be deserialized.
+ * The type is never initialized nor instantiated.
+ */
+class RejectedRecordTypeException(typeName: String) :
+    SerializationException("The type $typeName is not allowed to be deserialized, the record is dropped")

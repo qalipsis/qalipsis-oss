@@ -40,6 +40,7 @@ internal object SerializableClassSerializer : KSerializer<SerializableClass> {
 
     override fun deserialize(decoder: Decoder): SerializableClass {
         val className = decoder.decodeString()
-        return SerializableClass(Class.forName(className))
+        // The class name may come from a remote peer: it is resolved without running any static initializer.
+        return SerializableClass(Class.forName(className, false, SerializableClassSerializer::class.java.classLoader))
     }
 }

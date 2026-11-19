@@ -23,6 +23,7 @@ import io.qalipsis.api.scenario.ClasspathScenarioInitializer.Companion.SCENARIOS
 import java.io.File
 import java.net.JarURLConnection
 import java.net.URL
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Semaphore
 
 /**
@@ -37,12 +38,36 @@ class ClasspathScenarioInitializer : ScenarioFactory {
     override fun newScenario(): ConfigurableScenarioSpecification {
         val scenarioSpec = ScenarioSpecificationImplementation(CURRENT_SCENARIO_NAME!!)
         CURRENT_SCENARIO_SPECIFICATION = scenarioSpec
+        val callers = StackWalker.getInstance().walk { frames -> frames.iterator().asSequence().map { it.className }.toList() }
+        findScenarioDeclaringPackage(callers)?.let(SCENARIOS_PACKAGES::add)
         return scenarioSpec
     }
 
     companion object {
 
         private const val SCENARIOS_DIR = "META-INF/services/qalipsis/scenarios"
+
+        private const val SCENARIOS_LOADERS_PACKAGE_PREFIX = "io.qalipsis.api.scenariosloader."
+
+        private val SCENARIOS_PACKAGES: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+        /**
+         * Packages of the classes declaring the scenarios loaded so far.
+         */
+        val scenariosPackages: Set<String>
+            get() = SCENARIOS_PACKAGES
+
+        /**
+         * Searches the package of the class declaring the scenario, as the caller of the generated [ScenarioLoader].
+         *
+         * @param callers names of the classes in the current call stack, the innermost first
+         */
+        internal fun findScenarioDeclaringPackage(callers: List<String>): String? {
+            val loaderIndex = callers.indexOfFirst { it.startsWith(SCENARIOS_LOADERS_PACKAGE_PREFIX) }
+            return callers.getOrNull(loaderIndex - 1)?.takeIf { loaderIndex > 0 }
+                ?.substringBeforeLast('.', "")
+                ?.takeIf(String::isNotEmpty)
+        }
 
         /**
          * Semaphore preventing from scenarios specifications to be generated concurrently.

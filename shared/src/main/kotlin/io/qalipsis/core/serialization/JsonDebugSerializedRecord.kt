@@ -21,12 +21,14 @@
 
 package io.qalipsis.core.serialization
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.micronaut.core.annotation.Introspected
 
 @Introspected
 data class JsonDebugSerializedRecord(
     val value: String? = null,
-    override val type: Class<*> = Unit::class.java,
+    @param:JsonProperty("type") @get:JsonProperty("type")
+    override val typeName: String = Unit::class.java.name,
     val metadata: Map<String, String>? = emptyMap(),
     override val serializer: String = "",
 ) : SerializedRecord

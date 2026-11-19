@@ -31,7 +31,7 @@ import io.qalipsis.core.directives.DirectiveRegistry
 import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.handshake.HandshakeResponse
-import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.ControlPlaneSerializer
 import jakarta.inject.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -43,7 +43,7 @@ import kotlinx.coroutines.slf4j.MDCContext
  * @author Joël Valère
  */
 abstract class ChannelSubscriber(
-    private val serializer: DistributionSerializer,
+    private val serializer: ControlPlaneSerializer,
     private val directiveRegistry: DirectiveRegistry,
     private val factoryConfiguration: FactoryConfiguration,
     private val directiveListeners: List<DirectiveListener<*>>,
@@ -61,9 +61,8 @@ abstract class ChannelSubscriber(
     fun deserializeAndDispatch(channel: String, message: ByteArray) {
         try {
             when (channel) {
-                in subscribedDirectiveChannels -> serializer.deserialize<Directive>(message)?.let { dispatch(it) }
-                in subscribedHandshakeResponseChannels -> serializer.deserialize<HandshakeResponse>(message)
-                    ?.let { dispatch(it) }
+                in subscribedDirectiveChannels -> dispatch(serializer.deserializeDirective(message))
+                in subscribedHandshakeResponseChannels -> dispatch(serializer.deserializeHandshakeResponse(message))
 
                 else -> log.trace { "Channel $channel is not supported" }
             }

@@ -23,7 +23,7 @@ package io.qalipsis.core.factory.communication
 
 import io.qalipsis.core.directives.DirectiveRegistry
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
-import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.ControlPlaneSerializer
 import jakarta.inject.Singleton
 
 /** Channel subscriber model.
@@ -34,5 +34,5 @@ import jakarta.inject.Singleton
 class SubscriberChannelRegistry(
     val factoryConfiguration: FactoryConfiguration,
     val directiveRegistry: DirectiveRegistry,
-    val serializer: DistributionSerializer
+    val serializer: ControlPlaneSerializer
 )
