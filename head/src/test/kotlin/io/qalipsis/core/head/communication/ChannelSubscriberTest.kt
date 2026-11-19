@@ -34,7 +34,8 @@ import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.core.meters.CampaignMeterSnapshot
-import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.ControlPlaneSerializer
+import io.qalipsis.core.serialization.SerializationException
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyNever
@@ -53,7 +54,7 @@ internal class ChannelSubscriberTest {
     val testDispatcherProvider = TestDispatcherProvider()
 
     @MockK
-    private lateinit var serializer: DistributionSerializer
+    private lateinit var serializer: ControlPlaneSerializer
 
     @RelaxedMockK
     private lateinit var headConfiguration: HeadConfiguration
@@ -114,7 +115,7 @@ internal class ChannelSubscriberTest {
             val snapshot = CampaignMeterSnapshot(name = "m1", timestampEpochMs = 1000L, type = "counter")
             val feedback = CampaignMetersFeedback(meters = listOf(snapshot))
             val countLatch = SuspendedCountLatch(2)
-            every { serializer.deserialize<CampaignMetersFeedback>(bytes) } returns feedback
+            every { serializer.deserializeMetersFeedback(bytes) } returns feedback
             coEvery { meterFeedbackListener1.notify(feedback) } coAnswers { countLatch.decrement() }
             coEvery { meterFeedbackListener2.notify(feedback) } coAnswers { countLatch.decrement() }
 
@@ -128,13 +129,13 @@ internal class ChannelSubscriberTest {
         }
 
     @Test
-    internal fun `given message on meter channel when deserialize returns null when deserializeAndDispatch then no listener notified`() =
+    internal fun `given message on meter channel when deserialization fails when deserializeAndDispatch then no listener notified`() =
         testDispatcherProvider.run {
             // given
             subscriber = buildSubscriber(this)
             subscriber.subscribedMeterFeedbackChannels.add("meters")
             val bytes = byteArrayOf(4, 5, 6)
-            every { serializer.deserialize<CampaignMetersFeedback>(bytes) } returns null
+            every { serializer.deserializeMetersFeedback(bytes) } throws SerializationException("Not a meters feedback")
 
             // when
             subscriber.deserializeAndDispatch("meters", bytes)
@@ -153,7 +154,7 @@ internal class ChannelSubscriberTest {
             val bytes = byteArrayOf(7, 8, 9)
             val feedbackMessage = mockk<Feedback>(relaxed = true)
             val countLatch = SuspendedCountLatch(1)
-            every { serializer.deserialize<Feedback>(bytes) } returns feedbackMessage
+            every { serializer.deserializeFeedback(bytes) } returns feedbackMessage
             every { feedbackListener.accept(feedbackMessage) } returns true
             coEvery { feedbackListener.notify(feedbackMessage) } coAnswers { countLatch.decrement() }
 
@@ -191,7 +192,7 @@ internal class ChannelSubscriberTest {
             val bytes = byteArrayOf(13, 14, 15)
             val snapshot = CampaignMeterSnapshot(name = "m2", timestampEpochMs = 2000L, type = "gauge")
             val feedback = CampaignMetersFeedback(meters = listOf(snapshot))
-            every { serializer.deserialize<CampaignMetersFeedback>(bytes) } returns feedback
+            every { serializer.deserializeMetersFeedback(bytes) } returns feedback
 
             // when — should complete without error
             subscriber.deserializeAndDispatch("meters", bytes)
@@ -210,7 +211,7 @@ internal class ChannelSubscriberTest {
             val bytes = byteArrayOf(20, 21, 22)
             val heartbeat = Heartbeat("node-1", "tenant-1", Instant.now())
             val countLatch = SuspendedCountLatch(2)
-            every { serializer.deserialize<Heartbeat>(bytes) } returns heartbeat
+            every { serializer.deserializeHeartbeat(bytes) } returns heartbeat
             coEvery { heartbeatListener1.notify(heartbeat) } coAnswers { countLatch.decrement() }
             coEvery { heartbeatListener2.notify(heartbeat) } coAnswers { countLatch.decrement() }
 
@@ -240,7 +241,7 @@ internal class ChannelSubscriberTest {
                 scenarios = emptyList()
             )
             val countLatch = SuspendedCountLatch(2)
-            every { serializer.deserialize<HandshakeRequest>(bytes) } returns request
+            every { serializer.deserializeHandshakeRequest(bytes) } returns request
             coEvery { handshakeRequestListener1.notify(request) } coAnswers { countLatch.decrement() }
             coEvery { handshakeRequestListener2.notify(request) } coAnswers { countLatch.decrement() }
 
@@ -257,7 +258,7 @@ internal class ChannelSubscriberTest {
      * Minimal concrete subclass exposing the abstract [ChannelSubscriber] for testing purposes.
      */
     private class TestChannelSubscriber(
-        serializer: DistributionSerializer,
+        serializer: ControlPlaneSerializer,
         headConfiguration: HeadConfiguration,
         heartbeatListeners: Collection<HeartbeatListener>,
         feedbackListeners: Collection<FeedbackListener<*>>,

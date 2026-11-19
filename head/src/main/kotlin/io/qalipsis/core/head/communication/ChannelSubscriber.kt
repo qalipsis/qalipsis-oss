@@ -31,7 +31,7 @@ import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.head.configuration.HeadConfiguration
 import io.qalipsis.core.heartbeat.Heartbeat
-import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.ControlPlaneSerializer
 import jakarta.inject.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -43,7 +43,7 @@ import kotlinx.coroutines.slf4j.MDCContext
  * @author Joël Valère
  */
 abstract class ChannelSubscriber(
-    private val serializer: DistributionSerializer,
+    private val serializer: ControlPlaneSerializer,
     private val headConfiguration: HeadConfiguration,
     private val heartbeatListeners: Collection<HeartbeatListener>,
     private val feedbackListeners: Collection<FeedbackListener<*>>,
@@ -64,13 +64,10 @@ abstract class ChannelSubscriber(
     fun deserializeAndDispatch(channel: String, message: ByteArray) {
         try {
             when (channel) {
-                in subscribedFeedbackChannels -> serializer.deserialize<Feedback>(message)?.let { dispatch(it) }
-                in subscribedMeterFeedbackChannels -> serializer.deserialize<CampaignMetersFeedback>(message)
-                    ?.let { dispatch(it) }
-                in subscribedHandshakeRequestsChannels -> serializer.deserialize<HandshakeRequest>(message)
-                    ?.let { dispatch(it) }
-
-                headConfiguration.heartbeatChannel -> serializer.deserialize<Heartbeat>(message)?.let { dispatch(it) }
+                in subscribedFeedbackChannels -> dispatch(serializer.deserializeFeedback(message))
+                in subscribedMeterFeedbackChannels -> dispatch(serializer.deserializeMetersFeedback(message))
+                in subscribedHandshakeRequestsChannels -> dispatch(serializer.deserializeHandshakeRequest(message))
+                headConfiguration.heartbeatChannel -> dispatch(serializer.deserializeHeartbeat(message))
                 else -> log.trace { "Channel $channel is not supported" }
             }
         } catch (e: Exception) {

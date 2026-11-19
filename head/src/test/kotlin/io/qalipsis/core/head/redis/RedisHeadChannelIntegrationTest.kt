@@ -139,7 +139,7 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
         val received = captured.receive()
         assertThat(received).all {
             prop(ChannelMessage<String, ByteArray>::getChannel).isEqualTo(FACTORY_CHANNEL)
-            transform("message") { subscriber.subscriberRegistry.serializer.deserialize<Directive>(it.message) }.isNotNull()
+            transform("message") { subscriber.subscriberRegistry.serializer.deserializeDirective(it.message) }.isNotNull()
                 .isInstanceOf(TestDescriptiveDirective::class).prop(TestDescriptiveDirective::value).isEqualTo(1)
         }
     }
@@ -161,7 +161,7 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
         val received = captured.receive()
         assertThat(received).all {
             prop(ChannelMessage<String, ByteArray>::getChannel).isEqualTo(FACTORY_CHANNEL)
-            transform("message") { subscriber.subscriberRegistry.serializer.deserialize<Directive>(it.message) }.isNotNull()
+            transform("message") { subscriber.subscriberRegistry.serializer.deserializeDirective(it.message) }.isNotNull()
                 .isInstanceOf(MinionsDeclarationDirectiveReference::class)
                 // Dereferences the received directive.
                 .transform { runBlocking { directiveRegistry.get(it) } }.isNotNull()
@@ -189,7 +189,7 @@ internal class RedisHeadChannelIntegrationTest : AbstractRedisIntegrationTest() 
         val received = captured.receive()
         assertThat(received).all {
             prop(ChannelMessage<String, ByteArray>::getChannel).isEqualTo(HANDSHAKE_CHANNEL)
-            transform("message") { subscriber.subscriberRegistry.serializer.deserialize<HandshakeResponse>(it.message) }.isEqualTo(
+            transform("message") { subscriber.subscriberRegistry.serializer.deserializeHandshakeResponse(it.message) }.isEqualTo(
                 handshakeResponse
             )
         }

@@ -49,7 +49,7 @@ import io.qalipsis.core.head.communication.HeartbeatListener
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.core.meters.CampaignMeterSnapshot
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
-import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.ControlPlaneSerializer
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -122,7 +122,7 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
     private lateinit var subscriberCommands: RedisPubSubReactiveCommands<String, ByteArray>
 
     @Inject
-    private lateinit var serializer: DistributionSerializer
+    private lateinit var serializer: ControlPlaneSerializer
 
     private var initialized = false
 

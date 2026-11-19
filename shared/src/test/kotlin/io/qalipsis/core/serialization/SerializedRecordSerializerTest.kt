@@ -21,7 +21,6 @@
 
 package io.qalipsis.core.serialization
 
-import io.qalipsis.api.serialization.SerializableClass
 import io.qalipsis.core.directives.MinionsRampUpPreparationDirective
 import io.qalipsis.core.executionprofile.DefaultExecutionProfileConfiguration
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -40,7 +39,7 @@ internal class BinarySerializedRecordSerializerTest {
         // given
         val record = BinarySerializedRecord(
             "This is a test".encodeToByteArray(),
-            serType = SerializableClass(String::class.java),
+            typeName = String::class.java.name,
             serializer = "string"
         )
 
@@ -56,7 +55,7 @@ internal class BinarySerializedRecordSerializerTest {
     internal fun `should serialize a record with an empty value`() {
         // given
         val record =
-            BinarySerializedRecord(ByteArray(0), serType = SerializableClass(String::class.java), serializer = "string")
+            BinarySerializedRecord(ByteArray(0), typeName = String::class.java.name, serializer = "string")
 
         // when
         val serialized = protobuf.encodeToByteArray(record)
@@ -77,7 +76,7 @@ internal class BinarySerializedRecordSerializerTest {
         )
         val record = BinarySerializedRecord(
             protobuf.encodeToByteArray(directive),
-            serType = SerializableClass(MinionsRampUpPreparationDirective::class.java),
+            typeName = MinionsRampUpPreparationDirective::class.java.name,
             serializer = "string"
         )
 

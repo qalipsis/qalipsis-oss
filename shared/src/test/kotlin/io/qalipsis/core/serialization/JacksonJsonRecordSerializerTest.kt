@@ -27,11 +27,19 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
+import io.qalipsis.api.serialization.SerializersProvider
+import io.qalipsis.untrusted.TRAPPED_TYPE_NAME
+import io.qalipsis.untrusted.TrapState
+import kotlinx.serialization.ExperimentalSerializationApi
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
+@OptIn(ExperimentalSerializationApi::class)
 internal class JacksonJsonRecordSerializerTest {
 
-    private val serializer = JacksonJsonRecordSerializer()
+    private val serializer = JacksonJsonRecordSerializer(
+        DefaultRecordTypeResolver(SerializersProvider(), listOf("io.qalipsis.core.serialization"))
+    )
 
     @Test
     internal fun `should serialize and deserialize the record with a string`() {
@@ -73,6 +81,14 @@ internal class JacksonJsonRecordSerializerTest {
     internal fun `should not accept to deserialize record serialized with another one`() {
         val record = BinarySerializedRecord.from(ByteArray(0), Person::class, "another")
         assertThat(serializer.acceptsToDeserialize(record)).isFalse()
+    }
+
+    @Test
+    internal fun `should reject a record naming a not allowed type without initializing it`() {
+        val record = BinarySerializedRecord("{}".encodeToByteArray(), TRAPPED_TYPE_NAME, "jackson-json")
+
+        assertThrows<RejectedRecordTypeException> { serializer.deserialize<Any>(record) }
+        assertThat(TrapState.initialized.get()).isFalse()
     }
 
     data class Person(val name: String, val age: Int)

@@ -16,7 +16,7 @@ import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.head.communication.HeadChannel
 import io.qalipsis.core.head.configuration.HeadConfiguration
-import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.ControlPlaneSerializer
 import io.qalipsis.test.mockk.WithMockk
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
@@ -36,7 +36,7 @@ internal class DistributedDelayedFeedbackManagerIntegrationTest {
     lateinit var configuration: HeadConfiguration
 
     @MockK
-    lateinit var serializer: DistributionSerializer
+    lateinit var serializer: ControlPlaneSerializer
 
     @Inject
     lateinit var hazelcastInstance: HazelcastInstance
@@ -50,7 +50,7 @@ internal class DistributedDelayedFeedbackManagerIntegrationTest {
     @MockBean(HeadConfiguration::class)
     fun configuration() = configuration
 
-    @MockBean(DistributionSerializer::class)
+    @MockBean(ControlPlaneSerializer::class)
     fun serializer() = serializer
 
     @Test
@@ -60,7 +60,7 @@ internal class DistributedDelayedFeedbackManagerIntegrationTest {
         val latch = CountDownLatch(1)
         coEvery { headChannel.publishFeedback(any(), any(), any()) } answers { latch.countDown() }
         val serializedFeedback = "My-feedback".encodeToByteArray()
-        every { serializer.serialize(any<Feedback>(), any()) } returns serializedFeedback
+        every { serializer.serialize(any<Feedback>()) } returns serializedFeedback
         val feedback = mockk<Feedback>(moreInterfaces = arrayOf(CampaignManagementFeedback::class)) {
             every { (this@mockk as CampaignManagementFeedback).campaignKey } returns "my-campaign"
         }
@@ -73,7 +73,7 @@ internal class DistributedDelayedFeedbackManagerIntegrationTest {
         latch.await()
         assertThat(Duration.between(beforeCall, Instant.now())).isGreaterThanOrEqualTo(Duration.ofSeconds(1))
         coVerifyOrder {
-            serializer.serialize(refEq(feedback), any())
+            serializer.serialize(refEq(feedback))
             headChannel.publishFeedback("the-channel", "my-campaign", eq(serializedFeedback))
         }
     }

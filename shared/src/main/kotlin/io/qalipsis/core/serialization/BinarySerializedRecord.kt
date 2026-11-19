@@ -21,8 +21,6 @@
 
 package io.qalipsis.core.serialization
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import io.qalipsis.api.serialization.SerializableClass
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -38,7 +36,7 @@ import kotlin.reflect.KClass
  * all the fields are non-nullable.
  *
  * @property value serialized value as a byte array
- * @property serType concrete type of the original value
+ * @property typeName binary name of the concrete type of the original value, only resolved when deserializing the value
  * @property serializer qualifier of the serializer
  *
  * @author Eric Jessé
@@ -49,16 +47,12 @@ class BinarySerializedRecord(
     @SerialName("v") @Serializable(with = OtherByteArrayKotlinSerializer::class)
     val value: ByteArray = ByteArray(0),
     @SerialName("t")
-    val serType: SerializableClass,
+    override val typeName: String,
     @SerialName("s")
     override val serializer: String,
     @SerialName("m")
     val metadata: Map<String, String> = emptyMap()
 ) : SerializedRecord {
-
-    @get:JsonIgnore
-    override val type: Class<*>
-        get() = serType.type
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -67,7 +61,7 @@ class BinarySerializedRecord(
         other as BinarySerializedRecord
 
         if (!value.contentEquals(other.value)) return false
-        if (serType != other.serType) return false
+        if (typeName != other.typeName) return false
         if (serializer != other.serializer) return false
         if (metadata != other.metadata) return false
 
@@ -76,7 +70,7 @@ class BinarySerializedRecord(
 
     override fun hashCode(): Int {
         var result = value.contentHashCode()
-        result = 31 * result + serType.hashCode()
+        result = 31 * result + typeName.hashCode()
         result = 31 * result + serializer.hashCode()
         result = 31 * result + metadata.hashCode()
         return result
@@ -92,7 +86,7 @@ class BinarySerializedRecord(
             metadata: Map<String, String> = emptyMap()
         ) = BinarySerializedRecord(
             value,
-            serType = SerializableClass(type.java),
+            typeName = type.java.name,
             serializer = serializer,
             metadata = metadata
         )

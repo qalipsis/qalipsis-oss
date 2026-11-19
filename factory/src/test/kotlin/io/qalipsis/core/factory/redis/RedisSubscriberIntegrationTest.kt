@@ -43,7 +43,7 @@ import io.qalipsis.core.factory.communication.HandshakeResponseListener
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.handshake.HandshakeResponse
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
-import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.ControlPlaneSerializer
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
@@ -103,7 +103,7 @@ internal class RedisSubscriberIntegrationTest : AbstractRedisIntegrationTest() {
     fun factoryConfiguration() = factoryConfiguration
 
     @Inject
-    private lateinit var serializer: DistributionSerializer
+    private lateinit var serializer: ControlPlaneSerializer
 
     private var initialized = false
 

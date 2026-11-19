@@ -30,10 +30,12 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.prop
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.api.states.SharedStateDefinition
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.redis.AbstractRedisIntegrationTest
+import io.qalipsis.core.serialization.DefaultRecordTypeResolver
 import io.qalipsis.core.serialization.DistributionSerializer
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -52,6 +54,7 @@ import java.time.Duration
 @WithMockk
 @ExperimentalLettuceCoroutinesApi
 @MicronautTest(environments = [ExecutionEnvironments.REDIS, ExecutionEnvironments.FACTORY], startApplication = false)
+@Property(name = DefaultRecordTypeResolver.ALLOWED_PACKAGES_PROPERTY, value = "io.qalipsis.core.factory.redis")
 internal class RedisSharedStateRegistryIntegrationTest : AbstractRedisIntegrationTest() {
 
     @Inject

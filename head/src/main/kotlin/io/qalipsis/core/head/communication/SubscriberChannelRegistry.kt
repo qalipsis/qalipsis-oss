@@ -22,7 +22,7 @@
 package io.qalipsis.core.head.communication
 
 import io.qalipsis.core.head.configuration.HeadConfiguration
-import io.qalipsis.core.serialization.DistributionSerializer
+import io.qalipsis.core.serialization.ControlPlaneSerializer
 import jakarta.inject.Singleton
 
 /** Channel subscriber model.
@@ -31,6 +31,6 @@ import jakarta.inject.Singleton
  */
 @Singleton
 class SubscriberChannelRegistry(
-    val serializer: DistributionSerializer,
+    val serializer: ControlPlaneSerializer,
     val headConfiguration: HeadConfiguration
 )

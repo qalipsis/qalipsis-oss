@@ -44,7 +44,9 @@ import kotlinx.serialization.ExperimentalSerializationApi
 @Primary
 @ExperimentalSerializationApi
 @Requires(property = "streaming.serialization", value = "json")
-class JsonRecordDistributionSerializer : DistributionSerializer {
+class JsonRecordDistributionSerializer(
+    private val recordTypeResolver: RecordTypeResolver
+) : DistributionSerializer {
 
     private val objectMapper = jacksonMapperBuilder()
         .addModule(Jdk8Module())
@@ -84,14 +86,14 @@ class JsonRecordDistributionSerializer : DistributionSerializer {
 
     override fun <T> serializeAsRecord(entity: T, serializationContext: SerializationContext): SerializedRecord {
         return entity?.let {
-            JsonDebugSerializedRecord(objectMapper.writeValueAsString(it), it::class.java, serializer = QUALIFIER)
+            JsonDebugSerializedRecord(objectMapper.writeValueAsString(it), it::class.java.name, serializer = QUALIFIER)
         } ?: JsonDebugSerializedRecord(serializer = QUALIFIER)
     }
 
     override fun <T> deserializeRecord(record: SerializedRecord): T? {
         record as JsonDebugSerializedRecord
         return record.value?.let { value ->
-            objectMapper.readValue(value, record.type) as T
+            objectMapper.readValue(value, recordTypeResolver.resolve(record.typeName)) as T
         }
     }
 

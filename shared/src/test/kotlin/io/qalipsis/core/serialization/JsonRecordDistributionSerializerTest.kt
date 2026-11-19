@@ -27,11 +27,14 @@ import io.qalipsis.core.feedbacks.FactoryAssignmentFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.handshake.HandshakeRequest
+import io.qalipsis.api.serialization.SerializersProvider
+import kotlinx.serialization.ExperimentalSerializationApi
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalSerializationApi::class)
 internal class JsonRecordDistributionSerializerTest {
 
-    private val serializer = JsonRecordDistributionSerializer()
+    private val serializer = JsonRecordDistributionSerializer(DefaultRecordTypeResolver(SerializersProvider(), emptyList()))
 
     @Test
     fun `should serialize record`() {
