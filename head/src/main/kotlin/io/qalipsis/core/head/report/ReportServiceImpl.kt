@@ -268,6 +268,7 @@ class ReportServiceImpl(
     @LogInput
     override suspend fun render(tenant: String, creator: String, reference: String): ReportTask {
         val reportEntity = reportRepository.findByTenantAndReference(tenant, reference)
+        require(isVisibleBy(reportEntity, creator)) { REPORT_FETCH_DENY }
         val minionsCountSeries = dataSeriesRepository.findByTenantOrDefaultTenantAndReference(tenant, MINION_COUNT_DATA_SERIES_REFERENCE)
         val updatedComponents = reportEntity.dataComponents.map { component ->
             val updatedSeries = (component.dataSeries + minionsCountSeries)
@@ -292,6 +293,9 @@ class ReportServiceImpl(
 
         return reportTask.toModel()
     }
+
+    private suspend fun isVisibleBy(report: ReportEntity, username: String) =
+        report.sharingMode != SharingMode.NONE || report.creatorId == userProvider.findIdByUsername(username)
 
     @LogInput
     override suspend fun read(tenant: String, username: String, taskReference: String): DownloadFile {

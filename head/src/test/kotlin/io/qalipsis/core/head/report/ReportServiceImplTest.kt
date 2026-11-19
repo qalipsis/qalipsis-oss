@@ -87,15 +87,16 @@ import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.core.lifetime.ExitStatusException
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
+import java.io.File
+import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
-import java.io.File
-import java.time.Instant
 
 /**
  * @author Joël Valère
@@ -2011,6 +2012,51 @@ internal class ReportServiceImplTest {
                 dataSeriesRepository.findByTenantOrDefaultTenantAndReference("my-tenant", "minions.count")
             }
             confirmVerified(reportGenerator)
+        }
+
+    @Test
+    internal fun `given a private report of another user when rendering then it is refused`() =
+        testDispatcherProvider.runTest {
+            // given
+            val reportService = buildReportService()
+            coEvery { reportRepository.findByTenantAndReference("my-tenant", "qoi78wizened") } returns
+                    reportEntityProptotype2.copy(sharingMode = SharingMode.NONE, creatorId = 4L)
+            coEvery { userProvider.findIdByUsername("other-user") } returns 5L
+
+            // when
+            assertThrows<IllegalArgumentException> {
+                reportService.render("my-tenant", "other-user", "qoi78wizened")
+            }
+
+            // then
+            coVerifyNever {
+                reportTaskRepository.save(any<ReportTaskEntity>())
+                reportGenerator.processTaskGeneration(any(), any(), any(), any(), any())
+            }
+        }
+
+    @Test
+    internal fun `given a private report of the caller when rendering then it is rendered`() =
+        testDispatcherProvider.runTest {
+            // given
+            val reportService = buildReportService()
+            coEvery { reportRepository.findByTenantAndReference("my-tenant", "qoi78wizened") } returns
+                    reportEntityProptotype2.copy(sharingMode = SharingMode.NONE, creatorId = 4L)
+            coEvery { userProvider.findIdByUsername("user") } returns 4L
+            coEvery { dataSeriesRepository.findByTenantOrDefaultTenantAndReference(any(), any()) } returns relaxedMockk()
+            coEvery { idGenerator.short() } returns "report-task-1"
+            coEvery { reportTaskRepository.save(any<ReportTaskEntity>()) } returns reportTaskEntity
+            val latch = Latch(true)
+            coEvery { reportGenerator.processTaskGeneration(any(), any(), any(), any(), any()) } coAnswers { latch.release() }
+
+            // when
+            reportService.render("my-tenant", "user", "qoi78wizened")
+            latch.await()
+
+            // then
+            coVerifyOnce {
+                reportTaskRepository.save(any<ReportTaskEntity>())
+            }
         }
 
     @Test
