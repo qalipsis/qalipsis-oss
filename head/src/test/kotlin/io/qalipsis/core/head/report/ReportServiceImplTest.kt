@@ -256,9 +256,9 @@ internal class ReportServiceImplTest {
             assertThat(result).isSameInstanceAs(convertedReport)
             coVerifyOrder {
                 reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(refEq("my-tenant"), refEq("report-name"))
+                userProvider.findIdByUsername(refEq("the-user"))
                 idGenerator.short()
                 tenantProvider.findIdByReference(refEq("my-tenant"))
-                userProvider.findIdByUsername(refEq("the-user"))
                 reportRepository.save(capture(savedEntity))
                 reportConverter.convertToModel(refEq(convertedEntity.captured))
             }
@@ -316,18 +316,7 @@ internal class ReportServiceImplTest {
         coEvery {
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1", "campaign-key2"))
         } returns setOf("campaign-key1", "campaign-key2")
-        coEvery {
-            dataSeriesRepository.checkExistenceByTenantAndReference(
-                refEq("my-tenant"),
-                refEq("series-ref-1")
-            )
-        } returns true
-        coEvery {
-            dataSeriesRepository.checkExistenceByTenantAndReference(
-                refEq("my-tenant"),
-                refEq("series-ref-2")
-            )
-        } returns true
+        coEvery { dataSeriesRepository.findReadableReferences(any(), any(), any(), any()) } answers { arg<Collection<String>>(3).toList() }
         coEvery {
             dataSeriesRepository.findAllByTenantAndReferences(refEq("my-tenant"), listOf("series-ref-1"))
         } returns listOf(dataSeries[0])
@@ -370,17 +359,10 @@ internal class ReportServiceImplTest {
         coVerifyOrder {
             reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(refEq("my-tenant"), refEq("report-name"))
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1", "campaign-key2"))
-            dataSeriesRepository.checkExistenceByTenantAndReference(
-                tenant = refEq("my-tenant"),
-                reference = refEq("series-ref-1")
-            )
-            dataSeriesRepository.checkExistenceByTenantAndReference(
-                tenant = refEq("my-tenant"),
-                reference = refEq("series-ref-2")
-            )
+            userProvider.findIdByUsername(refEq("the-user"))
+            dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant"), any(), any())
             idGenerator.short()
             tenantProvider.findIdByReference(refEq("my-tenant"))
-            userProvider.findIdByUsername(refEq("the-user"))
             reportRepository.save(refEq(savedEntity.captured))
             dataSeriesRepository.findAllByTenantAndReferences(
                 tenant = refEq("my-tenant"),
@@ -539,7 +521,8 @@ internal class ReportServiceImplTest {
         testDispatcherProvider.runTest {
             // given
             val reportServiceImpl = buildReportService()
-            coEvery { dataSeriesRepository.checkExistenceByTenantAndReference(refEq("my-tenant"), any()) } returns false
+            coEvery { dataSeriesRepository.findReadableReferences(any(), any(), any(), any()) } returns emptyList()
+            coEvery { userProvider.findIdByUsername(any()) } returns 456L
             coEvery {
                 reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(
                     refEq("my-tenant"),
@@ -575,10 +558,8 @@ internal class ReportServiceImplTest {
                     refEq("report-name"),
                     -1
                 )
-                dataSeriesRepository.checkExistenceByTenantAndReference(
-                    tenant = refEq("my-tenant"),
-                    reference = refEq("series-ref-1")
-                )
+                userProvider.findIdByUsername(any())
+                dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant"), any(), any())
             }
             confirmVerified(
                 reportRepository,
@@ -846,12 +827,7 @@ internal class ReportServiceImplTest {
             coEvery {
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
             } returns setOf("campaign-key1")
-            coEvery {
-                dataSeriesRepository.checkExistenceByTenantAndReference(
-                    refEq("my-tenant"),
-                    refEq("series-ref-1")
-                )
-            } returns true
+            coEvery { dataSeriesRepository.findReadableReferences(any(), any(), any(), any()) } answers { arg<Collection<String>>(3).toList() }
 
             coEvery {
                 dataSeriesRepository.findAllByTenantAndReferences(refEq("my-tenant"), listOf("series-ref-1"))
@@ -902,10 +878,7 @@ internal class ReportServiceImplTest {
                     6165
                 )
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
-                dataSeriesRepository.checkExistenceByTenantAndReference(
-                    tenant = refEq("my-tenant"),
-                    reference = refEq("series-ref-1")
-                )
+                dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant"), any(), any())
                 reportDataComponentRepository.deleteByReportId(6165)
                 reportRepository.update(refEq(updatedEntity.captured))
                 dataSeriesRepository.findAllByTenantAndReferences(
@@ -1019,7 +992,7 @@ internal class ReportServiceImplTest {
             } returns setOf(
                 "campaign-key1"
             )
-            coEvery { dataSeriesRepository.checkExistenceByTenantAndReference(refEq("my-tenant"), any()) } returns true
+            coEvery { dataSeriesRepository.findReadableReferences(any(), any(), any(), any()) } answers { arg<Collection<String>>(3).toList() }
             coEvery { dataSeriesRepository.findByTenantAndReference(refEq("my-tenant"), any()) } returns dataSeries[1]
             coEvery { reportConverter.convertToModel(reportEntity) } returns report
 
@@ -1230,7 +1203,7 @@ internal class ReportServiceImplTest {
                 listOf("campaign-key1")
             )
         } returns setOf("campaign-key1")
-        coEvery { dataSeriesRepository.checkExistenceByTenantAndReference(refEq("my-tenant"), any()) } returns true
+        coEvery { dataSeriesRepository.findReadableReferences(any(), any(), any(), any()) } answers { arg<Collection<String>>(3).toList() }
         coEvery {
             dataSeriesRepository.findAllByTenantAndReferences(
                 refEq("my-tenant"),
@@ -1336,10 +1309,7 @@ internal class ReportServiceImplTest {
                 -1
             )
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
-            dataSeriesRepository.checkExistenceByTenantAndReference(
-                tenant = refEq("my-tenant"),
-                reference = refEq("series-ref-2")
-            )
+            dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant"), any(), any())
             reportDataComponentRepository.deleteByReportId(-1L)
             dataSeriesRepository.findAllByTenantAndReferences(
                 tenant = refEq("my-tenant"),

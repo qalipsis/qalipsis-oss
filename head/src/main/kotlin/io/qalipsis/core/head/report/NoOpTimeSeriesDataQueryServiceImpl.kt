@@ -40,12 +40,14 @@ class NoOpTimeSeriesDataQueryServiceImpl : TimeSeriesDataQueryService {
     override suspend fun render(
         tenant: String,
         dataSeriesReferences: Set<String>,
-        queryExecutionRequest: AggregationQueryExecutionRequest
+        queryExecutionRequest: AggregationQueryExecutionRequest,
+        username: String?
     ): Map<String, TimeSeriesValues> = emptyMap()
 
     override suspend fun search(
         tenant: String,
         dataSeriesReferences: Set<String>,
-        queryExecutionContext: DataRetrievalQueryExecutionRequest
+        queryExecutionContext: DataRetrievalQueryExecutionRequest,
+        username: String?
     ): Map<String, Page<TimeSeriesRecord>> = emptyMap()
 }

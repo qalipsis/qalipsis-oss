@@ -45,6 +45,7 @@ import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignsInstantsAndDuration
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
+import io.qalipsis.core.head.security.UserProvider
 import io.qalipsis.core.head.report.catadioptre.calculateMinimumAggregationTimeframe
 import io.qalipsis.core.head.report.catadioptre.sanitizeAggregationRequest
 import io.qalipsis.core.head.report.catadioptre.sanitizeRetrievalRequest
@@ -72,6 +73,9 @@ internal class TimeSeriesDataQueryServiceImplTest {
 
     @MockK
     private lateinit var campaignRepository: CampaignRepository
+
+    @MockK
+    private lateinit var userProvider: UserProvider
 
     @InjectMockKs
     @SpyK(recordPrivateCalls = true)

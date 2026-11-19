@@ -965,34 +965,6 @@ internal class DataSeriesRepositoryIntegrationTest : AbstractPostgreSQLTest() {
     }
 
     @Test
-    fun `should save then successfully check existence based on reference and tenant`() = testDispatcherProvider.run {
-        // given
-        val tenant = tenantRepository.save(tenantPrototype)
-        val creator = userRepository.save(userPrototype)
-        dataSeriesRepository.save(dataSeriesPrototype.copy(tenantId = tenant.id, creatorId = creator.id))
-
-        //when + then
-        assertThat(
-            dataSeriesRepository.checkExistenceByTenantAndReference(
-                tenant = "my-tenant",
-                reference = "my-series-1"
-            )
-        ).isFalse()
-        assertThat(
-            dataSeriesRepository.checkExistenceByTenantAndReference(
-                tenant = "my-tenant",
-                reference = "my-series"
-            )
-        ).isTrue()
-        assertThat(
-            dataSeriesRepository.checkExistenceByTenantAndReference(
-                tenant = "my-tenant-1",
-                reference = "my-series"
-            )
-        ).isFalse()
-    }
-
-    @Test
     fun `should fetch the requested dataSeries including the default`() = testDispatcherProvider.run {
         //given
         val tenant = tenantRepository.save(tenantPrototype)

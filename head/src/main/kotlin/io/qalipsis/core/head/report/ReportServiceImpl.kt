@@ -122,16 +122,13 @@ class ReportServiceImpl(
                 REPORT_CAMPAIGN_KEYS_NOT_ALLOWED
             }
         }
-        if (reportCreationAndUpdateRequest.dataComponents.isNotEmpty()) {
-            reportCreationAndUpdateRequest.dataComponents.map {
-                checkDataSeriesInDataComponent(tenant, it)
-            }
-        }
+        val creatorId = requireNotNull(userProvider.findIdByUsername(creator))
+        checkDataSeriesInDataComponents(tenant, creatorId, reportCreationAndUpdateRequest.dataComponents)
         var createdReport = reportRepository.save(
             ReportEntity(
                 reference = idGenerator.short(),
                 tenantId = tenantProvider.findIdByReference(tenant),
-                creatorId = requireNotNull(userProvider.findIdByUsername(creator)),
+                creatorId = creatorId,
                 displayName = reportCreationAndUpdateRequest.displayName,
                 description = reportCreationAndUpdateRequest.description,
                 sharingMode = reportCreationAndUpdateRequest.sharingMode,
@@ -188,11 +185,7 @@ class ReportServiceImpl(
             }
         }
         return if (isUpdateRequired(reportCreationAndUpdateRequest, reportEntity)) {
-            if (reportCreationAndUpdateRequest.dataComponents.isNotEmpty()) {
-                reportCreationAndUpdateRequest.dataComponents.map {
-                    checkDataSeriesInDataComponent(tenant, it)
-                }
-            }
+            checkDataSeriesInDataComponents(tenant, currentUserId, reportCreationAndUpdateRequest.dataComponents)
             reportDataComponentRepository.deleteByReportId(reportEntity.id)
             var updatedReport = reportRepository.update(
                 reportEntity.copy(
@@ -379,28 +372,23 @@ class ReportServiceImpl(
     }
 
     /**
-     * Checks if all data series in a data component exist and belong to the tenant before saving the associate report.
+     * Checks that all the data series of the data components exist in the tenant and can be read by the user.
      */
-    private suspend fun checkDataSeriesInDataComponent(
+    private suspend fun checkDataSeriesInDataComponents(
         tenant: String,
-        dataComponentCreationAndUpdateRequest: DataComponentCreationAndUpdateRequest,
-    ): Boolean {
-        if (dataComponentCreationAndUpdateRequest.type == Diagram.TYPE) {
-            val diagram = dataComponentCreationAndUpdateRequest as DiagramCreationAndUpdateRequest
-            diagram.dataSeriesReferences.map {
-                require(dataSeriesRepository.checkExistenceByTenantAndReference(tenant = tenant, reference = it)) {
-                    REPORT_DATA_SERIES_NOT_ALLOWED
-                }
+        userId: Long,
+        dataComponents: Collection<DataComponentCreationAndUpdateRequest>,
+    ) {
+        val references = dataComponents.flatMap { component ->
+            when (component) {
+                is DiagramCreationAndUpdateRequest -> component.dataSeriesReferences
+                else -> (component as DataTableCreationAndUpdateRequest).dataSeriesReferences
             }
-        } else {
-            val dataTable = dataComponentCreationAndUpdateRequest as DataTableCreationAndUpdateRequest
-            dataTable.dataSeriesReferences.map {
-                require(dataSeriesRepository.checkExistenceByTenantAndReference(tenant = tenant, reference = it)) {
-                    REPORT_DATA_SERIES_NOT_ALLOWED
-                }
-            }
+        }.toSet()
+        if (references.isNotEmpty()) {
+            val readableReferences = dataSeriesRepository.findReadableReferences(tenant, listOf(tenant), userId, references)
+            require(readableReferences.containsAll(references)) { REPORT_DATA_SERIES_NOT_ALLOWED }
         }
-        return true
     }
 
     /**

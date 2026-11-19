@@ -41,6 +41,7 @@ import com.qalipsis.core.head.jdbc.entity.UserEntityForTest
 import io.micronaut.data.model.Pageable
 import io.micronaut.data.model.Sort
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.model.DataComponentType
@@ -2347,5 +2348,69 @@ internal class ReportRepositoryIntegrationTest : AbstractPostgreSQLTest() {
             hasSize(1)
             index(0).prop(ReportEntity::id).isEqualTo(report3.id)
         }
+    }
+
+    @Test
+    fun `should only return the data series readable by the user`() = testDispatcherProvider.run {
+        // given
+        val tenant = tenantRepository.save(tenantPrototype.copy())
+        val defaultTenant = tenantRepository.save(tenantPrototype.copy(reference = Defaults.TENANT))
+        val otherTenant = tenantRepository.save(tenantPrototype.copy(reference = "other-tenant"))
+        val user = userRepository.save(userPrototype.copy())
+        val owner = userRepository.save(userPrototype.copy(username = "the-owner"))
+        fun series(reference: String, tenantId: Long, creatorId: Long, sharingMode: SharingMode) =
+            DataSeriesEntity(
+                reference = reference,
+                tenantId = tenantId,
+                creatorId = creatorId,
+                displayName = reference,
+                dataType = DataType.EVENTS,
+                valueName = "my-value",
+                sharingMode = sharingMode
+            )
+        val savedSeries = dataSeriesRepository.saveAll(
+            listOf(
+                series("own-private", tenant.id, user.id, SharingMode.NONE),
+                series("shared", tenant.id, owner.id, SharingMode.READONLY),
+                series("private-of-other", tenant.id, owner.id, SharingMode.NONE),
+                series("private-in-shared-report", tenant.id, owner.id, SharingMode.NONE),
+                series("private-in-private-report", tenant.id, owner.id, SharingMode.NONE),
+                series("default-tenant", defaultTenant.id, owner.id, SharingMode.NONE),
+                series("other-tenant", otherTenant.id, user.id, SharingMode.READONLY),
+            )
+        ).toList().associateBy { it.reference }
+        fun report(reference: String, sharingMode: SharingMode) = reportPrototype.copy(
+            reference = reference,
+            displayName = reference,
+            tenantId = tenant.id,
+            creatorId = owner.id,
+            sharingMode = sharingMode
+        )
+        val sharedReport = reportRepository.save(report("shared-report", SharingMode.READONLY))
+        val privateReport = reportRepository.save(report("private-report", SharingMode.NONE))
+        reportDataComponentRepository.saveAll(
+            listOf(
+                ReportDataComponentEntity(
+                    sharedReport.id, DataComponentType.DIAGRAM, listOf(savedSeries.getValue("private-in-shared-report"))
+                ),
+                ReportDataComponentEntity(
+                    privateReport.id, DataComponentType.DIAGRAM, listOf(savedSeries.getValue("private-in-private-report"))
+                ),
+            )
+        ).toList()
+
+        // when
+        val readable = dataSeriesRepository.findReadableReferences(
+            "my-tenant", listOf("my-tenant", Defaults.TENANT), user.id, savedSeries.keys
+        )
+        val readableInTenantOnly = dataSeriesRepository.findReadableReferences(
+            "my-tenant", listOf("my-tenant"), user.id, savedSeries.keys
+        )
+
+        // then
+        assertThat(readable).containsOnly(
+            "own-private", "shared", "private-in-shared-report", "default-tenant"
+        )
+        assertThat(readableInTenantOnly).containsOnly("own-private", "shared", "private-in-shared-report")
     }
 }

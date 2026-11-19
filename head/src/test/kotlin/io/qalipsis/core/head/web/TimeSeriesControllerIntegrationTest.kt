@@ -131,7 +131,7 @@ internal class TimeSeriesControllerIntegrationTest {
                 ),
             )
         ).mapValues { TimeSeriesValues(values = it.value) }
-        coEvery { timeSeriesDataQueryService.render(any(), any(), any()) } returns aggregationResult
+        coEvery { timeSeriesDataQueryService.render(any(), any(), any(), any()) } returns aggregationResult
 
         val request =
             HttpRequest.GET<Unit>(
@@ -162,7 +162,8 @@ internal class TimeSeriesControllerIntegrationTest {
                     from = start,
                     until = end,
                     aggregationTimeframe = Duration.ofSeconds(10)
-                )
+                ),
+                username = Defaults.USERNAME
             )
         }
         confirmVerified(timeSeriesDataQueryService)
@@ -204,7 +205,7 @@ internal class TimeSeriesControllerIntegrationTest {
                 ),
             )
         ).mapValues { TimeSeriesValues(values = it.value) }
-        coEvery { timeSeriesDataQueryService.render(any(), any(), any()) } returns aggregationResult
+        coEvery { timeSeriesDataQueryService.render(any(), any(), any(), any()) } returns aggregationResult
 
         val request =
             HttpRequest.GET<Unit>(
@@ -230,7 +231,8 @@ internal class TimeSeriesControllerIntegrationTest {
                 queryExecutionRequest = AggregationQueryExecutionRequest(
                     tenant = "_qalipsis_ten_",
                     campaignsReferences = setOf("camp-1", "camp2")
-                )
+                ),
+                username = Defaults.USERNAME
             )
         }
         confirmVerified(timeSeriesDataQueryService)
@@ -372,7 +374,7 @@ internal class TimeSeriesControllerIntegrationTest {
                 )
             )
         )
-        coEvery { timeSeriesDataQueryService.search(any(), any(), any()) } returns searchResult
+        coEvery { timeSeriesDataQueryService.search(any(), any(), any(), any()) } returns searchResult
 
         val request =
             HttpRequest.GET<Unit>(
@@ -405,7 +407,8 @@ internal class TimeSeriesControllerIntegrationTest {
                     aggregationTimeframe = Duration.ofSeconds(10),
                     page = 3,
                     size = 256
-                )
+                ),
+                username = Defaults.USERNAME
             )
         }
         confirmVerified(timeSeriesDataQueryService)
@@ -438,7 +441,7 @@ internal class TimeSeriesControllerIntegrationTest {
                 )
             )
         )
-        coEvery { timeSeriesDataQueryService.search(any(), any(), any()) } returns searchResult
+        coEvery { timeSeriesDataQueryService.search(any(), any(), any(), any()) } returns searchResult
 
         val request =
             HttpRequest.GET<Unit>(
@@ -469,7 +472,8 @@ internal class TimeSeriesControllerIntegrationTest {
                     aggregationTimeframe = null,
                     page = 0,
                     size = 500
-                )
+                ),
+                username = Defaults.USERNAME
             )
         }
         confirmVerified(timeSeriesDataQueryService)

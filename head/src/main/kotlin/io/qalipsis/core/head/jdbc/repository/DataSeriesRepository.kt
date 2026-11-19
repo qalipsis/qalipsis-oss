@@ -405,16 +405,31 @@ interface DataSeriesRepository : CoroutineCrudRepository<DataSeriesEntity, Long>
     )
     suspend fun findAll(pageable: Pageable): Page<DataSeriesEntity>
 
+    /**
+     * Returns the references of the data series that the user [userId] can read in [tenants]: the series of other
+     * tenants (like the default one), the series they created, the shared ones and the ones used in a report they can
+     * read.
+     */
     @Query(
-        """SELECT 
-                CASE 
-                    WHEN EXISTS 
-                        (SELECT 1 FROM data_series 
-                            WHERE reference = :reference AND EXISTS (SELECT 1 FROM tenant WHERE data_series.tenant_id = tenant.id AND tenant.reference = :tenant)) 
-                    THEN TRUE 
-                    ELSE FALSE 
-                END"""
+        """SELECT data_series.reference
+            FROM data_series
+                JOIN tenant t ON data_series.tenant_id = t.id
+            WHERE data_series.reference IN (:references) AND t.reference IN (:tenants)
+                AND (t.reference <> :tenant
+                    OR data_series.creator_id = :userId
+                    OR data_series.sharing_mode <> 'NONE'
+                    OR EXISTS (SELECT 1 FROM data_component_data_series dcds
+                        JOIN data_component dc ON dc.id = dcds.data_component_id
+                        JOIN report r ON r.id = dc.report_id
+                        WHERE dcds.data_series_id = data_series.id
+                            AND (r.creator_id = :userId OR r.sharing_mode <> 'NONE')))"""
     )
-    suspend fun checkExistenceByTenantAndReference(tenant: String, reference: String): Boolean
+    suspend fun findReadableReferences(
+        tenant: String,
+        tenants: Collection<String>,
+        userId: Long,
+        references: Collection<String>
+    ): List<String>
+
 
 }
