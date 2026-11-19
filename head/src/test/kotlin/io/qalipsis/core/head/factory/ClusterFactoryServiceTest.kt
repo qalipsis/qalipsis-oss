@@ -26,6 +26,8 @@ import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isTrue
 import assertk.assertions.prop
 import io.aerisconsulting.catadioptre.coInvokeInvisible
 import io.mockk.coEvery
@@ -614,6 +616,45 @@ internal class ClusterFactoryServiceTest {
         coVerifyOnce { factoryRepository.findTenantByNodeId("the-real-node-id") }
         assertThat(tenant).isEqualTo("my-tenant")
     }
+
+    @Test
+    internal fun `given a node ID registered in the same tenant when checking the ownership then it is not owned by another tenant`() =
+        testDispatcherProvider.run {
+            // given
+            coEvery { factoryRepository.findTenantByNodeId("the-real-node-id") } returns "my-tenant"
+
+            // when
+            val result = clusterFactoryService.isNodeIdOwnedByAnotherTenant("my-tenant", "the-real-node-id")
+
+            // then
+            assertThat(result).isFalse()
+        }
+
+    @Test
+    internal fun `given a node ID registered in another tenant when checking the ownership then it is owned by another tenant`() =
+        testDispatcherProvider.run {
+            // given
+            coEvery { factoryRepository.findTenantByNodeId("the-real-node-id") } returns "other-tenant"
+
+            // when
+            val result = clusterFactoryService.isNodeIdOwnedByAnotherTenant("my-tenant", "the-real-node-id")
+
+            // then
+            assertThat(result).isTrue()
+        }
+
+    @Test
+    internal fun `given an unknown node ID when checking the ownership then it is not owned by another tenant`() =
+        testDispatcherProvider.run {
+            // given
+            coEvery { factoryRepository.findTenantByNodeId("the-real-node-id") } returns null
+
+            // when
+            val result = clusterFactoryService.isNodeIdOwnedByAnotherTenant("my-tenant", "the-real-node-id")
+
+            // then
+            assertThat(result).isFalse()
+        }
 
     @Test
     fun `should return all active scenarios`() = testDispatcherProvider.run {

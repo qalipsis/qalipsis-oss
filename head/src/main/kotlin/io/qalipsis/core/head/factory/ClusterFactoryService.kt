@@ -98,6 +98,9 @@ class ClusterFactoryService(
         return factoryRepository.findTenantByNodeId(nodeId)!!
     }
 
+    override suspend fun isNodeIdOwnedByAnotherTenant(tenant: String, nodeId: NodeId): Boolean =
+        factoryRepository.findTenantByNodeId(nodeId)?.let { it != tenant } ?: false
+
     /**
      * Updates or saves factory and factory_selector entities using handshakeRequest
      */

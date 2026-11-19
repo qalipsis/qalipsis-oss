@@ -88,6 +88,9 @@ class InMemoryFactoryService(
         return factoriesByNodeId[nodeId]!!.tenant
     }
 
+    override suspend fun isNodeIdOwnedByAnotherTenant(tenant: String, nodeId: NodeId): Boolean =
+        factoriesByNodeId[nodeId]?.let { it.tenant != tenant } ?: false
+
     @LogInput
     override suspend fun notify(heartbeat: Heartbeat) {
         if (heartbeat.state == Heartbeat.State.OFFLINE) {

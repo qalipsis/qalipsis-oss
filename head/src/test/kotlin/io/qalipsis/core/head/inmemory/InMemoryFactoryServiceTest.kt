@@ -26,6 +26,8 @@ import assertk.assertThat
 import assertk.assertions.containsOnly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isTrue
 import io.mockk.coVerify
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -104,6 +106,25 @@ internal class InMemoryFactoryServiceTest {
         // then
         assertThat(tenant).isEqualTo("my-tenant")
     }
+
+    @Test
+    internal fun `given a node ID when checking whether it is owned by another tenant then only another tenant matches`() =
+        testDispatcherProvider.runTest {
+            // given
+            val request = HandshakeRequest(
+                nodeId = "",
+                tags = emptyMap(),
+                replyTo = "",
+                scenarios = emptyList(),
+                tenant = "my-tenant"
+            )
+            inMemoryFactoryService.register("the-real-node-id", request, relaxedMockk())
+
+            // when + then
+            assertThat(inMemoryFactoryService.isNodeIdOwnedByAnotherTenant("my-tenant", "the-real-node-id")).isFalse()
+            assertThat(inMemoryFactoryService.isNodeIdOwnedByAnotherTenant("other-tenant", "the-real-node-id")).isTrue()
+            assertThat(inMemoryFactoryService.isNodeIdOwnedByAnotherTenant("other-tenant", "unknown-node-id")).isFalse()
+        }
 
     @Test
     internal fun `should returns the searched scenarios from the repository`() = testDispatcherProvider.runTest {

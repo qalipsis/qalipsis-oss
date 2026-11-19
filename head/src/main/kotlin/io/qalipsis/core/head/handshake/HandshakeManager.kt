@@ -22,6 +22,7 @@
 package io.qalipsis.core.head.handshake
 
 import io.micronaut.context.annotation.Requires
+import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.lang.IdGenerator
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInput
@@ -56,12 +57,7 @@ class HandshakeManager(
 
     @LogInput(level = Level.DEBUG)
     override suspend fun notify(handshakeRequest: HandshakeRequest) {
-        val nodeRegistrationId = if (handshakeRequest.nodeId.isBlank() || handshakeRequest.nodeId.startsWith("_")) {
-            idGenerator.short()
-        } else {
-            handshakeRequest.nodeId
-        }
-        val unicastChannel = channelNameFactory.getUnicastChannelName(handshakeRequest)
+        val (nodeRegistrationId, unicastChannel) = resolveNodeIdAndUnicastChannel(handshakeRequest)
 
         val response = HandshakeResponse(
             handshakeNodeId = handshakeRequest.nodeId,
@@ -75,6 +71,29 @@ class HandshakeManager(
 
         log.debug { "Sending handshake response $response to ${handshakeRequest.replyTo}" }
         headChannel.publishHandshakeResponse(handshakeRequest.replyTo, response)
+    }
+
+    /**
+     * Resolves the ID and unicast channel to assign to the factory, never reusing those of a factory
+     * registered in another tenant.
+     */
+    private suspend fun resolveNodeIdAndUnicastChannel(handshakeRequest: HandshakeRequest): Pair<NodeId, String> {
+        val requestedNodeId = handshakeRequest.nodeId
+        return when {
+            requestedNodeId.isBlank() || requestedNodeId.startsWith("_") ->
+                idGenerator.short() to channelNameFactory.getUnicastChannelName(handshakeRequest)
+
+            factoryService.isNodeIdOwnedByAnotherTenant(handshakeRequest.tenant, requestedNodeId) -> {
+                val generatedNodeId = idGenerator.short()
+                log.warn {
+                    "The node ID $requestedNodeId requested by a factory of the tenant ${handshakeRequest.tenant} " +
+                            "is already used in another tenant, the ID $generatedNodeId is assigned instead"
+                }
+                generatedNodeId to channelNameFactory.getUnicastChannelName(handshakeRequest.tenant, generatedNodeId)
+            }
+
+            else -> requestedNodeId to channelNameFactory.getUnicastChannelName(handshakeRequest)
+        }
     }
 
     companion object {
