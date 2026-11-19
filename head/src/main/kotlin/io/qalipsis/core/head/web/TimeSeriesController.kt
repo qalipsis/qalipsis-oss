@@ -27,6 +27,7 @@ import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.QueryValue
 import io.micronaut.security.annotation.Secured
+import io.micronaut.security.authentication.Authentication
 import io.micronaut.validation.Validated
 import io.qalipsis.api.constraints.PositiveDuration
 import io.qalipsis.api.query.Page
@@ -92,6 +93,7 @@ class TimeSeriesController(
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
+        @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
             description = "Data-series references to aggregate.",
             required = true,
@@ -145,7 +147,8 @@ class TimeSeriesController(
                 from = from,
                 until = until,
                 aggregationTimeframe = timeframe
-            )
+            ),
+            authentication.name
         )
     }
 
@@ -175,6 +178,7 @@ class TimeSeriesController(
             required = true,
             `in` = ParameterIn.HEADER
         ) @NotBlank @Tenant tenant: String,
+        @Parameter(hidden = true) authentication: Authentication,
         @Parameter(
             description = "Data-series references to search.",
             required = true,
@@ -242,7 +246,8 @@ class TimeSeriesController(
                 aggregationTimeframe = timeframe,
                 page = page,
                 size = size
-            )
+            ),
+            authentication.name
         )
     }
 

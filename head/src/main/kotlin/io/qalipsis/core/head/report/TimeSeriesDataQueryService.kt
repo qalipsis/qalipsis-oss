@@ -38,13 +38,15 @@ interface TimeSeriesDataQueryService {
      * @param tenant the tenant owning the time-series data
      * @param dataSeriesReferences references of data-series to use for the aggregation
      * @param queryExecutionRequest context of execution of the query
+     * @param username when set, only the data series readable by this user are used
      *
      * @return a map of [TimeSeriesValues] keyed by the corresponding item of [dataSeriesReferences].
      */
     suspend fun render(
         tenant: String,
         dataSeriesReferences: Set<String>,
-        queryExecutionRequest: AggregationQueryExecutionRequest
+        queryExecutionRequest: AggregationQueryExecutionRequest,
+        username: String? = null
     ): Map<String, TimeSeriesValues>
 
     /**
@@ -53,12 +55,14 @@ interface TimeSeriesDataQueryService {
      * @param tenant the tenant owning the time-series data
      * @param dataSeriesReferences references of data-series to use for the aggregation
      * @param queryExecutionRequest context of execution of the query
+     * @param username when set, only the data series readable by this user are used
      *
      * @return a map of pages of [TimeSeriesRecord], keyed by the corresponding item of [dataSeriesReferences].
      */
     suspend fun search(
         tenant: String,
         dataSeriesReferences: Set<String>,
-        queryExecutionRequest: DataRetrievalQueryExecutionRequest
+        queryExecutionRequest: DataRetrievalQueryExecutionRequest,
+        username: String? = null
     ): Map<String, Page<out TimeSeriesRecord>>
 }

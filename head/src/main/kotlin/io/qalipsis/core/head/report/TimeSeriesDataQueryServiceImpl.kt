@@ -31,9 +31,12 @@ import io.qalipsis.api.report.TimeSeriesDataProvider
 import io.qalipsis.api.report.TimeSeriesRecord
 import io.qalipsis.api.report.TimeSeriesValues
 import io.qalipsis.core.annotations.LogInput
+import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
 import io.qalipsis.core.head.jdbc.repository.CampaignsInstantsAndDuration
 import io.qalipsis.core.head.jdbc.repository.DataSeriesRepository
+import io.qalipsis.core.head.security.UserProvider
 import jakarta.inject.Singleton
 import java.time.Duration
 
@@ -48,17 +51,17 @@ class TimeSeriesDataQueryServiceImpl(
     private val timeSeriesDataProvider: TimeSeriesDataProvider,
     private val dataSeriesRepository: DataSeriesRepository,
     private val campaignRepository: CampaignRepository,
+    private val userProvider: UserProvider,
 ) : TimeSeriesDataQueryService {
 
     @LogInput
     override suspend fun render(
         tenant: String,
         dataSeriesReferences: Set<String>,
-        queryExecutionRequest: AggregationQueryExecutionRequest
+        queryExecutionRequest: AggregationQueryExecutionRequest,
+        username: String?
     ): Map<String, TimeSeriesValues> {
-        val dataSeries =
-            dataSeriesRepository.findAllByTenantAndReferences(tenant, dataSeriesReferences)
-                .filterNot { it.query.isNullOrBlank() }
+        val dataSeries = findDataSeries(tenant, dataSeriesReferences, username).filterNot { it.query.isNullOrBlank() }
         return if (dataSeries.isNotEmpty()) {
             campaignRepository.findInstantsAndDuration(tenant, queryExecutionRequest.campaignsReferences)
                 ?.takeIf { it.hasValues }
@@ -74,6 +77,24 @@ class TimeSeriesDataQueryServiceImpl(
         } else {
             log.info { "No data series with prepared queries could be found in tenant $tenant with the specified references $dataSeriesReferences" }
             emptyMap()
+        }
+    }
+
+    /**
+     * Fetches the data series, restricted to the ones readable by [username] when specified.
+     */
+    private suspend fun findDataSeries(tenant: String, references: Set<String>, username: String?): List<DataSeriesEntity> {
+        val actualReferences = if (username == null || references.isEmpty()) {
+            references
+        } else {
+            userProvider.findIdByUsername(username)?.let { userId ->
+                dataSeriesRepository.findReadableReferences(tenant, listOf(tenant, Defaults.TENANT), userId, references)
+            }.orEmpty()
+        }
+        return if (actualReferences.isEmpty()) {
+            emptyList()
+        } else {
+            dataSeriesRepository.findAllByTenantAndReferences(tenant, actualReferences)
         }
     }
 
@@ -108,10 +129,10 @@ class TimeSeriesDataQueryServiceImpl(
     override suspend fun search(
         tenant: String,
         dataSeriesReferences: Set<String>,
-        queryExecutionRequest: DataRetrievalQueryExecutionRequest
+        queryExecutionRequest: DataRetrievalQueryExecutionRequest,
+        username: String?
     ): Map<String, Page<TimeSeriesRecord>> {
-        val dataSeries =
-            dataSeriesRepository.findAllByTenantAndReferences(tenant, dataSeriesReferences).filter { it.query != null }
+        val dataSeries = findDataSeries(tenant, dataSeriesReferences, username).filter { it.query != null }
         return if (dataSeries.isNotEmpty()) {
             campaignRepository.findInstantsAndDuration(tenant, queryExecutionRequest.campaignsReferences)
                 ?.takeIf { it.hasValues }
