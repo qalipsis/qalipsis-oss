@@ -24,6 +24,7 @@ package io.qalipsis.core.head.campaign.states
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.Feedback
 
 /**
@@ -44,6 +45,12 @@ interface CampaignExecutionState<C : CampaignExecutionContext> {
      * ID of the current campaign.
      */
     val campaignKey: CampaignKey
+
+    /**
+     * Returns `true` when [feedback] is related to the campaign and declares a factory currently
+     * involved in the campaign, in the tenant of the campaign.
+     */
+    fun isEmittedByCampaignFactory(feedback: CampaignManagementFeedback): Boolean
 
     fun inject(context: C)
 

@@ -36,12 +36,14 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.campaigns.ScenarioSummary
 import io.qalipsis.core.handshake.HandshakeRequest
 import io.qalipsis.core.handshake.HandshakeResponse
+import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.relaxedMockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.time.Duration
+import java.time.Instant
 
 @WithMockk
 internal class InMemoryFactoryServiceTest {
@@ -124,6 +126,60 @@ internal class InMemoryFactoryServiceTest {
             assertThat(inMemoryFactoryService.isNodeIdOwnedByAnotherTenant("my-tenant", "the-real-node-id")).isFalse()
             assertThat(inMemoryFactoryService.isNodeIdOwnedByAnotherTenant("other-tenant", "the-real-node-id")).isTrue()
             assertThat(inMemoryFactoryService.isNodeIdOwnedByAnotherTenant("other-tenant", "unknown-node-id")).isFalse()
+        }
+
+    @Test
+    internal fun `given a heartbeat claiming another tenant when notified then the factory is kept`() =
+        testDispatcherProvider.runTest {
+            // given
+            val request = HandshakeRequest(
+                nodeId = "",
+                tags = emptyMap(),
+                replyTo = "",
+                scenarios = emptyList(),
+                tenant = "my-tenant"
+            )
+            inMemoryFactoryService.register("the-real-node-id", request, relaxedMockk())
+
+            // when
+            inMemoryFactoryService.notify(
+                Heartbeat(
+                    nodeId = "the-real-node-id",
+                    tenant = "other-tenant",
+                    timestamp = Instant.now(),
+                    state = Heartbeat.State.OFFLINE
+                )
+            )
+
+            // then
+            assertThat(inMemoryFactoryService.getFactoryTenant("the-real-node-id")).isEqualTo("my-tenant")
+        }
+
+    @Test
+    internal fun `given an offline heartbeat of the right tenant when notified then the factory is removed`() =
+        testDispatcherProvider.runTest {
+            // given
+            val request = HandshakeRequest(
+                nodeId = "",
+                tags = emptyMap(),
+                replyTo = "",
+                scenarios = emptyList(),
+                tenant = "my-tenant"
+            )
+            inMemoryFactoryService.register("the-real-node-id", request, relaxedMockk())
+
+            // when
+            inMemoryFactoryService.notify(
+                Heartbeat(
+                    nodeId = "the-real-node-id",
+                    tenant = "my-tenant",
+                    timestamp = Instant.now(),
+                    state = Heartbeat.State.OFFLINE
+                )
+            )
+
+            // then
+            assertThat(inMemoryFactoryService.isNodeIdOwnedByAnotherTenant("other-tenant", "the-real-node-id")).isFalse()
         }
 
     @Test

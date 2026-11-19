@@ -27,6 +27,7 @@ import io.qalipsis.api.report.ExecutionStatus
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.configuration.AbortRunningCampaign
 import io.qalipsis.core.directives.Directive
+import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.heartbeat.Heartbeat
 
@@ -36,8 +37,10 @@ import io.qalipsis.core.heartbeat.Heartbeat
  * @author Eric Jessé
  */
 abstract class AbstractCampaignExecutionState<C : CampaignExecutionContext>(
-    override val campaignKey: CampaignKey
+    protected val campaign: RunningCampaign
 ) : CampaignExecutionState<C> {
+
+    override val campaignKey: CampaignKey = campaign.key
 
     var initialized: Boolean = false
 
@@ -48,6 +51,10 @@ abstract class AbstractCampaignExecutionState<C : CampaignExecutionContext>(
     override fun inject(context: C) {
         this.context = context
     }
+
+    override fun isEmittedByCampaignFactory(feedback: CampaignManagementFeedback): Boolean =
+        feedback.campaignKey == campaign.key && feedback.tenant == campaign.tenant
+                && campaign.factories.containsKey(feedback.nodeId)
 
     override suspend fun init(): List<Directive> {
         return if (!initialized) {

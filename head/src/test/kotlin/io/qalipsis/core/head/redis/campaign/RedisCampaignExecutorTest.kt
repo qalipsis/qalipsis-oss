@@ -57,6 +57,7 @@ import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.CampaignTimeoutFeedback
+import io.qalipsis.core.feedbacks.FailedCampaignFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
@@ -77,6 +78,7 @@ import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.BeforeEach
@@ -693,6 +695,7 @@ internal class RedisCampaignExecutorTest {
         val campaignExecutor = redisCampaignExecutor(this)
         coEvery { campaignService.retrieve(any(), any()).status } returns ExecutionStatus.SUCCESSFUL
         val completedState = mockk<CampaignExecutionState<CampaignExecutionContext>> {
+            every { isEmittedByCampaignFactory(any()) } returns true
             every { isCompleted } returns true
         }
         coEvery { campaignExecutor.get("my-tenant", "first_campaign") } returns completedState
@@ -722,6 +725,7 @@ internal class RedisCampaignExecutorTest {
             operations.getState("my-tenant", "first_campaign")
         } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
         val initialCampaignState = mockk<RedisRunningState> {
+            every { isEmittedByCampaignFactory(any()) } returns true
             every { campaignKey } returns "first_campaign"
             every { isCompleted } returns false
         }
@@ -809,6 +813,7 @@ internal class RedisCampaignExecutorTest {
             operations.getState("my-tenant", "first_campaign")
         } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
         val initialCampaignState = mockk<RedisRunningState> {
+            every { isEmittedByCampaignFactory(any()) } returns true
             every { campaignKey } returns "first_campaign"
             every { initialized } returns true
             every { isCompleted } returns false
@@ -1004,10 +1009,37 @@ internal class RedisCampaignExecutorTest {
     }
 
     @Test
+    internal fun `given a feedback not emitted by a factory of the campaign when notified then it is ignored`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignExecutor = redisCampaignExecutor(this)
+            val feedback = FailedCampaignFeedback(campaignKey = "first_campaign", errorMessage = "Spoofed").apply {
+                tenant = "my-tenant"
+                nodeId = "foreign-node"
+            }
+            val campaignState = mockk<CampaignExecutionState<CampaignExecutionContext>> {
+                every { isEmittedByCampaignFactory(refEq(feedback)) } returns false
+            }
+                coEvery { campaignExecutor.get("my-tenant", "first_campaign") } returns campaignState
+
+            // when
+            campaignExecutor.notify(feedback)
+
+            // then
+            coVerifyOrder {
+                campaignExecutor.get("my-tenant", "first_campaign")
+                campaignState.isEmittedByCampaignFactory(refEq(feedback))
+            }
+            coVerifyNever { campaignState.process(any()) }
+            confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+        }
+
+    @Test
     internal fun `should not abort a completed campaign on timeout`() = testDispatcherProvider.run {
         //given
         val campaignExecutor = redisCampaignExecutor(this)
         val completedState = mockk<CampaignExecutionState<CampaignExecutionContext>> {
+            every { isEmittedByCampaignFactory(any()) } returns true
             every { isCompleted } returns true
         }
         coEvery { campaignExecutor.get("my-tenant", "first_campaign") } returns completedState
@@ -1052,6 +1084,7 @@ internal class RedisCampaignExecutorTest {
                 operations.getState("my-tenant", "first_campaign")
             } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
             val initialCampaignState = mockk<RedisRunningState> {
+                every { isEmittedByCampaignFactory(any()) } returns true
                 every { campaignKey } returns "first_campaign"
                 every { isCompleted } returns false
             }
@@ -1142,6 +1175,7 @@ internal class RedisCampaignExecutorTest {
                 operations.getState("my-tenant", "first_campaign")
             } returns Pair(campaign, CampaignRedisState.RUNNING_STATE)
             val initialCampaignState = mockk<RedisRunningState> {
+                every { isEmittedByCampaignFactory(any()) } returns true
                 every { campaignKey } returns "first_campaign"
                 every { isCompleted } returns false
             }

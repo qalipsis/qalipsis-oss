@@ -33,9 +33,9 @@ import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 
 open class FailureState(
-    protected val campaign: RunningCampaign,
+    campaign: RunningCampaign,
     private val error: String
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign) {
 
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 

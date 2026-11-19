@@ -31,6 +31,7 @@ import io.qalipsis.core.directives.DispatcherChannel
 import io.qalipsis.core.directives.SingleUseDirective
 import io.qalipsis.core.factory.communication.DirectiveListener
 import io.qalipsis.core.factory.communication.FactoryChannel
+import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.CampaignMetersFeedback
 import io.qalipsis.core.feedbacks.Feedback
@@ -49,6 +50,7 @@ import org.slf4j.event.Level
 @Requires(env = [ExecutionEnvironments.STANDALONE])
 class StandaloneChannel(
     private val listeners: BeanProvider<Listeners>,
+    private val factoryConfiguration: FactoryConfiguration,
     @Named(Executors.ORCHESTRATION_EXECUTOR_NAME) private val orchestrationCoroutineScope: CoroutineScope,
 ) : HeadChannel, FactoryChannel {
 
@@ -107,6 +109,7 @@ class StandaloneChannel(
     override suspend fun publishFeedback(feedback: Feedback) {
         if (feedback is CampaignManagementFeedback) {
             feedback.nodeId = STANDALONE_FACTORY_NAME
+            feedback.tenant = factoryConfiguration.tenant
         }
         listeners.get().feedbackListeners.filter { it.accept(feedback) }.forEach { listener ->
             @Suppress("UNCHECKED_CAST")

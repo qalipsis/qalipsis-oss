@@ -21,6 +21,7 @@
 
 package io.qalipsis.core.head.report.meters
 
+import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments.TRANSIENT
 import org.h2.jdbcx.JdbcDataSource
@@ -28,6 +29,9 @@ import javax.sql.DataSource
 
 @MicronautTest(environments = [TRANSIENT], startApplication = false, transactional = false)
 internal class H2CampaignMeterFeedbackListenerIntegrationTest : AbstractCampaignMeterFeedbackListenerTest() {
+
+    @MockBean(CampaignOwnershipChecker::class)
+    fun campaignOwnershipChecker(): CampaignOwnershipChecker = TestCampaignOwnershipChecker
 
     // Connect to the same in-memory DB that H2CampaignMeterFeedbackListener creates at bean init
     override val verificationDataSource: DataSource = JdbcDataSource().also {

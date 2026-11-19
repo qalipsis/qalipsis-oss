@@ -33,10 +33,10 @@ import io.qalipsis.core.feedbacks.Feedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 
 open class AbortingState(
-    protected val campaign: RunningCampaign,
+    campaign: RunningCampaign,
     protected val abortConfiguration: AbortRunningCampaign,
     protected val error: String
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign) {
 
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 

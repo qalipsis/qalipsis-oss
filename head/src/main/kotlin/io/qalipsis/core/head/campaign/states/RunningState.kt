@@ -39,10 +39,10 @@ import io.qalipsis.core.feedbacks.MinionsRampUpPreparationFeedback
 import io.qalipsis.core.feedbacks.MinionsStartFeedback
 
 open class RunningState(
-    protected val campaign: RunningCampaign,
+    campaign: RunningCampaign,
     private val directivesForInit: List<Directive> = emptyList(),
     private val expectedScenariosToComplete: MutableSet<ScenarioName> = concurrentSet(campaign.scenarios.keys)
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign) {
 
     override suspend fun doInit(): List<Directive> {
         return directivesForInit

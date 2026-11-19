@@ -21,6 +21,7 @@
 
 package io.qalipsis.core.head.report.meters
 
+import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.micronaut.test.support.TestPropertyProvider
 import io.micronaut.transaction.jdbc.DelegatingDataSource
@@ -42,6 +43,9 @@ internal class PgsqlCampaignMeterFeedbackListenerIntegrationTest :
     @Inject
     @field:Named("default")
     private lateinit var jdbcDataSource: DataSource
+
+    @MockBean(CampaignOwnershipChecker::class)
+    fun campaignOwnershipChecker(): CampaignOwnershipChecker = TestCampaignOwnershipChecker
 
     override val verificationDataSource: DataSource
         get() = DelegatingDataSource.unwrapDataSource(jdbcDataSource)

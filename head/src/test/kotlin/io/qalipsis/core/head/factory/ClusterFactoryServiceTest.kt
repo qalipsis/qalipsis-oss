@@ -957,14 +957,14 @@ internal class ClusterFactoryServiceTest {
                 campaignKey = "1"
             )
 
-        coEvery { factoryRepository.findIdByNodeIdIn(listOf(heartbeat.nodeId)) } returns listOf(factoryId)
+        coEvery { factoryRepository.findIdByNodeIdIn("my-tenant", listOf(heartbeat.nodeId)) } returns listOf(factoryId)
 
         //when
         clusterFactoryService.notify(heartbeat)
 
         //then
         coVerifyOrder {
-            factoryRepository.findIdByNodeIdIn(listOf(heartbeat.nodeId))
+            factoryRepository.findIdByNodeIdIn("my-tenant", listOf(heartbeat.nodeId))
             factoryStateRepository.save(
                 FactoryStateEntity(
                     now,
@@ -978,6 +978,26 @@ internal class ClusterFactoryServiceTest {
 
         confirmVerified(factoryRepository, factoryStateRepository)
     }
+
+    @Test
+    internal fun `given a heartbeat of a node unknown in its tenant when notified then it is ignored`() =
+        testDispatcherProvider.run {
+            // given
+            val heartbeat = Heartbeat(
+                nodeId = "boo",
+                tenant = "my-tenant",
+                timestamp = Instant.now(),
+                state = Heartbeat.State.UNHEALTHY
+            )
+            coEvery { factoryRepository.findIdByNodeIdIn("my-tenant", listOf("boo")) } returns emptyList()
+
+            // when
+            clusterFactoryService.notify(heartbeat)
+
+            // then
+            coVerifyOnce { factoryRepository.findIdByNodeIdIn("my-tenant", listOf("boo")) }
+            confirmVerified(factoryRepository, factoryStateRepository)
+        }
 
     @Test
     internal fun `should return the available factories by scenarios`() = testDispatcherProvider.run {

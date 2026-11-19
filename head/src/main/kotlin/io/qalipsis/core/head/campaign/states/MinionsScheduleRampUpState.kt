@@ -34,8 +34,8 @@ import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
 
 open class MinionsScheduleRampUpState(
-    protected val campaign: RunningCampaign
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
+    campaign: RunningCampaign
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign) {
 
     // All the factories prepare and schedule the ramp-up of the scenarios they execute, hence a feedback is
     // expected from each of them before the campaign can start.

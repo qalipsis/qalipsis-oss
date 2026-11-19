@@ -25,6 +25,7 @@ import io.micronaut.context.annotation.Requirements
 import io.micronaut.context.annotation.Requires
 import io.micronaut.data.repository.kotlin.CoroutineCrudRepository
 import io.qalipsis.api.context.NodeId
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
 import io.qalipsis.core.campaigns.RunningCampaign
@@ -207,17 +208,21 @@ class ClusterFactoryService(
 
     @LogInput
     override suspend fun notify(heartbeat: Heartbeat) {
-        val latency = Instant.now().toEpochMilli() - heartbeat.timestamp.toEpochMilli()
-        val factoryId = factoryRepository.findIdByNodeIdIn(listOf(heartbeat.nodeId)).first()
-        factoryStateRepository.save(
-            FactoryStateEntity(
-                Instant.now(),
-                factoryId,
-                heartbeat.timestamp,
-                latency,
-                FactoryStateValue.valueOf(heartbeat.state.name)
+        val factoryId = factoryRepository.findIdByNodeIdIn(heartbeat.tenant, listOf(heartbeat.nodeId)).firstOrNull()
+        if (factoryId == null) {
+            log.warn { "Ignoring the heartbeat of ${heartbeat.nodeId}, unknown as factory in the tenant ${heartbeat.tenant}" }
+        } else {
+            val latency = Instant.now().toEpochMilli() - heartbeat.timestamp.toEpochMilli()
+            factoryStateRepository.save(
+                FactoryStateEntity(
+                    Instant.now(),
+                    factoryId,
+                    heartbeat.timestamp,
+                    latency,
+                    FactoryStateValue.valueOf(heartbeat.state.name)
+                )
             )
-        )
+        }
     }
 
     @LogInputAndOutput
@@ -285,5 +290,10 @@ class ClusterFactoryService(
         factories: Collection<NodeId>
     ): Collection<FactoryHealth> {
         return factoryRepository.getFactoriesHealth(tenant, factories)
+    }
+
+    private companion object {
+
+        val log = logger()
     }
 }

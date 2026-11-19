@@ -26,6 +26,7 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.core.beans.BeanIntrospection
 import io.qalipsis.api.context.NodeId
 import io.qalipsis.api.context.ScenarioName
+import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.annotations.LogInputAndOutput
@@ -93,7 +94,9 @@ class InMemoryFactoryService(
 
     @LogInput
     override suspend fun notify(heartbeat: Heartbeat) {
-        if (heartbeat.state == Heartbeat.State.OFFLINE) {
+        if (factoriesByNodeId[heartbeat.nodeId]?.tenant != heartbeat.tenant) {
+            log.warn { "Ignoring the heartbeat of ${heartbeat.nodeId}, unknown as factory in the tenant ${heartbeat.tenant}" }
+        } else if (heartbeat.state == Heartbeat.State.OFFLINE) {
             factoriesByNodeId.remove(heartbeat.nodeId)?.activeScenarios?.forEach { scenarioName ->
                 factoriesByScenarios.computeIfPresent(scenarioName) { _, factories ->
                     // Delete the factory from the set of factories supporting the scenario.
@@ -203,5 +206,7 @@ class InMemoryFactoryService(
     private companion object {
 
         val HEALTH_QUERY_INTERVAL = Duration.ofMinutes(2)
+
+        val log = logger()
     }
 }

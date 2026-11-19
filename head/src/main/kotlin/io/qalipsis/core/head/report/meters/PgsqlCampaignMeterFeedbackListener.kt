@@ -36,8 +36,9 @@ import javax.sql.DataSource
     Requires(property = "${EXPORT_CONFIGURATION}.default.enabled", notEquals = "false")
 )
 internal class PgsqlCampaignMeterFeedbackListener(
-    @Named("default") injectedDataSource: DataSource
-) : AbstractCampaignMeterFeedbackListener() {
+    @Named("default") injectedDataSource: DataSource,
+    campaignOwnershipChecker: CampaignOwnershipChecker
+) : AbstractCampaignMeterFeedbackListener(campaignOwnershipChecker) {
 
     override val dataSource: DataSource = DelegatingDataSource.unwrapDataSource(injectedDataSource)
 }
