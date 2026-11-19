@@ -57,6 +57,7 @@ import io.qalipsis.api.query.QueryClauseOperator
 import io.qalipsis.api.sync.Latch
 import io.qalipsis.core.head.jdbc.entity.DataSeriesEntity
 import io.qalipsis.core.head.jdbc.entity.DataSeriesFilterEntity
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.entity.ReportFileEntity
@@ -360,7 +361,7 @@ internal class ReportServiceImplTest {
             reportRepository.existsByTenantReferenceAndDisplayNameAndIdNot(refEq("my-tenant"), refEq("report-name"))
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1", "campaign-key2"))
             userProvider.findIdByUsername(refEq("the-user"))
-            dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant"), any(), any())
+            dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant", Defaults.TENANT), any(), any())
             idGenerator.short()
             tenantProvider.findIdByReference(refEq("my-tenant"))
             reportRepository.save(refEq(savedEntity.captured))
@@ -559,7 +560,7 @@ internal class ReportServiceImplTest {
                     -1
                 )
                 userProvider.findIdByUsername(any())
-                dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant"), any(), any())
+                dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant", Defaults.TENANT), any(), any())
             }
             confirmVerified(
                 reportRepository,
@@ -878,7 +879,7 @@ internal class ReportServiceImplTest {
                     6165
                 )
                 campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
-                dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant"), any(), any())
+                dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant", Defaults.TENANT), any(), any())
                 reportDataComponentRepository.deleteByReportId(6165)
                 reportRepository.update(refEq(updatedEntity.captured))
                 dataSeriesRepository.findAllByTenantAndReferences(
@@ -1309,7 +1310,7 @@ internal class ReportServiceImplTest {
                 -1
             )
             campaignRepository.findKeyByTenantAndKeyIn(refEq("my-tenant"), listOf("campaign-key1"))
-            dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant"), any(), any())
+            dataSeriesRepository.findReadableReferences("my-tenant", listOf("my-tenant", Defaults.TENANT), any(), any())
             reportDataComponentRepository.deleteByReportId(-1L)
             dataSeriesRepository.findAllByTenantAndReferences(
                 tenant = refEq("my-tenant"),

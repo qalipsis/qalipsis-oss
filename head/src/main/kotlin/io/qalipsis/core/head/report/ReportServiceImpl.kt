@@ -32,6 +32,7 @@ import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.core.annotations.LogInput
 import io.qalipsis.core.configuration.ExecutionEnvironments
 import io.qalipsis.core.head.jdbc.entity.ReportDataComponentEntity
+import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.jdbc.entity.ReportEntity
 import io.qalipsis.core.head.jdbc.entity.ReportTaskEntity
 import io.qalipsis.core.head.jdbc.repository.CampaignRepository
@@ -372,7 +373,8 @@ class ReportServiceImpl(
     }
 
     /**
-     * Checks that all the data series of the data components exist in the tenant and can be read by the user.
+     * Checks that all the data series of the data components exist in the tenant or the default one, and can be
+     * read by the user.
      */
     private suspend fun checkDataSeriesInDataComponents(
         tenant: String,
@@ -386,7 +388,8 @@ class ReportServiceImpl(
             }
         }.toSet()
         if (references.isNotEmpty()) {
-            val readableReferences = dataSeriesRepository.findReadableReferences(tenant, listOf(tenant), userId, references)
+            val readableReferences =
+                dataSeriesRepository.findReadableReferences(tenant, listOf(tenant, Defaults.TENANT), userId, references)
             require(readableReferences.containsAll(references)) { REPORT_DATA_SERIES_NOT_ALLOWED }
         }
     }
