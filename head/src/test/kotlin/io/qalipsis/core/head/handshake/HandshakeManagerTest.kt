@@ -155,6 +155,7 @@ internal class HandshakeManagerTest {
                     heartbeatPeriod = Duration.ofSeconds(123)
                 )
                 coVerifyOrder {
+                    factoryService.isNodeIdOwnedByAnotherTenant("my-tenant", "a-real-id")
                     channelNameFactory.getUnicastChannelName(refEq(handshakeRequest))
                     factoryService.register(
                         actualNodeId = eq("a-real-id"),
@@ -169,5 +170,50 @@ internal class HandshakeManagerTest {
 
                 confirmVerified(factoryService, headChannel)
             }
+        }
+
+    @Test
+    internal fun `given a node ID registered in another tenant when handshaking then a new ID and channel are assigned`() =
+        testCoroutineDispatcher.runTest {
+            // given
+            val handshakeRequest = HandshakeRequest(
+                nodeId = "a-real-id",
+                tags = mapOf("key1" to "value1"),
+                replyTo = "reply-channel",
+                scenarios = listOf(relaxedMockk { every { name } returns "scen-1" }),
+                tenant = "my-tenant"
+            )
+            coEvery { factoryService.isNodeIdOwnedByAnotherTenant("my-tenant", "a-real-id") } returns true
+            every { idGenerator.short() } returns "generated-node-id"
+            coEvery {
+                channelNameFactory.getUnicastChannelName("my-tenant", "generated-node-id")
+            } returns "the-unicast-channel-of-generated-node-id"
+
+            // when
+            handshakeManager.notify(handshakeRequest = handshakeRequest)
+
+            // then
+            val expectedResponse = HandshakeResponse(
+                handshakeNodeId = "a-real-id",
+                nodeId = "generated-node-id",
+                unicastChannel = "the-unicast-channel-of-generated-node-id",
+                heartbeatChannel = "the-heartbeat-channel",
+                heartbeatPeriod = Duration.ofSeconds(123)
+            )
+            coVerifyOrder {
+                factoryService.isNodeIdOwnedByAnotherTenant("my-tenant", "a-real-id")
+                channelNameFactory.getUnicastChannelName("my-tenant", "generated-node-id")
+                factoryService.register(
+                    actualNodeId = eq("generated-node-id"),
+                    handshakeRequest = refEq(handshakeRequest),
+                    handshakeResponse = expectedResponse
+                )
+                headChannel.publishHandshakeResponse(
+                    channelName = "reply-channel",
+                    handshakeResponse = expectedResponse
+                )
+            }
+
+            confirmVerified(factoryService, headChannel, channelNameFactory)
         }
 }

@@ -48,6 +48,12 @@ interface FactoryService : HeartbeatListener {
     suspend fun getFactoryTenant(nodeId: NodeId): String
 
     /**
+     * Returns `true` when [nodeId] is already registered for a tenant other than [tenant],
+     * in which case it must not be granted to a factory of [tenant].
+     */
+    suspend fun isNodeIdOwnedByAnotherTenant(tenant: String, nodeId: NodeId): Boolean
+
+    /**
      * Returns all factories supporting the scenarios with the given identifiers.
      */
     suspend fun getAvailableFactoriesForScenarios(
