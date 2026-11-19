@@ -22,6 +22,7 @@
 package io.qalipsis.core.head.report.meters
 
 import assertk.assertThat
+import assertk.assertions.containsOnly
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import io.qalipsis.core.feedbacks.CampaignMetersFeedback
@@ -134,6 +135,8 @@ internal abstract class AbstractCampaignMeterFeedbackListenerTest {
             val snapshot = CampaignMeterSnapshot(
                 name = "minimal-meter",
                 timestampEpochMs = timestampMs,
+                tenant = "tenant-a",
+                campaign = "campaign-1",
                 type = "gauge"
             )
 
@@ -149,8 +152,8 @@ internal abstract class AbstractCampaignMeterFeedbackListenerTest {
                         assertThat(rs.getString("tags")).isNull()
                         assertThat(rs.getTimestamp("timestamp"))
                             .isEqualTo(Timestamp.from(Instant.ofEpochMilli(timestampMs)))
-                        assertThat(rs.getString("tenant")).isNull()
-                        assertThat(rs.getString("campaign")).isNull()
+                        assertThat(rs.getString("tenant")).isEqualTo("tenant-a")
+                        assertThat(rs.getString("campaign")).isEqualTo("campaign-1")
                         assertThat(rs.getString("scenario")).isNull()
                         assertThat(rs.getString("type")).isEqualTo("gauge")
                         assertThat(rs.getBigDecimal("count")).isNull()
@@ -169,9 +172,9 @@ internal abstract class AbstractCampaignMeterFeedbackListenerTest {
     internal fun `given multiple meters when notify then all rows inserted`() = testDispatcherProvider.run {
         // given
         val meters = listOf(
-            CampaignMeterSnapshot(name = "meter-1", timestampEpochMs = 1_000_000L, type = "counter"),
-            CampaignMeterSnapshot(name = "meter-2", timestampEpochMs = 2_000_000L, type = "gauge"),
-            CampaignMeterSnapshot(name = "meter-3", timestampEpochMs = 3_000_000L, type = "timer")
+            meter("meter-1", "tenant-a", "campaign-1"),
+            meter("meter-2", "tenant-a", "campaign-1"),
+            meter("meter-3", "tenant-b", "campaign-2")
         )
 
         // when
@@ -188,6 +191,39 @@ internal abstract class AbstractCampaignMeterFeedbackListenerTest {
         }
         assertThat(count).isEqualTo(3)
     }
+
+    @Test
+    internal fun `given meters of a campaign not owned by their tenant when notify then they are not inserted`() =
+        testDispatcherProvider.run {
+            // given
+            val meters = listOf(
+                meter("owned-meter", "tenant-a", "campaign-1"),
+                meter("foreign-meter", "tenant-a", TestCampaignOwnershipChecker.FOREIGN_CAMPAIGN)
+            )
+
+            // when
+            feedbackListener.notify(CampaignMetersFeedback(meters = meters))
+
+            // then
+            assertThat(insertedMeterNames()).containsOnly("owned-meter")
+        }
+
+    @Test
+    internal fun `given meters without tenant or campaign when notify then they are not inserted`() =
+        testDispatcherProvider.run {
+            // given
+            val meters = listOf(
+                meter("owned-meter", "tenant-a", "campaign-1"),
+                meter("meter-without-tenant", null, "campaign-1"),
+                meter("meter-without-campaign", "tenant-a", null)
+            )
+
+            // when
+            feedbackListener.notify(CampaignMetersFeedback(meters = meters))
+
+            // then
+            assertThat(insertedMeterNames()).containsOnly("owned-meter")
+        }
 
     @Test
     internal fun `given snapshot with all fields when bindCampaignMeterSnapshot then all parameters bound correctly`() =
@@ -243,6 +279,17 @@ internal abstract class AbstractCampaignMeterFeedbackListenerTest {
                 }
             }
         }
+
+    private fun meter(name: String, tenant: String?, campaign: String?) =
+        CampaignMeterSnapshot(name = name, timestampEpochMs = 1_000_000L, tenant = tenant, campaign = campaign, type = "counter")
+
+    private fun insertedMeterNames(): List<String> = verificationDataSource.connection.use { conn ->
+        conn.createStatement().use { stmt ->
+            stmt.executeQuery("SELECT name FROM campaign_meters").use { rs ->
+                generateSequence { if (rs.next()) rs.getString(1) else null }.toList()
+            }
+        }
+    }
 
     protected companion object {
         const val INSERT_SQL =

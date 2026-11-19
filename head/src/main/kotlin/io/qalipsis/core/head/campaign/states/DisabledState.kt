@@ -28,9 +28,9 @@ import io.qalipsis.core.directives.CompleteCampaignDirective
 import io.qalipsis.core.directives.Directive
 
 open class DisabledState(
-    protected val campaign: RunningCampaign,
+    campaign: RunningCampaign,
     private val isSuccessful: Boolean = true
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign) {
 
     override val isCompleted: Boolean = true
 

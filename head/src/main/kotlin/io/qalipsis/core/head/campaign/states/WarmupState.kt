@@ -36,8 +36,8 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 open class WarmupState(
-    protected val campaign: RunningCampaign
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
+    campaign: RunningCampaign
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign) {
 
     private val expectedFeedbacks =
         ConcurrentHashMap(campaign.factories.mapValues { it.value.assignment.keys.toSet() })

@@ -30,8 +30,8 @@ import io.qalipsis.core.feedbacks.CampaignShutdownFeedback
 import io.qalipsis.core.feedbacks.Feedback
 
 open class CompletionState(
-    protected val campaign: RunningCampaign
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
+    campaign: RunningCampaign
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign) {
 
     private val expectedFeedbacks = concurrentSet(campaign.factories.keys)
 

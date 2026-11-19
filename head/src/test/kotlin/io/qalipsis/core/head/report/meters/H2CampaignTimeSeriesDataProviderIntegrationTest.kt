@@ -21,6 +21,7 @@
 
 package io.qalipsis.core.head.report.meters
 
+import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.core.configuration.ExecutionEnvironments.TRANSIENT
 import org.h2.jdbcx.JdbcDataSource
@@ -28,6 +29,9 @@ import org.h2.jdbcx.JdbcDataSource
 @MicronautTest(environments = [TRANSIENT], startApplication = false, transactional = false)
 internal class H2CampaignTimeSeriesDataProviderIntegrationTest :
     AbstractCampaignTimeSeriesDataProviderIntegrationTest() {
+
+    @MockBean(CampaignOwnershipChecker::class)
+    fun campaignOwnershipChecker(): CampaignOwnershipChecker = TestCampaignOwnershipChecker
 
     override suspend fun setUpTest() {
         JdbcDataSource().also { it.setURL("jdbc:h2:mem:qalipsis_campaign_meters;DB_CLOSE_DELAY=-1;MODE=PostgreSQL") }

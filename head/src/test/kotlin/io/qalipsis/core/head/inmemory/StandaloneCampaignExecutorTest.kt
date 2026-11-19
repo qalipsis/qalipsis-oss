@@ -57,6 +57,7 @@ import io.qalipsis.core.directives.Directive
 import io.qalipsis.core.directives.FactoryAssignmentDirective
 import io.qalipsis.core.feedbacks.CampaignManagementFeedback
 import io.qalipsis.core.feedbacks.CampaignTimeoutFeedback
+import io.qalipsis.core.feedbacks.FailedCampaignFeedback
 import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.head.campaign.CampaignConstraintsProvider
 import io.qalipsis.core.head.campaign.CampaignService
@@ -79,6 +80,7 @@ import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.assertk.typedProp
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyNever
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.BeforeEach
@@ -331,6 +333,7 @@ internal class StandaloneCampaignExecutorTest {
             campaignExecutor.setProperty(
                 "currentCampaignState",
                 relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                    every { isEmittedByCampaignFactory(any()) } returns true
                     every { isCompleted } returns false
                 })
 
@@ -357,6 +360,7 @@ internal class StandaloneCampaignExecutorTest {
         campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                every { isEmittedByCampaignFactory(any()) } returns true
                 every { isCompleted } returns false
                 coEvery { abort(any()) } returns relaxedMockk {
                     every { isCompleted } returns false
@@ -419,6 +423,7 @@ internal class StandaloneCampaignExecutorTest {
         campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                every { isEmittedByCampaignFactory(any()) } returns true
                 every { isCompleted } returns false
                 coEvery { abort(any()) } returns relaxedMockk {
                     every { isCompleted } returns false
@@ -491,6 +496,7 @@ internal class StandaloneCampaignExecutorTest {
             campaignExecutor.setProperty(
                 "currentCampaignState",
                 relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                    every { isEmittedByCampaignFactory(any()) } returns true
                     every { isCompleted } returns false
                     coEvery { abort(any()) } returns relaxedMockk {
                         // No factory can acknowledge the abortion, the state is directly completed.
@@ -542,6 +548,7 @@ internal class StandaloneCampaignExecutorTest {
         campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                every { isEmittedByCampaignFactory(any()) } returns true
                 every { isCompleted } returns true
             })
 
@@ -628,12 +635,39 @@ internal class StandaloneCampaignExecutorTest {
     }
 
     @Test
+    internal fun `given a feedback not emitted by a factory of the campaign when notified then it is ignored`() =
+        testDispatcherProvider.run {
+            // given
+            val campaignExecutor = standaloneCampaignExecutor(this)
+            val feedback = FailedCampaignFeedback(campaignKey = "first_campaign", errorMessage = "Spoofed").apply {
+                tenant = "my-tenant"
+                nodeId = "foreign-node"
+            }
+            val campaignState = mockk<CampaignExecutionState<CampaignExecutionContext>> {
+                every { isEmittedByCampaignFactory(refEq(feedback)) } returns false
+            }
+                campaignExecutor.setProperty("currentCampaignState", campaignState)
+
+            // when
+            campaignExecutor.notify(feedback)
+
+            // then
+            coVerifyOrder {
+                campaignExecutor.get("my-tenant", "first_campaign")
+                campaignState.isEmittedByCampaignFactory(refEq(feedback))
+            }
+            coVerifyNever { campaignState.process(any()) }
+            confirmVerified(campaignService, campaignReportStateKeeper, headChannel)
+        }
+
+    @Test
     internal fun `should not abort a completed campaign on timeout`() = testDispatcherProvider.run {
         //given
         val campaignExecutor = standaloneCampaignExecutor(this)
         campaignExecutor.setProperty(
             "currentCampaignState",
             relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                every { isEmittedByCampaignFactory(any()) } returns true
                 every { isCompleted } returns true
             })
         val timeoutFeedback = CampaignTimeoutFeedback(
@@ -680,6 +714,7 @@ internal class StandaloneCampaignExecutorTest {
             campaignExecutor.setProperty(
                 "currentCampaignState",
                 relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                    every { isEmittedByCampaignFactory(any()) } returns true
                     every { isCompleted } returns false
                 })
             coEvery {
@@ -773,6 +808,7 @@ internal class StandaloneCampaignExecutorTest {
             campaignExecutor.setProperty(
                 "currentCampaignState",
                 relaxedMockk<CampaignExecutionState<CampaignExecutionContext>> {
+                    every { isEmittedByCampaignFactory(any()) } returns true
                     every { isCompleted } returns false
                 })
             coEvery {

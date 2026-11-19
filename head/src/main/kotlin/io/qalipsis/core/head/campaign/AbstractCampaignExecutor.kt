@@ -87,7 +87,12 @@ abstract class AbstractCampaignExecutor<C : CampaignExecutionContext>(
                     )
                 ) { "The campaign ${feedback.campaignKey} is not running" }
                 log.trace { "Processing $feedback on $sourceCampaignState" }
-                if (feedback is CampaignTimeoutFeedback) {
+                if (!sourceCampaignState.isEmittedByCampaignFactory(feedback)) {
+                    log.warn {
+                        "Ignoring the feedback ${feedback::class.simpleName} for the campaign ${feedback.campaignKey}, " +
+                                "since ${feedback.nodeId} is not a factory of the campaign in the tenant ${feedback.tenant}"
+                    }
+                } else if (feedback is CampaignTimeoutFeedback) {
                     timeoutAbort(feedback.tenant, feedback.campaignKey, feedback.hard, sourceCampaignState)
                 } else {
                     val campaignState = sourceCampaignState.process(feedback)

@@ -35,10 +35,10 @@ import io.qalipsis.core.feedbacks.FeedbackStatus
 import io.qalipsis.core.head.model.Factory
 
 open class FactoryAssignmentState(
-    protected val campaign: RunningCampaign,
+    campaign: RunningCampaign,
     private val factories: Collection<Factory>,
     private val scenarios: Collection<ScenarioSummary>
-) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign.key) {
+) : AbstractCampaignExecutionState<CampaignExecutionContext>(campaign) {
     private val expectedFeedbacks = concurrentSet<NodeId>()
 
     override suspend fun doInit(): List<Directive> {

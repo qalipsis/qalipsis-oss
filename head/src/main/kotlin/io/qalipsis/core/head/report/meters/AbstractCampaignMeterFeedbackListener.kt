@@ -33,22 +33,49 @@ import java.sql.Types
 import java.time.Instant
 import javax.sql.DataSource
 
-internal abstract class AbstractCampaignMeterFeedbackListener : CampaignMeterFeedbackListener {
+internal abstract class AbstractCampaignMeterFeedbackListener(
+    private val campaignOwnershipChecker: CampaignOwnershipChecker
+) : CampaignMeterFeedbackListener {
 
     protected abstract val dataSource: DataSource
 
     override suspend fun notify(feedback: CampaignMetersFeedback) {
         if (feedback.meters.isNotEmpty()) {
             tryAndLogOrNull(log) {
-                dataSource.connection.use { connection ->
-                    connection.prepareStatement(INSERT_SQL).use { statement ->
-                        feedback.meters.forEach { meter ->
-                            bindCampaignMeterSnapshot(statement, meter)
-                            statement.addBatch()
-                        }
-                        statement.executeBatch()
-                    }
+                val meters = keepMetersOfOwnedCampaigns(feedback.meters)
+                if (meters.isNotEmpty()) {
+                    insert(meters)
                 }
+            }
+        }
+    }
+
+    /**
+     * Only keeps the meters declaring a tenant and a campaign of that tenant, since they are only
+     * read by tenant and campaign, and must not pollute the campaign of another tenant.
+     */
+    private suspend fun keepMetersOfOwnedCampaigns(meters: List<CampaignMeterSnapshot>): List<CampaignMeterSnapshot> {
+        val claimedCampaignsByTenant = meters.asSequence()
+            .filter { it.tenant != null && it.campaign != null }
+            .groupBy({ it.tenant!! }, { it.campaign!! })
+        val ownedCampaignsByTenant = claimedCampaignsByTenant.mapValues { (tenant, campaigns) ->
+            campaignOwnershipChecker.filterOwnedCampaigns(tenant, campaigns.toSet())
+        }
+        val acceptedMeters = meters.filter { ownedCampaignsByTenant[it.tenant]?.contains(it.campaign) == true }
+        if (acceptedMeters.size < meters.size) {
+            log.warn { "Ignoring ${meters.size - acceptedMeters.size} meter(s) not related to a campaign of their tenant" }
+        }
+        return acceptedMeters
+    }
+
+    private fun insert(meters: List<CampaignMeterSnapshot>) {
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(INSERT_SQL).use { statement ->
+                meters.forEach { meter ->
+                    bindCampaignMeterSnapshot(statement, meter)
+                    statement.addBatch()
+                }
+                statement.executeBatch()
             }
         }
     }

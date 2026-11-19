@@ -34,7 +34,9 @@ import javax.sql.DataSource
     Requires(env = [TRANSIENT]),
     Requires(property = "${EXPORT_CONFIGURATION}.default.enabled", notEquals = "false")
 )
-internal class H2CampaignMeterFeedbackListener : AbstractCampaignMeterFeedbackListener() {
+internal class H2CampaignMeterFeedbackListener(
+    campaignOwnershipChecker: CampaignOwnershipChecker
+) : AbstractCampaignMeterFeedbackListener(campaignOwnershipChecker) {
 
     override val dataSource: DataSource = JdbcDataSource().also {
         it.setURL("jdbc:h2:mem:qalipsis_campaign_meters;DB_CLOSE_DELAY=-1;MODE=PostgreSQL")
