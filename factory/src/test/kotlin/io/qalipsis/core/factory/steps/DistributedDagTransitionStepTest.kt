@@ -30,22 +30,23 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.api.context.DefaultCompletionContext
 import io.qalipsis.core.factory.orchestration.FactoryCampaignManager
 import io.qalipsis.core.factory.orchestration.LocalAssignmentStore
-import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.steps.StepTestHelper
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.extension.RegisterExtension
+import org.junit.jupiter.api.Timeout.ThreadMode.SEPARATE_THREAD
 import java.time.Instant
 
 @WithMockk
+/**
+ * The tests only use mocks and do not wait for any time: they run in virtual time, with a timeout generous enough
+ * for the creation of the mocks on a loaded machine.
+ */
 internal class DistributedDagTransitionStepTest {
-
-    @field:RegisterExtension
-    val testCoroutineDispatcher = TestDispatcherProvider()
 
     @RelaxedMockK
     private lateinit var factoryCampaignManager: FactoryCampaignManager
@@ -57,8 +58,8 @@ internal class DistributedDagTransitionStepTest {
     private lateinit var contextForwarder: ContextForwarder
 
     @Test
-    @Timeout(1)
-    internal fun `should execute pipeline operation when the next DAG is local`() = testCoroutineDispatcher.runTest {
+    @Timeout(value = 10, threadMode = SEPARATE_THREAD)
+    internal fun `should execute pipeline operation when the next DAG is local`() = runTest {
         // given
         val step = DistributedDagTransitionStep<Int>(
             "",
@@ -94,8 +95,8 @@ internal class DistributedDagTransitionStepTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun `should forward the step execution when the next DAG is remote`() = testCoroutineDispatcher.run {
+    @Timeout(value = 10, threadMode = SEPARATE_THREAD)
+    internal fun `should forward the step execution when the next DAG is remote`() = runTest {
         // given
         val step = DistributedDagTransitionStep<Int>(
             "",
@@ -130,8 +131,8 @@ internal class DistributedDagTransitionStepTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun `should complete pipeline operation when the next DAG is local`() = testCoroutineDispatcher.runTest {
+    @Timeout(value = 10, threadMode = SEPARATE_THREAD)
+    internal fun `should complete pipeline operation when the next DAG is local`() = runTest {
         // given
         val step = DistributedDagTransitionStep<Int>(
             "",
@@ -170,8 +171,8 @@ internal class DistributedDagTransitionStepTest {
     }
 
     @Test
-    @Timeout(1)
-    internal fun `should not complete pipeline operation when the flag is disabled`() = testCoroutineDispatcher.runTest {
+    @Timeout(value = 10, threadMode = SEPARATE_THREAD)
+    internal fun `should not complete pipeline operation when the flag is disabled`() = runTest {
         // given
         val step = DistributedDagTransitionStep<Int>(
             "",
@@ -203,9 +204,9 @@ internal class DistributedDagTransitionStepTest {
     }
 
     @Test
-    @Timeout(1)
+    @Timeout(value = 10, threadMode = SEPARATE_THREAD)
     internal fun `should complete pipeline operation then forward the complete execution when the next DAG is remote`() =
-        testCoroutineDispatcher.runTest {
+        runTest {
             // given
             val step = DistributedDagTransitionStep<Int>(
                 "",

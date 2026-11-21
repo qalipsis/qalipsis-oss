@@ -89,7 +89,10 @@ import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.mockk.verifyOnce
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import org.junit.jupiter.api.BeforeEach
@@ -1211,7 +1214,10 @@ internal class FactoryCampaignManagerImplTest {
             Optional.of(contextConsumer),
             campaignReportLiveStateRegistry,
             meterRegistry,
-            this
+            // The failure of the scenario is expected: it must not leak as an uncaught exception into other tests.
+            CoroutineScope(
+                coroutineContext + SupervisorJob(coroutineContext[Job]) + CoroutineExceptionHandler { _, _ -> }
+            )
         )
 
         // when

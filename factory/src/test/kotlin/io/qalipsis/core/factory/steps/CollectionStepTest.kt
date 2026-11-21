@@ -28,27 +28,31 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isGreaterThanOrEqualTo
 import assertk.assertions.isLessThanOrEqualTo
-import io.mockk.clearMocks
-import io.mockk.coEvery
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.sync.SuspendedCountLatch
 import io.qalipsis.test.mockk.relaxedMockk
 import io.qalipsis.test.steps.StepTestHelper
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.Timeout.ThreadMode.SEPARATE_THREAD
 import java.time.Duration
 
+/**
+ * The tests run in virtual time: the step works in the [kotlinx.coroutines.test.TestScope.backgroundScope], so that
+ * its periodic ticker is cancelled at the end of the test, and the timeouts are enforced in a separate thread,
+ * in order to always end the test.
+ */
 internal class CollectionStepTest {
 
     @Test
-    @Timeout(10)
-    internal fun `should forward data when the batch size is reached`() = runBlockingTest {
+    @Timeout(value = 10, threadMode = SEPARATE_THREAD)
+    internal fun `should forward data when the batch size is reached`() = runTest {
         // given
-        val step = CollectionStep<String>("", timeout = null, batchSize = 50, coroutineScope = this)
+        val step = CollectionStep<String>("", timeout = null, batchSize = 50, coroutineScope = backgroundScope)
         step.start(relaxedMockk())
         val count = 420 // 20 items should stay in the buffer and be never sent.
         val counter = SuspendedCountLatch(count.toLong())
@@ -56,17 +60,15 @@ internal class CollectionStepTest {
 
         // when
         repeat(count) { index ->
-            val output = relaxedMockk<SendChannel<StepContext.StepOutputRecord<List<String>>?>> {
-                coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg<StepContext.StepOutputRecord<List<String>>>().value) }
-            }
+            val output = Channel<StepContext.StepOutputRecord<List<String>>>(Channel.UNLIMITED)
             val ctx = StepTestHelper.createStepContext(
                 minionId = "$index", input = "$index",
                 outputChannel = output
             )
             this.launch {
                 step.execute(ctx)
-                // Clears the mock to ensure that no call can be found after the execution scope was left.
-                clearMocks(output)
+                // Only the records sent while the execution scope was active are captured.
+                output.drainTo(batchCaptor, index)
                 counter.decrement()
             }
         }
@@ -83,10 +85,10 @@ internal class CollectionStepTest {
     }
 
     @Test
-    @Timeout(5)
-    internal fun `should forward data when the timeout is reached`() = runBlockingTest {
+    @Timeout(value = 5, threadMode = SEPARATE_THREAD)
+    internal fun `should forward data when the timeout is reached`() = runTest {
         val step = CollectionStep<String>("", timeout = Duration.ofMillis(100), batchSize = Int.MAX_VALUE,
-            coroutineScope = this)
+            coroutineScope = backgroundScope)
         step.start(relaxedMockk())
         val count = 120
         val counter = SuspendedCountLatch(count.toLong())
@@ -95,17 +97,15 @@ internal class CollectionStepTest {
         // when
         repeat(count) { index ->
             delay(20)
-            val output = relaxedMockk<SendChannel<StepContext.StepOutputRecord<List<String>>>> {
-                coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg<StepContext.StepOutputRecord<List<String>>>().value) }
-            }
+            val output = Channel<StepContext.StepOutputRecord<List<String>>>(Channel.UNLIMITED)
             val ctx = StepTestHelper.createStepContext(
                 minionId = "$index", input = "$index",
                 outputChannel = output
             )
             this.launch {
                 step.execute(ctx)
-                // Clears the mock to ensure that no call can be found after the execution scope was left.
-                clearMocks(output)
+                // Only the records sent while the execution scope was active are captured.
+                output.drainTo(batchCaptor, index)
                 counter.decrement()
             }
         }
@@ -123,11 +123,11 @@ internal class CollectionStepTest {
     }
 
     @Test
-    @Timeout(10)
-    internal fun `should forward data when either the batch size of the timeout is reached`() = runBlockingTest {
+    @Timeout(value = 10, threadMode = SEPARATE_THREAD)
+    internal fun `should forward data when either the batch size of the timeout is reached`() = runTest {
         val batchSize = 60
         val step =
-            CollectionStep<String>("", timeout = Duration.ofMillis(600), batchSize = batchSize, coroutineScope = this)
+            CollectionStep<String>("", timeout = Duration.ofMillis(600), batchSize = batchSize, coroutineScope = backgroundScope)
         step.start(relaxedMockk())
         val count = 1030 // Should not be a multiple of batchSize.
         val counter = SuspendedCountLatch(count.toLong())
@@ -138,17 +138,15 @@ internal class CollectionStepTest {
             delay(100)
             repeat(count) { index ->
                 delay((Math.random() * 10 + 5).toLong()) // Random delay between 5 and 15 ms.
-                val output = relaxedMockk<SendChannel<StepContext.StepOutputRecord<List<String>>>> {
-                    coEvery { send(any()) } answers { batchCaptor.add("$index" to firstArg<StepContext.StepOutputRecord<List<String>>>().value) }
-                }
+                val output = Channel<StepContext.StepOutputRecord<List<String>>>(Channel.UNLIMITED)
                 val ctx = StepTestHelper.createStepContext(
                     minionId = "$index", input = "$index",
                     outputChannel = output
                 )
                 this.launch {
                     step.execute(ctx)
-                    // Clears the mock to ensure that no call can be found after the execution scope was left.
-                    clearMocks(output)
+                    // Only the records sent while the execution scope was active are captured.
+                    output.drainTo(batchCaptor, index)
                     counter.decrement()
                 }
             }
@@ -165,5 +163,15 @@ internal class CollectionStepTest {
             // Verifies that the latest item of the batch always belongs to the context it was sent with.
             assertThat(batch.last()).isEqualTo(index)
         }
+    }
+
+    /**
+     * Moves the records already sent to the channel into [captor], attached to the index of the context.
+     */
+    private fun Channel<StepContext.StepOutputRecord<List<String>>>.drainTo(
+        captor: MutableList<Pair<String, List<String>>>,
+        index: Int
+    ) {
+        generateSequence { tryReceive().getOrNull() }.forEach { captor.add("$index" to it.value) }
     }
 }
