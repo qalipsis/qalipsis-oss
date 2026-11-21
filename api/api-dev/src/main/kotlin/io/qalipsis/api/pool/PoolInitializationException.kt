@@ -20,6 +20,17 @@ package io.qalipsis.api.pool
 
 /**
  * Exception to throw when the pool could not have been initialized.
+ *
+ * @param message explanation of the failure, including the count of items that could be created
+ * @param cause failure of the creation of an item, if any
  */
-class PoolInitializationException :
-    RuntimeException("The pool could not be initialized, look at the errors previously logged")
+class PoolInitializationException(
+    message: String = DEFAULT_MESSAGE,
+    cause: Throwable? = null,
+) : RuntimeException(message, cause) {
+
+    private companion object {
+
+        const val DEFAULT_MESSAGE = "The pool could not be initialized, look at the errors previously logged"
+    }
+}

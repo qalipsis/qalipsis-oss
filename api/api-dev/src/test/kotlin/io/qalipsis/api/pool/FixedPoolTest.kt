@@ -25,6 +25,7 @@ import assertk.assertions.index
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isLessThan
 import assertk.assertions.isNotNull
 import assertk.assertions.isSameAs
@@ -116,6 +117,50 @@ internal class FixedPoolTest {
             assertThrows<PoolInitializationException> {
                 pool.init()
             }
+        }
+
+    @Test
+    fun `given no item can be created when initializing then it fails fast after the retries of the first item`() =
+        testCoroutineDispatcher.run {
+            // given
+            val attempts = AtomicInteger()
+            val pool = FixedPool(1000, this.coroutineContext, retries = 2) {
+                attempts.incrementAndGet()
+                throw RuntimeException("connection refused")
+            }
+
+            // when
+            val exception = assertThrows<PoolInitializationException> { pool.init() }
+
+            // then
+            assertThat(attempts.get()).isEqualTo(3)
+            assertThat(exception.message).isEqualTo("No item of the pool could be created: connection refused")
+            assertThat(exception.cause).isNotNull().isInstanceOf(PoolItemInitializationException::class)
+        }
+
+    @Test
+    fun `given only some items can be created when initializing then it fails once and closes the created items`() =
+        testCoroutineDispatcher.run {
+            // given
+            val created = concurrentList<MyTestObject>()
+            val attempts = AtomicInteger()
+            val pool = FixedPool(5, this.coroutineContext, retries = 0) {
+                if (attempts.incrementAndGet() <= 3) {
+                    relaxedMockk<MyTestObject>().also { created += it }
+                } else {
+                    throw RuntimeException("too many connections")
+                }
+            }
+
+            // when
+            val exception = assertThrows<PoolInitializationException> { pool.init() }
+
+            // then
+            assertThat(exception.message).isEqualTo("Only 3 of 5 items of the pool could be created: too many connections")
+            assertThat(created).hasSize(3)
+            created.forEach { coVerifyOnce { it.close() } }
+            assertThat(pool).typedProp<List<MyTestObject>>("items").isEmpty()
+            assertThrows<IllegalStateException> { pool.init() }
         }
 
     @Test

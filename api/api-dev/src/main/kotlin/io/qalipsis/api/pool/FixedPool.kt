@@ -21,6 +21,7 @@ package io.qalipsis.api.pool
 import io.qalipsis.api.io.Closeable
 import io.qalipsis.api.lang.concurrentList
 import io.qalipsis.api.sync.SuspendedCountLatch
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -46,7 +47,7 @@ import kotlin.coroutines.CoroutineContext
  * @property healthCheck action to perform to verify the health of the items of type [T], defaults to always healthy
  * @property cleaner action to perform before releasing the item to the pool and before the health check, in order to make it reusable, defaults to no operation
  * @property factory creator for a new item for the pool
- * @property retries number of retries to initialize the items
+ * @property retries number of retries to create each item, after which the initialization of the pool fails
  */
 class FixedPool<T : Closeable>(
     size: Int,
@@ -84,27 +85,55 @@ class FixedPool<T : Closeable>(
 
     /**
      * Initializes the items of the pool. This function is not thread-safe.
+     *
+     * A first item is created alone: when it cannot be created, the initialization fails immediately without
+     * attempting to create the other items. The other items are then created concurrently, and the first one that
+     * cannot be created interrupts the creation of the others. When the initialization fails, the error is reported
+     * once with the count of created items, and these items are closed.
      */
     internal suspend fun init() {
         if (!initialized) {
-            runCatching {
+            check(open) { "The pool is closed" }
+            try {
                 withContext(coroutineContext) {
-                    (1..actualSize).map {
-                        launch {
-                            val item = createItem()
-                            if (open) {
-                                itemPool.send(item)
-                            }
-                            readinessLatch.decrement()
-                        }
-                    }.forEach { it.join() }
+                    addToPool(createItem())
+                    (2..actualSize).map { launch { addToPool(createItem()) } }.forEach { it.join() }
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                throw initializationFailure(e)
             }
             if (readinessLatch.isSuspended()) {
                 throw PoolInitializationException()
             }
             initialized = true
         }
+    }
+
+    private suspend fun addToPool(item: T) {
+        if (open) {
+            itemPool.send(item)
+        }
+        readinessLatch.decrement()
+    }
+
+    /**
+     * Logs the failure of the initialization once, closes the items already created and returns the exception to throw.
+     */
+    private suspend fun initializationFailure(cause: Exception): PoolInitializationException {
+        val createdCount = items.size
+        // The exceptions might be wrapped several times when recovered by the coroutines.
+        val reason = generateSequence<Throwable>(cause) { it.cause }
+            .firstOrNull { it !is PoolItemInitializationException }?.message ?: cause.message
+        val message = if (createdCount == 0) {
+            "No item of the pool could be created: $reason"
+        } else {
+            "Only $createdCount of $actualSize items of the pool could be created: $reason"
+        }
+        log.error { message }
+        close()
+        return PoolInitializationException(message, cause)
     }
 
     private suspend fun createItem(): T {
@@ -115,13 +144,12 @@ class FixedPool<T : Closeable>(
             try {
                 item = factory()
                 items.add(item)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 attempts--
-                if (attempts == 0) {
-                    failure = e
-                } else {
-                    log.warn(e) { "The item could not be created, but a new attempt will occur: ${e.message}" }
-                }
+                failure = e
+                log.debug { "The item could not be created, remaining attempts: $attempts: ${e.message}" }
             }
         }
         return item ?: throw PoolItemInitializationException(failure!!)
