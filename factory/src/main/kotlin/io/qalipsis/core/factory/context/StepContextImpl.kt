@@ -21,6 +21,7 @@
 
 package io.qalipsis.core.factory.context
 
+import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.CompletionContext
 import io.qalipsis.api.context.DefaultCompletionContext
@@ -68,14 +69,28 @@ class StepContextImpl<IN, OUT>(
     private var immutableEventTags: Map<String, String>? = null
     private var immutableMetersTags: Map<String, String>? = null
 
-    private val bufferedOutputRecords = SuspendedCountLatch()
+    /**
+     * Count of the records sent to the output and not yet consumed, created at the first sent record since most
+     * contexts never generate any output.
+     */
+    @KTestable
+    @Volatile
+    private var bufferedOutputRecords: SuspendedCountLatch? = null
+
+    /**
+     * Returns the latch counting the buffered output records, creating it at the first call.
+     */
+    private fun bufferedOutputRecords(): SuspendedCountLatch =
+        bufferedOutputRecords ?: synchronized(this) {
+            bufferedOutputRecords ?: SuspendedCountLatch().also { bufferedOutputRecords = it }
+        }
 
     /**
      * Awaits that the output is totally consumed.
      */
     suspend fun awaitEmptyOutput() {
         if (generatedOutput) {
-            bufferedOutputRecords.await()
+            bufferedOutputRecords().await()
         }
     }
 
@@ -84,7 +99,7 @@ class StepContextImpl<IN, OUT>(
             try {
                 block(outputRecord)
             } finally {
-                bufferedOutputRecords.decrement()
+                bufferedOutputRecords().decrement()
             }
         }
     }
@@ -124,7 +139,7 @@ class StepContextImpl<IN, OUT>(
      * Send a record to the next steps.
      */
     override suspend fun send(element: OUT) {
-        bufferedOutputRecords.increment()
+        bufferedOutputRecords().increment()
         output.send(StepContext.StepOutputRecord(element, isTail))
         generatedOutput = true
     }
@@ -245,4 +260,3 @@ class StepContextImpl<IN, OUT>(
     }
 
 }
-
