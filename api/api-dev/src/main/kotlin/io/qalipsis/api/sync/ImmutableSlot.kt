@@ -75,9 +75,15 @@ class ImmutableSlot<T>(value: T? = null) {
     /**
      * Returns the value if it exists or suspends until the timeout is reached otherwise.
      * If the timeout is reached before a value is set, a [kotlinx.coroutines.TimeoutCancellationException] is thrown.
+     *
+     * When the value is already present, it is returned immediately and no timer is scheduled.
      */
-    suspend fun get(timeout: Duration): T = withTimeout(timeout.toMillis()) {
+    suspend fun get(timeout: Duration): T = if (deferred.isCompleted) {
         deferred.await()
+    } else {
+        withTimeout(timeout.toMillis()) {
+            deferred.await()
+        }
     }
 
     override fun toString(): String {

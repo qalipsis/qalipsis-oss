@@ -19,6 +19,7 @@
 package io.qalipsis.api.sync
 
 import assertk.assertThat
+import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import io.qalipsis.api.lang.concurrentSet
 import io.qalipsis.api.lang.millis
@@ -29,6 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
@@ -36,6 +38,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
+import java.time.Duration
 import java.time.Instant
 
 /**
@@ -157,6 +160,39 @@ internal class ImmutableSlotTest {
         assertThrows<TimeoutCancellationException> {
             slot.get(100.millis())
         }
+    }
+
+    @Test
+    @Timeout(3)
+    fun `given a value already present when getting with a timeout then the value is returned without timer`() = runTest {
+        // given
+        val slot = ImmutableSlot("value")
+
+        // when
+        // A zero timeout would immediately fail if a timer was used.
+        val result = slot.get(Duration.ZERO)
+
+        // then
+        assertThat(result).isEqualTo("value")
+        assertThat(testScheduler.currentTime).isEqualTo(0L)
+    }
+
+    @Test
+    @Timeout(3)
+    fun `given no value when getting with a timeout then the caller waits until the value is set`() = runTest {
+        // given
+        val slot = ImmutableSlot<String>()
+        launch {
+            delay(200)
+            slot.set("value")
+        }
+
+        // when
+        val result = slot.get(Duration.ofSeconds(1))
+
+        // then
+        assertThat(result).isEqualTo("value")
+        assertThat(testScheduler.currentTime).isEqualTo(200L)
     }
 
     @Test
