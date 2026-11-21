@@ -46,8 +46,10 @@ import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import jakarta.inject.Named
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
@@ -82,6 +84,11 @@ class CampaignMeterRegistryFacadeImpl(
     @KTestable
     private val publishers = mutableListOf<MeasurementPublisher>()
 
+    /**
+     * Parent of the running publications of the campaign, periodic or final, joined before the publishers are stopped.
+     */
+    private var publicationJobs: CompletableJob = SupervisorJob()
+
     private val actualFactories = mutableListOf<MeasurementPublisherFactory>()
 
     init {
@@ -106,6 +113,7 @@ class CampaignMeterRegistryFacadeImpl(
 
     override suspend fun init(campaign: Campaign) {
         currentCampaignKey = campaign.campaignKey
+        publicationJobs = SupervisorJob()
         publishers += actualFactories.map { it.getPublisher() }
         publishers.forEach { it.init() }
         startPublishingJob()
@@ -135,6 +143,9 @@ class CampaignMeterRegistryFacadeImpl(
         val snapshots = meterRegistry.summarize(Instant.now().truncatedTo(ChronoUnit.SECONDS))
         logger.debug { "Publishing the ${snapshots.size} long-run snapshots for the campaign $currentCampaignKey" }
         publishSnapshots(snapshots).joinAll()
+        // A periodic publication might still be running, and has to complete before the connections are closed.
+        publicationJobs.complete()
+        publicationJobs.join()
         logger.debug { "Shutting down the publication of meters for the campaign $currentCampaignKey" }
         publishers.forEach { it.stop() }
         // The publishers are created for each campaign: the stopped ones should not be used by the next campaigns.
@@ -149,7 +160,7 @@ class CampaignMeterRegistryFacadeImpl(
         return if (snapshots.isNotEmpty()) {
             publishers.map { publisher ->
                 logger.trace { "Publishing ${snapshots.size} snapshots with publisher $publisher." }
-                coroutineScope.launch {
+                coroutineScope.launch(publicationJobs) {
                     try {
                         publisher.publish(snapshots)
                     } catch (e: Exception) {
