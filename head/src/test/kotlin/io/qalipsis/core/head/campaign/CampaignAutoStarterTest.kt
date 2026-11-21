@@ -44,6 +44,7 @@ import io.qalipsis.core.head.jdbc.entity.Defaults
 import io.qalipsis.core.head.model.CampaignConfiguration
 import io.qalipsis.core.head.model.ScenarioRequest
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
+import io.qalipsis.core.head.web.handler.BulkIllegalArgumentException
 import io.qalipsis.core.heartbeat.Heartbeat
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
@@ -202,6 +203,39 @@ internal class CampaignAutoStarterTest {
 
             // then
             assertThat(result).isPresent().isEqualTo(201)
+        }
+
+    @Test
+    @Timeout(10)
+    internal fun `should release the starter with an error code when the campaign cannot be started`() =
+        testCoroutineDispatcher.run {
+            // given
+            val campaignAutoStarter = CampaignAutoStarter(
+                factoryService,
+                campaignExecutorProvider,
+                campaignReportStateKeeper,
+                autostartConfiguration,
+                headChannel
+            )
+            val scenario = relaxedMockk<ScenarioSummary> {
+                every { name } returns "scenario-1"
+                every { minionsCount } returns 20_000
+            }
+            coEvery { factoryService.getActiveScenarios(any(), setOf("scenario-1")) } returns listOf(scenario)
+            coEvery { campaignExecutor.start(any(), any(), any()) } throws
+                    BulkIllegalArgumentException(listOf("The count of minions in the campaign should not exceed 10000"))
+
+            // when
+            campaignAutoStarter.notify(relaxedMockk<HandshakeRequest> {
+                every { scenarios } returns listOf(relaxedMockk { every { name } returns "scenario-1" })
+            })
+            campaignAutoStarter.notify(Heartbeat("node-1", "my-tenant", Instant.now()))
+
+            // then
+            assertThat(campaignAutoStarter.campaignLatch().isLocked).isFalse()
+            assertThat(campaignAutoStarter.await()).isPresent()
+                .isEqualTo(CampaignAutoStarter.EXIT_CODE_START_FAILURE)
+            coVerifyOnce { campaignExecutor.start(Defaults.TENANT, Defaults.USERNAME, any()) }
         }
 
     @Test

@@ -57,6 +57,7 @@ import io.qalipsis.core.lifetime.ProcessExitCodeSupplier
 import jakarta.annotation.PreDestroy
 import jakarta.inject.Provider
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -140,26 +141,9 @@ class CampaignAutoStarter(
                         log.info { "Starting the campaign ${autostartCampaignConfiguration.name} for the scenario(s) ${registeredScenarios.joinToString()} in $delay ms" }
                         delay(delay)
                         campaignLatch.lock()
-                        val scenariosConfigs =
-                            factoryService.getActiveScenarios(
-                                Defaults.TENANT,
-                                registeredScenarios
-                            ).associate { scenario ->
-                                scenario.name to ScenarioRequest(calculateMinionsCount(scenario))
-                            }
-                        campaign = campaignExecutor.get().start(
-                            tenant = Defaults.TENANT,
-                            configurer = Defaults.USERNAME,
-                            configuration = CampaignConfiguration(
-                                name = autostartCampaignConfiguration.name,
-                                speedFactor = autostartCampaignConfiguration.speedFactor,
-                                startOffsetMs = autostartCampaignConfiguration.startOffset.toMillis(),
-                                scenarios = scenariosConfigs
-                            )
-                        )
-                        autostartCampaignConfiguration.generatedKey = campaign.key
+                        startCampaign()
                     } else {
-                        exitCode = 201
+                        exitCode = EXIT_CODE_NO_SCENARIO
                         log.error { "No executable scenario was found" }
                         error = "No executable scenario was found"
                         // Call the abort to generate a failure.
@@ -168,6 +152,41 @@ class CampaignAutoStarter(
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Starts the campaign with all the registered scenarios. When the campaign cannot be started (e.g. when it does
+     * not pass the validation), the error is reported and the process blocker is released, so that the process
+     * exits with [EXIT_CODE_START_FAILURE] instead of waiting forever for a campaign that will never run.
+     */
+    private suspend fun startCampaign() {
+        try {
+            val scenariosConfigs =
+                factoryService.getActiveScenarios(
+                    Defaults.TENANT,
+                    registeredScenarios
+                ).associate { scenario ->
+                    scenario.name to ScenarioRequest(calculateMinionsCount(scenario))
+                }
+            campaign = campaignExecutor.get().start(
+                tenant = Defaults.TENANT,
+                configurer = Defaults.USERNAME,
+                configuration = CampaignConfiguration(
+                    name = autostartCampaignConfiguration.name,
+                    speedFactor = autostartCampaignConfiguration.speedFactor,
+                    startOffsetMs = autostartCampaignConfiguration.startOffset.toMillis(),
+                    scenarios = scenariosConfigs
+                )
+            )
+            autostartCampaignConfiguration.generatedKey = campaign.key
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            exitCode = EXIT_CODE_START_FAILURE
+            error = e.message ?: e.javaClass.simpleName
+            log.error { "The campaign ${autostartCampaignConfiguration.name} could not be started: $error" }
+            campaignLatch.release()
         }
     }
 
@@ -183,7 +202,7 @@ class CampaignAutoStarter(
         if (report.status == ExecutionStatus.SUCCESSFUL) {
             log.info { "The campaign $campaignKey was successfully completed" }
         } else {
-            exitCode = 202
+            exitCode = EXIT_CODE_CAMPAIGN_FAILURE
             val errors = report.scenariosReports
                 .filter { it.status != ExecutionStatus.SUCCESSFUL }
                 .flatMap { it.messages }
@@ -206,7 +225,7 @@ class CampaignAutoStarter(
     @LogInput
     suspend fun completeCampaign(directive: CompleteCampaignDirective) {
         if (!directive.isSuccessful) {
-            exitCode = 202
+            exitCode = EXIT_CODE_CAMPAIGN_FAILURE
         }
         campaign.factories.forEach { (_, factory) ->
             headChannel.publishDirective(FactoryShutdownDirective(factory.unicastChannel))
@@ -234,6 +253,22 @@ class CampaignAutoStarter(
     }
 
     companion object {
+
+        /**
+         * Exit code when no executable scenario was found.
+         */
+        const val EXIT_CODE_NO_SCENARIO = 201
+
+        /**
+         * Exit code when the campaign was executed but completed with failures.
+         */
+        const val EXIT_CODE_CAMPAIGN_FAILURE = 202
+
+        /**
+         * Exit code when the campaign could not be started, e.g. when its configuration is invalid.
+         */
+        const val EXIT_CODE_START_FAILURE = 203
+
         @JvmStatic
         private val log = logger()
     }

@@ -33,6 +33,7 @@ import io.qalipsis.core.head.campaign.AutostartCampaignConfiguration
 import io.qalipsis.core.head.orchestration.CampaignReportStateKeeper
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
+import io.qalipsis.test.mockk.coVerifyNever
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
@@ -102,4 +103,18 @@ internal class AutostartCampaignProcessExitSupplierTest {
         // then
         assertThat(result.get()).isEqualTo(202)
     }
+
+    @Test
+    internal fun `given no started campaign when awaiting then no code is returned and no report is generated`() =
+        testDispatcherProvider.runTest {
+            // given
+            every { autostartCampaignConfiguration.generatedKey } returns null
+
+            // when
+            val result = autostartCampaignProcessExitSupplier.await()
+
+            // then
+            assertThat(result.isEmpty).isTrue()
+            coVerifyNever { campaignReportStateKeeper.generateReport(any()) }
+        }
 }

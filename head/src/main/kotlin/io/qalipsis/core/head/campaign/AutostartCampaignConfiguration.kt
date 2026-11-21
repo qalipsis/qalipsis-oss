@@ -73,5 +73,8 @@ class AutostartCampaignConfiguration {
     @get:Bindable(defaultValue = "1s")
     var startOffset: Duration = Duration.ofMillis(1_000)
 
-    lateinit var generatedKey: CampaignKey
+    /**
+     * Key of the started campaign, null as long as no campaign could be started.
+     */
+    var generatedKey: CampaignKey? = null
 }
