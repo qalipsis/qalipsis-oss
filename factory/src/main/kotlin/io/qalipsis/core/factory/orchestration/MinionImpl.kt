@@ -24,7 +24,6 @@ package io.qalipsis.core.factory.orchestration
 import io.qalipsis.api.context.CampaignKey
 import io.qalipsis.api.context.MinionId
 import io.qalipsis.api.context.ScenarioName
-import io.qalipsis.api.coroutines.contextualLaunch
 import io.qalipsis.api.lang.tryAndLogOrNull
 import io.qalipsis.api.logging.LoggerHelper.logger
 import io.qalipsis.api.runtime.Minion
@@ -34,7 +33,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.LAZY
 import kotlinx.coroutines.Job
-import org.slf4j.MDC
+import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -149,11 +148,10 @@ open class MinionImpl(
             runningJobsLatch.increment()
             countLatch?.increment()
 
-            MDC.put("job", "$jobId")
             log.trace {
                 "Adding a job to minion (currently active jobs excluding the new one: ${runningJobsLatch.get()})"
             }
-            scope.contextualLaunch(context, LAZY) {
+            scope.launch(context + MinionMdcContext(campaignKey, scenarioName, id, "$jobId"), LAZY) {
                 waitForStart()
                 try {
                     log.trace { "Executing the minion job $jobId" }
