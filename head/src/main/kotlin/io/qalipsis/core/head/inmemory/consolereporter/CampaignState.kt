@@ -115,7 +115,7 @@ data class ScenarioState(val scenarioName: ScenarioName) {
 
     val errorsByType = ConcurrentHashMap<Class<out Throwable>, AtomicInteger>()
 
-    val messages = mutableListOf<ExecutionMessage>()
+    val messages = concurrentList<ExecutionMessage>()
 
     /**
      * Number of current errors, to drive the status of the scenario.

@@ -101,7 +101,7 @@ class ConsoleCampaignProgressionReporter(
             thread(name = "console-live-reporter", isDaemon = false) {
                 session(clearTerminal = false, terminal = terminal) {
                     section {
-                        consoleRenderer.render(this, this.width.coerceAtLeast(WIDTH))
+                        consoleRenderer.render(this, renderWidth(this.width))
                     }.runUntilSignal {
                         addTimer(1.seconds, repeat = true) {
                             rerender()
@@ -148,21 +148,25 @@ class ConsoleCampaignProgressionReporter(
     }
 
     suspend fun report() {
-        defaultTerminal()?.let { terminal ->
-            val consoleRenderer = ConsoleRenderer(campaignState, consoleMeterReporter)
-            session(terminal = terminal) {
-                section {
-                    consoleRenderer.render(this, this.width.coerceAtLeast(WIDTH))
-                }.runUntilSignal {
-                    addTimer(2.seconds, repeat = false) {
-                        rerender()
-                        consoleAppender?.start()
-                        processBlocker.cancel()
-                        signal()
+        // The process has to be released even when the rendering fails, otherwise it never stops.
+        try {
+            defaultTerminal()?.let { terminal ->
+                val consoleRenderer = ConsoleRenderer(campaignState, consoleMeterReporter)
+                session(terminal = terminal) {
+                    section {
+                        consoleRenderer.render(this, renderWidth(this.width))
+                    }.runUntilSignal {
+                        addTimer(2.seconds, repeat = false) {
+                            rerender()
+                            signal()
+                        }
                     }
                 }
-            }
-        } ?: run { log.warn { "Cannot create the console renderer, no terminal available" } }
+            } ?: run { log.warn { "Cannot create the console renderer, no terminal available" } }
+        } finally {
+            consoleAppender?.start()
+            processBlocker.cancel()
+        }
     }
 
     override suspend fun preSchedule(
@@ -319,10 +323,19 @@ class ConsoleCampaignProgressionReporter(
     }
 
 
-    private companion object {
+    internal companion object {
 
         const val WIDTH = 120
 
-        val log = logger()
+        /**
+         * Provides the width to render the report into a terminal of [terminalWidth].
+         *
+         * The terminals without display, such as the [InMemoryTerminal] used when the process runs without TTY,
+         * have an unbounded width, which would generate lines of billions of characters.
+         */
+        fun renderWidth(terminalWidth: Int) =
+            if (terminalWidth == TerminalSize.Unbounded.width) WIDTH else terminalWidth.coerceAtLeast(WIDTH)
+
+        private val log = logger()
     }
 }
