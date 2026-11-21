@@ -22,7 +22,6 @@
 package io.qalipsis.core.factory.meters
 
 import assertk.assertThat
-import assertk.assertions.isBetween
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isNotNull
@@ -61,10 +60,14 @@ import io.qalipsis.core.factory.meters.catadioptre.ticker
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.WithMockk
 import io.qalipsis.test.mockk.coVerifyOnce
+import io.qalipsis.test.mockk.verifyExactly
 import io.qalipsis.test.mockk.verifyOnce
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.TickerMode
+import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.test.runTest
 import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -101,7 +104,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
     @ParameterizedTest
     @ValueSource(longs = [100, 200])
     internal fun `should successfully initialize the meter registry and publish measurements`(publicationPeriodMs: Long) =
-        testDispatcherProvider.run {
+        runTest {
             //given
             every { factoryConfiguration.tags } returns mapOf("tag-1" to "value-1", "tag-2" to "value-2")
             every { factoryConfiguration.zone } returns "at"
@@ -118,11 +121,16 @@ internal class CampaignMeterRegistryFacadeImplTest {
                     factoryConfiguration,
                     measurementConfiguration,
                     Duration.ofMillis(publicationPeriodMs),
-                    this
+                    backgroundScope
                 ), recordPrivateCalls = true
             ) {
+                // The fixed-period ticker of production measures the real time: a fixed-delay ticker in virtual time
+                // makes the ticks deterministic.
+                every { this@spyk["createTicker"](publicationPeriodMs) } answers {
+                    ticker(publicationPeriodMs, publicationPeriodMs, backgroundScope.coroutineContext, TickerMode.FIXED_DELAY)
+                }
                 every { this@spyk["publishSnapshots"](any<Collection<MeterSnapshot>>()) } coAnswers {
-                    publicationTimestamps += System.currentTimeMillis()
+                    publicationTimestamps += testScheduler.currentTime
                     latch.decrement()
                     emptyList<Job>()
                 }
@@ -161,12 +169,11 @@ internal class CampaignMeterRegistryFacadeImplTest {
                     "tenant" to "my-tenant"
                 )
             )
-            // Verifies that the publication occurs regularly.
-            publicationTimestamps.windowed(2, 1).forEach { timestamps ->
-                assertThat(timestamps[1] - timestamps[0]).isBetween(publicationPeriodMs - 15, publicationPeriodMs + 15)
-            }
+            // Verifies that the publication occurs regularly, in virtual time.
+            assertThat(publicationTimestamps).isEqualTo((1..4).map { it * publicationPeriodMs })
             coExcludeRecords {
                 campaignMeterRegistry.init(any())
+                campaignMeterRegistry["createTicker"](any<Long>())
             }
             coVerifyOrder {
                 publisherFactory1.getPublisher()
@@ -251,6 +258,7 @@ internal class CampaignMeterRegistryFacadeImplTest {
                 publisher1.init()
                 publisher2.init()
                 campaignMeterRegistry.startPublishingJob()
+                campaignMeterRegistry["createTicker"](10_000L)
 
                 campaignMeterRegistry.close(campaign)
                 meterRegistry.summarize(any())
@@ -580,6 +588,70 @@ internal class CampaignMeterRegistryFacadeImplTest {
         }
         confirmVerified(meterRegistry, counter)
     }
+
+    @Test
+    internal fun `given a meter already requested in the campaign when requested again then the registry is not looked up again`() =
+        testDispatcherProvider.run {
+            // given
+            every { factoryConfiguration.tags } returns emptyMap()
+            val campaignMeterRegistry = CampaignMeterRegistryFacadeImpl(
+                publisherFactories = emptyList(),
+                meterRegistry = meterRegistry,
+                factoryConfiguration = factoryConfiguration,
+                measurementConfiguration = measurementConfiguration,
+                step = Duration.ofSeconds(10),
+                coroutineScope = this
+            )
+            every { campaign.campaignKey } returns "campaign-1"
+            campaignMeterRegistry.init(campaign)
+            val counter1 = mockk<Counter>()
+            val counter2 = mockk<Counter>()
+            val timer = mockk<Timer>()
+            every { meterRegistry.counter(any()) } returnsMany listOf(counter1, counter2)
+            every { meterRegistry.timer(any(), any()) } returns timer
+            every { measurementConfiguration.timer.percentiles } returns emptyList()
+
+            // when
+            val firstCounter = campaignMeterRegistry.counter("scenario", "step", "meter", mapOf("key" to "value"))
+            val sameCounter = campaignMeterRegistry.counter("scenario", "step", "meter", mapOf("key" to "value"))
+            val otherCounter = campaignMeterRegistry.counter("scenario", "other-step", "meter", mapOf("key" to "value"))
+            val timerWithSameName = campaignMeterRegistry.timer("scenario", "step", "meter", mapOf("key" to "value"))
+
+            // then
+            assertThat(firstCounter).isSameInstanceAs(counter1)
+            assertThat(sameCounter).isSameInstanceAs(counter1)
+            assertThat(otherCounter).isSameInstanceAs(counter2)
+            assertThat(timerWithSameName).isSameInstanceAs(timer)
+            verifyExactly(2) { meterRegistry.counter(any()) }
+            verifyOnce { meterRegistry.timer(any(), any()) }
+
+            // when
+            coEvery { meterRegistry.summarize(any()) } returns emptyList()
+            campaignMeterRegistry.close(campaign)
+            every { campaign.campaignKey } returns "campaign-2"
+            campaignMeterRegistry.init(campaign)
+            every { meterRegistry.counter(any()) } returns counter2
+            val counterOfNextCampaign =
+                campaignMeterRegistry.counter("scenario", "step", "meter", mapOf("key" to "value"))
+
+            // then
+            assertThat(counterOfNextCampaign).isSameInstanceAs(counter2)
+            verifyExactly(3) { meterRegistry.counter(any()) }
+            verifyOnce {
+                meterRegistry.counter(
+                    Meter.Id(
+                        meterName = "meter",
+                        type = MeterType.COUNTER,
+                        tags = mapOf(
+                            "key" to "value",
+                            "campaign" to "campaign-2",
+                            "scenario" to "scenario",
+                            "step" to "step"
+                        )
+                    )
+                )
+            }
+        }
 
     @Test
     internal fun `should create a counter with tags only`() = testDispatcherProvider.run {

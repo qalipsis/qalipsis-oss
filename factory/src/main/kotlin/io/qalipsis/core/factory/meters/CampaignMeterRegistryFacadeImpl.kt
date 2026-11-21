@@ -58,6 +58,7 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Implementation of meter registry.
@@ -77,6 +78,12 @@ class CampaignMeterRegistryFacadeImpl(
 
     @KTestable
     private var currentCampaignKey: CampaignKey? = null
+
+    /**
+     * Cache of the meters scoped to a scenario and a step of the current campaign, cleared when the campaign changes.
+     */
+    @KTestable
+    private val scopedMeters = ConcurrentHashMap<ScopedMeterKey, Meter<*>>()
 
     @KTestable
     private lateinit var ticker: ReceiveChannel<*>
@@ -112,6 +119,7 @@ class CampaignMeterRegistryFacadeImpl(
     override fun getOrder(): Int = Integer.MIN_VALUE
 
     override suspend fun init(campaign: Campaign) {
+        scopedMeters.clear()
         currentCampaignKey = campaign.campaignKey
         publicationJobs = SupervisorJob()
         publishers += actualFactories.map { it.getPublisher() }
@@ -123,7 +131,7 @@ class CampaignMeterRegistryFacadeImpl(
     private suspend fun startPublishingJob() {
         logger.debug { "Starting publishing job" }
         val stepMillis = step.toMillis()
-        ticker = ticker(stepMillis, stepMillis, mode = TickerMode.FIXED_PERIOD)
+        ticker = createTicker(stepMillis)
         coroutineScope.launch {
             for (event in ticker) {
                 try {
@@ -136,6 +144,13 @@ class CampaignMeterRegistryFacadeImpl(
         }
     }
 
+    /**
+     * Creates the ticker triggering the periodic publications.
+     */
+    @KTestable
+    private fun createTicker(periodMillis: Long): ReceiveChannel<Unit> =
+        ticker(periodMillis, periodMillis, mode = TickerMode.FIXED_PERIOD)
+
     override suspend fun close(campaign: Campaign) {
         logger.debug { "Closing the meter registry attached to the campaign $currentCampaignKey" }
         ticker.cancel()
@@ -143,6 +158,8 @@ class CampaignMeterRegistryFacadeImpl(
         val snapshots = meterRegistry.summarize(Instant.now().truncatedTo(ChronoUnit.SECONDS))
         logger.debug { "Publishing the ${snapshots.size} long-run snapshots for the campaign $currentCampaignKey" }
         publishSnapshots(snapshots).joinAll()
+        // The meters of the registry are released with the campaign, they should not be reused by the next one.
+        scopedMeters.clear()
         // A periodic publication might still be running, and has to complete before the connections are closed.
         publicationJobs.complete()
         publicationJobs.join()
@@ -183,17 +200,15 @@ class CampaignMeterRegistryFacadeImpl(
         name: String,
         tags: Map<String, String>,
     ): Counter {
-        return counter(
-            Meter.Id(
-                meterName = name,
-                tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey!!,
-                    SCENARIO_NAME to scenarioName,
-                    STEP_NAME to stepName
-                ),
-                type = MeterType.COUNTER
+        return scopedMeter(MeterType.COUNTER, scenarioName, stepName, name, tags) {
+            counter(
+                Meter.Id(
+                    meterName = name,
+                    tags = scopedTags(scenarioName, stepName, tags),
+                    type = MeterType.COUNTER
+                )
             )
-        )
+        }
     }
 
     private fun counter(meterId: Meter.Id): Counter {
@@ -206,17 +221,15 @@ class CampaignMeterRegistryFacadeImpl(
     }
 
     override fun rate(scenarioName: ScenarioName, stepName: StepName, name: String, tags: Map<String, String>): Rate {
-        return rate(
-            Meter.Id(
-                meterName = name,
-                tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey!!,
-                    SCENARIO_NAME to scenarioName,
-                    STEP_NAME to stepName
-                ),
-                type = MeterType.RATE
+        return scopedMeter(MeterType.RATE, scenarioName, stepName, name, tags) {
+            rate(
+                Meter.Id(
+                    meterName = name,
+                    tags = scopedTags(scenarioName, stepName, tags),
+                    type = MeterType.RATE
+                )
             )
-        )
+        }
     }
 
     override fun rate(name: String, vararg tags: String): Rate {
@@ -233,17 +246,15 @@ class CampaignMeterRegistryFacadeImpl(
         name: String,
         tags: Map<String, String>,
     ): Gauge {
-        return gauge(
-            Meter.Id(
-                meterName = name,
-                tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey!!,
-                    SCENARIO_NAME to scenarioName,
-                    STEP_NAME to stepName
-                ),
-                type = MeterType.GAUGE
+        return scopedMeter(MeterType.GAUGE, scenarioName, stepName, name, tags) {
+            gauge(
+                Meter.Id(
+                    meterName = name,
+                    tags = scopedTags(scenarioName, stepName, tags),
+                    type = MeterType.GAUGE
+                )
             )
-        )
+        }
     }
 
     private fun gauge(meterId: Meter.Id): Gauge {
@@ -263,19 +274,17 @@ class CampaignMeterRegistryFacadeImpl(
         percentiles: Collection<Double>,
         tags: Map<String, String>,
     ): Throughput {
-        return throughput(
-            Meter.Id(
-                meterName = name,
-                tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey!!,
-                    SCENARIO_NAME to scenarioName,
-                    STEP_NAME to stepName
+        return scopedMeter(MeterType.THROUGHPUT, scenarioName, stepName, name, tags) {
+            throughput(
+                Meter.Id(
+                    meterName = name,
+                    tags = scopedTags(scenarioName, stepName, tags),
+                    type = MeterType.THROUGHPUT
                 ),
-                type = MeterType.THROUGHPUT
-            ),
-            unit = unit,
-            percentiles = percentiles
-        )
+                unit = unit,
+                percentiles = percentiles
+            )
+        }
     }
 
     override fun throughput(name: String, vararg tags: String): Throughput {
@@ -301,18 +310,16 @@ class CampaignMeterRegistryFacadeImpl(
         tags: Map<String, String>,
         percentiles: Collection<Double>,
     ): DistributionSummary {
-        return summary(
-            meterId = Meter.Id(
-                meterName = name,
-                tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey!!,
-                    SCENARIO_NAME to scenarioName,
-                    STEP_NAME to stepName
+        return scopedMeter(MeterType.DISTRIBUTION_SUMMARY, scenarioName, stepName, name, tags) {
+            summary(
+                meterId = Meter.Id(
+                    meterName = name,
+                    tags = scopedTags(scenarioName, stepName, tags),
+                    type = MeterType.DISTRIBUTION_SUMMARY
                 ),
-                type = MeterType.DISTRIBUTION_SUMMARY
-            ),
-            percentiles = percentiles,
-        )
+                percentiles = percentiles,
+            )
+        }
     }
 
     private fun summary(
@@ -336,18 +343,16 @@ class CampaignMeterRegistryFacadeImpl(
         tags: Map<String, String>,
         percentiles: Collection<Double>,
     ): Timer {
-        return timer(
-            meterId = Meter.Id(
-                meterName = name,
-                tags = tags + additionalTags + mapOf(
-                    CAMPAIGN_KEY to currentCampaignKey!!,
-                    SCENARIO_NAME to scenarioName,
-                    STEP_NAME to stepName
+        return scopedMeter(MeterType.TIMER, scenarioName, stepName, name, tags) {
+            timer(
+                meterId = Meter.Id(
+                    meterName = name,
+                    tags = scopedTags(scenarioName, stepName, tags),
+                    type = MeterType.TIMER
                 ),
-                type = MeterType.TIMER
-            ),
-            percentiles = percentiles
-        )
+                percentiles = percentiles
+            )
+        }
     }
 
     private fun timer(
@@ -358,6 +363,47 @@ class CampaignMeterRegistryFacadeImpl(
             meterId,
             (percentiles.takeIf { it.isNotEmpty() } ?: measurementConfiguration.timer.percentiles.orEmpty()).toSet())
     }
+
+    /**
+     * Returns the meter of the campaign identified by [type], [scenarioName], [stepName], [name] and [tags] from the
+     * cache, or creates it with [creator] and caches it.
+     *
+     * The steps generally fetch their meters for each execution: the cache avoids building the complete set of tags
+     * and hashing it to look up the [MeterRegistry] each time.
+     */
+    @Suppress("UNCHECKED_CAST")
+    private inline fun <T : Meter<*>> scopedMeter(
+        type: MeterType,
+        scenarioName: ScenarioName,
+        stepName: StepName,
+        name: String,
+        tags: Map<String, String>,
+        crossinline creator: () -> T
+    ): T = scopedMeters.computeIfAbsent(ScopedMeterKey(type, scenarioName, stepName, name, tags)) { creator() } as T
+
+    /**
+     * Builds the complete tags of a meter scoped to the current campaign, [scenarioName] and [stepName], in a single map.
+     * The latest tags override the first ones: [tags], then [additionalTags], then the campaign, scenario and step.
+     */
+    private fun scopedTags(scenarioName: ScenarioName, stepName: StepName, tags: Map<String, String>) =
+        LinkedHashMap<String, String>(tags.size + additionalTags.size + SCOPE_TAGS_COUNT, 1f).apply {
+            putAll(tags)
+            putAll(additionalTags)
+            put(CAMPAIGN_KEY, currentCampaignKey!!)
+            put(SCENARIO_NAME, scenarioName)
+            put(STEP_NAME, stepName)
+        }
+
+    /**
+     * Key of the cache of the meters scoped to the current campaign, a scenario and a step.
+     */
+    private data class ScopedMeterKey(
+        val type: MeterType,
+        val scenarioName: ScenarioName,
+        val stepName: StepName,
+        val name: String,
+        val tags: Map<String, String>,
+    )
 
     /**
      * Converts the provided details to a meter id.
@@ -394,5 +440,10 @@ class CampaignMeterRegistryFacadeImpl(
         const val SCENARIO_NAME = "scenario"
 
         const val STEP_NAME = "step"
+
+        /**
+         * Count of tags added to identify the scope of a meter: campaign, scenario and step.
+         */
+        private const val SCOPE_TAGS_COUNT = 3
     }
 }
