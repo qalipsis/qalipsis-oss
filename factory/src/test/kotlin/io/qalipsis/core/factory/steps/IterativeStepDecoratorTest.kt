@@ -23,6 +23,8 @@ package io.qalipsis.core.factory.steps
 
 import assertk.assertThat
 import assertk.assertions.containsExactly
+import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
@@ -43,6 +45,7 @@ import io.qalipsis.test.time.QalipsisTimeAssertions
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -304,6 +307,25 @@ internal class IterativeStepDecoratorTest {
         capturedContexts.forEach {
             Assertions.assertSame(testEntity, it.receive())
         }
+    }
+
+    @Test
+    @Timeout(10)
+    fun `given no delay when iterating then the iterations do not wait for any timer`() = runTest {
+        val decoratedStep: Step<TestEntity, Any> = mockk {
+            coEvery { execute(any(), any()) } returns Unit
+            every { retryPolicy } returns null
+            every { next } returns mutableListOf()
+        }
+        val step = IterativeStepDecorator(10, decorated = decoratedStep)
+        val ctx = coreStepContext<TestEntity, Any>(TestEntity())
+
+        step.execute(minion, ctx)
+
+        coVerifyExactly(10) { decoratedStep.execute(refEq(minion), any()) }
+        assertThat(ctx.isExhausted).isFalse()
+        // A forced delay between the iterations would make the virtual time elapse.
+        assertThat(testScheduler.currentTime).isEqualTo(0L)
     }
 
     @Test

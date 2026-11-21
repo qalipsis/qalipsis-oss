@@ -34,6 +34,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.yield
 import java.time.Duration
 
 /**
@@ -55,10 +56,7 @@ class IterativeStepDecorator<I, O>(
 
     override val next = decorated.next
 
-    /**
-     * Force a delay to have a suspension point.
-     */
-    private var delayMillis = delay.toMillis().coerceAtLeast(1)
+    private val delayMillis = delay.toMillis().coerceAtLeast(0)
 
     override suspend fun execute(minion: Minion, context: StepContext<I, O>) {
         val inputValue = context.receive()
@@ -123,14 +121,26 @@ class IterativeStepDecorator<I, O>(
 
                 if (remainingIterations > 0) {
                     repetitionIndex++
-                    log.trace { "Waiting $delayMillis ms for context $context" }
-                    delay(delayMillis)
+                    awaitNextIteration()
                 }
             }
         }
         innerInputChannel.cancel()
         context.isTail = isOuterContextTail
         log.trace { "End of the iterations for context $context" }
+    }
+
+    /**
+     * Waits for the configured delay between two iterations. Without delay, the coroutine only yields, in order to
+     * keep a suspension point between the iterations, without scheduling a timer on the dispatcher.
+     */
+    private suspend fun awaitNextIteration() {
+        if (delayMillis > 0) {
+            log.trace { "Waiting $delayMillis ms before the next iteration" }
+            delay(delayMillis)
+        } else {
+            yield()
+        }
     }
 
     private suspend fun forwardOutput(
