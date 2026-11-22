@@ -379,7 +379,11 @@ class CampaignMeterRegistryFacadeImpl(
         name: String,
         tags: Map<String, String>,
         crossinline creator: () -> T
-    ): T = scopedMeters.computeIfAbsent(ScopedMeterKey(type, scenarioName, stepName, name, tags)) { creator() } as T
+    ): T {
+        val key = ScopedMeterKey(type, scenarioName, stepName, name, tags)
+        // The tags of the caller might be mutable: the cached key keeps its own copy.
+        return (scopedMeters[key] ?: scopedMeters.computeIfAbsent(key.copy(tags = tags.toMap())) { creator() }) as T
+    }
 
     /**
      * Builds the complete tags of a meter scoped to the current campaign, [scenarioName] and [stepName], in a single map.
