@@ -29,29 +29,31 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.cancel
-import java.util.ArrayDeque
 import java.util.PriorityQueue
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executor
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.LockSupport
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
 /**
- * Coroutine dispatcher made of independent single-threaded event loops, each owning its task queues and its timers.
+ * Coroutine dispatcher made of single-threaded event loops, each owning its timers and its queue of tasks, with work
+ * stealing between the loops.
  *
  * Unlike a [java.util.concurrent.ScheduledThreadPoolExecutor], which serializes all the dispatches and timers of
- * its threads on one locked queue, nothing is shared between the loops:
- * - a task dispatched from a loop stays on that loop, without synchronization nor wake-up;
- * - a task dispatched from another thread is pushed to a random loop, through a lock-free queue;
+ * its threads on one locked queue:
+ * - a task dispatched from a loop is queued on that loop, without wake-up;
+ * - a task dispatched from another thread is queued on a random loop, through a lock-free queue;
  * - a timer expires on the loop owning it and is run there directly, so timers due at the same time are
- *   executed by all the loops in parallel, keeping the precision of the delays.
+ *   executed by all the loops in parallel, keeping the precision of the delays;
+ * - a loop without task takes tasks from the queues of the other loops before parking, and a loop keeping a backlog
+ *   after its turn wakes a parked loop up, so that a busy loop does not delay its tasks while other loops are idle.
  *
- * There is no work stealing: a task blocking its thread delays all the other tasks of its loop.
- * The dispatcher is therefore only suitable for non-blocking code.
+ * The dispatcher is only suitable for non-blocking code: a blocked loop does not run its timers.
  *
  * @author Eric Jessé
  */
@@ -62,6 +64,11 @@ internal class EventLoopsDispatcher(
 ) : ExecutorCoroutineDispatcher(), Delay {
 
     private val loops = Array(threadsCount) { EventLoop(this, "$name-${it + 1}") }
+
+    /**
+     * Count of the parked loops, so that the busy loops only look for a loop to wake up when there is one.
+     */
+    private val parkedLoops = AtomicInteger()
 
     /**
      * Set by [close]: the tasks dispatched afterwards are not accepted by the loops any more.
@@ -114,8 +121,9 @@ internal class EventLoopsDispatcher(
      * Creates a timer executing [task] after [timeMillis] and registers it on a loop.
      *
      * From a loop, the timer is added to the timers of that loop directly. From another thread, its registration is
-     * sent as a task to a random loop, since the timers of a loop are only accessed by its own thread. In both cases,
-     * the deadline is computed now, so the time to register the timer does not delay it.
+     * sent as a task to a random loop, since the timers of a loop are only accessed by its own thread; the loop
+     * finally running that task, possibly after stealing it, owns the timer. In both cases, the deadline is computed
+     * now, so the time to register the timer does not delay it.
      */
     private fun schedule(timeMillis: Long, task: Runnable): Timer {
         val timer = Timer(System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeMillis.coerceAtLeast(0)), task)
@@ -134,6 +142,45 @@ internal class EventLoopsDispatcher(
      * counter, which would be contended.
      */
     private fun randomLoop() = loops[ThreadLocalRandom.current().nextInt(loops.size)]
+
+    /**
+     * Takes up to [STEAL_BATCH_SIZE] tasks from the queues of the loops other than [thief], starting from a random
+     * one so that the thieves do not all compete for the same victim, and runs them on [thief].
+     *
+     * @return true when at least one task was stolen.
+     */
+    private fun steal(thief: EventLoop): Boolean {
+        val start = ThreadLocalRandom.current().nextInt(loops.size)
+        for (offset in loops.indices) {
+            val victim = loops[(start + offset) % loops.size]
+            if (victim !== thief && victim.hasTasks()) {
+                var stolen = 0
+                while (stolen < STEAL_BATCH_SIZE) {
+                    thief.runSafely(victim.pollTask() ?: break)
+                    stolen++
+                }
+                if (stolen > 0) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    /**
+     * Wakes a parked loop up, if there is one, so that it steals tasks from a loop that cannot run them all in its
+     * turn.
+     */
+    private fun wakeUpParkedLoop() {
+        if (parkedLoops.get() > 0) {
+            val start = ThreadLocalRandom.current().nextInt(loops.size)
+            for (offset in loops.indices) {
+                if (loops[(start + offset) % loops.size].wakeUp()) {
+                    return
+                }
+            }
+        }
+    }
 
     /**
      * Stops the loops after their current turn. The tasks and timers still queued are not executed.
@@ -162,31 +209,27 @@ internal class EventLoopsDispatcher(
     }
 
     /**
-     * Thread of the dispatcher running its own tasks and timers, one after the other.
+     * Thread of the dispatcher running its own timers and the tasks of its queue, and stealing the tasks of the other
+     * loops when it has nothing to do.
      *
      * Each turn of the loop:
      * 1. runs the timers that are due;
-     * 2. moves up to [EXTERNAL_BATCH_SIZE] tasks from the external queue to the local queue, then runs all the tasks
-     *    of the local queue present at the start of the run;
-     * 3. parks the thread when no task is left, until the next deadline of a timer or until a task is submitted by
-     *    another thread.
+     * 2. runs up to [TURN_BATCH_SIZE] tasks of its queue, then wakes a parked loop up when tasks are left, so that it
+     *    steals them;
+     * 3. when its queue is empty, steals tasks from the other loops;
+     * 4. parks the thread when nothing was stolen, until the next deadline of a timer or until it is woken up.
      *
-     * The local queue and the timers are only accessed by the thread of the loop, so they need no synchronization.
-     * Only the external queue and the [parked] flag are shared with other threads.
+     * The timers are only accessed by the thread of the loop, so they need no synchronization. The queue of tasks is
+     * lock-free, since the other threads add tasks to it and the other loops steal from it.
      *
      * @property owner the dispatcher creating the loop, to recognize its own threads in [currentLoop].
      */
     private class EventLoop(val owner: EventLoopsDispatcher, name: String) : Thread(name) {
 
         /**
-         * Tasks submitted by other threads.
+         * Tasks of the loop, dispatched from the loop itself or from other threads, and stolen by the other loops.
          */
-        private val external = ConcurrentLinkedQueue<Runnable>()
-
-        /**
-         * Tasks dispatched from the loop itself, only accessed by its own thread.
-         */
-        private val local = ArrayDeque<Runnable>()
+        private val tasks = ConcurrentLinkedQueue<Runnable>()
 
         /**
          * Timers of the loop, only accessed by its own thread.
@@ -215,25 +258,51 @@ internal class EventLoopsDispatcher(
         }
 
         /**
-         * Enqueues [task] from the thread of the loop itself: no synchronization and no wake-up are needed, since
-         * the loop is running.
+         * Enqueues [task] from the thread of the loop itself. The loop is running, so it does not need to be woken up.
+         * But when tasks were already waiting, a parked loop is woken up to steal them: the current task of this
+         * loop might take long, and nothing else would wake a helper before the end of the turn.
          */
         fun enqueueLocally(task: Runnable) {
-            local.addLast(task)
+            val backlog = tasks.isNotEmpty()
+            tasks.offer(task)
+            if (backlog) {
+                owner.wakeUpParkedLoop()
+            }
         }
 
         /**
          * Enqueues [task] from another thread and wakes the loop up if it is parked.
          *
-         * The task is offered before [parked] is read, and [park] sets [parked] before checking the external queue:
-         * either the loop sees the task before parking, or this function sees the flag and unparks the loop. The
-         * compare-and-set ensures that only one of the concurrent submitters calls [LockSupport.unpark].
+         * The task is offered before [parked] is read, and [park] sets [parked] before checking the queue: either
+         * the loop sees the task before parking, or this function sees the flag and unparks the loop.
          */
         fun enqueueExternally(task: Runnable) {
-            external.offer(task)
-            if (parked.get() && parked.compareAndSet(true, false)) {
+            tasks.offer(task)
+            wakeUp()
+        }
+
+        /**
+         * Returns true when the queue contains tasks, for a thief to select its victim.
+         */
+        fun hasTasks() = tasks.isNotEmpty()
+
+        /**
+         * Removes the next task of the queue, from the loop itself or from a thief.
+         */
+        fun pollTask(): Runnable? = tasks.poll()
+
+        /**
+         * Unparks the loop when it is parked. The compare-and-set ensures that only one of the concurrent callers
+         * unparks it.
+         *
+         * @return true when the loop was parked and is now woken up.
+         */
+        fun wakeUp(): Boolean {
+            val wokenUp = parked.get() && parked.compareAndSet(true, false)
+            if (wokenUp) {
                 LockSupport.unpark(this)
             }
+            return wokenUp
         }
 
         /**
@@ -265,8 +334,8 @@ internal class EventLoopsDispatcher(
         override fun run() {
             while (running) {
                 runDueTimers()
-                runQueuedTasks()
-                if (local.isEmpty() && external.isEmpty()) {
+                val ranOwnTasks = runOwnTasks()
+                if (!ranOwnTasks && !owner.steal(this)) {
                     park()
                 }
             }
@@ -286,34 +355,42 @@ internal class EventLoopsDispatcher(
         }
 
         /**
-         * Runs the tasks queued so far, the ones added meanwhile are kept for the next turn, after the due timers.
+         * Runs up to [TURN_BATCH_SIZE] tasks of the queue, then wakes a parked loop up when tasks are left.
          *
-         * Taking a bounded batch from the external queue and only the tasks present at the start of the run keeps
-         * a turn short, even when the tasks enqueue new tasks (e.g. coroutines calling `yield`): the timers are then
-         * checked often enough to keep their precision, and the external tasks are not starved by the local ones.
+         * Bounding the batch keeps a turn short, even when the tasks enqueue new tasks (e.g. coroutines calling
+         * `yield`): the timers are then checked often enough to keep their precision. The tasks left after the batch
+         * are the ones another loop can take over, instead of waiting for the next turn.
+         *
+         * @return true when at least one task was run.
          */
-        private fun runQueuedTasks() {
-            var transferred = 0
-            while (transferred++ < EXTERNAL_BATCH_SIZE) {
-                local.addLast(external.poll() ?: break)
+        private fun runOwnTasks(): Boolean {
+            var executed = 0
+            while (executed < TURN_BATCH_SIZE) {
+                runSafely(tasks.poll() ?: break)
+                executed++
             }
-            repeat(local.size) { runSafely(local.pollFirst()) }
+            if (tasks.isNotEmpty()) {
+                owner.wakeUpParkedLoop()
+            }
+            return executed > 0
         }
 
         /**
          * Parks the thread until the next deadline of a timer, or indefinitely when there is no timer, unless a task
-         * was submitted meanwhile. [enqueueExternally] and [shutdown] wake the thread up; a spurious wake-up only
-         * starts a new turn.
+         * was submitted meanwhile. [enqueueExternally], [wakeUp] and [shutdown] wake the thread up; a spurious
+         * wake-up only starts a new turn.
          */
         private fun park() {
             parked.set(true)
-            if (external.isEmpty() && running) {
+            owner.parkedLoops.incrementAndGet()
+            if (tasks.isEmpty() && running) {
                 val nextDeadline = timers.peek()?.deadline
                 when {
                     nextDeadline == null -> LockSupport.park(this)
                     else -> (nextDeadline - System.nanoTime()).takeIf { it > 0 }?.let { LockSupport.parkNanos(this, it) }
                 }
             }
+            owner.parkedLoops.decrementAndGet()
             parked.set(false)
         }
 
@@ -321,7 +398,7 @@ internal class EventLoopsDispatcher(
          * Runs [task] and logs its failure, so that an exception does not stop the loop and its other tasks.
          * The tasks of coroutines handle their own exceptions; this only protects against tasks that do not.
          */
-        private fun runSafely(task: Runnable) {
+        fun runSafely(task: Runnable) {
             try {
                 task.run()
             } catch (e: Throwable) {
@@ -333,9 +410,15 @@ internal class EventLoopsDispatcher(
     private companion object {
 
         /**
-         * Maximal count of tasks taken from the external queue in a turn, so that the timers are regularly checked.
+         * Maximal count of tasks of its own queue that a loop runs in a turn, so that the timers are regularly checked
+         * and the tasks left can be stolen.
          */
-        const val EXTERNAL_BATCH_SIZE = 256
+        const val TURN_BATCH_SIZE = 64
+
+        /**
+         * Maximal count of tasks a loop steals from another one at once.
+         */
+        const val STEAL_BATCH_SIZE = 16
 
         /**
          * Minimal count of timers in a loop, from which the disposed ones are purged.

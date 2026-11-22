@@ -43,6 +43,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.assertThrows
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Timeout(10)
@@ -139,9 +142,32 @@ internal class EventLoopsDispatcherTest {
         assertThat(job.isCancelled).isTrue()
     }
 
+    @Test
+    fun `given a loop busy with a long task when it queues other tasks then another loop steals and runs them`() =
+        runBlocking {
+            val executed = CountDownLatch(STOLEN_TASKS_COUNT)
+            val executingThreads = ConcurrentHashMap.newKeySet<Thread>()
+
+            val stolen = withContext(dispatcher) {
+                val busyThread = Thread.currentThread()
+                repeat(STOLEN_TASKS_COUNT) {
+                    launch {
+                        executingThreads += Thread.currentThread()
+                        executed.countDown()
+                    }
+                }
+                // Keeps the loop busy: the tasks can only complete when another loop steals them.
+                executed.await(STEALING_TIMEOUT_SECONDS, TimeUnit.SECONDS) && busyThread !in executingThreads
+            }
+
+            assertThat(stolen).isTrue()
+        }
+
     private companion object {
         const val DELAY_MS = 50L
         const val TOLERANCE_MS = 40L
         const val TIMERS_COUNT = 10_000
+        const val STOLEN_TASKS_COUNT = 4
+        const val STEALING_TIMEOUT_SECONDS = 5L
     }
 }
