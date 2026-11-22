@@ -77,7 +77,9 @@ class ExecutorsFactory {
         )
         // Scopes with a defined size or referencing the global scope.
         @Suppress("UNCHECKED_CAST") val definedScopes = nonGlobalConfigs
-            .mapValues { (name, config) -> createScope(name, config) }
+            .mapValues { (name, config) ->
+                createScope(name, config, eventLoops = name == Executors.CAMPAIGN_EXECUTOR_NAME)
+            }
             .filterValues { it != null } as Map<String, NamedCoroutineScope>
         scopes += definedScopes
 
@@ -98,7 +100,7 @@ class ExecutorsFactory {
         )
     }
 
-    private fun createScope(name: String, configuration: String): NamedCoroutineScope? {
+    private fun createScope(name: String, configuration: String, eventLoops: Boolean = false): NamedCoroutineScope? {
         val threadsCount = configuration.toIntOrNull()
         val actualThreadsCount = threadsCount
             ?: if (configuration.trim().endsWith("x")
@@ -112,13 +114,13 @@ class ExecutorsFactory {
             }
 
         return actualThreadsCount?.let { threads ->
-            createFixedThreadPoolContext(name, threads)
+            createFixedThreadPoolContext(name, threads, eventLoops)
         }
     }
 
-    private fun createFixedThreadPoolContext(name: String, threadsCount: Int): NamedCoroutineScope {
+    private fun createFixedThreadPoolContext(name: String, threadsCount: Int, eventLoops: Boolean): NamedCoroutineScope {
         return if (threadsCount > 0) {
-            val dispatcher = newFixedThreadPoolContext(threadsCount, name)
+            val dispatcher = if (eventLoops) EventLoopsDispatcher(name, threadsCount) else newFixedThreadPoolContext(threadsCount, name)
             NamedCoroutineScope(name, dispatcher, dispatcher, CoroutineScope(dispatcher)).also {
                 log.trace { "Created the coroutine context $name with $threadsCount threads: $it" }
             }

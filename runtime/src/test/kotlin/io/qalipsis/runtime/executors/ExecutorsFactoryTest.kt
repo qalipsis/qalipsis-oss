@@ -24,6 +24,7 @@ package io.qalipsis.runtime.executors
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNotSameInstanceAs
 import assertk.assertions.isSameInstanceAs
@@ -297,6 +298,24 @@ internal class ExecutorsFactoryTest {
             )
             factory.campaignScope(dummyScopeProvider)
         }
+    }
+
+    @Test
+    fun `should create event loops for the campaign executor only`() {
+        val factory = ExecutorsFactory()
+        val config = executorsConfiguration(
+            global = "2",
+            campaign = "2",
+            io = "2",
+            background = "2",
+            orchestration = "2"
+        )
+
+        scopeProvider = factory.coroutineScopeProvider(config)
+
+        assertThat(factory.campaignDispatcher(scopeProvider!!)).isInstanceOf<EventLoopsDispatcher>()
+        assertThat(factory.ioDispatcher(scopeProvider!!)).isNotInstanceOf<EventLoopsDispatcher>()
+        assertThat(factory.globalDispatcher(scopeProvider!!)).isNotInstanceOf<EventLoopsDispatcher>()
     }
 
     private fun executorsConfiguration(
