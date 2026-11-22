@@ -21,7 +21,6 @@
 
 package io.qalipsis.core.factory.meters.inmemory.valued
 
-import com.tdunning.math.stats.TDigest
 import io.aerisconsulting.catadioptre.KTestable
 import io.qalipsis.api.lang.supplyIf
 import io.qalipsis.api.meters.DistributionMeasurementMetric
@@ -59,8 +58,7 @@ internal class StepTimer(
     @KTestable
     private val total = LongAdder()
 
-    @KTestable
-    private var tDigest: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+    private val percentilesRecorder: PercentilesRecorder? = supplyIf(percentiles.isNotEmpty()) { PercentilesRecorder() }
 
     private val max = AtomicLong(0)
 
@@ -94,14 +92,13 @@ internal class StepTimer(
                 Statistic.TOTAL_TIME
             ),
             MeasurementMetric(microsToUnitConverter(max.getAndSet(0).toDouble(), BASE_TIME_UNIT), Statistic.MAX),
-        ) + (percentiles.map {
-            DistributionMeasurementMetric(percentile(it, BASE_TIME_UNIT), Statistic.PERCENTILE, it)
+        ) + (percentilesRecorder?.drain(percentiles).orEmpty().zip(percentiles) { valueInMicros, percentile ->
+            DistributionMeasurementMetric(
+                microsToUnitConverter(valueInMicros, BASE_TIME_UNIT),
+                Statistic.PERCENTILE,
+                percentile
+            )
         })
-        tDigest?.let {
-            synchronized(it) {
-                tDigest = TDigest.createMergingDigest(100.0)
-            }
-        }
         return result
     }
 
@@ -129,11 +126,7 @@ internal class StepTimer(
             } while (curMax < amountInMicros && !max.compareAndSet(curMax, amountInMicros))
             total.add(amountInMicros)
             counter.add(1)
-            tDigest?.let {
-                synchronized(it) {
-                    it.add(amountInMicros.toDouble())
-                }
-            }
+            percentilesRecorder?.record(amountInMicros)
         }
     }
 
@@ -148,7 +141,7 @@ internal class StepTimer(
     }
 
     override fun percentile(percentile: Double, unit: TimeUnit?): Double {
-        return tDigest?.let { microsToUnitConverter(it.quantile(percentile / 100), unit) } ?: 0.0
+        return percentilesRecorder?.let { microsToUnitConverter(it.percentile(percentile), unit) } ?: 0.0
     }
 
     /**

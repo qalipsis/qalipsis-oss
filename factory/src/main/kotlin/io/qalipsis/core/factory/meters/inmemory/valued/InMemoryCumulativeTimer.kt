@@ -21,7 +21,6 @@
 
 package io.qalipsis.core.factory.meters.inmemory.valued
 
-import com.tdunning.math.stats.TDigest
 import io.qalipsis.api.lang.supplyIf
 import io.qalipsis.api.meters.DistributionMeasurementMetric
 import io.qalipsis.api.meters.MeasurementMetric
@@ -63,7 +62,7 @@ internal class InMemoryCumulativeTimer(
 
     private val total = LongAdder()
 
-    private var tDigest: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+    private val percentilesRecorder: PercentilesRecorder? = supplyIf(percentiles.isNotEmpty()) { PercentilesRecorder() }
 
     private val max = AtomicLong(0)
 
@@ -102,12 +101,7 @@ internal class InMemoryCumulativeTimer(
     override fun record(amount: Long, unit: TimeUnit?) {
         if (amount >= 0) {
             buckets[currentBucketHolder.get()].record(amount, unit)
-            tDigest?.let {
-                val amountInMicros = TimeUnit.MICROSECONDS.convert(amount, unit)
-                synchronized(it) {
-                    it.add(amountInMicros.toDouble())
-                }
-            }
+            percentilesRecorder?.record(TimeUnit.MICROSECONDS.convert(amount, unit))
         }
     }
 
@@ -159,7 +153,7 @@ internal class InMemoryCumulativeTimer(
     }
 
     override fun percentile(percentile: Double, unit: TimeUnit?): Double {
-        return tDigest?.let { microsToUnitConverter(it.quantile(percentile / 100), unit) } ?: 0.0
+        return percentilesRecorder?.let { microsToUnitConverter(it.percentile(percentile), unit) } ?: 0.0
     }
 
     /**

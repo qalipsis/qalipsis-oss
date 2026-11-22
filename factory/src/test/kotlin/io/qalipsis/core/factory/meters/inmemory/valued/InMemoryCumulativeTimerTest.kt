@@ -184,7 +184,8 @@ internal class InMemoryCumulativeTimerTest {
         val fiftiethPercentileInMillis = timer.percentile(50.0, TimeUnit.MILLISECONDS)
 
         //then
-        assertThat(fiftiethPercentileInMillis).isBetween(600311.10, 600311.12)
+        // Precision of 2 significant digits: the value is within 1 % of the recorded one.
+        assertThat(fiftiethPercentileInMillis).isBetween(600311.11 * 0.99, 600311.11 * 1.01)
     }
 
     @Test
@@ -255,14 +256,14 @@ internal class InMemoryCumulativeTimerTest {
                     }
                     index(4).all {
                         isInstanceOf(DistributionMeasurementMetric::class).all {
-                            prop(DistributionMeasurementMetric::value).isEqualTo(3.6E8)
+                            prop(DistributionMeasurementMetric::value).isBetween(3.6E8 * 0.99, 3.6E8 * 1.01)
                             prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
                             prop(DistributionMeasurementMetric::observationPoint).isEqualTo(25.0)
                         }
                     }
                     index(5).all {
                         isInstanceOf(DistributionMeasurementMetric::class).all {
-                            prop(DistributionMeasurementMetric::value).isEqualTo(2.00566E9)
+                            prop(DistributionMeasurementMetric::value).isBetween(2.00566E9 * 0.99, 2.00566E9 * 1.01)
                             prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
                             prop(DistributionMeasurementMetric::observationPoint).isEqualTo(99.0)
                         }
@@ -371,14 +372,14 @@ internal class InMemoryCumulativeTimerTest {
                     }
                     index(4).all {
                         isInstanceOf(DistributionMeasurementMetric::class).all {
-                            prop(DistributionMeasurementMetric::value).isEqualTo(3.6E8)
+                            prop(DistributionMeasurementMetric::value).isBetween(3.6E8 * 0.99, 3.6E8 * 1.01)
                             prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
                             prop(DistributionMeasurementMetric::observationPoint).isEqualTo(25.0)
                         }
                     }
                     index(5).all {
                         isInstanceOf(DistributionMeasurementMetric::class).all {
-                            prop(DistributionMeasurementMetric::value).isEqualTo(2.00566E9)
+                            prop(DistributionMeasurementMetric::value).isBetween(2.00566E9 * 0.99, 2.00566E9 * 1.01)
                             prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
                             prop(DistributionMeasurementMetric::observationPoint).isEqualTo(99.0)
                         }
@@ -425,14 +426,15 @@ internal class InMemoryCumulativeTimerTest {
                     }
                     index(4).all {
                         isInstanceOf(DistributionMeasurementMetric::class).all {
-                            prop(DistributionMeasurementMetric::value).isEqualTo(3.6E8)
+                            // Nearest rank of the 25th percentile of 8 values: the 2nd lowest one, 2,560 ms.
+                            prop(DistributionMeasurementMetric::value).isBetween(2.56E6 * 0.99, 2.56E6 * 1.01)
                             prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
                             prop(DistributionMeasurementMetric::observationPoint).isEqualTo(25.0)
                         }
                     }
                     index(5).all {
                         isInstanceOf(DistributionMeasurementMetric::class).all {
-                            prop(DistributionMeasurementMetric::value).isEqualTo(2.00566E9)
+                            prop(DistributionMeasurementMetric::value).isBetween(2.00566E9 * 0.99, 2.00566E9 * 1.01)
                             prop(DistributionMeasurementMetric::statistic).isEqualTo(Statistic.PERCENTILE)
                             prop(DistributionMeasurementMetric::observationPoint).isEqualTo(99.0)
                         }

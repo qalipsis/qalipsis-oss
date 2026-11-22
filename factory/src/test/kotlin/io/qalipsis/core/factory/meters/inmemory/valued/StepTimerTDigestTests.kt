@@ -148,7 +148,7 @@ internal class StepTimerTDigestTests {
      *
      */
     @Test
-    internal fun `should return accurate percentiles when recording values from 0 to 10_000 milliseconds with a compression factor of 100 to the digest`() {
+    internal fun `should return accurate percentiles when recording values from 0 to 10_000 milliseconds`() {
         //given
         val id = mockk<Meter.Id>()
         val timer = StepTimer(id, meterReporter, listOf(25.0, 50.0))
@@ -166,18 +166,18 @@ internal class StepTimerTDigestTests {
                 50.0,
                 TimeUnit.MILLISECONDS
             )
-        ).isBetween(4999.500046606136, 4999.500046606140)
+        ).isBetween(5000.0 * 0.99, 5000.0 * 1.01)
         assertThat(
             timer.percentile(
                 99.99,
                 TimeUnit.MILLISECONDS
             )
-        ).isBetween(9998.521248822666, 9998.521248822670)
+        ).isBetween(9999.0 * 0.99, 9999.0 * 1.01)
     }
 
 
     @Test
-    internal fun `should return accurate percentiles when recording values from 0 t0 20_000 milliseconds with a compression factor of 100 to the digest`() {
+    internal fun `should return accurate percentiles when recording values from 0 t0 20_000 milliseconds`() {
         //given
         val id = mockk<Meter.Id>()
         val timer = StepTimer(id, meterReporter, listOf(25.0, 50.0))
@@ -188,8 +188,6 @@ internal class StepTimerTDigestTests {
             timer.record(Duration.of(count.toLong(), ChronoUnit.MILLIS))
             count += 0.001
         }
-        println(timer.percentile(50.0, TimeUnit.MILLISECONDS))
-        println(timer.percentile(99.99, TimeUnit.MILLISECONDS))
 
         //then
         assertThat(
@@ -197,18 +195,18 @@ internal class StepTimerTDigestTests {
                 50.0,
                 TimeUnit.MILLISECONDS
             )
-        ).isEqualTo(9999.499921515606)
+        ).isBetween(10000.0 * 0.99, 10000.0 * 1.01)
         assertThat(
             timer.percentile(
                 99.99,
                 TimeUnit.MILLISECONDS
             )
-        ).isEqualTo(19997.46503885969)
+        ).isBetween(19998.0 * 0.99, 19998.0 * 1.01)
     }
 
 
     @Test
-    internal fun `should return accurate percentiles when recording milliseconds with a compression factor of 100 in a multithreaded environment`() =
+    internal fun `should return accurate percentiles when recording milliseconds in a multithreaded environment`() =
         testDispatcherProvider.run {
             //given
             val id = mockk<Meter.Id>()
@@ -228,8 +226,10 @@ internal class StepTimerTDigestTests {
             timer.record(Duration.of(20, ChronoUnit.SECONDS))
 
             //then
-//            assertThat(timer.percentile(50.0, TimeUnit.MILLISECONDS)).isEqualTo(5000)//Returns 4999.500046606138
-//            assertThat(timer.percentile(99.99, TimeUnit.MILLISECONDS)).isEqualTo(9990)//Returns 9998.521248822666
+            assertThat(timer.count()).isEqualTo(10_001L)
+            // Median of 10,000 values uniformly distributed between 0 and 10 s.
+            assertThat(timer.percentile(50.0, TimeUnit.MILLISECONDS)).isBetween(4700.0, 5300.0)
+            assertThat(timer.percentile(100.0, TimeUnit.MILLISECONDS)).isBetween(20_000.0 * 0.99, 20_000.0 * 1.01)
         }
 
 

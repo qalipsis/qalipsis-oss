@@ -85,6 +85,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
     implementation("com.tdunning:t-digest:3.3")
+    implementation("org.hdrhistogram:HdrHistogram:2.1.12")
     implementation("com.h2database:h2")
 
     runtimeOnly("io.micronaut.sql:micronaut-jdbc-hikari")
