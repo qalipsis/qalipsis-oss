@@ -27,6 +27,7 @@ import io.mockk.confirmVerified
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.RelaxedMockK
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
+import io.qalipsis.core.campaigns.FactoryConfiguration
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioConfiguration
 import io.qalipsis.core.directives.FactoryAssignmentDirective
@@ -116,6 +117,8 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
             ).apply {
                 broadcastChannel = "broadcast-channel"
                 feedbackChannel = "feedback-channel"
+                factories["factory-1"] = FactoryConfiguration("unicast-1")
+                factories["factory-2"] = FactoryConfiguration("unicast-2")
             },
             channel = "broadcast"
         )
@@ -141,7 +144,8 @@ internal class CampaignLaunch1FactoryAssignmentDirectiveListenerTest {
             assignments = listOf(
                 FactoryScenarioAssignment("my-scenario-1", listOf("dag-1", "dag-2")),
                 FactoryScenarioAssignment("my-scenario-2", listOf("dag-3", "dag-4"))
-            )
+            ),
+            factoriesCount = 2
         )
         coVerifyOrder {
             campaignLifeCycleAware1.init(expectedCampaign)

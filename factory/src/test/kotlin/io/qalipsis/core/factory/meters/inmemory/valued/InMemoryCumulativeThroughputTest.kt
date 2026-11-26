@@ -25,6 +25,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.index
+import assertk.assertions.isGreaterThan
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.prop
@@ -48,6 +49,8 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.CountDownLatch
+import kotlin.concurrent.thread
 
 @WithMockk
 internal class InMemoryCumulativeThroughputTest {
@@ -236,6 +239,31 @@ internal class InMemoryCumulativeThroughputTest {
 
         //then
         assertThat(throughput.percentile(75.0)).isEqualTo(23.0)
+    }
+
+    @Test
+    internal fun `given concurrent records over many time slots when reading the percentiles then all the hits are kept`() {
+        // given
+        val id = Meter.Id("any-test", type = MeterType.THROUGHPUT, tags = mapOf("a" to "b"))
+        val throughput = InMemoryCumulativeThroughput(id, meterReporter, ChronoUnit.MILLIS, listOf(50.0, 99.0))
+        val start = CountDownLatch(1)
+        val recorders = List(RECORDING_THREADS) {
+            thread {
+                start.await()
+                repeat(RECORDS_PER_THREAD) {
+                    throughput.record()
+                    throughput.percentile(99.0)
+                }
+            }
+        }
+
+        // when
+        start.countDown()
+        recorders.forEach { it.join() }
+
+        // then
+        assertThat(throughput.total()).isEqualTo((RECORDING_THREADS * RECORDS_PER_THREAD).toDouble())
+        assertThat(throughput.percentile(50.0)).isGreaterThan(0.0)
     }
 
     @Test
@@ -499,4 +527,10 @@ internal class InMemoryCumulativeThroughputTest {
         }
     }
 
+    private companion object {
+
+        const val RECORDING_THREADS = 8
+
+        const val RECORDS_PER_THREAD = 200_000
+    }
 }

@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.DoubleAdder
  * @property timeIncrement the interval of the time slot to calculate the throughput, converted as milliseconds.
  * @property pastBucketHits the throughput of the lately aggregated time slot
  * @property intervalCount the count of time slots that were aggregated so far
+ * @property onAggregation called once with the hits of each aggregated time slot
  *
  *
  * @author Francisca Eze
@@ -58,6 +59,7 @@ internal class StepThroughput(
     private val meterReporter: MeterReporter,
     override val unit: ChronoUnit,
     override val percentiles: Collection<Double>,
+    private val onAggregation: (hits: Double) -> Unit = {},
 ) : Throughput, Meter.ReportingConfiguration<Throughput> {
 
     private val timeIncrement = Duration.of(1, unit).toMillis()
@@ -68,9 +70,15 @@ internal class StepThroughput(
     @KTestable
     internal var tDigest: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
 
+    /**
+     * Guards [tDigest], which is not thread-safe: even its reads compress it.
+     */
+    private val tDigestLock = Any()
+
     @KTestable
     private var max = AtomicDouble(0.0)
 
+    @Volatile
     internal var intervalCount = 0
 
     @KTestable
@@ -129,7 +137,7 @@ internal class StepThroughput(
     override fun total(): Double = total.get()
 
     override fun percentile(percentile: Double): Double {
-        return tDigest?.quantile(percentile / 100) ?: 0.0
+        return synchronized(tDigestLock) { tDigest?.quantile(percentile / 100) } ?: 0.0
     }
 
     override fun record(amount: Double) {
@@ -174,7 +182,7 @@ internal class StepThroughput(
         val hits = bucket.sumThenReset()
         pastBucketHits.set(hits)
         aggregatedTotal.addAndGet(hits)
-        tDigest?.add(hits)
+        synchronized(tDigestLock) { tDigest?.add(hits) }
         intervalCount++
 
         // Set the new max.
@@ -183,6 +191,7 @@ internal class StepThroughput(
             curMax = max.get()
             // This do / while loop ensures that the max is only updated if not a higher value was set in the meantime.
         } while (curMax < hits && !max.compareAndSet(curMax, hits))
+        onAggregation(hits)
     }
 
     override suspend fun snapshot(timestamp: Instant): Collection<MeterSnapshot> {
@@ -202,8 +211,8 @@ internal class StepThroughput(
         ) + (percentiles.map {
             DistributionMeasurementMetric(percentile(it), Statistic.PERCENTILE, it)
         })
-        tDigest?.let {
-            synchronized(it) {
+        synchronized(tDigestLock) {
+            if (tDigest != null) {
                 tDigest = TDigest.createMergingDigest(100.0)
             }
         }

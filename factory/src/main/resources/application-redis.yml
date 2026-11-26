@@ -6,3 +6,24 @@ redis:
   io-thread-pool-size: 5
   computation-thread-pool-size: 4
   client-name: "qalipsis-factory"
+
+meters:
+  # Combination of the meters in Redis when a campaign runs on several factories.
+  # Requires Redis 7.0 or later (sharded Pub/Sub), or Redis 4.0 or later with sharded-pub-sub set to false.
+  redis:
+    # Set to false to keep the meters of each factory in memory, even when a campaign runs on several factories.
+    enabled: true
+    # Period of the bulk flushes of the meters to Redis.
+    linger: 1s
+    # Maximal duration to wait for the final values of the owned meters at the end of the campaign.
+    final-timeout: 10s
+    # Safety TTL of the keys of the meter shards, refreshed at each acknowledgement of a period.
+    keys-ttl: 1m
+    # Safety TTL of the keys of the declared meters, refreshed at each declaration.
+    registry-ttl: 24h
+    # Count of shards distributing the meters over the nodes of a Redis cluster, flushed concurrently.
+    shards: 16
+    # Publishes the values of the meters with the sharded Pub/Sub (SPUBLISH / SSUBSCRIBE, Redis 7.0 or later), which
+    # only reaches the node owning the shard in a Redis cluster. Set to false to use the plain Pub/Sub on older
+    # servers: in a Redis cluster, each message is then broadcast to all the nodes.
+    sharded-pub-sub: true

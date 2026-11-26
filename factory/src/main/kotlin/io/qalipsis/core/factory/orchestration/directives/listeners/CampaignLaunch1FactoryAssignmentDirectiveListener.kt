@@ -76,7 +76,8 @@ class CampaignLaunch1FactoryAssignmentDirectiveListener(
                 broadcastChannel = directive.runningCampaign.broadcastChannel,
                 feedbackChannel = directive.runningCampaign.feedbackChannel,
                 scenarios = directive.runningCampaign.scenarios,
-                assignments = directive.assignments
+                assignments = directive.assignments,
+                factoriesCount = directive.runningCampaign.factories.size.coerceAtLeast(1)
             )
             campaignLifeCycleAwares.forEach {
                 it.init(campaign)
