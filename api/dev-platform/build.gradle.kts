@@ -36,7 +36,8 @@ val caffeineCache = "3.2.0"
 val cuid = "0.1.1"
 val commonsLang = "3.17.0"
 
-val reactor = "2022.0.20"
+val reactor = "2023.0.19"
+val lettuce = "6.8.2.RELEASE"
 val netty = "4.2.1.Final"
 val bouncycastle = "1.70"
 val postgresqlDriver = "42.3.1"
@@ -79,6 +80,9 @@ dependencies {
         api("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinCoroutines")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinCoroutines")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9:$kotlinCoroutines")
+
+        // Redis client, more recent than the one of Micronaut, to support the sharded Pub/Sub.
+        api("io.lettuce:lettuce-core:$lettuce")
 
         // Misc libraries.
         api("com.google.guava:guava:$guava")

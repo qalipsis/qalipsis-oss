@@ -314,6 +314,14 @@ fun Project.configureNotPlatform() {
         }
 
         withType<Test> {
+            // The benchmarks are not instrumented, to not distort their measures and profiles.
+            if (System.getenv("QALIPSIS_METERS_BENCHMARK") == "true") {
+                doFirst { extensions.findByType<JacocoTaskExtension>()?.isEnabled = false }
+            }
+            // Runs the tests with a specific JDK, for instance a native one when the toolchain is emulated.
+            System.getenv("QALIPSIS_TEST_JAVA_HOME")?.takeIf { it.isNotBlank() }?.let { javaHome ->
+                executable = "$javaHome/bin/java"
+            }
             // Simulates the execution of the tests with a given number of CPUs.
             if (!testNumCpuCore.isNullOrBlank()) {
                 project.logger.lifecycle("Running tests of ${project.name} with $testNumCpuCore cores")

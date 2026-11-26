@@ -29,6 +29,7 @@ import io.qalipsis.api.meters.MeterSnapshot
 import io.qalipsis.api.meters.Rate
 import io.qalipsis.api.meters.Throughput
 import io.qalipsis.api.meters.Timer
+import io.qalipsis.core.factory.campaign.Campaign
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -38,6 +39,16 @@ import java.time.temporal.ChronoUnit
  * @author Francisca Eze
  */
 interface MeterRegistry {
+
+    /**
+     * Prepares the registry to keep the meters of [campaign], before any of them is created.
+     */
+    suspend fun init(campaign: Campaign) = Unit
+
+    /**
+     * Completes [campaign] if not yet done and releases its meters.
+     */
+    suspend fun close(campaign: Campaign) = Unit
 
     /**
      * Creates a new [Counter] metric to be added to the registry. This metric measures the

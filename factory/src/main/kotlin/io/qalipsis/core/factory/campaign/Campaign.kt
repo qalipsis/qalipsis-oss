@@ -31,6 +31,8 @@ import java.time.Instant
 /**
  * Configuration of a scheduled or running campaign.
  *
+ * @property factoriesCount total count of factories running the campaign, this one included
+ *
  * @author Eric Jessé
  */
 data class Campaign(
@@ -42,5 +44,6 @@ data class Campaign(
     val broadcastChannel: DispatcherChannel,
     val feedbackChannel: DispatcherChannel,
     val scenarios: Map<ScenarioName, ScenarioConfiguration> = emptyMap(),
-    val assignments: Collection<FactoryScenarioAssignment>
+    val assignments: Collection<FactoryScenarioAssignment>,
+    val factoriesCount: Int = 1
 )

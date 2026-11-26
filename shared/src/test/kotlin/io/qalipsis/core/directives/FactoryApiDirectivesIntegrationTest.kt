@@ -22,10 +22,12 @@
 package io.qalipsis.core.directives
 
 import assertk.assertThat
+import assertk.assertions.containsOnly
 import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isNotNull
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import io.qalipsis.api.executionprofile.CompletionMode.GRACEFUL
+import io.qalipsis.core.campaigns.FactoryConfiguration
 import io.qalipsis.core.campaigns.FactoryScenarioAssignment
 import io.qalipsis.core.campaigns.RunningCampaign
 import io.qalipsis.core.campaigns.ScenarioConfiguration
@@ -84,6 +86,8 @@ internal class FactoryApiDirectivesIntegrationTest {
             ).apply {
                 broadcastChannel = "broadcast-channel"
                 feedbackChannel = "feedback-channel"
+                factories["factory-1"] = FactoryConfiguration("unicast-1")
+                factories["factory-2"] = FactoryConfiguration("unicast-2")
             },
             channel = "broadcast"
         )
@@ -91,6 +95,9 @@ internal class FactoryApiDirectivesIntegrationTest {
         val directiveFromSerialization = protoBuf.decodeFromByteArray<Directive>(serialized)
 
         assertThat(directiveFromSerialization).isDataClassEqualTo(directive)
+        // The factories are used to count the factories running the campaign.
+        assertThat((directiveFromSerialization as FactoryAssignmentDirective).runningCampaign.factories.keys)
+            .containsOnly("factory-1", "factory-2")
 
         // when + then
         assertThat(serializer.deserialize<Directive>(serializer.serialize(directive))).isNotNull().isDataClassEqualTo(directive)

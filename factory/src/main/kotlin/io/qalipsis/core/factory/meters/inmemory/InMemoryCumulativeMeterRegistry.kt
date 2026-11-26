@@ -32,7 +32,6 @@ import io.qalipsis.api.meters.Rate
 import io.qalipsis.api.meters.Throughput
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.core.factory.campaign.Campaign
-import io.qalipsis.core.factory.campaign.CampaignLifeCycleAware
 import io.qalipsis.core.factory.meters.MeterRegistry
 import io.qalipsis.core.factory.meters.inmemory.composite.CompositeCounter
 import io.qalipsis.core.factory.meters.inmemory.composite.CompositeDistributionSummary
@@ -66,7 +65,7 @@ import java.util.concurrent.ConcurrentHashMap
 @Singleton
 class InMemoryCumulativeMeterRegistry(
     private val meterReporter: MeterReporter,
-) : MeterRegistry, CampaignLifeCycleAware {
+) : MeterRegistry {
 
     /**
      * Contains all the unique meters.
@@ -87,7 +86,6 @@ class InMemoryCumulativeMeterRegistry(
     override suspend fun init(campaign: Campaign) {
         meters.clear()
         globalMeters.clear()
-        super.init(campaign)
         if (campaign.scenarios.size == 1) {
             // When there is a unique scenario running in the campaign, we let the meters being created normally.
             // The snapshots later generated for the scenario will be duplicated without scenario tag, as "company-level" measurements.
@@ -181,7 +179,6 @@ class InMemoryCumulativeMeterRegistry(
         globalMeters.clear()
         snapshotsConverter = NO_OP_SNAPSHOTS_CONVERTER
         meterConverter = NO_OP_SCENARIO_METER_CONVERTER
-        super.close(campaign)
     }
 
     private interface MeterConverter {

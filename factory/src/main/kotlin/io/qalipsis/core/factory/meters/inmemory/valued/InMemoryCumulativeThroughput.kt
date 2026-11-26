@@ -58,15 +58,16 @@ internal class InMemoryCumulativeThroughput(
 
     private val aggregatedTotal = AtomicDouble(0.0)
 
-    private var tDigest: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
+    private val tDigest: TDigest? = supplyIf(percentiles.isNotEmpty()) { TDigest.createMergingDigest(100.0) }
 
     private val max = AtomicDouble(0.0)
 
     private val current = AtomicDouble(0.0)
 
+    @Volatile
     private var intervalCount = 0
 
-    private val stepThroughput = StepThroughput(id, meterReporter, unit, percentiles)
+    private val stepThroughput = StepThroughput(id, meterReporter, unit, percentiles, ::aggregate)
 
     override fun total(): Double {
         return stepThroughput.total()
@@ -87,21 +88,24 @@ internal class InMemoryCumulativeThroughput(
     }
 
     override fun percentile(percentile: Double): Double {
-        return tDigest?.quantile(percentile / 100) ?: 0.0
+        // The digest is not thread-safe: even its reads compress it.
+        return tDigest?.let { synchronized(it) { it.quantile(percentile / 100) } } ?: 0.0
     }
 
     override fun record(amount: Double) {
         if (amount > 0) {
-            val shouldRotateBucket = stepThroughput.shouldRotateBucket()
             stepThroughput.record(amount)
-            if (shouldRotateBucket) {
-                intervalCount = stepThroughput.intervalCount
-                aggregatedTotal.set(stepThroughput.aggregatedTotal.toDouble())
-                current.set(stepThroughput.current())
-
-                tDigest?.add(stepThroughput.tDigest)
-            }
         }
+    }
+
+    /**
+     * Keeps the hits of each time slot aggregated by [stepThroughput], called once per time slot.
+     */
+    private fun aggregate(hits: Double) {
+        intervalCount = stepThroughput.intervalCount
+        aggregatedTotal.set(stepThroughput.aggregatedTotal.toDouble())
+        current.set(hits)
+        tDigest?.let { synchronized(it) { it.add(hits) } }
     }
 
     override suspend fun snapshot(timestamp: Instant): Collection<MeterSnapshot> {
