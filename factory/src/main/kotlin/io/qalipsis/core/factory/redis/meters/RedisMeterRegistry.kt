@@ -27,8 +27,6 @@ import io.aerisconsulting.catadioptre.KTestable
 import io.lettuce.core.AbstractRedisClient
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.RedisClient
-import io.lettuce.core.RedisNoScriptException
-import io.lettuce.core.ScriptOutputType
 import io.lettuce.core.api.coroutines.RedisHashCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisKeyCoroutinesCommands
 import io.lettuce.core.api.coroutines.RedisScriptingCoroutinesCommands
@@ -58,13 +56,13 @@ import io.qalipsis.core.factory.configuration.FactoryConfiguration
 import io.qalipsis.core.factory.meters.CompositeMeterRegistry
 import io.qalipsis.core.factory.meters.MeterRegistry
 import io.qalipsis.core.factory.meters.MeterSnapshotImpl
+import io.qalipsis.core.factory.redis.RedisScript
 import io.qalipsis.core.factory.redis.meters.RedisMeter.Companion.BUCKETS_FIELD
 import io.qalipsis.core.factory.redis.meters.RedisMeter.Companion.COUNT_FIELD
 import io.qalipsis.core.factory.redis.meters.RedisMeter.Companion.DENOMINATOR_FIELD
 import io.qalipsis.core.factory.redis.meters.RedisMeter.Companion.NUMERATOR_FIELD
 import io.qalipsis.core.factory.redis.meters.RedisMeter.Companion.TOTAL_FIELD
 import io.qalipsis.core.factory.redis.meters.RedisMeter.Companion.VALUE_FIELD
-import io.qalipsis.core.redis.RedisUtils
 import io.qalipsis.core.reporter.MeterReporter
 import jakarta.inject.Named
 import jakarta.inject.Singleton
@@ -299,12 +297,12 @@ internal class RedisMeterRegistry(
     /**
      * Script declaring the meter levels in the campaign registry.
      */
-    private val declarationScript = Script(DECLARATION_SCRIPT)
+    private val declarationScript = RedisScript(scriptingCommands, DECLARATION_SCRIPT)
 
     /**
      * Script adding the deltas to a shard, acknowledging the periods and publishing their values.
      */
-    private val flushScript = Script(FLUSH_SCRIPT)
+    private val flushScript = RedisScript(scriptingCommands, FLUSH_SCRIPT)
 
     /**
      * Starts combining the meters of [campaign] in Redis: prepares the keys, opens the Pub/Sub connection and starts
@@ -742,44 +740,6 @@ internal class RedisMeterRegistry(
          * The factory completed the campaign: no other value will be sent.
          */
         CAMPAIGN("2")
-    }
-
-    /**
-     * Lua script loaded from the resource [path], executed by its SHA and loaded again when unknown to Redis, for
-     * example after a restart of Redis or on a new node of a cluster.
-     */
-    private inner class Script(path: String) {
-
-        /**
-         * Source of the script.
-         */
-        private val source = RedisUtils.loadScript(path)
-
-        /**
-         * SHA of the script once loaded in Redis.
-         */
-        @Volatile
-        private var sha: String? = null
-
-        /**
-         * Executes the script on [keys] with [arguments], and returns its result as a list.
-         */
-        suspend fun execute(keys: List<String>, vararg arguments: String): List<Any?> = try {
-            evaluate(sha ?: load(), keys, arguments)
-        } catch (e: RedisNoScriptException) {
-            evaluate(load(), keys, arguments)
-        }
-
-        /**
-         * Loads the script into Redis and keeps its SHA.
-         */
-        private suspend fun load() = scriptingCommands.scriptLoad(source)!!.also { sha = it }
-
-        /**
-         * Executes the script identified by [digest].
-         */
-        private suspend fun evaluate(digest: String, keys: List<String>, arguments: Array<out String>): List<Any?> =
-            scriptingCommands.evalsha<List<Any?>>(digest, ScriptOutputType.MULTI, keys.toTypedArray(), *arguments)!!
     }
 
     private companion object {
