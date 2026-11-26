@@ -315,7 +315,7 @@ fun Project.configureNotPlatform() {
 
         withType<Test> {
             // The benchmarks are not instrumented, to not distort their measures and profiles.
-            if (System.getenv("QALIPSIS_METERS_BENCHMARK") == "true") {
+            if (listOf("QALIPSIS_METERS_BENCHMARK", "QALIPSIS_STEPS_BENCHMARK").any { System.getenv(it) == "true" }) {
                 doFirst { extensions.findByType<JacocoTaskExtension>()?.isEnabled = false }
             }
             // Runs the tests with a specific JDK, for instance a native one when the toolchain is emulated.
