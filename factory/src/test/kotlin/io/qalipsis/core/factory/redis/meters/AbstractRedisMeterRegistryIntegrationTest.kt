@@ -52,6 +52,7 @@ import io.qalipsis.api.meters.Throughput
 import io.qalipsis.api.meters.Timer
 import io.qalipsis.core.factory.campaign.Campaign
 import io.qalipsis.core.factory.configuration.FactoryConfiguration
+import io.qalipsis.core.factory.redis.meters.catadioptre.flush
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -263,11 +264,9 @@ internal abstract class AbstractRedisMeterRegistryIntegrationTest {
             factory2.registry.init(campaign)
             val counter = factory1.counter(SCENARIOS.first())
             counter.increment(4.0)
-            withTimeout(CONVERGENCE_TIMEOUT.toMillis()) {
-                while (counter.count() != 4.0) {
-                    delay(50)
-                }
-            }
+            // Sends the value to Redis before the completion: the final flush, bounded by the final timeout, then has
+            // nothing left to send, even on a slow host.
+            factory1.registry.flush(final = false)
 
             // when only the first factory completes.
             val summary = factory1.registry.summarize(Instant.now())
