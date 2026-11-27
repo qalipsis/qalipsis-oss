@@ -41,7 +41,7 @@ class RedisClusterContainer(image: String = IMAGE) : FixedHostPortGenericContain
     init {
         PORTS.forEach { withFixedExposedPort(it, it) }
         withCommand("sh", "-c", STARTUP_SCRIPT)
-        waitingFor(Wait.forLogMessage(".*.*", 1))
+        waitingFor(Wait.forLogMessage(".*$READY_MESSAGE.*\\n", 1))
         withStartupTimeout(Duration.ofSeconds(90))
     }
 
