@@ -168,6 +168,11 @@ internal class EventLoopsDispatcher(
     }
 
     /**
+     * Returns true when a loop other than [loop] has tasks that [loop] could steal.
+     */
+    private fun hasStealableTasks(loop: EventLoop) = loops.any { it !== loop && it.hasTasks() }
+
+    /**
      * Wakes a parked loop up, if there is one, so that it steals tasks from a loop that cannot run them all in its
      * turn.
      */
@@ -379,11 +384,15 @@ internal class EventLoopsDispatcher(
          * Parks the thread until the next deadline of a timer, or indefinitely when there is no timer, unless a task
          * was submitted meanwhile. [enqueueExternally], [wakeUp] and [shutdown] wake the thread up; a spurious
          * wake-up only starts a new turn.
+         *
+         * The queues of the other loops are checked after [parkedLoops] is incremented, because a busy loop only
+         * wakes a parked loop up when it sees one: either the busy loop sees this loop as parked and wakes it up, or
+         * this loop sees the tasks queued since its last stealing attempt and does not park.
          */
         private fun park() {
             parked.set(true)
             owner.parkedLoops.incrementAndGet()
-            if (tasks.isEmpty() && running) {
+            if (tasks.isEmpty() && !owner.hasStealableTasks(this) && running) {
                 val nextDeadline = timers.peek()?.deadline
                 when {
                     nextDeadline == null -> LockSupport.park(this)
