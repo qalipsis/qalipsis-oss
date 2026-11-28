@@ -40,6 +40,11 @@ interface MinionsKeeper {
     operator fun get(minionId: MinionId): Minion
 
     /**
+     * Returns the minion with the expected ID, or null when it does not exist or was already shut down.
+     */
+    fun find(minionId: MinionId): Minion?
+
+    /**
      * Returns the singleton minion attached to a singleton DAG or DAG not under load.
      */
     fun getSingletonMinion(scenarioName: ScenarioName, dagId: DirectedAcyclicGraphName): Minion

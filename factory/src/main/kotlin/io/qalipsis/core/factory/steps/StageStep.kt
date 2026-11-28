@@ -147,9 +147,16 @@ class StageStep<I, O>(
     }
 
     override suspend fun complete(completionContext: CompletionContext) {
-        log.trace { "Completing the stage '$name' for the minion ${completionContext.minionId}" }
-        runner.complete(minionsKeeper[completionContext.minionId], head!!, completionContext)?.join()
-        log.trace { "Stage '$name' for the minion ${completionContext.minionId} is completed" }
+        // The steps following the stage might complete the minion and shut it down concurrently, once the tail
+        // already completed the steps of the stage: there is then nothing left to complete.
+        val minion = minionsKeeper.find(completionContext.minionId)
+        if (minion != null) {
+            log.trace { "Completing the stage '$name' for the minion ${completionContext.minionId}" }
+            runner.complete(minion, head!!, completionContext)?.join()
+            log.trace { "Stage '$name' for the minion ${completionContext.minionId} is completed" }
+        } else {
+            log.trace { "The minion ${completionContext.minionId} was already shut down, the stage '$name' is completed" }
+        }
     }
 
     companion object {

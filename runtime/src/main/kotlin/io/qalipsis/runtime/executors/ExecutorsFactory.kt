@@ -121,7 +121,8 @@ class ExecutorsFactory {
     private fun createFixedThreadPoolContext(name: String, threadsCount: Int, eventLoops: Boolean): NamedCoroutineScope {
         return if (threadsCount > 0) {
             val dispatcher = if (eventLoops) EventLoopsDispatcher(name, threadsCount) else newFixedThreadPoolContext(threadsCount, name)
-            NamedCoroutineScope(name, dispatcher, dispatcher, CoroutineScope(dispatcher)).also {
+            // A failing coroutine must not cancel the scope, and with it all the others, like the jobs of the other minions.
+            NamedCoroutineScope(name, dispatcher, dispatcher, CoroutineScope(dispatcher + SupervisorJob())).also {
                 log.trace { "Created the coroutine context $name with $threadsCount threads: $it" }
             }
         } else {
