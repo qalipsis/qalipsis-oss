@@ -28,10 +28,16 @@ import assertk.assertions.isNotInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isNotSameInstanceAs
 import assertk.assertions.isSameInstanceAs
+import assertk.assertions.isTrue
 import io.qalipsis.api.coroutines.CoroutineScopeProvider
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -316,6 +322,24 @@ internal class ExecutorsFactoryTest {
         assertThat(factory.campaignDispatcher(scopeProvider!!)).isInstanceOf<EventLoopsDispatcher>()
         assertThat(factory.ioDispatcher(scopeProvider!!)).isNotInstanceOf<EventLoopsDispatcher>()
         assertThat(factory.globalDispatcher(scopeProvider!!)).isNotInstanceOf<EventLoopsDispatcher>()
+    }
+
+    @Test
+    fun `given a failing coroutine when it completes then the other coroutines of the scope keep running`() = runBlocking {
+        val factory = ExecutorsFactory()
+        scopeProvider = factory.coroutineScopeProvider(
+            executorsConfiguration(global = "2", campaign = "2", io = "2", background = "2", orchestration = "2")
+        )
+        val scopes = with(scopeProvider!!) { listOf(global, campaign, io, background, orchestration) }
+
+        scopes.forEach { scope ->
+            // when
+            scope.launch(CoroutineExceptionHandler { _, _ -> }) { throw IllegalStateException() }.join()
+
+            // then
+            assertThat(scope.isActive).isTrue()
+            assertThat(scope.async { true }.await()).isTrue()
+        }
     }
 
     private fun executorsConfiguration(

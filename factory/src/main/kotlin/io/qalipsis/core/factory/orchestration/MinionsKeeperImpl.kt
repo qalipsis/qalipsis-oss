@@ -87,8 +87,9 @@ class MinionsKeeperImpl(
 
     override fun contains(minionId: MinionId) = minions.containsKey(minionId)
 
-    override fun get(minionId: MinionId): Minion =
-        requireNotNull(minions[minionId]) { "The minion $minionId does not exist" }
+    override fun get(minionId: MinionId): Minion = requireNotNull(find(minionId)) { "The minion $minionId does not exist" }
+
+    override fun find(minionId: MinionId): Minion? = minions[minionId]
 
     override fun getSingletonMinion(scenarioName: ScenarioName, dagId: DirectedAcyclicGraphName): Minion {
         return requireNotNull(singletonMinionsByDagId[scenarioName, dagId]) { "the DAG $dagId is not a singleton DAG in the scenario $scenarioName" }

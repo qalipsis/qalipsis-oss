@@ -36,18 +36,24 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.qalipsis.api.context.DefaultCompletionContext
 import io.qalipsis.api.context.StepContext
 import io.qalipsis.api.context.StepError
 import io.qalipsis.api.context.StepStartStopContext
 import io.qalipsis.api.meters.CampaignMeterRegistry
+import io.qalipsis.api.runtime.Minion
 import io.qalipsis.api.steps.Step
 import io.qalipsis.core.exceptions.StepExecutionException
 import io.qalipsis.core.factory.coreStepContext
 import io.qalipsis.core.factory.orchestration.MinionImpl
+import io.qalipsis.core.factory.orchestration.MinionsKeeper
+import io.qalipsis.core.factory.orchestration.Runner
 import io.qalipsis.core.factory.orchestration.RunnerImpl
 import io.qalipsis.test.assertk.prop
 import io.qalipsis.test.coroutines.TestDispatcherProvider
 import io.qalipsis.test.mockk.CleanMockkRecordedCalls
+import io.qalipsis.test.mockk.coVerifyNever
+import io.qalipsis.test.mockk.coVerifyOnce
 import io.qalipsis.test.mockk.relaxedMockk
 import kotlinx.coroutines.channels.Channel
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -344,5 +350,55 @@ internal class StageStepTest {
             step2.destroy()
             step3.destroy()
         }
+    }
+
+    @Test
+    internal fun `given an existing minion when completing then the completion is propagated to the contained steps`() =
+        testCoroutineDispatcher.runTest {
+            // given
+            val minion = relaxedMockk<Minion>()
+            val minionsKeeper = mockk<MinionsKeeper> { every { find(MINION_ID) } returns minion }
+            val runner = relaxedMockk<Runner>()
+            val head = relaxedMockk<Step<*, *>>()
+            val stageStep = StageStep<Int, String>("", null, minionsKeeper)
+            stageStep.runner = runner
+            stageStep.addNext(head)
+
+            // when
+            stageStep.complete(COMPLETION_CONTEXT)
+
+            // then
+            coVerifyOnce { runner.complete(refEq(minion), refEq(head), refEq(COMPLETION_CONTEXT)) }
+        }
+
+    @Test
+    internal fun `given a minion already shut down when completing then nothing is propagated`() =
+        testCoroutineDispatcher.runTest {
+            // given
+            val minionsKeeper = mockk<MinionsKeeper> { every { find(MINION_ID) } returns null }
+            val runner = relaxedMockk<Runner>()
+            val stageStep = StageStep<Int, String>("", null, minionsKeeper)
+            stageStep.runner = runner
+            stageStep.addNext(relaxedMockk<Step<*, *>>())
+
+            // when
+            stageStep.complete(COMPLETION_CONTEXT)
+
+            // then
+            coVerifyNever { runner.complete(any(), any(), any()) }
+        }
+
+    private companion object {
+
+        const val MINION_ID = "my-minion"
+
+        val COMPLETION_CONTEXT = DefaultCompletionContext(
+            campaignKey = "my-campaign",
+            scenarioName = "my-scenario",
+            minionId = MINION_ID,
+            minionStart = 123L,
+            lastExecutedStepName = "my-step",
+            errors = emptyList()
+        )
     }
 }
